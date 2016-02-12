@@ -81,9 +81,8 @@ The Pharmacogenomics Knowledgebase (PharmGKB, [www.pharmgkb.org](http://www.phar
 With the exponential growth of the literature, manual curation requires prioritization of specific drugs or genes in order to stay up to date with current research.
 In collaboration with [Emily Mallory](http://bmi.stanford.edu/people-directory/current-students.html#fourthyear) (PhD candidate in the Biomedical Informatics training program) and Prof. Russ Altman at Stanford, we are developing DeepDive applications in the field of pharmacogenomics.
 Specifically, we use DeepDive to extract relations between genes, diseases, and drugs in order to predict novel pharmacological relationships.
-<p><figure style="width:80%; margin:0 auto;">
-<a href="https://www.pharmgkb.org/pathway/PA145011114"><img
-    src="../images/showcase/PA145011114.png" style="display:block; margin:0 auto;"></a>
+<p><figure>
+<a href="https://www.pharmgkb.org/pathway/PA145011114"><img src="../images/showcase/PA145011114.png" class="img-responsive"></a>
 <figcaption><small>
 <div>
   M. Whirl-Carrillo, E.M. McDonagh, J. M. Hebert, L. Gong, K. Sangkuhl, C.F. Thorn, R.B. Altman and T.E. Klein.
