@@ -439,7 +439,7 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
             }
           }
         }
-        case (x: Cond, _) => Some(compileCond(x))
+        case (x: Cond, _) => Some(compileCond(x, 1))
         case (x: QuantifiedBody, index) => {
           val newIndexPrefix = s"${indexPrefix}${index}_"
           val subqueryWhereStr = generateWhereClause(x.bodies, newIndexPrefix)
