@@ -1,0 +1,13 @@
+numVotesWithSign(p1,p2,
+	COUNT(if l>0 then 1 else NULL end),
+	COUNT(if l<0 then 1 else NULL end)
+) :-
+	spouse_label(p1,p2,l,r),
+	r IS NOT NULL.
+
+@order_by r,
+@order_by (if l > 0 then posVotes else if l < 0 then negVotes else NULL end),
+COUNT(1) ?-
+	numVotesWithSign(p1,p2, posVotes, negVotes),
+	spouse_label(p1,p2, l,r),
+	r IS NOT NULL.

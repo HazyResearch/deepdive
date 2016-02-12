@@ -1,0 +1,8 @@
+conflictLevel(p1,p2,
+	 1 - ABS(SUM(l)) / COUNT(1)::FLOAT
+) :- spouse_label(p1,p2, l,r).
+
+@order_by r, @order_by cl, COUNT(1)  ?-
+	spouse_label(p1,p2, l,r),
+	conflictLevel(p1,p2, cl),
+	r IS NOT NULL.

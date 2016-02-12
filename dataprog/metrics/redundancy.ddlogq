@@ -1,0 +1,8 @@
+numVotes(p1,p2,COUNT(r)) :-
+	spouse_label(p1,p2,_,r),
+	r IS NOT NULL.
+
+@order_by r, @order_by votes, COUNT(1) ?-
+	numVotes(p1,p2, votes),
+	spouse_label(p1,p2,l,r),
+	r IS NOT NULL.

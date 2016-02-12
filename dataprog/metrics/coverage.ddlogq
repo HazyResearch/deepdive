@@ -1,0 +1,8 @@
+#examples(p1,p2) * :- spouse_label(p1,p2,_,_).
+#total(COUNT(1)) :- examples(p1,p2).
+
+total(COUNT(1)) :- spouse_label(_,_,_,r), r IS NULL.
+countPerRule(r, COUNT(1)) :- spouse_label(_,_,_,r), r IS NOT NULL.
+
+@order_by r, cnt, cnt / total :: FLOAT  ?-
+	countPerRule(r, cnt), total(total).
