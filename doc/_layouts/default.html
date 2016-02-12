@@ -146,14 +146,10 @@
         <div class="container">
           <div class="row">
           {% if page.no_toc %}
-            <div class="col-md-10 col-md-offset-1">
-              {{ content }}
-            </div>
+            <div class="col-md-10 col-md-offset-1">{{ content }}</div>
           {% else %}
-            <div class="col-md-9">
-              {{ content }}
-            </div>
             <nav id="toc" class="col-md-3 bs-docs-sidebar"></nav>
+            <div class="col-md-9">{{ content }}</div>
             <script>
                 $("#toc").toc({
                     noBackToTopLinks: true,
@@ -170,11 +166,22 @@
                         .attr({ id: "sidebar" })
                         .addClass("fixed")
                     ;
-                $("#sidebar").affix({
+                // affix sidebar
+                var $sidebar = $("#sidebar");
+                $sidebar.affix({
                     offset: {
                       top: 80
                     }
                 });
+                // woraround for mobile to make #sidebar.affix:hover non-sticky
+                $("html").on("touchstart", function(e) {
+                    if ($sidebar.has(e.target)) {
+                        e.stopPropagation();
+                    } else {
+                        $sidebar.hide().show();
+                    }
+                });
+                // put a scrollspy
                 $("body").scrollspy({
                     target: ".bs-docs-sidebar",
                     offset: 1
