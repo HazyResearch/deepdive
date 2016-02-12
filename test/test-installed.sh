@@ -16,7 +16,7 @@ echo "Testing DeepDive installed at: $DEEPDIVE_HOME"
     git submodule update --init test/bats ||
     git clone https://github.com/sstephenson/bats.git test/bats ||
     curl -fsSL https://github.com/sstephenson/bats/archive/v0.4.0.tar.gz |
-        (cd test && rm -rf bats && tar xf - && mv -f bats-0.4.0 bats)
+        (cd test && rm -rf bats && tar xfz - && mv -f bats-0.4.0 bats)
 
 # display target database
 # TODO read these default values from somewhere else
