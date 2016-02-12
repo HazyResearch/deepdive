@@ -456,6 +456,6 @@ weight for each possible assignment of variables in the multinomial factor.
 We include a typical usage example of multinomial variables in the chunking
 example under `examples/chunking`. A walkthrough this example, detailing how to
 specify Conditional Random Fields and perform Multi-class Logistic Regression is
-available [here](chunking.md).
+available [here](example-chunking.md).
 
 ----
