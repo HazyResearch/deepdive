@@ -91,7 +91,7 @@ your environment is more complex than usual.
   MASTER_DATA_DIRECTORY=GREENPLUM_DIR/greenplumdb/master/gpsne-1`. In order to
   have these commands run every time you log in to the system, save a new script
   called `greenplum_startup.sh` with the following contents:
-  
+
     ```bash
     source GREENPLUM_DIR/greenplum-db/greenplum_path.sh
     export MASTER_DATA_DIRECTORY=GREENPLUM_DIR/greenplumdb/master/gpsne-1
