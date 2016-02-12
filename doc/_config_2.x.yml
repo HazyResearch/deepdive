@@ -1,0 +1,5 @@
+# Extra Jekyll config for 2.x
+
+# We need to disable syntax highlighting as jekyll-2.x with pygments complains:
+#     no lexer for alias 'ddlog' found
+highlighter: false

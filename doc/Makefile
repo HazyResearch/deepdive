@@ -21,8 +21,8 @@ TEST_PORT = 4000
 # localize required Ruby gems
 GEM_HOME ?= $(shell pwd)/.gems
 export GEM_HOME
-PATH := $(shell pwd)/.gems/bin:$(PATH)
-REQUIRED_GEMS = jekyll redcarpet
+PATH := $(GEM_HOME)/bin:$(PATH)
+SHELL := $(shell type -p bash)
 
 IGNORE_URL = $(shell sed <.linkchecker.ignore-urls -e 's/[[:space:]]*\#.*$$//' -e '/^[[:space:]]*$$/d')
 LINKCHECKER_OPTIONS = --timeout 30 \
@@ -31,9 +31,16 @@ LINKCHECKER_OPTIONS = --timeout 30 \
                       #
 
 .PHONY: test
+define JEKYLL_SERVE
+jekyll serve --host $(TEST_HOST) --port $(TEST_PORT) --baseurl "" --watch
+endef
 test: jekyll
 	# Launching a server for testing...
-	jekyll serve --host $(TEST_HOST) --port $(TEST_PORT) --baseurl "" --watch
+ifeq ($(shell PATH="$(PATH)"; jekyll --version | grep -c 'jekyll 2'),0)
+	$(JEKYLL_SERVE)
+else
+	$(JEKYLL_SERVE) --config _config.yml,_config_2.x.yml
+endif
 
 .PHONY: linkcheck linkcheck-deployed
 linkcheck: jekyll linkchecker
@@ -63,7 +70,7 @@ deploy: jekyll
 
 .PHONY: jekyll linkchecker
 jekyll:
-	type jekyll || gem2.0 install $(REQUIRED_GEMS) || gem install $(REQUIRED_GEMS)
+	type jekyll || gem2.0 install jekyll || gem install jekyll || gem install jekyll --version 2.5.3
 linkchecker:
 	type linkchecker >/dev/null || pip install linkchecker --use-mirrors
 
