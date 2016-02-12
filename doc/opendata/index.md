@@ -34,7 +34,7 @@ We would like to thank the HTCondor research group and the <a href="http://chtc.
 </div>
 
 
-### Data Format (NLP Markups)
+## Data Format (NLP Markups)
 
 The datasets we provide are in two formats, and for
 most datasets, we provide data in both formats.
