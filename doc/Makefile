@@ -22,7 +22,6 @@ TEST_PORT = 4000
 GEM_HOME ?= $(shell pwd)/.gems
 export GEM_HOME
 PATH := $(GEM_HOME)/bin:$(PATH)
-SHELL := $(shell type -p bash)
 
 IGNORE_URL = $(shell sed <.linkchecker.ignore-urls -e 's/[[:space:]]*\#.*$$//' -e '/^[[:space:]]*$$/d')
 LINKCHECKER_OPTIONS = --timeout 30 \
