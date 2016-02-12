@@ -168,11 +168,7 @@
                     ;
                 // affix sidebar
                 var $sidebar = $("#sidebar");
-                $sidebar.affix({
-                    offset: {
-                      top: 80
-                    }
-                });
+                $sidebar.affix({ offset: { top: $("#header").outerHeight() } });
                 // woraround for mobile to make #sidebar.affix:hover non-sticky
                 $("html").on("touchstart", function(e) {
                     if ($sidebar.has(e.target)) {
@@ -186,7 +182,10 @@
                     target: ".bs-docs-sidebar",
                     offset: 1
                 });
-                setTimeout(function(){ $("body").scrollspy("refresh"); }, 1000);
+                setTimeout(function(){
+                    $("body").scrollspy("refresh");
+                    $sidebar.affix({ offset: { top: $("#header").outerHeight() } });
+                }, 1000);
             </script>
           {% endif %}
           </div>

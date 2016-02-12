@@ -6,8 +6,9 @@
 
 #sidebar.affix {
     top: 20px;
-    width: 240px;
 }
+@media only screen and (max-width: 1199px) { #sidebar.affix { width: 205px; } }
+@media only screen and (min-width: 1200px) { #sidebar.affix { width: 255px; } }
 
 /* float a tiny icon TOC for smaller screens */
 @media only screen and (max-width: 991px) {
