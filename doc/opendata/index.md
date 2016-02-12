@@ -28,7 +28,7 @@ datasets](http://creativecommons.org/) as we can find. Below, we describe the da
 <img src="https://pbs.twimg.com/profile_images/722745234/nlp-logo-4x4_400x400.jpg" style="width:65px;"/></a>
 </center>
 <div style="margin-top:10px;">
-We would like to thank the HTCondor research group and the <a href="http://chtc.cs.wisc.edu/">Center for High Throughput Computing (CHTC)</a> at the University of Wisconsin-Madison, who have provided millions of machine hours to our group. Thank you, Miron Livny. We would also like to thank the <a href="http://nlp.stanford.edu/index.shtml">Stanford Natural Language Processing Group</a>, whose tools we use in many of our applications. DeepDive is also generously supported by <a href="../support">our sponsors</a>.
+We would like to thank the HTCondor research group and the <a href="http://chtc.cs.wisc.edu/">Center for High Throughput Computing (CHTC)</a> at the University of Wisconsin-Madison, who have provided millions of machine hours to our group. Thank you, Miron Livny. We would also like to thank the <a href="http://nlp.stanford.edu/index.shtml">Stanford Natural Language Processing Group</a>, whose tools we use in many of our applications. DeepDive is also generously supported by <a href="../#acknowledgment">our sponsors</a>.
 </div>
 </div>
 </div>
