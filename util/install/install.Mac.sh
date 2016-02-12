@@ -12,6 +12,7 @@ install__deepdive_build_deps() {
     xcode-select --install || true
     has git     || brew install git
     has unzip   || brew install unzip
+    has xz      || brew install xz
 }
 
 install__deepdive_runtime_deps() {
