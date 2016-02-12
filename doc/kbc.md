@@ -99,14 +99,14 @@ sentence-level information including words in each sentence, POS tags, named
 entity tags, etc.
 
 2. In the **feature extraction** step, DeepDive converts input data into
-relation signals called **evidence**, by running [extractors](extractors.md)
+relation signals called **evidence**, by [running extractors](ops-execution.md)
 written by developers. Evidence includes: (1) candidates for (mention-level or
 entity-level) relations; (2) (linguistic) features for these candidates.
 
 3. In the next step, DeepDive uses evidence to **generate a [factor
 graph](inference)**. To instruct DeepDive about how to generate this
-factor graph, developers use a SQL-like declarative language to specify
-[inference rules](inference_rules.md).
+factor graph, developers use a SQL-like declarative language to [specify
+inference rules](writing-model-ddlog.md).
 
 4. In the next step, DeepDive automatically performs **learning and statistical
 inference** on the generated factor graph.  learning, the values of [factor

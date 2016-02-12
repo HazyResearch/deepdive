@@ -12,8 +12,8 @@ It describes each step performed during the execution of a DeepDive application:
 ## Extraction
 
 The extraction step is a **data transformation** during which DeepDive processes the data to extract [entities](relation_extraction.md#entity), perform entity linking, feature extraction, [distant supervision](distant_supervision.md), and any other task necessary to create the variables on which it will then perform [inference](inference.md), and, if needed, to generate the training data used for learning the factor weights.
-The tasks to perform during extraction are specified by defining [extractors](extractors.md), which are user-defined functions (UDFs).
-The results of extraction are stored in the application database and will be then used to build the factor graph according to [rules specified by the user](inference_rules.md).
+The tasks to perform during extraction are specified by [defining extractors](writing-dataflow-ddlog.md), which can also be [user-defined functions (UDFs)](writing-udf-python.md).
+The results of extraction are stored in the application database and will be then used to build the factor graph according to [rules specified by the user](writing-model-ddlog.md).
 
 ## Factor graph grounding
 

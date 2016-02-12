@@ -91,7 +91,7 @@ Both `:` and `=` are valid key-value separators.
 
 ## <a name="extraction" href="#"></a> Extraction and extractors
 
-Configuration directives for executing [extractors](extractors.md) go in the
+Configuration directives for executing extractors go in the
 `extraction` section, while extractor definitions go in the `extraction.extractors` section:
 
 ```
@@ -129,14 +129,13 @@ deepdive {
 }
 ```
 
-Different styles of [extractors](extractors.md) are defined using different
+Different styles of extractors are defined using different
 sets of directives. There is nevertheless a subset of directives that are common
 to all styles:
 
 - `style`: specifies the style of the extractor. Can take the values
   `tsv_extractor`, `sql_extractor`, or
-  `cmd_extractor`. See the ['Writing extractors' document](extractors.md) for
-  details about the different styles of extractors. This is a mandatory
+  `cmd_extractor`. This is a mandatory
   directive.
 
 - `before`: specifies a shell command to run **before** executing the extractor.
@@ -219,11 +218,9 @@ They are **mandatory** for these styles.
     ```
 
 - `udf`: specifies the extractor User Defined Function (UDF). This is a shell
-  command or a script that is executed. Refer to the ['Writing extractors'
-  guide](extractors.md) for details about the requirements for the UDF for
-  different styles of extractors.
+  command or a script that is executed.
 
-- Depending on the extractor style, additional directives may be necessary, such as `sql`, `cmd`, `input_batch_size`, and `output_batch_size`.  Refer to the ['Writing extractors' guide](extractors.md) for details.
+- Depending on the extractor style, additional directives may be necessary, such as `sql`, `cmd`, `input_batch_size`, and `output_batch_size`.
 
 
 ## <a name="inference-opt" href="#"></a> Inference

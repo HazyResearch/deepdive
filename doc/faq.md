@@ -5,15 +5,17 @@ title: FAQ
 
 # DeepDive FAQ
 
-<br><todo>
+### DDlog is giving me obscure errors.  How can I see more details?
 
-- `DDLOG_STACK_TRACE=1` to enable stack trace in ddlog compiler
+Recompile after running the following to enable stack trace in the DDlog compiler:
 
-</todo>
+```bash
+export DDLOG_STACK_TRACE=1
+```
 
 ### How can I debug my extractors?
 
-See [debugging extractors](extractors.md#debug_extractors) section in extractor documentation.
+See [debugging UDFs](debugging-udf.md) page.
 
 ### Can I have features for dictionary entries with precise terms (e.g.,
 Cretaceous), and less-precise terms (e.g., Recent, Word)?
@@ -25,7 +27,7 @@ DeepDive can learn the weight for each dictionary and choose the one to trust.
 the same weights?
 
 No, weights are unique within each inference rule, this is achieved in DeepDive
-by concating a ''prefix'' to the
+by concatenating a ''prefix'' to the
 feature, which by default is the name of the corresponding rule. You can force
 the sharing of weights by specifying this
 prefix, for example:
