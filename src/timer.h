@@ -12,43 +12,36 @@
 
 #ifdef __MACH__
 #include <sys/time.h>
-//clock_gettime is not implemented on OSX
-int clock_gettime(int /*clk_id*/, struct timespec* t);
+// clock_gettime is not implemented on OSX
+int clock_gettime(int /*clk_id*/, struct timespec *t);
 
 #define CLOCK_MONOTONIC 0
 #endif
 
-
 #include <time.h>
 
-namespace dd{
-    
-    /**
-     * Timer class that keeps track of time
-     */
-    class Timer {
-    public:
-        
-        struct timespec _start;
-        struct timespec _end;
-        
-        Timer();
+namespace dd {
 
-        /** 
-         * Restart the timer
-         */
-        void restart();
-        
-        /**
-         * Returns time elapsed
-         */
-        float elapsed();
-        
-    };
-                
+/**
+ * Timer class that keeps track of time
+ */
+class Timer {
+ public:
+  struct timespec _start;
+  struct timespec _end;
+
+  Timer();
+
+  /**
+   * Restart the timer
+   */
+  void restart();
+
+  /**
+   * Returns time elapsed
+   */
+  float elapsed();
+};
 }
-
-
-
 
 #endif

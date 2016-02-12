@@ -50,6 +50,9 @@ SOURCES += src/timer.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 PROGRAM = dw
 
+# header files
+HEADERS += $(wildcard src/*.h src/*/*.h src/**/*.h src/*/*/*.hxx)
+
 # test files
 TEST_SOURCES += test/test.cpp
 TEST_SOURCES += test/FactorTest.cpp
@@ -115,3 +118,9 @@ PATH := $(shell pwd)/test/bats/bin:$(PATH)
 end2end-test: $(PROGRAM)
 	bats test/*.bats
 .PHONY: test unit-test end2end-test
+
+# how to format code
+CLANG_FORMAT = clang-format
+format:
+	$(CLANG_FORMAT) -i $(SOURCES) $(TEST_SOURCES) $(HEADERS)
+.PHONY: format

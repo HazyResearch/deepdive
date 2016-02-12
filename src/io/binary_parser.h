@@ -7,19 +7,19 @@ using namespace std;
 
 // meta data
 typedef struct {
-	long long num_weights;
-	long long num_variables;
-	long long num_factors;
-	long long num_edges;
-	string weights_file; 
-	string variables_file;
-	string factors_file;
+  long long num_weights;
+  long long num_variables;
+  long long num_factors;
+  long long num_edges;
+  string weights_file;
+  string variables_file;
+  string factors_file;
   string edges_file;
 } Meta;
 
 /**
  * Reads meta data from the given file.
- * For reference of factor graph file formats, refer to 
+ * For reference of factor graph file formats, refer to
  * deepdive.stanford.edu
  */
 Meta read_meta(string meta_file);
@@ -40,13 +40,15 @@ long long read_variables(string filename, dd::FactorGraph &);
 long long read_factors(string filename, dd::FactorGraph &);
 
 /**
- * Loads factors from the given file into the given factor graph (incremental mode)
+ * Loads factors from the given file into the given factor graph (incremental
+ * mode)
  */
 long long read_factors_inc(string filename, dd::FactorGraph &);
 
 /**
- * Loads edges from the given file into the given factor graph (incremental mode)
+ * Loads edges from the given file into the given factor graph (incremental
+ * mode)
  */
-long long read_edges_inc(string filename, dd::FactorGraph &);    
+long long read_edges_inc(string filename, dd::FactorGraph &);
 
 #endif

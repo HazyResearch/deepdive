@@ -6,9 +6,10 @@ sudo: false  # to use container-based infra, see: http://docs.travis-ci.com/user
 addons:
   apt:
     sources:
-    # for gcc 4.8
-    - ubuntu-toolchain-r-test
+    - llvm-toolchain-precise-3.7  # for clang-format-3.7
+    - ubuntu-toolchain-r-test     # for gcc 4.8
     packages:
+    - clang-format-3.7
     # for building sampler
     - libnuma-dev
     - gcc-4.8
@@ -24,8 +25,11 @@ compiler:
   - gcc
 
 before_install:
-  - export CXX="g++-4.8" CC="gcc-4.8"
+  # code should be already formatted
+  - make format CLANG_FORMAT=clang-format-3.7
+  - test $(git status --porcelain | wc -l) -eq 0
 install:
+  - export CXX="g++-4.8" CC="gcc-4.8"
   # skip preparing dependencies if they're cached
   - test -e lib/gtest/libgtest.a -a -d lib/tclap/include/tclap || make dep
   - make

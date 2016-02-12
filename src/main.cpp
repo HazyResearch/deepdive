@@ -1,9 +1,8 @@
 
 #include "gibbs.h"
 
-
-int main(int argv, char** argc){
-	// parse arguments
+int main(int argv, char **argc) {
+  // parse arguments
   dd::CmdParser cmd_parser = parse_input(argv, argc);
 
   // run gibbs sampler
@@ -14,13 +13,4 @@ int main(int argv, char** argc){
   } else if (cmd_parser.app_name == "inc") {
     inc(cmd_parser);
   }
-
-
 }
-
-
-
-
-
-
-
