@@ -13,15 +13,9 @@ esac
 install__deepdive_build_deps() {
     set -x
     sudo apt-get update
-    sudo apt-get install -y git bzip2 unzip make default-jdk
-    sudo apt-get install -y build-essential flex
-    sudo apt-get install -y gcc-4.8 libnuma-dev cmake  # sampler
-
-    # sampler build deps
-    #sudo apt-get install -y g++ cmake libnuma-dev libtclap-dev
-
-    # mindbender build deps
-    #sudo apt-get install -y libyaml-dev python-pip
+    sudo apt-get install -qq git bzip2 build-essential flex make default-jdk
+    sudo apt-get install -qq ed  # mindbender
+    sudo apt-get install -qq gcc-4.8 libnuma-dev cmake unzip  # sampler
 }
 
 install__deepdive_runtime_deps() {

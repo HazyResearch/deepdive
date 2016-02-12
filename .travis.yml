@@ -52,6 +52,8 @@ addons:
     - libnuma-dev
     - gcc-4.8
     - g++-4.8
+      # for mindbender
+    - ed
 
 install:
 #  - make depends # XXX does not work on container-based infra
