@@ -301,7 +301,7 @@ your query. For example, the following will **not** work:
 
 The factor function defines which variables should be connected to the factor,
 and how they are related. All variables used in a factor function must have been
-previously defined in the [schema](schema.md).
+previously [defined in the schema](#variable-relations).
 
 DeepDive supports [several types of factor
 functions](inference_rule_functions.md). One example of a factor function is

@@ -107,10 +107,10 @@ distant supervision rules.
 
 ### Calibration data and plots
 
-The system generates a calibration data file for each variable defined in the
-[schema](schema.md). The output log contains the path of these files. By
-default, they are placed in `target/calibration/[variable_name].tsv`. Each file
-contains ten lines with five columns each:
+The system generates a calibration data file for each [variable defined in the schema](writing-model-ddlog.md#variable-relations).
+The output log contains the path of these files.
+By default, they are placed in `target/calibration/[variable_name].tsv`.
+Each file contains ten lines with five columns each:
 
 [bucket_from] [bucket_to] [num_predictions] [num_true] [num_false]
 

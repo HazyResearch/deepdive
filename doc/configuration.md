@@ -296,7 +296,7 @@ Configuration directives to control the inference steps go in the global
 
 ## <a name="inference_schema" href="#"></a> Inference schema
 
-Inference [schema](schema.md) directives define the variables used in the
+[Inference schema](writing-model-ddlog.md#variable-relations) directives define the variables used in the
 factor graph and their type. Inference schema directives go in the
 `schema.variables` section:
 
