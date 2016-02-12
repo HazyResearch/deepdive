@@ -20,7 +20,7 @@ The results of extraction are stored in the application database and will be the
 DeepDive uses a [factor graph](inference.md) to perform inference.
 The user writes SQL queries to instruct the system about which variables to create.
 These queries usually involve tables populated during the extraction step.
-The variable nodes of the factor graph are connected to factors according to [inference rules](inference_rules.md) specified by the user, who also defines the factor functions which describe how the variables are related.
+The variable nodes of the factor graph are connected to factors according to [inference rules](writing-model-ddlog.md) specified by the user, who also defines the factor functions which describe how the variables are related.
 The user can specify whether the factor weights should be constant or learned by the system (refer to the ['Writing inference rules' document](inference_rules.md) ).
 
 Grounding is the process of writing the graph to disk so that it can be used to perform inference.

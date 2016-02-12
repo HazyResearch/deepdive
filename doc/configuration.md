@@ -321,7 +321,7 @@ DeepDive currently supports Boolean and Multinomial variables.
 
 ## <a name="inference_rules" href="#"></a> Inference rules
 
-*Note:* refer to ['Writing inference rules' document](inference_rules.md) for
+*Note:* refer to ['Writing inference rules' document](writing-model-ddlog.md) for
 an in-depth discussion about writing inference rules.
 
 The definitions of inference rules for the factor graphs go in the

@@ -373,7 +373,7 @@ and the schema of the weight table. -->
 ### Evidence and Query variables
 
 Evidence is training data that is used to automatically learn [factor
-weights](inference_rules.md). DeepDive will treat variables with existing
+weights](writing-model-ddlog.md). DeepDive will treat variables with existing
 values as evidence. In the above example, rows in the *people* table with a
 `true` or `false` value in the *smokes* or *has_cancer* column will be treated
 as evidence for that variable. Cells without a value (NULL) value will be

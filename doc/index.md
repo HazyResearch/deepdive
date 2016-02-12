@@ -42,7 +42,7 @@ DeepDive differs from traditional systems in several ways:
 - DeepDive is able to use large amounts of data from a **variety of sources**.
   Applications built using DeepDive have extracted data from millions of documents, web pages, PDFs, tables, and figures.
 
-- DeepDive allows developers to **use their knowledge of a given domain** to improve the quality of the results by [writing simple rules](inference_rules.md) that inform the inference (learning) process.
+- DeepDive allows developers to **use their knowledge of a given domain** to improve the quality of the results by [writing simple rules](writing-model-ddlog.md) that inform the inference (learning) process.
   DeepDive can also take into account user feedback on the correctness of the predictions to improve the predictions.
 
 - DeepDive is able to use the data to [learn "distantly"](distant_supervision.md).

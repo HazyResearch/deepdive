@@ -42,7 +42,7 @@ Description of each schema:
 
 - `dd_inference_result_weights_mapping`: a view that maps all distinct factor weights to their description and  their learned values. It is a commonly used view that shows the learned weight value of a factor as well as the number of occurences of a factor.
 
-- `dd_factors_[RULE_NAME]`: a table that is defined by the input query of an [inference rule](inference_rules.md). You can use it as a feature table in BrainDump.
+- `dd_factors_[RULE_NAME]`: a table that is defined by the input query of an [inference rule](writing-model-ddlog.md). You can use it as a feature table in BrainDump.
 
 - `dd_weight_[RULE_NAME]`: a table that stores initial weights for factors, used internally.
 

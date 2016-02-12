@@ -78,7 +78,7 @@ with it? -->
 ## Inference in DeepDive
 
 DeepDive allows the user to write [inference
-rules](inference_rules.md) to specify how to create the factor
+rules](writing-model-ddlog.md) to specify how to create the factor
 graph. A rule expresses concepts like "If John smokes then he is likely to
 have cancer" and, in other words, describes the factor function of a factor and
 which variables are connected to this factor. Each rule has a *weight* (either
