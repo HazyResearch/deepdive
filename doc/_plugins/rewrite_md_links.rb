@@ -2,7 +2,7 @@
 begin
     # jekyll >= 3.x
     Jekyll::Hooks.register :pages, :pre_render do |page|
-        page.content = page.content.gsub(/(\[[^\]]*\]\([^:\)]*)\.md(#.*)?\)/, '\1\2)')
+        page.content = page.content.gsub(/(\[[^\]]*\]\([^:\)]*)\.md(#[^)]*)?\)/, '\1\2)')
     end
 rescue
     # jekyll <= 2.x
@@ -13,7 +13,7 @@ rescue
                 site.pages.each { |p| rewrite_links(site, p) }
             end
             def rewrite_links(site, page)
-                page.content = page.content.gsub(/(\[[^\]]*\]\([^:\)]*)\.md(#.*)?\)/, '\1\2)')
+                page.content = page.content.gsub(/(\[[^\]]*\]\([^:\)]*)\.md(#[^)]*)?\)/, '\1\2)')
             end
         end
     end

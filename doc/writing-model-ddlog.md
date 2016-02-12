@@ -30,7 +30,7 @@ A question mark after the relation name indicates that the relation is a variabl
 
 ### Categorical/Multinomial variables
 
-DeepDive supports multinomial variables, which take integer values ranging from 0 to a user-specified upper bound. The variable relation is defined similarly as a Boolean variable where we add `Categorical(N)`, to specify that the variable domain is 0, 1, ..., N-1. For instance, in the [chunking example](chunking.md), the declaration in `app.ddlog` is:
+DeepDive supports multinomial variables, which take integer values ranging from 0 to a user-specified upper bound. The variable relation is defined similarly as a Boolean variable where we add `Categorical(N)`, to specify that the variable domain is 0, 1, ..., N-1. For instance, in the [chunking example](example-chunking.md), the declaration in `app.ddlog` is:
 
 ```ddlog
 tag?(word_id bigint) Categorical(13).

@@ -243,9 +243,8 @@ Configuration directives to control the inference steps go in the global
     The default value depends on the used datastore (50000 for PostgreSQL).
 
 - <a name="parallelgrounding" href="#"></a> `inference.parallel_grounding`. If
-  set to `true` and you are using <a href="greenplum">GreenPlum
-  on DeepDive</a>, use <a
-  href="greenplum#parallelgrounding">parallelism when
+  set to `true` and you are using [GreenPlum
+  on DeepDive](using-greenplum.md), use [parallelism](using-greenplum.md#parallelgrounding) when
   grounding the graph</a>. Default is `false`.
 
     ```
@@ -420,50 +419,6 @@ The available directives are:
     }
     ```
 
-
-## <a name="pipelines" href="#"></a> Pipelines
-
-[Pipelines](running.md#pipelines) specification directives go in the global `deepdive`
-section. Available directives are `pipeline.pipelines` and `pipeline.run`.
-
-- `pipeline.pipelines` is a section containing a list of one or more
-  pipelines. Each pipeline is defined as an array of tasks, where the names of
-  the tasks are the names of the extractors or inference rules to be executed,
-  as in the following example:
-
-    ```
-    pipeline.pipelines.myPipeline: [ "extractor1", "extractor2", "inferenceRule1" ]
-    ```
-
-- `pipeline.run` specifies which pipeline to run, e.g.:
-
-    ```
-    pipeline.run : "myPipeline"
-    ```
-
-  Notice that:
-
-  - If there is no extractor or inference rule with a specified name, that
-    name is ignored.
-
-  - If an extractor specified in the pipeline contains in its `dependencies`
-    directive another extractor **not** specified in the pipeline, this
-    particular dependency is ignored.
-
-  - When no inference rules are active in the pipeline, DeepDive only execute
-    the extractors, skipping the weight learning and inference steps.
-
-  - Only a single pipeline can be specified. When the `pipeline.run` directive is
-    not specified, DeepDive executes all extractors and inference rules.
-
-- `pipeline.relearn_from`: this directive takes as value a path to a previous
-  execution of the application. It instructs DeepDives to **skip all
-  extractors** and use the factor graph contained in the specified directory for
-  the learning and inference steps. Usage example:
-
-    ```
-    pipeline.relearn_from: "/PATH_TO_DEEPDIVE_HOME/out/2014-05-02T131658/"
-    ```
 
 
 ## <a name="sampler" href="#"></a> Sampler

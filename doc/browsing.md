@@ -6,7 +6,7 @@ title: Browsing DeepDive Data
 # Browsing DeepDive Data
 
 This document describes how one can easily bring up an interactive search interface to browse data produced by DeepDive as well as its input/source data.
-Your DeepDive application must be [written in DDlog](ddlog.md) to be able to use this functionality.
+Your DeepDive application must be written in DDlog to be able to use this functionality.
 
 Currently, the functionality only works with PostgreSQL versions 9.3 or later because it relies on the `to_json()` support.
 We plan to lift this limitation soon and support Greenplum/PostgreSQL-XL as well as to grow the underlying [Elasticsearch][] cluster for applications with large data.
