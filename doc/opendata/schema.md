@@ -11,7 +11,7 @@ as a table.
 This page contains a description of the schema of this table.
 Note that the schema of this table
 is very similar to what was used in our
-[walkthrough example](../walkthrough.md),
+[tutorial example](../examples/spouse.md),
 but with a few twists to represent more sophisticated provenance
 of each word.
 

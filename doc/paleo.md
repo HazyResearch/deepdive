@@ -13,9 +13,9 @@ found [here](https://github.com/zhangce/pdd/tree/master/example_data).
 ## Prerequisite
 
 To fully understand PaleoDeepDive, it is useful to first go through the online tutorial for DeepDive,
-which provides an overview of [basic concepts](walkthrough.md)
+which provides an overview of [basic concepts](example-spouse.md.md)
 and an example of
-[how relations between people, locations, and organizations](walkthrough.md) are inferred.
+[how relations between people, locations, and organizations](kbc.md) are inferred.
 In this document, you will see how similar approaches can be applied
 to paleontology in order to extract relations between
 biological taxa, geological rock formations, geographic locations, and geological time intervals.
@@ -86,7 +86,7 @@ This row encodes the sentence
 > Edzf U, Ciudad Universitaria, Morelia, Michoacdn, México
 
 The columns wordidxs, words, poses, ners, lemmas, dep\_paths, and dep\_parents are
-defined by the NLP software and are consistent with our [other walkthrough](walkthrough.md). The column
+defined by the NLP software and are consistent with our [tutorial](example-spouse.md). The column
 bounding_boxes contains a list of strings, one for each word. For each word,
 the string defines a bounding box containing that word in the PDF. As an example, `p1l809t1151r871b1181`, defines a box on page 1, left margin 809, top margin 1151, right margin 871, and bottom margin 1181 (units are in pixels).
 
@@ -202,7 +202,7 @@ is:
     }
 
 If you have difficulty in understanding this syntax, please refer to
-our [more general walkthrough for DeepDive](walkthrough.md) first.
+our [more general tutorial for DeepDive](example-spouse.md) first.
 This extractor goes through the sentence table, and for each sentence,
 it executes the extractor in ext\_temporal\_local.py.
 
@@ -447,7 +447,7 @@ This extractor contains four components.
 Inferences rules are used to specify the correlation
 among random variables. Most of these inference
 rules have a similar form as the one in our
-[other walkthroughs](walkthrough.md), and here we show
+[tutorial](example-spouse.md), and here we show
 two examples.
 
     inference_rule_formation : {

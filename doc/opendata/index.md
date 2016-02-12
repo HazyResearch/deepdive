@@ -42,7 +42,7 @@ most datasets, we provide data in both formats.
   - **DeepDive-ready DB Dump.** In this format, the
   data is a database table that can be loaded directly
   into a database with PostgreSQL or Greenplum. The schema of this
-  table is the same as what we used in our [walkthrough example](../walkthrough.md)
+  table is the same as what we used in our [tutorial example](../example-spouse.md)
   such that you can start building your own DeepDive applications
   immediately after download.
 

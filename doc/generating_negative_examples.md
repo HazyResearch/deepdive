@@ -43,5 +43,5 @@ For example, most people mention pairs in sentences are not spouses, so we can r
 <!-- TODO: improve this -->
 
 
-To see an example of how we generate negative evidence in DeepDive, refer to the [example application walkthrough](walkthrough.md#candidate_relations).
+To see an example of how we generate negative evidence in DeepDive, refer to the [example application tutorial](example-spouse.md#1-3-extracting-candidate-relation-mentions).
 

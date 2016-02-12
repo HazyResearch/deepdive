@@ -78,7 +78,7 @@ DeepDive applications written in DDlog typically use multiple relations falling 
 3. Relation that holds predictions (random variables)
     * whose expectation predicted by DeepDive
 
-For example, in the spouse example we use in [DeepDive's tutorial](walkthrough.md), the relations are:
+For example, in the spouse example we use in [DeepDive's tutorial](example-spouse.md), the relations are:
 
 1. Source
     * `articles`

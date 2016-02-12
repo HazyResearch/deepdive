@@ -77,7 +77,7 @@ You can install DeepDive and all its dependencies with a single command.
     It downloads all examples and tests for the DeepDive release and runs the tests using the installed one.
     To only download the example applications, use the `deepdive_examples_tests` option.
 
-Congratulations! DeepDive is now installed on your system, and you can proceed to the [next steps](walkthrough.md).
+Congratulations! DeepDive is now installed on your system, and you can proceed to the [next steps](example-spouse.md).
 
 
 

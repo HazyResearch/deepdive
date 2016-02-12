@@ -5,8 +5,10 @@ title: Incremental Workflow
 
 # Building an Incremental Application
 
-This document describes how to build an incremental application using [DDlog][] and
-DeepDive. The example application is [the spouse example](walkthrough.md).
+<todo>Drop this page?</todo>
+
+This document describes how to build an incremental application using DDlog and
+DeepDive. The example application is [the spouse example](example-spouse.md).
 
 This document assumes you are familiar with basic concepts in DeepDive and the
 spouse application tutorial.
@@ -38,7 +40,7 @@ the base part. The workflow can be summarized as follows.
 
 The incremental version of the spouse example is under [`examples/spouse_example/postgres/incremental`](https://github.com/HazyResearch/deepdive/tree/master/examples/spouse_example/postgres/incremental).
 The only difference is that all the arrays are transformed into string using `array_to_string` with delimiter `'~^~'` due to DDlog's limited support for array type.
-You can follow the [corresponding section in the original walkthrough](walkthrough.md#loading_data) to load the data.
+You can follow the [corresponding section in the original walkthrough](example-spouse.md#1-1-loading-raw-input-data) to load the data.
 
 Alternatively, you can try the handy scripts included in the incremental example provided in the source tree.
 
@@ -51,7 +53,7 @@ cd examples/spouse_example/postgres/incremental
 ### Writing Application in DDlog
 
 In order to make use of the incremental support of DeepDive, the application must be written in DDlog.
-Please refer to [DDlog tutorial][DDlog] for how to write your DeepDive application in DDlog.
+Please refer to DDlog tutorial for how to write your DeepDive application in DDlog.
 Let's assume you have put the DDlog program shown below in a file named `spouse_example.f1.ddlog` under the application folder.
 
 <script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/spouse_example.f1.ddlog?footer=minimal">
@@ -144,4 +146,3 @@ export DBNAME=deepdive_spouse_noninc
 ```
 
 
-[DDlog]: ddlog

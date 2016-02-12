@@ -63,7 +63,7 @@ deepdive {
 ```
 ### <a name="Setting Up" href="#"></a> Setting Up
 
-Before running the example, please check that DeepDive has been properly [installed](http://deepdive.stanford.edu/doc/basics/installation.html) and the necessary files (app.ddlog, db.url, and deepdive.conf) and directory (input/) that are associated with this example are stored in the current working directory. Input directory should have data files (friends.tsv, person_has_cancer.tsv, person_smokes.tsv, and person.tsv). In order to use DeepDive a database instance must be running to accept requests, and the database location must be specified in the db.url. You can refer to the detailed [walkthrough](http://deepdive.stanford.edu/doc/basics/walkthrough/walkthrough.html) to setup the environemnt.
+Before running the example, please check that DeepDive has been properly [installed](http://deepdive.stanford.edu/doc/basics/installation.html) and the necessary files (app.ddlog, db.url, and deepdive.conf) and directory (input/) that are associated with this example are stored in the current working directory. Input directory should have data files (friends.tsv, person_has_cancer.tsv, person_smokes.tsv, and person.tsv). In order to use DeepDive a database instance must be running to accept requests, and the database location must be specified in the db.url. You can refer to the detailed [tutorial](example-spouse.md) to setup the environemnt.
 
 ### <a name="Running" href="#"></a> Running
 
