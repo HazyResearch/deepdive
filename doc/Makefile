@@ -30,21 +30,23 @@ LINKCHECKER_OPTIONS = --timeout 30 \
                       #
 
 .PHONY: test
+ifeq ($(shell PATH="$(PATH)"; jekyll --version | grep -c 'jekyll 3'),1)
 define JEKYLL_SERVE
-jekyll serve --host $(TEST_HOST) --port $(TEST_PORT) --baseurl "" --watch
+jekyll serve --host $(TEST_HOST) --port $(TEST_PORT) --baseurl ""
 endef
+else
+define JEKYLL_SERVE
+    jekyll serve --host $(TEST_HOST) --port $(TEST_PORT) --baseurl "" --config _config.yml,_config_2.x.yml
+endef
+endif
 test: jekyll
 	# Launching a server for testing...
-ifeq ($(shell PATH="$(PATH)"; jekyll --version | grep -c 'jekyll 2'),0)
-	$(JEKYLL_SERVE)
-else
-	$(JEKYLL_SERVE) --config _config.yml,_config_2.x.yml
-endif
+	$(JEKYLL_SERVE) --watch
 
 .PHONY: linkcheck linkcheck-deployed
 linkcheck: jekyll linkchecker
 	# Checking broken links locally
-	jekyll serve --host $(TEST_HOST) --port $(TEST_PORT) --baseurl "" & \
+	$(JEKYLL_SERVE) & \
 	    trap "kill -TERM $$!" EXIT; sleep 3; \
 	linkchecker $(LINKCHECKER_OPTIONS) http://$(TEST_HOST):$(TEST_PORT)/
 linkcheck-deployed: jekyll linkchecker
