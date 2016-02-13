@@ -36,6 +36,7 @@ spouses_dbpedia(
 sentences(
     @key
     @distributed_by
+    # XXX This breaks the search index.  @source should not be derived from another @source
     #@references(relation="articles", column="id")
     doc_id         text,
     @key
