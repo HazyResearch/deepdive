@@ -47,7 +47,7 @@ build_submodule() {
         mkdir -p "$(dirname "$build_cache/$f")"
         (
         set -x
-        cp -a -H "$Submodule/$f" "$build_cache/$f"
+        rsync -aH --delete --copy-unsafe-links "$Submodule/$f" "$build_cache/$f"
         )
     done
     # record built commit id
