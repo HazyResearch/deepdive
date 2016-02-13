@@ -71,7 +71,7 @@ deploy: jekyll
 
 .PHONY: jekyll linkchecker
 jekyll:
-	type jekyll || gem2.0 install jekyll || gem install jekyll || gem install jekyll --version 2.5.3
+	type jekyll || gem2.0 install jekyll redcarpet || gem install jekyll redcarpet || gem install jekyll --version 2.5.3
 linkchecker:
 	type linkchecker >/dev/null || pip install linkchecker --use-mirrors
 
