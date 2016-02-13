@@ -36,7 +36,7 @@ spouses_dbpedia(
 sentences(
     @key
     @distributed_by
-    @references(relation="articles", column="id")
+    #@references(relation="articles", column="id")
     doc_id         text,
     @key
     sentence_index int,
