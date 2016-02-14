@@ -634,12 +634,12 @@ Then repeating the commands to update the search index and load the user interfa
 ![Screenshot of the search interface showing results](images/browsing_results.png)
 
 
-#### Customizing how data is rendered
+#### Customizing how data is presented
 
 <!-- TODO describe presentation annotations once it's ready -->
 
-In fact, the screenshots above are showing the data rendered using a [carefully prepared set of templates under `mindbender/search-templates/`](https://github.com/HazyResearch/deepdive/tree/master/examples/spouse/mindbender/search-template/).
-In these AngularJS templates, virtually anything you can program in HTML/CSS/JavaScript/CoffeeScript can be added to render the data.
+In fact, the screenshots above are showing the data presented using a [carefully prepared set of templates under `mindbender/search-templates/`](https://github.com/HazyResearch/deepdive/tree/master/examples/spouse/mindbender/search-template/).
+In these AngularJS templates, virtually anything you can program in HTML/CSS/JavaScript/CoffeeScript can be added to present the data that is ideal for human consumption, e.g., highlighted text spans rather than token indexes.
 Please see the [documentation about customizing the presentation](browsing.md#customizing-presentation) for further detail.
 
 
