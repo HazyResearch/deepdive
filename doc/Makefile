@@ -40,8 +40,11 @@ define JEKYLL_SERVE
 endef
 endif
 test: jekyll
-	# Launching a server for testing...
+	# Launching a server with watch for testing and authoring...
 	$(JEKYLL_SERVE) --watch
+test-nowatch: jekyll
+	# Launching a server for testing...
+	$(JEKYLL_SERVE) --no-watch --incremental
 
 .PHONY: linkcheck linkcheck-deployed
 linkcheck: jekyll linkchecker
