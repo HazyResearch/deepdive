@@ -569,11 +569,19 @@ has_spouse(p1_id, p2_id) => has_spouse(p1_id, p3_id) :-
 
 ## 4. Error analysis & debugging
 
+After finishing a pass of writing and running the DeepDive application, the first thing we want to see is how good the results are.
+In this section, we describe how DeepDive's interactive tools can be used for viewing the results as well as error analysis and debugging.
+
+
 ### 4.1. Browsing data with Mindbender
 
-<todo>write</todo>
+*Mindbender* is the name of the tool that provides an interactive user interface to DeepDive.
+It can be used for browsing any data that has been loaded into DeepDive and produced by it.
 
-#### DDlog annotations for browsing data
+#### Browsing input corpus
+
+We need to give hints to DeepDive which part of the data we want to browse [using DDlog's annotation](browsing.md#ddlog-annotations-for-browsing).
+For example, on the `articles` relation we declared earlier in `app.ddlog`, we can sprinkle some annotations such as `@source`, `@key`, and `@searchable`, as the following.
 
 ```ddlog
 @source
@@ -584,6 +592,56 @@ articles(
     content text
 ).
 ```
+
+Next, if we run the following command, DeepDive will create and populate a search index according to these hints.
+
+```bash
+mindbender search update
+```
+
+To access the populated search index through a web browser, run:
+
+```bash
+mindbender search gui
+```
+
+Then, point your browser to the URL that appears after the command (typically <http://localhost:8000>) to see a view that looks like the following:
+
+![Screenshot of the search interface showing input corpus](images/browsing_corpus.png)
+
+
+#### Browsing result data
+
+To browse the results, we can add annotations to the derived relations and how they relate to their source relations.
+For example, the `@extraction` and `@references` annotations in the following DDlog declaration tells DeepDive that the variable relation `has_spouse` is derived from pairs of `person_mention`.
+
+```ddlog
+@extraction
+has_spouse?(
+    @key
+    @references(relation="person_mention", column="mention_id", alias="p1")
+    p1_id text,
+    @key
+    @references(relation="person_mention", column="mention_id", alias="p2")
+    p2_id text
+).
+```
+
+The relation `person_mention` as well as the relations it references should have similar annotations (see the [complete `app.ddlog` code](https://github.com/HazyResearch/deepdive/blob/master/examples/spouse/app.ddlog) for full detail).
+
+Then repeating the commands to update the search index and load the user interface will allow us to browse the expected marginal probabilities of `has_spouse` as well.
+
+![Screenshot of the search interface showing results](images/browsing_results.png)
+
+
+#### Customizing how data is rendered
+
+<!-- TODO describe presentation annotations once it's ready -->
+
+In fact, the screenshots above are showing the data rendered using a [carefully prepared set of templates under `mindbender/search-templates/`](https://github.com/HazyResearch/deepdive/tree/master/examples/spouse/mindbender/search-template/).
+In these AngularJS templates, virtually anything you can program in HTML/CSS/JavaScript/CoffeeScript can be added to render the data.
+Please see the [documentation about customizing the presentation](browsing.md#customizing-presentation) for further detail.
+
 
 ### 4.2. Estimating precision with Mindtagger
 
