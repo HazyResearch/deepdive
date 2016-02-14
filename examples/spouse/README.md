@@ -646,6 +646,8 @@ Please see the [documentation about customizing the presentation](browsing.md#cu
 ### 4.2. Estimating precision with Mindtagger
 
 *Mindtagger*, which is part of the Mindbender tool suite, assists data labeling tags to quickly assess the precision and/or recall of the extraction.
+We show how it helps us perform a labeling task to estimate the precision of the extraction.
+A complete [example is shown under `labeling/has_spouse-precision/`](https://github.com/HazyResearch/deepdive/tree/master/examples/spouse/labeling/has_spouse-precision/).
 
 <!-- TODO describe how a task can be created from the search interface instead, once it's ready -->
 
@@ -657,18 +659,18 @@ First, we can take a random sample of 100 examples from `has_spouse` relation wh
 
 ```bash
 deepdive sql eval "
-{% include examples/spouse/mindtagger/sample-has_spouse.sql %}
+{% include examples/spouse/labeling/has_spouse-precision/sample-has_spouse.sql %}
 " format=csv >has_spouse.csv
 ```
 
 We also prepare the `mindtagger.conf` and `template.html` files that look like the following:
 
 ```hocon
-{% include examples/spouse/mindtagger/mindtagger.conf %}
+{% include examples/spouse/labeling/has_spouse-precision/mindtagger.conf %}
 ```
 
 ```html
-{% include examples/spouse/mindtagger/template.html %}
+{% include examples/spouse/labeling/has_spouse-precision/template.html %}
 ```
 
 #### Labeling data with Mindtagger
