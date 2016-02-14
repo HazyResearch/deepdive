@@ -77,7 +77,6 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   def print(e: Expr, level: Int) : String = {
     e match {
       case VarExpr(name) => name
-      case ArrayExpr(name, index) => s"${name}[${index}]"
       case NullConst() => "NULL"
       case IntConst(value) => value.toString
       case DoubleConst(value) => value.toString
@@ -97,6 +96,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
           case (ifCond, thenExpr) => s"if ${print(ifCond)} then ${print(thenExpr)}"
         }) ++ (optElseExpr map print toList)
       ) mkString("", "\n\telse ", "\n\tend")
+      case ArrayElementExpr(array, index) => s"${print(array, level + 1)}[${print(index, level + 1)}]"
     }
   }
 

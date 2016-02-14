@@ -211,7 +211,6 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
   // collect variables used in the expression
   def collectUsedVars(expr: Expr) : Set[String] = expr match {
     case VarExpr(name) => Set(name)
-    case ArrayExpr(name, _) => Set(name)
     case FuncExpr(function, args, agg) => args flatMap collectUsedVars toSet
     case BinaryOpExpr(lhs, op, rhs) => collectUsedVars(lhs) ++ collectUsedVars(rhs)
     case TypecastExpr(lhs, rhs) => collectUsedVars(lhs)
@@ -219,6 +218,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
       (ifCondThenExprs flatMap { case (ifCond, thenExpr) =>
         collectUsedVars(ifCond) ++ collectUsedVars(thenExpr)
       } toSet) ++ (optElseExpr.toSet flatMap { e:Expr => collectUsedVars(e) })
+    case ArrayElementExpr(array, index) => collectUsedVars(array) ++ collectUsedVars(index)
     case _ => Set()
   }
 

@@ -17,6 +17,24 @@
       }
     
 
+      deepdive.extraction.extractors.ext_U {
+        cmd: """
+
+  deepdive create view U as 'SELECT R1.x AS column_0
+FROM R R0, S R1
+        WHERE (R1.x + f(R1.x + 1)[(R1.x + R0.x[1])]) = R1.y[R1.x]'
+  
+        """
+          output_relation: "U"
+        style: "cmd_extractor"
+          
+          input_relations: [
+            R
+            S
+          ]
+      }
+    
+
       deepdive.extraction.extractors.ext_T {
         cmd: """
 
@@ -36,8 +54,10 @@ FROM R R0, S R1
     
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.extraction: [
+  ext_U
   ext_T
 ]
 deepdive.pipeline.pipelines.endtoend: [
+  ext_U
   ext_T
 ]

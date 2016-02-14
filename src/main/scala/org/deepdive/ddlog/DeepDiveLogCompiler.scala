@@ -354,7 +354,6 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
   def compileExpr(e: Expr, level: Int) : String = {
     e match {
       case VarExpr(name) => compileVariable(name)
-      case ArrayExpr(name, index) => s"${compileVariable(name)}[${index}]"
       case NullConst() => "NULL"
       case IntConst(value) => value.toString
       case DoubleConst(value) => value.toString
@@ -380,6 +379,7 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
           case (ifCond, thenExpr) => s"WHEN ${compileCond(ifCond)} THEN ${compileExpr(thenExpr)}"
         }) ++ List(optElseExpr map compileExpr mkString("ELSE ", "", ""))
       } mkString("\nCASE ", "\n     ", "\nEND")
+      case ArrayElementExpr(name, index) => s"${compileExpr(name, level + 1)}[${compileExpr(index, level + 1)}]"
     }
   }
 

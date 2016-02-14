@@ -14,7 +14,7 @@ case class Variable(varName : String, relName : String, index : Int )
 
 sealed trait Expr
 case class VarExpr(name: String) extends Expr
-case class ArrayExpr(name: String, index: Int) extends Expr
+case class ArrayElementExpr(array: Expr, index: Expr) extends Expr
 sealed trait ConstExpr extends Expr
 case class StringConst(value: String) extends ConstExpr
 case class IntConst(value: Int) extends ConstExpr
@@ -195,7 +195,8 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   // expression
   def expr : Parser[Expr] =
-    ( lexpr ~ operator ~ expr ^^ { case (lhs ~ op ~ rhs) => BinaryOpExpr(lhs, op, rhs) }
+    ( lexpr ~ ("[" ~> expr <~ "]") ^^ { case (a ~ i) => ArrayElementExpr(a, i) }
+    | lexpr ~ operator ~ expr ^^ { case (lhs ~ op ~ rhs) => BinaryOpExpr(lhs, op, rhs) }
     | lexpr ~ typeOperator ~ columnType ^^ { case (lhs ~ _ ~ rhs) => TypecastExpr(lhs, rhs) }
     | lexpr
     )
@@ -217,9 +218,6 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | "NULL" ^^ { _ => new NullConst }
     | functionName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ {
         case (name ~ _ ~ args ~ _) => FuncExpr(name, args, (aggregationFunctions contains name))
-      }
-    | variableName ~ ("[" ~> """\d+""".r <~ "]") ^^ {
-        case (name ~ index) => ArrayExpr(name, index.toInt)
       }
     | variableName ^^ { VarExpr(_) }
     | "(" ~> expr <~ ")"
