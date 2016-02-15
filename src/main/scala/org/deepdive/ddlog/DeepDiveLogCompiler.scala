@@ -346,7 +346,7 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
       case _ => s" AS column_${cq.headTerms indexOf e}"
     }
     case ViewAlias => s" AS column_${cq.headTerms indexOf e}"
-    case UseVariableAsAlias => s""" AS "${DeepDiveLogPrettyPrinter.print(e)}""""
+    case UseVariableAsAlias => s""" AS "${DeepDiveLogPrettyPrinter.print(e)}"""" //" fix sublime highlighting
   }
 
   // resolve an expression
@@ -379,6 +379,7 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
           case (ifCond, thenExpr) => s"WHEN ${compileCond(ifCond)} THEN ${compileExpr(thenExpr)}"
         }) ++ List(optElseExpr map compileExpr mkString("ELSE ", "", ""))
       } mkString("\nCASE ", "\n     ", "\nEND")
+      case ArrayElementExpr(name, index) => s"${compileExpr(name, level + 1)}[${compileExpr(index, level + 1)}]"
     }
   }
 

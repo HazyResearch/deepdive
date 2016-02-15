@@ -96,6 +96,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
           case (ifCond, thenExpr) => s"if ${print(ifCond)} then ${print(thenExpr)}"
         }) ++ (optElseExpr map print toList)
       ) mkString("", "\n\telse ", "\n\tend")
+      case ArrayElementExpr(array, index) => s"${print(array, level + 1)}[${print(index, level + 1)}]"
     }
   }
 

@@ -218,6 +218,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
       (ifCondThenExprs flatMap { case (ifCond, thenExpr) =>
         collectUsedVars(ifCond) ++ collectUsedVars(thenExpr)
       } toSet) ++ (optElseExpr.toSet flatMap { e:Expr => collectUsedVars(e) })
+    case ArrayElementExpr(array, index) => collectUsedVars(array) ++ collectUsedVars(index)
     case _ => Set()
   }
 
