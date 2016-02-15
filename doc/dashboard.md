@@ -49,7 +49,7 @@ There are two types of report templates:
 
 Parameters allow for the inclusion of variables in report templates which can be set at the time the snapshot is run. A common use case for parameters is when you want to run the same report template on different data sources from your DeepDive application run, or want to make a quick series of snapshots involving a varying number of data items.
 
-The name of a parameter corresponds to the name of the variable in the report template. For example, if the parameter name is "doc\_id", the corresponding template variable is ```$doc\_id```.
+The name of a parameter corresponds to the name of the variable in the report template. For example, if the parameter name is "doc\_id", the corresponding template variable is ```$doc_id```.
 
 #### Nested Templates
 
@@ -138,7 +138,7 @@ When you are ready to run the task, click "Run Task" from the task control inter
 
 As you run more and more snapshots, you may be interested in seeing how certain data values from your reports change over time. Trends provides a simple mechanism through which you can accomplish this.
 
-<todo> can it be done from the UI </todo>
+<todo> can it be done from the UI? </todo>
 
 Tracking data values can be accomplished via the ```report-value``` command. For example, if you wish to track a precision value from a report, and assuming the precision is stored in a ```$precision``` variable, simply include the following in the report template:
 
@@ -181,7 +181,7 @@ For custom templates, you can use [markdown](https://help.github.com/articles/ma
 You will also need to specify whether the template is for a Report or Task. If you are creating a Task template, you additionally need to specify the *scope* of the template, which is the report (or set of reports if selecting a hierarchical report name) that the task is valid for.
 
 ##### Custom Template Commands
-[Jaeho] <todo> </todo>
+[Jaeho] <todo> what does this mean exactly ? </todo>
 * deepdive sql: Runs a SQL query. Example: ```deepdive sql "SELECT * FROM table"```
 * report-value
 * ...
@@ -260,7 +260,7 @@ Each report in a snapshot is produced by a *report template*.
     * It may contain as many extra files as it needs.
         * All files in the template will be cloned to the report instance.
         * Any file named `*.in` will be considered as executable documents and automatically compiled at production time.
-* **Parameters**: <todo> report.param or snapshot-files ? </todo>
+* **Parameters**:
   it takes zero or more named parameters (i.e., `name=value` pairs).
     * The parameters should be declared in the `report.params` file.
     * Each `report` line in the snapshot configuration provides value bindings for these parameters.
