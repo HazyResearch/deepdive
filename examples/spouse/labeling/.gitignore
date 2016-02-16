@@ -1,0 +1,3 @@
+.mindtagger.conf.json
+*.csv
+tags.json

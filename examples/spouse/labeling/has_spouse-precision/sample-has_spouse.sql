@@ -1,15 +1,16 @@
-SELECT id
+SELECT p1_id
+     , p2_id
      , s.doc_id
      , s.sentence_index
      , label
      , expectation
      , s.tokens
-     , pm1.mention_text
-     , pm2.mention_text
-     , pm1.begin_index                   AS p1_start
-     , pm1.end_index-pm1.begin_index + 1 AS p1_length
-     , pm2.begin_index                   AS p2_start
-     , pm2.end_index-pm2.begin_index + 1 AS p2_length
+     , pm1.mention_text AS p1_text
+     , pm1.begin_index  AS p1_start
+     , pm1.end_index    AS p1_end
+     , pm2.mention_text AS p2_text
+     , pm2.begin_index  AS p2_start
+     , pm2.end_index    AS p2_end
 
   FROM has_spouse_label_inference hsi
      , person_mention             pm1

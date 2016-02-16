@@ -1,0 +1,375 @@
+{
+ "version": 1,
+ "key_columns": [
+  "p1_id",
+  "p2_id"
+ ],
+ "by_key": {
+  "b5d4091a-4fb0-4afb-8d49-65e985f1be21_65_13_13\tb5d4091a-4fb0-4afb-8d49-65e985f1be21_65_11_11": {
+   "is_correct": false
+  },
+  "248c8a3a-ea00-454d-b018-968e410c190f_41_16_16\t248c8a3a-ea00-454d-b018-968e410c190f_41_18_18": {
+   "is_correct": false
+  },
+  "bdff3acf-88a1-473a-b3d7-542ec6cf20a1_66_9_9\tbdff3acf-88a1-473a-b3d7-542ec6cf20a1_66_7_7": {
+   "is_correct": false
+  },
+  "8fe3c398-184d-4c31-b8ce-31bde7445d87_2_17_20\t8fe3c398-184d-4c31-b8ce-31bde7445d87_2_13_15": {
+   "is_correct": true,
+   "to parents": true
+  },
+  "fd868d84-0c8b-4f60-8050-77013669a6d5_18_4_5\tfd868d84-0c8b-4f60-8050-77013669a6d5_18_1_2": {
+   "is_correct": false,
+   "movie": true
+  },
+  "38e9afdb-8323-4815-bcdc-40f54a69f0c8_54_13_14\t38e9afdb-8323-4815-bcdc-40f54a69f0c8_54_10_11": {
+   "is_correct": false
+  },
+  "d30a9e45-3b43-4082-a6c2-ae4f1db5fbf7_10_4_4\td30a9e45-3b43-4082-a6c2-ae4f1db5fbf7_10_6_6": {
+   "is_correct": "UNKNOWN"
+  },
+  "f20cb79c-6ef5-4213-96de-25c1e382d769_4_5_5\tf20cb79c-6ef5-4213-96de-25c1e382d769_4_7_7": {
+   "is_correct": false
+  },
+  "d8532b10-491e-469d-a6b7-900867c676f3_16_8_8\td8532b10-491e-469d-a6b7-900867c676f3_16_10_10": {
+   "is_correct": true,
+   "to parents": true
+  },
+  "b1ec7d6b-4531-4d27-81cc-677c24384c70_22_4_4\tb1ec7d6b-4531-4d27-81cc-677c24384c70_22_2_2": {
+   "is_correct": "UNKNOWN"
+  },
+  "99433959-950b-4eb9-afa0-d42fccde948b_1_24_25\t99433959-950b-4eb9-afa0-d42fccde948b_1_27_28": {
+   "is_correct": false,
+   "movie": true
+  },
+  "a5d7430d-c0a2-4095-b8c0-27ff804b69e0_1_2_2\ta5d7430d-c0a2-4095-b8c0-27ff804b69e0_1_0_0": {
+   "is_correct": "UNKNOWN"
+  },
+  "ee4f3a61-e822-4d6a-bcb0-ee80a0bcff4f_22_21_21\tee4f3a61-e822-4d6a-bcb0-ee80a0bcff4f_22_23_23": {
+   "is_correct": false
+  },
+  "b2f29e01-aa01-4c50-a338-89ce730ef6e1_84_4_6\tb2f29e01-aa01-4c50-a338-89ce730ef6e1_84_1_2": {
+   "is_correct": false
+  },
+  "b0e43f70-484f-458e-94db-208c00cbcfea_59_11_11\tb0e43f70-484f-458e-94db-208c00cbcfea_59_9_9": {
+   "is_correct": "UNKNOWN"
+  },
+  "f2c64b73-47dd-4612-a2e3-d796d8ec24ce_6_14_15\tf2c64b73-47dd-4612-a2e3-d796d8ec24ce_6_12_12": {
+   "is_correct": true
+  },
+  "2b1f7e7b-5a3d-44dd-a921-7e091b6bc7a5_77_24_24\t2b1f7e7b-5a3d-44dd-a921-7e091b6bc7a5_77_26_26": {
+   "is_correct": false,
+   "sister": true
+  },
+  "ed3a2b4c-0ec5-4af9-ab1d-9b5144af1f3f_43_10_10\ted3a2b4c-0ec5-4af9-ab1d-9b5144af1f3f_43_8_8": {
+   "is_correct": false,
+   "three or more people": true
+  },
+  "54cc5e41-6ecd-4646-a3a1-0559e9ed3cad_65_15_15\t54cc5e41-6ecd-4646-a3a1-0559e9ed3cad_65_13_13": {
+   "is_correct": false
+  },
+  "8eeb608d-2938-482d-88a5-51d18ca6c2d3_2_10_10\t8eeb608d-2938-482d-88a5-51d18ca6c2d3_2_8_8": {
+   "is_correct": false
+  },
+  "57902d6e-e20a-4eaa-a92b-e2c5b598bb38_10_6_7\t57902d6e-e20a-4eaa-a92b-e2c5b598bb38_10_3_4": {
+   "is_correct": false
+  },
+  "d6d63d59-40dc-46be-98bb-0fb0bb4c720d_73_14_15\td6d63d59-40dc-46be-98bb-0fb0bb4c720d_73_17_18": {
+   "is_correct": false,
+   "three or more people": true
+  },
+  "3f80a405-0adc-419c-ac2c-813191f6c1c8_7_4_5\t3f80a405-0adc-419c-ac2c-813191f6c1c8_7_7_8": {
+   "is_correct": false,
+   "three or more people": true
+  },
+  "1eb24364-3568-4143-8aa1-1f2c3cbd70ba_29_9_10\t1eb24364-3568-4143-8aa1-1f2c3cbd70ba_29_6_7": {
+   "is_correct": false
+  },
+  "986ad771-7660-481c-b847-6288f9ed6a18_196_24_25\t986ad771-7660-481c-b847-6288f9ed6a18_196_21_22": {
+   "non-people": true,
+   "is_correct": false
+  },
+  "b118e088-7e67-40e3-9e18-16032f0bdaff_16_2_2\tb118e088-7e67-40e3-9e18-16032f0bdaff_16_4_4": {
+   "is_correct": "UNKNOWN"
+  },
+  "70f0bbee-835d-4ae6-a7ab-c1587f3f18cc_3_11_12\t70f0bbee-835d-4ae6-a7ab-c1587f3f18cc_3_14_15": {
+   "is_correct": false
+  },
+  "e2be6901-eb5a-476e-9c4a-3b51f9f611f0_19_15_15\te2be6901-eb5a-476e-9c4a-3b51f9f611f0_19_17_17": {
+   "is_correct": true
+  },
+  "315864d6-6976-489b-8b2a-0bb7b31603d0_26_3_4\t315864d6-6976-489b-8b2a-0bb7b31603d0_26_6_7": {
+   "is_correct": false,
+   "three or more people": true,
+   "movie": true
+  },
+  "042d3658-84fd-45eb-8910-7c57b9245a2a_6_5_6\t042d3658-84fd-45eb-8910-7c57b9245a2a_6_3_3": {
+   "is_correct": true
+  },
+  "80cfba7e-cf28-487f-ac70-652c6ad8b264_35_7_8\t80cfba7e-cf28-487f-ac70-652c6ad8b264_35_10_11": {
+   "is_correct": false
+  },
+  "85fc1acd-a82d-4c49-831f-595b8141467c_17_7_7\t85fc1acd-a82d-4c49-831f-595b8141467c_17_9_9": {
+   "is_correct": false,
+   "three or more people": true,
+   "obituary": true
+  },
+  "1199efaf-86e4-4729-bc3d-faefff6d5e13_8_2_2\t1199efaf-86e4-4729-bc3d-faefff6d5e13_8_0_0": {
+   "is_correct": true
+  },
+  "7eb617b3-bb46-4606-a359-d8d168f04b01_37_9_10\t7eb617b3-bb46-4606-a359-d8d168f04b01_37_12_13": {
+   "is_correct": false
+  },
+  "2c6c81f5-2ac4-4184-8cc7-4e272c03b6ae_14_6_7\t2c6c81f5-2ac4-4184-8cc7-4e272c03b6ae_14_9_10": {
+   "is_correct": false,
+   "three or more people": true
+  },
+  "3aa2e4e3-08ce-466b-9410-cb9315e6c761_20_14_14\t3aa2e4e3-08ce-466b-9410-cb9315e6c761_20_12_12": {
+   "obituary": true,
+   "is_correct": false,
+   "three or more people": true
+  },
+  "e56bea1c-c84d-42a4-8743-aca7b0bfa4e4_11_5_5\te56bea1c-c84d-42a4-8743-aca7b0bfa4e4_11_3_3": {
+   "is_correct": false,
+   "boyfriends": true
+  },
+  "61bb65bf-a868-481f-8a20-e129f80f735d_16_34_35\t61bb65bf-a868-481f-8a20-e129f80f735d_16_32_32": {
+   "sister": true,
+   "is_correct": false,
+   "three or more people": null,
+   "obituary": null,
+   "to parents": true
+  },
+  "21afce7c-f437-4e01-ba6d-46277b803a83_9_1_1\t21afce7c-f437-4e01-ba6d-46277b803a83_9_3_3": {
+   "is_correct": "UNKNOWN"
+  },
+  "917a3c81-6935-4aab-9c13-2e61b2802009_5_17_17\t917a3c81-6935-4aab-9c13-2e61b2802009_5_19_19": {
+   "is_correct": "UNKNOWN"
+  },
+  "6e1549d1-26cb-40d9-8a1c-c095fb4884ce_10_3_3\t6e1549d1-26cb-40d9-8a1c-c095fb4884ce_10_1_1": {
+   "is_correct": false
+  },
+  "df9d26aa-a0c3-4dfa-bbe2-d3fed4b61b16_72_9_10\tdf9d26aa-a0c3-4dfa-bbe2-d3fed4b61b16_72_12_13": {
+   "is_correct": false
+  },
+  "68fd0b5c-f01a-40bb-883a-80ccdf119bd8_4_23_23\t68fd0b5c-f01a-40bb-883a-80ccdf119bd8_4_21_21": {
+   "is_correct": true,
+   "divorce": true
+  },
+  "6c85139d-13cb-4383-af99-b2b3966f5e49_1_22_23\t6c85139d-13cb-4383-af99-b2b3966f5e49_1_19_20": {
+   "is_correct": false,
+   "movie": true
+  },
+  "db23b42c-9650-4e0f-af04-fb366c310408_1_38_39\tdb23b42c-9650-4e0f-af04-fb366c310408_1_41_42": {
+   "is_correct": false,
+   "movie": true
+  },
+  "6eb2abc4-2915-4e85-8ece-775572e97339_6_23_23\t6eb2abc4-2915-4e85-8ece-775572e97339_6_25_25": {
+   "is_correct": false,
+   "movie": true
+  },
+  "ce014d5b-114c-4bab-8678-9f6361bbaa7c_49_22_24\tce014d5b-114c-4bab-8678-9f6361bbaa7c_49_19_20": {
+   "to parents": true,
+   "is_correct": true,
+   "obituary": true
+  },
+  "105357af-4913-40db-9a4f-43352f580933_2_2_3\t105357af-4913-40db-9a4f-43352f580933_2_5_6": {
+   "is_correct": false,
+   "movie": true
+  },
+  "cc364dd4-00db-41b0-84f1-ec4666be90ec_5_28_28\tcc364dd4-00db-41b0-84f1-ec4666be90ec_5_26_26": {
+   "is_correct": false
+  },
+  "2f8ca217-d0d0-4d4a-b7a7-936e1a35a446_1_19_20\t2f8ca217-d0d0-4d4a-b7a7-936e1a35a446_1_16_17": {
+   "is_correct": false
+  },
+  "c10ef88f-eb91-4f10-83bd-140bd79fe9fc_6_3_3\tc10ef88f-eb91-4f10-83bd-140bd79fe9fc_6_1_1": {
+   "is_correct": "UNKNOWN"
+  },
+  "48a4dbc9-0936-4179-8a7f-84d18c64f5ef_117_2_2\t48a4dbc9-0936-4179-8a7f-84d18c64f5ef_117_4_4": {
+   "sister": true,
+   "is_correct": false
+  },
+  "87390bff-e5fb-4459-b0e8-d3055a6e2f63_43_0_1\t87390bff-e5fb-4459-b0e8-d3055a6e2f63_43_3_4": {
+   "is_correct": true
+  },
+  "910660b5-a083-439d-98d6-a9ad45c9a0c2_13_12_12\t910660b5-a083-439d-98d6-a9ad45c9a0c2_13_10_10": {
+   "is_correct": "UNKNOWN"
+  },
+  "b10502ab-b410-49a4-b2b0-5e3862d8dfe8_39_0_1\tb10502ab-b410-49a4-b2b0-5e3862d8dfe8_39_3_4": {
+   "non-people": true,
+   "is_correct": false
+  },
+  "7c1bb0f3-c78d-4d3d-8444-4f422ca02db0_4_1_1\t7c1bb0f3-c78d-4d3d-8444-4f422ca02db0_4_3_3": {
+   "is_correct": "UNKNOWN"
+  },
+  "9478632d-c2c3-4ab4-bde4-5e3c76dfa219_1_0_0\t9478632d-c2c3-4ab4-bde4-5e3c76dfa219_1_2_3": {
+   "is_correct": "UNKNOWN"
+  },
+  "ce014d5b-114c-4bab-8678-9f6361bbaa7c_3_17_17\tce014d5b-114c-4bab-8678-9f6361bbaa7c_3_15_15": {
+   "obituary": true,
+   "three or more people": null,
+   "to parents": true,
+   "is_correct": true
+  },
+  "302a9024-3be0-49e8-a8e6-17289d749825_150_3_4\t302a9024-3be0-49e8-a8e6-17289d749825_150_6_7": {
+   "is_correct": false
+  },
+  "beb6507a-6acb-4c59-9608-443ac76c9c4f_37_24_24\tbeb6507a-6acb-4c59-9608-443ac76c9c4f_37_26_26": {
+   "is_correct": false
+  },
+  "ced76bc2-2b67-4eae-916d-84edbfede6b9_4_31_32\tced76bc2-2b67-4eae-916d-84edbfede6b9_4_27_29": {
+   "is_correct": false,
+   "caption/title": true
+  },
+  "e94a4c40-49d7-4f00-92ba-2b4511b33df4_3_4_5\te94a4c40-49d7-4f00-92ba-2b4511b33df4_3_0_2": {
+   "is_correct": true
+  },
+  "9cc9fa09-6fae-4993-93ea-02f9b1b82eec_36_23_23\t9cc9fa09-6fae-4993-93ea-02f9b1b82eec_36_25_25": {
+   "is_correct": false
+  },
+  "128c606a-55f1-47a4-8c3f-745d81e8e954_12_9_10\t128c606a-55f1-47a4-8c3f-745d81e8e954_12_12_13": {
+   "is_correct": false,
+   "caption/title": true
+  },
+  "2b34839d-f58c-408a-a121-1227efccb045_25_10_10\t2b34839d-f58c-408a-a121-1227efccb045_25_12_12": {
+   "three or more people": true,
+   "is_correct": false
+  },
+  "9972953d-7d59-4ae9-8341-a1c111c11cc5_6_2_2\t9972953d-7d59-4ae9-8341-a1c111c11cc5_6_0_0": {
+   "is_correct": false
+  },
+  "8c301aba-bdd7-4ce9-8cce-bc2673765624_100_25_25\t8c301aba-bdd7-4ce9-8cce-bc2673765624_100_27_27": {
+   "is_correct": false
+  },
+  "3bcd31bc-8d44-4b64-aeb3-87e55a97dc8a_9_9_9\t3bcd31bc-8d44-4b64-aeb3-87e55a97dc8a_9_7_7": {
+   "is_correct": false
+  },
+  "b67a73e0-8b30-46b0-bb55-41efbf8b4625_9_12_13\tb67a73e0-8b30-46b0-bb55-41efbf8b4625_9_15_16": {
+   "obituary": true,
+   "is_correct": false,
+   "sister": true
+  },
+  "fdc7b8ed-07a0-40d3-8477-2dbd685e6194_12_6_7\tfdc7b8ed-07a0-40d3-8477-2dbd685e6194_12_9_10": {
+   "three or more people": true,
+   "is_correct": false
+  },
+  "c0c0cda4-22ae-4f04-96c2-22261be8b123_5_49_50\tc0c0cda4-22ae-4f04-96c2-22261be8b123_5_46_47": {
+   "is_correct": false
+  },
+  "6d54a64b-c21d-4c9f-9083-a3c855cd1e42_8_5_6\t6d54a64b-c21d-4c9f-9083-a3c855cd1e42_8_3_3": {
+   "is_correct": true,
+   "obituary": true,
+   "to parents": true
+  },
+  "dd8aff71-5701-4e26-846f-97a5f4ba45c2_7_17_18\tdd8aff71-5701-4e26-846f-97a5f4ba45c2_7_14_15": {
+   "sister": true,
+   "is_correct": false
+  },
+  "8b49e2cc-65a7-4f5b-93bf-4c2628426821_2_11_14\t8b49e2cc-65a7-4f5b-93bf-4c2628426821_2_6_9": {
+   "sister": true,
+   "is_correct": false,
+   "caption/title": true,
+   "movie": true
+  },
+  "8abd053b-e51f-4494-9763-1444ce17faa0_116_2_2\t8abd053b-e51f-4494-9763-1444ce17faa0_116_0_0": {
+   "caption/title": true,
+   "is_correct": false
+  },
+  "e6ebcdeb-2b8f-436f-8727-20285fed5354_325_3_4\te6ebcdeb-2b8f-436f-8727-20285fed5354_325_0_1": {
+   "is_correct": false,
+   "movie": true
+  },
+  "59c9351d-1049-484c-aa51-9ead73e6f184_31_26_26\t59c9351d-1049-484c-aa51-9ead73e6f184_31_24_24": {
+   "is_correct": false
+  },
+  "377150bf-9c56-429e-84b1-553757abd0eb_56_7_8\t377150bf-9c56-429e-84b1-553757abd0eb_56_4_5": {
+   "caption/title": true,
+   "is_correct": false
+  },
+  "a65d8237-dae4-4d13-af1f-003d173b3fa5_11_20_20\ta65d8237-dae4-4d13-af1f-003d173b3fa5_11_22_22": {
+   "is_correct": false
+  },
+  "dca294b0-aba9-46a4-8b97-0e90909fb174_58_8_9\tdca294b0-aba9-46a4-8b97-0e90909fb174_58_6_6": {
+   "is_correct": true,
+   "three or more people": null,
+   "to parents": true
+  },
+  "3365171b-4acb-44a9-b066-91687a3f6622_8_4_5\t3365171b-4acb-44a9-b066-91687a3f6622_8_1_2": {
+   "is_correct": true,
+   "divorce": true
+  },
+  "e769be19-3ea3-4fda-98bb-19e69ebe2e6c_3_2_2\te769be19-3ea3-4fda-98bb-19e69ebe2e6c_3_0_0": {
+   "caption/title": true,
+   "is_correct": false
+  },
+  "6e20f18c-e560-4965-83fb-081bfc3f864e_10_0_1\t6e20f18c-e560-4965-83fb-081bfc3f864e_10_3_4": {
+   "is_correct": false,
+   "movie": true
+  },
+  "4ed2ea04-03cf-4276-8491-6a19ea3e0e68_15_8_8\t4ed2ea04-03cf-4276-8491-6a19ea3e0e68_15_19_20": {
+   "is_correct": false,
+   "movie": true
+  },
+  "02398a3c-d413-470b-bfe8-da717cc2d3a0_13_11_11\t02398a3c-d413-470b-bfe8-da717cc2d3a0_13_9_9": {
+   "non-people": true,
+   "is_correct": false
+  },
+  "ccf9c7fc-7cf8-4f39-90b2-866e6ca3144a_1_3_4\tccf9c7fc-7cf8-4f39-90b2-866e6ca3144a_1_0_1": {
+   "is_correct": true,
+   "divorce": true
+  },
+  "e43ce00b-83e5-429d-a5f4-b60f6f09243c_30_2_2\te43ce00b-83e5-429d-a5f4-b60f6f09243c_30_0_0": {
+   "is_correct": false
+  },
+  "e53eff6c-98f7-47f4-92b3-28795ede5096_108_1_2\te53eff6c-98f7-47f4-92b3-28795ede5096_108_4_5": {
+   "non-people": true,
+   "is_correct": false
+  },
+  "9e3a8943-61fc-4681-8c19-5655f10e6251_5_0_1\t9e3a8943-61fc-4681-8c19-5655f10e6251_5_3_4": {
+   "is_correct": false,
+   "movie": true
+  },
+  "a9c4b1b3-34aa-42aa-9e37-fbd138d548ac_29_0_1\ta9c4b1b3-34aa-42aa-9e37-fbd138d548ac_29_3_4": {
+   "is_correct": false,
+   "movie": true
+  },
+  "f07b10e4-e1f4-4332-8c68-5a2564debb28_8_1_1\tf07b10e4-e1f4-4332-8c68-5a2564debb28_8_3_3": {
+   "is_correct": true
+  },
+  "1ea54493-30a8-450d-a020-0abe4b2cf6e0_1_6_7\t1ea54493-30a8-450d-a020-0abe4b2cf6e0_1_9_10": {
+   "is_correct": true,
+   "movie": true
+  },
+  "d9599dc9-8546-47bc-a064-4d53c92cb5e2_2_14_14\td9599dc9-8546-47bc-a064-4d53c92cb5e2_2_16_16": {
+   "is_correct": true,
+   "to parents": true,
+   "obituary": true
+  },
+  "94adac71-5acd-40c0-8dc1-85492ef972fb_66_3_4\t94adac71-5acd-40c0-8dc1-85492ef972fb_66_6_7": {
+   "is_correct": false,
+   "three or more people": true
+  },
+  "38e45dd2-0dff-49c6-97b1-011f7578df47_5_28_28\t38e45dd2-0dff-49c6-97b1-011f7578df47_5_30_30": {
+   "is_correct": true
+  },
+  "92c4d476-30ba-4cd6-abc6-19cc62ca1706_1_34_35\t92c4d476-30ba-4cd6-abc6-19cc62ca1706_1_31_32": {
+   "is_correct": false,
+   "movie": true
+  },
+  "d582ea33-7d1d-4b06-aa8a-4f7465a24b66_10_29_29\td582ea33-7d1d-4b06-aa8a-4f7465a24b66_10_27_27": {
+   "is_correct": false,
+   "sister": true
+  },
+  "0389cbfe-e27b-423c-9469-df90c12de014_18_0_0\t0389cbfe-e27b-423c-9469-df90c12de014_18_2_2": {
+   "is_correct": "UNKNOWN"
+  },
+  "d1d258ee-b16b-4a62-9670-e38e58c19fec_1_3_5\td1d258ee-b16b-4a62-9670-e38e58c19fec_1_1_1": {
+   "is_correct": false
+  },
+  "bdc41515-e540-4a81-91d2-f12bf8804aa1_1_3_5\tbdc41515-e540-4a81-91d2-f12bf8804aa1_1_0_1": {
+   "is_correct": true,
+   "caption/title": true
+  }
+ }
+}
