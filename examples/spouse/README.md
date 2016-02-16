@@ -683,7 +683,7 @@ Then, point your browser to the URL that appears after the command (typically <h
 
 ![Screenshot of the labeling interface showing the sampled data](images/mindtagger_screenshot.png)
 
-We can quickly label the sampled 100 examples using the intuitive user interface with buttons for correct/incorrect tags that also supports keyboard shortcuts for entering labels and moving between items. 
+We can quickly label the sampled 100 examples using the intuitive user interface with buttons for correct/incorrect tags that also supports keyboard shortcuts for entering labels and moving between items.
 (Press the <kbd>?</kbd> key to view all supported keys.)
 How many were labeled correct as well as other tags are shown in the "Tags" dropdown at the top right corner as shown below.
 
