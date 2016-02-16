@@ -643,6 +643,9 @@ In these AngularJS templates, virtually anything you can program in HTML/CSS/Jav
 Please see the [documentation about customizing the presentation](browsing.md#customizing-presentation) for further detail.
 
 
+
+
+
 ### 4.2. Estimating precision with Mindtagger
 
 *Mindtagger*, which is part of the Mindbender tool suite, assists data labeling tags to quickly assess the precision and/or recall of the extraction.
@@ -698,6 +701,20 @@ The collected tags can also be exported in various format for post-processing.
 For further detail, see the [documentation about labeling data](labeling.md).
 
 
+
+
+
 ### 4.3. Monitoring statistics with Dashboard
 
-<todo>write</todo>
+<!-- TODO introduce how dashboard reports can be created from search context and their values be tracked in trends, once mindbender is updated -->
+
+*Dashboard* provides a way to monitor various descriptive statistics of the data products after each pass of DeepDive improvements.
+We can use a combination of SQL, any Bash script, and Markdown in each *report template* that produces a *report*, and we can produce a collection of them as a *snapshot* against the data extracted by DeepDive.
+Dashboard provides a structure to manage those templates and instantiate them in a sophisticated way using parameters.
+It provides a graphical interface for visualizing the collected statistics and trends as shown below.
+Refer to the [full documentation on Dashboard](dashboard.md) to set up your own set of reports.
+
+![Screenshot of Dashboard Reports](images/dashboard/supervision_report.png)
+![Screenshot of Dashboard Trends](images/dashboard/homepage.png)
+
+<!-- TODO write about setting up some basic example snapshot config / report templates for spouse example -->
