@@ -10,6 +10,24 @@
         </big>
     </blockquote>
 
+    <div class="row" ng-if="item.features">
+      <!-- Enumerate features with weights (leveraging AngularJS a bit more)-->
+      <div class="col-sm-offset-1 col-sm-10">
+        <table class="table table-striped table-condensed table-hover">
+          <thead><tr>
+              <th class="col-sm-1">Weight</th>
+              <th>Feature</th>
+          </tr></thead>
+          <tbody>
+            <tr ng-repeat="feature in item.features | parsedArray:'postgres' track by $index">
+              <td class="text-right">{{(item.weights | parsedArray:'postgres')[$index] | number:6}}</td>
+              <th>{{feature}}</th>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <div>
       <div mindtagger-item-details></div>
     </div>
