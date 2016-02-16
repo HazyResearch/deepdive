@@ -646,8 +646,8 @@ Please see the [documentation about customizing the presentation](browsing.md#cu
 ### 4.2. Estimating precision with Mindtagger
 
 *Mindtagger*, which is part of the Mindbender tool suite, assists data labeling tags to quickly assess the precision and/or recall of the extraction.
-We show how it helps us perform a labeling task to estimate the precision of the extraction.
-A complete [example is shown under `labeling/has_spouse-precision/`](https://github.com/HazyResearch/deepdive/tree/master/examples/spouse/labeling/has_spouse-precision/).
+We show how Mindtagger helps us perform a labeling task to estimate the precision of the extraction.
+The necessary set of files shown below already exist [in the example under `labeling/has_spouse-precision/`](https://github.com/HazyResearch/deepdive/tree/master/examples/spouse/labeling/has_spouse-precision/).
 
 <!-- TODO describe how a task can be created from the search interface instead, once it's ready -->
 
@@ -660,10 +660,10 @@ First, we can take a random sample of 100 examples from `has_spouse` relation wh
 ```bash
 deepdive sql eval "
 {% include examples/spouse/labeling/has_spouse-precision/sample-has_spouse.sql %}
-" format=csv >has_spouse.csv
+" format=csv header=1 >labeling/has_spouse-precision/has_spouse.csv
 ```
 
-We also prepare the `mindtagger.conf` and `template.html` files that look like the following:
+We also prepare the `mindtagger.conf` and `template.html` files under `labeling/has_spouse-precision/` that look like the following:
 
 ```hocon
 {% include examples/spouse/labeling/has_spouse-precision/mindtagger.conf %}
@@ -678,7 +678,7 @@ We also prepare the `mindtagger.conf` and `template.html` files that look like t
 Mindtagger can then be started for the task using the following command:
 
 ```bash
-mindbender tagger mindtagger.conf
+mindbender tagger labeling/has_spouse-precision/mindtagger.conf
 ```
 
 Then, point your browser to the URL that appears after the command (typically <http://localhost:8000>) to see a dedicated user interface for labeling data that looks like the following:
