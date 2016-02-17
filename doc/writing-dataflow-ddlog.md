@@ -244,9 +244,11 @@ Q(a,b,MAX(c)) :- R(a,b,c).
 ### Select Distinct
 
 In order to select only distinct elements from other relations, the operator `*:-` can be used. For instance, let's consider the following rule:
+
 ```ddlog
 Q(x,y) *:- R(x, y).
 ```
+
 In this rule, only disctinct couple of variables `(x,y)` from the relation `R` will be inserted in the head `Q`.
 
 
