@@ -1,43 +1,62 @@
 ---
 layout: default
-title: Text Chunking Example
+title: Text chunking example
 ---
 
-# Example: Text chunking
+# Text chunking example
 
 ## Introduction
 
-In this document, we will describe an example application of text chunking using DeepDive, and demonstrate how to use **Multinomial variables**. This example assumes a working installation of DeepDive, and basic knowledge of how to build an application in DeepDive. Please go through the [tutorial with the spouse example application](example-spouse.md) before preceding.
+In this document, we will describe an example application of text chunking using DeepDive to demonstrate how to use *multinomial factors* with *categorical variables*.
+This example assumes a [working installation of DeepDive](installation.md) and basic knowledge of how to build an application in DeepDive.
+Please go through the [tutorial with the spouse example application](example-spouse.md) before preceding.
 
-Text chunking consists of dividing a text in syntactically correlated parts of words. For example, the following sentence:
+Text chunking consists of dividing a text in syntactically correlated parts of words.
+For example, the following sentence:
 
 > He reckons the current account deficit will narrow to only # 1.8 billion in September .
 
 can be divided as follows:
 
 ```
-  [NP He ] [VP reckons ] [NP the current account deficit ] [VP will narrow ] [PP to ] [NP only # 1.8 billion ] [PP in ] [NP September ] .
+[NP He ] [VP reckons ] [NP the current account deficit ] [VP will narrow ] [PP to ] [NP only # 1.8 billion ] [PP in ] [NP September ] .
 ```
 
-Text chunking is an intermediate step towards full parsing. It is the [shared task for CoNLL-2000](http://www.cnts.ua.ac.be/conll2000/chunking/). Training and test data for this task is derived from the Wall Street Journal corpus (WSJ), which includes words, part-of-speech tags, and chunking tags.
+Text chunking is an intermediate step towards full parsing.
+It was the [shared task for CoNLL-2000](http://www.cnts.ua.ac.be/conll2000/chunking/).
+Training and test data for this task is derived from the Wall Street Journal corpus (WSJ), which includes words, part-of-speech tags, and chunking tags.
 
-In the example, we will predicate chunk label for each word. We include three inference rules, corresponding to logistic regression, linear-chain conditional random field (CRF), and skip-chain conditional random field. The features and rules we use are very simple, just to illustrate how to use multinomial variables and factors in DeepDive to build applications.
+In the example, we will predicate chunk label for each word.
+We include three inference rules, corresponding to *logistic regression*, *linear-chain conditional random field* (CRF), and *skip-chain conditional random field*.
+The features and rules we use are very simple, just to illustrate how to use categorical variables and multinomial factors in DeepDive to build applications.
 
 
 ## Running the Example
 
-The full example is under `examples/chunking` directory. The structure of this directory is
+The complete example is under [the `examples/chunking` directory](../examples/chunking/).
 
-- `input` contains training and testing data
-- `udf` contains extractor for extracting training data and features
-- `result` contains evaluation scripts and sample results
+```bash
+cd examples/chunking/
+```
+
+The structure of this directory is as follows:
+
+- [`input/`](../examples/chunking/input/) contains training and testing data.
+- [`udf/`](../examples/chunking/udf/) contains extractor for extracting training data and features.
+- [`result/`](../examples/chunking/result/) contains evaluation scripts and sample results.
 
 
-To run this example, perform the following steps:
+To run this example, use the following command:
 
-1. Run `deepdive compile`
-2. Run `deepdive run`
-3. Run `result/eval.sh` to evaluate the results
+```bash
+deepdive compile && deepdive run
+```
+
+Then run the following to evaluate the results:
+
+```bash
+result/eval.sh
+```
 
 
 ## Example Walkthrough
@@ -46,104 +65,147 @@ The application performs the following high-level steps:
 
 1. Data preprocessing: load training and test data into database.
 2. Feature extraction: extract surrounding words and their part-of-speech tags as features.
-3. Statistical inference and learning
-4. Evaluate results
+3. Statistical inference and learning.
+4. Evaluation of the results.
 
-### Data Preprocessing
+### 1. Data Preprocessing
 
-The train and test data consist of words, their part-of-speech tag and the chunk tags as derived from the WSJ corpus. The raw data is first copied into into table `words_raw`, and then is processed to convert the chunk labels to integer indexes. This extractor is defined in `app.ddlog` using the following code:
+The train and test data consist of words, their part-of-speech tag and the chunk tags as derived from the WSJ corpus.
+The raw data is first copied into table `words_raw` by [`input/init_words_raw.sh` script](../examples/chunking/input/init_words_raw.sh).
+Then it is processed to convert the chunk labels to integer indexes, based on [predefined mappings in the `tags` table](../examples/chunking/input/tags.tsv).
+This process is defined in [`app.ddlog`](../examples/chunking/app.ddlog) using the following code:
 
-    function ext_training
-      over rows like words_raw
-      returns rows like words
-      implementation "udf/ext_training.py" handles tsv lines.
-
-    words +=
-      ext_training(wid, word, pos, tag) :- words_raw(wid, word, pos, tag).
-
+```ddlog
+words(sent_id, word_id, word, pos, true_tag, tag_id) :-
+  words_raw(sent_id, word_id, word, pos, true_tag),
+  tags(tag, tag_id),
+  if true_tag = "B-UCP" then ""
+  else if true_tag = "I-UCP" then ""
+  else if strpos(true_tag, "-") > 0 then
+     split_part(true_tag, "-", 2)
+  else if true_tag = "O" then "O"
+  else ""
+  end = tag.
+```
 
 The input table `words_raw` looks like
 
-     word_id |    word    | pos | tag  | id
-    ---------+------------+-----+------+----
-           1 | Confidence | NN  | B-NP |
+```
+ word_id |    word    | pos | tag  | id
+---------+------------+-----+------+----
+       1 | Confidence | NN  | B-NP |
+[...]
+```
 
 The output table `words` looks like
 
-     sent_id | word_id |    word    | pos | true_tag | tag | id
-    ---------+---------+------------+-----+----------+-----+----
-           1 |       1 | Confidence | NN  | B-NP     |   0 |  0
+```
+ sent_id | word_id |    word    | pos | true_tag | tag | id
+---------+---------+------------+-----+----------+-----+----
+       1 |       1 | Confidence | NN  | B-NP     |   0 |  0
+[...]
+```
+
+### 2. Feature Extraction
+
+To predict chunking label, we need to add features.
+We use three simple features: the word itself, its part-of-speech tag, and the part-of-speech tag of its previous word.
+We add an extractor in [`app.ddlog`](../examples/chunking/app.ddlog):
+
+```ddlog
+function ext_features
+  over (word_id1 bigint, word1 text, pos1 text, word2 text, pos2 text)
+  returns rows like word_features
+  implementation "udf/ext_features.py" handles tsv lines.
+
+word_features +=
+  ext_features(word_id1, word1, pos1, word2, pos2) :-
+  words(sent_id, word_id1, word1, pos1, _, _),
+  words(sent_id, word_id2, word2, pos2, _, _),
+  [word_id1 = word_id2 + 1],
+  word1 IS NOT NULL.
+```
+
+where the input is generating 2-grams from `words` table, which looks like:
+
+```
+ w1.word_id | w1.word | w1.pos | w2.word | w2.pos
+------------+---------+--------+---------+--------
+         15 | figures | NNS    | trade   | NN
+[...]
+```
+
+The output will look like:
+
+```
+ word_id |   feature    | id
+---------+--------------+----
+      15 | word=figures |
+      15 | pos=NNS      |
+      15 | prev_pos=NN  |
+[...]
+```
+
+The user-defined function can be in [`udf/ext_features.py`](../examples/chunking/udf/ext_features.py).
 
 
-The user-defined function can be found in `udf/ext_training.py`.
+### 3. Statistical Learning and Inference
 
-### Feature Extraction
+We will predicate the chunk tag for each word, which corresponds to `tag` column of `words` table.
+The variables are declared in [`app.ddlog`](../examples/chunking/app.ddlog):
 
-To predict chunking label, we need to add features. We use three simple features: the word itself, its part-of-speech tag, and the part-of-speech tag of its previous word. We add an extractor in `app.ddlog`
+```ddlog
+tag?(word_id bigint) Categorical(13).
+```
 
-    function ext_features
-      over (word_id1 bigint, word1 text, pos1 text, word2 text, pos2 text)
-      returns rows like word_features
-      implementation "udf/ext_features.py" handles tsv lines.
+Here, we have 13 types of chunk tags `NP, VP, PP, ADJP, ADVP, SBAR, O, PRT, CONJP, INTJ, LST, B, null` according to CoNLL-2000 task description.
+We have three rules, logistic regression, linear-chain CRF, and skip-chain CRF.
+The logistic regression rule is:
 
-    word_features +=
-      ext_features(word_id1, word1, pos1, word2, pos2) :-
-      words(sent_id, word_id1, word1, pos1, _, _),
-      words(sent_id, word_id2, word2, pos2, _, _).
+```ddlog
+@weight(f)
+tag(word_id) :- word_features(word_id, f).
+```
 
-where the input is generating 2-grams from `words` table, which looks like
+To express conditional random field, just use the `Multinomial` factor to link variables that could interact with each other.
+For more information about CRF, see [this tutorial on CRF](http://people.cs.umass.edu/~mccallum/papers/crf-tutorial.pdf).
+The following rule links labels of neighboring words:
 
-     w1.word_id | w1.word | w1.pos | w2.word | w2.pos
-    ------------+---------+--------+---------+--------
-             15 | figures | NNS    | trade   | NN
-
-The output will look like
-
-     word_id |   feature    | id
-    ---------+--------------+----
-          15 | word=figures |
-          15 | pos=NNS      |
-          15 | prev_pos=NN  |
-
-The user-defined function can be in `udf/ext_features.py`.
-
-### Statistical Learning and Inference
-
-We will predicate the chunk tag for each word, which corresponds to `tag` column of `words` table. The variables are declared in `app.ddlog`:
-
-    tag?(word_id bigint) Categorical(13).
-
-Here, we have 13 types of chunk tags `NP, VP, PP, ADJP, ADVP, SBAR, O, PRT, CONJP, INTJ, LST, B, null` according to CoNLL-2000 task description. We have three rules, logistic regression, linear-chain CRF, and skip-chain CRF. The logistic regression rule is
-
-    @weight(f)
-    tag(word_id) :- word_features(word_id, f).
-
-To express conditional random field, just use `Multinomial` factor to link variables that could interact with each other (For more information about CRF, see [this tutorial on CRF](http://people.cs.umass.edu/~mccallum/papers/crf-tutorial.pdf). The following rule links labels of neiboring words
-
-    @weight("?")
-    Multinomial(tag(word_id_1), tag(word_id_2)) :-
-      words(_, word_id_1, _, _, _, _),
-      words(_, word_id_2, _, _, _, _),
-      word_id_2=word_id_1+1.
+```ddlog
+@weight("?")
+Multinomial(tag(word_id_1), tag(word_id_2)) :-
+  words(_, word_id_1, _, _, _, _),
+  words(_, word_id_2, _, _, _, _),
+  word_id_2=word_id_1+1.
+```
 
 It is similar with skip-chain CRF, where we have skip edges that link labels of identical words.
 
-    @weight("?")
-    Multinomial(tag(word_id_1), tag(word_id_2)) :-
-      words(sent_id, word_id_1, word, _, _, tag),
-      words(sent_id, word_id_2, word, _, _, _),
-      tag != NULL,
-      word_id_1<word_id_2.
+```ddlog
+@weight("?")
+Multinomial(tag(word_id_1), tag(word_id_2)) :-
+  words(sent_id, word_id_1, word, _, _, tag),
+  words(sent_id, word_id_2, word, _, _, _),
+  tag IS NOT NULL,
+  word_id_1<word_id_2.
+```
 
-We also specify the holdout variables according to task description about training and test data in `deepdive.conf`.
+We also specify the holdout variables according to task description about training and test data in [`deepdive.conf`](../examples/chunking/deepdive.conf).
 
-    calibration {
-      holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT id FROM tag WHERE word_id > 220663"
-    }
+```hocon
+{% include examples/chunking/deepdive.conf %}
+```
 
-### Evaluation Results
+### 4. Evaluation Results
 
-Running `result/eval.sh` will give the evaluation results. Below are results for using different rules. We can see that by adding CRF rules, we get better results both for precision and recall.
+Running the following script will give the evaluation results.
+
+```bash
+result/eval.sh
+```
+
+Below are the results for using different rules.
+We can see that by adding CRF rules, we get better results both for precision and recall.
 
 #### Logistic Regression
 

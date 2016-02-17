@@ -25,8 +25,6 @@ word_features(
   feature text
 ).
 
-tag?(word_id bigint) Categorical(13).
-
 words(sent_id, word_id, word, pos, true_tag, tag_id) :-
   words_raw(sent_id, word_id, word, pos, true_tag),
   tags(tag, tag_id),
@@ -49,6 +47,9 @@ word_features +=
   words(sent_id, word_id2, word2, pos2, _, _),
   [word_id1 = word_id2 + 1],
   word1 IS NOT NULL.
+
+
+tag?(word_id bigint) Categorical(13).
 
 @label(tag)
 tag(word_id) :- words(_, word_id, _, _, _, tag).
