@@ -130,7 +130,7 @@ and
     - [Calibration](calibration.md) <todo/>
     - [Monitoring descriptive statistics of data](dashboard.md) <todo/>
     - [Browsing data](browsing.md)
-    - [Labeling data products](labeling.md) <todo/>
+    - [Labeling data products](labeling.md)
     - [Generating negative examples](generating_negative_examples.md)
 
 
