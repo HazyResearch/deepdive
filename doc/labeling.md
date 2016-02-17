@@ -85,7 +85,7 @@ You can specify the path to the file holding the data items as well as the colum
 
 As shown in the configuration, the template for the task is set to `template.html`.
 A Mindtagger template is a collection of HTML fragments decorated with Mindtagger-specific directives that controls how the data items are rendered and what tags and GUI elements should be available during the task.
-For the precision task at hand, creating a `template.html` file with contents similar to the following will do the job.
+For the precision task at hand, creating [a `template.html` file with contents similar to the following](../examples/spouse/labeling/has_spouse-precision/template.html) will do the job.
 
 <!-- TODO find a way to use Jekyll's tag for AngularJS templates: include examples/spouse/labeling/has_spouse-precision/template.html -->
 {{% raw %}}
@@ -124,12 +124,7 @@ Also the column values of each item are available through the `item` variable.
 
 ### 1.3. Launch Mindtagger
 
-You can now launch Mindtagger passing the path to your `mindtagger.conf` file as a command-line argument, such as: `mindbender tagger ./mindtagger.conf`
-Of course, you should first download [the mindbender binary][Mindbender releases] for your system, which includes Mindtagger, and install it as an executable in ones of your `$PATH` directories.
-
-In fact, DeepDive bundles [a nice script that launches Mindtagger](https://github.com/HazyResearch/deepdive/blob/develop/examples/labeling/start-mindtagger.sh) and also handles the installation for you.
-With that, you can simply run it to start Mindtagger with all tasks existing in a subdirectory next to the script.
-For example, running the following command from the root of DeepDive's source tree will first install Mindtagger if necessary, then launch it with the example tasks.
+You can now launch Mindtagger passing the path to your `mindtagger.conf` file as a command-line argument as follows:
 
 ```bash
 mindbender tagger labeling/*/mindtagger.conf
@@ -166,7 +161,7 @@ While making progress on inspecting every item, you can quickly check how many i
 ### 1.6. Export annotations
 
 Suppose you want to augment the ground truth with the `is_correct` tags you've marked on each item through this task.
-Using Mindtagger's export tags feature ("Export" on the top-right), you can download the tag data as SQL with UPDATE or INSERT statements, as well as CSV/TSV or JSON.
+Using Mindtagger's export tags feature ("Export" on the top-right), you can download the tag data as SQL with `UPDATE` or `INSERT` statements, as well as CSV/TSV or JSON.
 
 ![Screenshot of exporting tags from Mindtagger](images/mindtagger_screenshot_export.png)
 
@@ -215,7 +210,7 @@ p1_id,p2_id,doc_id,sentence_index,label,expectation,tokens,p1_text,p1_start,p1_e
 
 ### 2.2. Modify template to also render features
 
-Now, we can use the following Mindtagger template to enumerate the extra feature information.
+Now, we can use the following [Mindtagger template](../examples/spouse/labeling/has_spouse-precision-with_features/template-with_features.html) to enumerate the extra feature information.
 
 
 <!-- TODO find a way to use Jekyll's tag for AngularJS templates: include examples/spouse/labeling/has_spouse-precision-with_features/template-with_features.html -->
