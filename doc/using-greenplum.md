@@ -3,37 +3,28 @@ layout: default
 title: Using DeepDive with Greenplum
 ---
 
-<todo>
-
-- check the Installation process. Is it still true with the new release ? (Maybe ask in particular Johannes or Sen).
-- Can the section Parallel grounding be now removed ?
-- check discussion about DEEPDIVE\_NUM\_PARALLEL\_UNLOADS=... and GPFDIST\_DISABLE=true
-
-</todo>
-
 # Using DeepDive with Greenplum
 
-This document describes how to install and configure
-[Greenplum](http://pivotal.io/big-data/pivotal-greenplum) to work
-with DeepDive. It describes some [specifications](#using_greenplum) when using Greenplum, how to [install](#installing_greenplum) and some [FAQs](#faq) about using Greenplum.
+This document describes how to install and configure [Greenplum](http://pivotal.io/big-data/pivotal-greenplum) to work with DeepDive.
+It describes some [specifications](#using_greenplum) when using Greenplum, how to [install](#installing_greenplum) and some [FAQs](#faq) about using Greenplum.
 
 After installing Greenplum, DeepDive should work well with it and no difference should be observed from running PostgreSQL, except an increase in speed.
 
-## <a name="using_greenplum" href="#"></a> Greenplum - specific configurations
+## <a name="using_greenplum" href="#"></a> Greenplum specific configuration
 
 ### Distributed by clauses
 
-For Greenplum to work optimally, `distributed by` clauses should be added in all the tables declarations. For that, when declaring a table in `app.ddlog`, the annotation `@distributed_by` must be added in front of the column for which the table should be distributed by. For instance, in the spouse example, to distribute the table _sentences_ by the column _doc\_id_ (in addition to other annotations), the following declaration should be written:
+For Greenplum to work optimally, `DISTRIBUTED BY` clauses should be added in all the tables declarations.
+For that, when declaring a table in `app.ddlog`, the annotation `@distributed_by` must be added in front of the column for which the table should be distributed by.
+For instance, in the spouse example, to distribute the table `sentences` by the column `doc_id` (in addition to other annotations), the following declaration should be written:
 
 ```
 sentences(
     @key
     @distributed_by
-    #@references(relation="articles", column="id")
     doc_id         text,
     @key
     sentence_index int,
-    @searchable
     sentence_text  text,
     tokens         text[],
     lemmas         text[],
@@ -44,22 +35,25 @@ sentences(
     dep_tokens     int[]
 ).
 ```
-As seen in this example, the annotation `@distributed_by` can be easily added to other existing annotations. If DeepDive is run with PostgreSQL, the annotations `@distributed_by` will simply be ignored, allowing the same `app.ddlog` to be easily run under PostgreSQL and Greenplum.
+As seen in this example, the annotation `@distributed_by` can be easily added to other existing annotations.
+If DeepDive is run with PostgreSQL, the annotations `@distributed_by` will simply be ignored, allowing the same `app.ddlog` to be easily run under PostgreSQL and Greenplum.
 
 The `db.url` should explicit that Greenplum is used, being for instance `greenplum://localhost:6432/spouse`.
 
-Refer to the [Greenplum
-manual](http://media.gpadmin.me/wp-content/uploads/2012/11/GPDBAGuide.pdf) for more information.
+Refer to the [Greenplum manual](http://media.gpadmin.me/wp-content/uploads/2012/11/GPDBAGuide.pdf) for more information.
 
 ### Parallel unloading and grounding
 
 Greenplum allows DeepDive to speed up by loading and unloading data in parallel. The number of parallel processes can be manually fixed by setting the environment variable `DEEPDIVE_NUM_PARALLEL_UNLOADS=...`
 
-DeepDive will automatically use Greenplum's file system server `gpfdist` to speed up the grounding. If the parralel grounding should be disabled, export the environment variable `GPFDIST_DISABLE=true`.
+DeepDive will automatically use Greenplum's file system server `gpfdist` to speed up the grounding. If the parallel grounding should be disabled, export the environment variable `GPFDIST_DISABLE=true`.
 
 
 ## <a name="installing_greenplum" href="#"></a> Installation
+
+<!--
 <todo>Update to install from source, Migrate <https://github.com/HazyResearch/greenplum-howto></todo>
+-->
 
 We now describe how to install Greenplum and configure it to be used with
 DeepDive. The steps were tested to install Greenplum on CentOS 5.6 x64. For
@@ -202,7 +196,7 @@ move on.
 
 ### Create directories for the database
 
-Create the master and segment directorier, where the database files will
+Create the master and segment directories, where the database files will
 be stored. **Be sure that you have write permission to these directory**.
 
 ```bash
@@ -289,36 +283,7 @@ postgres=# \q
 
 Use `gpstop` and `gpstart` to stop / start the Greenplum server at any time.
 
-### <a name="parallelgrounding" href="#"></a> Parallel grounding
-<todo>remove this: everything related to gpfdist is now done by db-driver internally</todo>
-[Grounding](overview.md#grounding) is the process of building the
-factor graph. You can enable parallel grounding to speed up the grounding phase,
-which makes use of Greenplum's parallel file system (gpfdist). To use parallel
-grounding, first make sure that Greenplum's file system server `gpfdist` is running
-locally, i.e., on the machine where you will run the DeepDive applications.
-If it is not running, you can use the following command to start gpfdist
 
-    gpfdist -d [directory] -p [port] &
-
-where you specify the directory for storing the files and the HTTP port to run on.
-The directory should be an **empty directory** since DeepDive will clean up
-this directory or overwrite files.
-Then, in `deepdive.conf`, specify the gpfdist settings in the `deepdive.db.default` as
-follows
-
-    db.default {
-      gphost   : [host of gpfdist]
-      gpport   : [port of gpfdist]
-      gppath   : [**absolute path** of gpfdist directory]
-    }
-
-where gphost, gpport, gppath are the host, port, and absolute path
-gpfdist is running on (specified when starting gpfdist server).
-
-Finally, tell DeepDive to use parallel grounding by adding the following to
-`deepdive.conf`:
-
-    inference.parallel_grounding: true
 
 ## <a name="faq" href="#"></a> FAQs
 
