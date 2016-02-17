@@ -155,7 +155,7 @@ and
 
 #### Advanced topics
 
-- [FAQ](faq.md) <todo/>
+- [FAQ](faq.md)
 - Using DeepDive in Various Configurations
     - [Using DeepDive with GreenPlum](using-greenplum.md)
     - [Using DeepDive with Postgres-XL](using-pgxl.md)
