@@ -39,12 +39,10 @@ define JEKYLL_SERVE
     jekyll serve --host $(TEST_HOST) --port $(TEST_PORT) --baseurl "" --config _config.yml,_config_2.x.yml
 endef
 endif
+JEKYLL_SERVE_FLAGS = --watch  # with watch by default
 test: jekyll
-	# Launching a server with watch for testing and authoring...
-	$(JEKYLL_SERVE) --watch
-test-nowatch: jekyll
-	# Launching a server for testing...
-	$(JEKYLL_SERVE) --no-watch --incremental
+	# Launching a server for testing and authoring...
+	$(JEKYLL_SERVE) $(JEKYLL_SERVE_FLAGS)
 
 .PHONY: linkcheck linkcheck-deployed
 linkcheck: jekyll linkchecker
