@@ -6,13 +6,10 @@ title: Specifying a statistical model in DDlog
 # Specifying a statistical model in DDlog
 
 Every DeepDive application can be viewed as defining a [statistical inference](inference.md) problem using every bits of [its input data](ops-data.md#organizing-input-data) and [data derived by a series of data processing steps](ops-execution.md#compiled-processes-and-data-flow).
-
-    This document describes how to declare random variables on which DeepDive performs inference, how to label these variables and how to write inference rules.
-
-    First, declare variable relations on which DeepDive predicts the marginal probability.
+This document describes how to declare random variables for a DeepDive application's statistical model, how to define their scope as well as supervision labels, and how to write inference rules for specifying features and correlations.
 
 
-## Variable relation declarations
+## Variable declarations
 
 DeepDive requires the user to specify the name and type of the *variable relations* that hold random variables on which to perform inference.
 Currently DeepDive supports Boolean (i.e., Bernoulli) variables and Categorical variables.
@@ -36,18 +33,12 @@ This declares a variable relation named `has_spouse` where each unique pair of `
 DeepDive supports categorical variables, which take integer values ranging from 0 to a user-specified upper bound.
 The variable relation is declared similarly as a Boolean variable except that the declaration is followed by a `Categorical(N)` where `N` is the number of categories the variables can take, defining the size of the domain.
 Each variable can take values from 0, 1, ..., `N`-1.
-For instance, in the [chunking example](example-chunking.md), the categorical variable declared is as follows:
+For instance, in the [chunking example](example-chunking.md), a categorical variable of 13 possible categories is declared as follows:
 
 ```ddlog
 tag?(word_id bigint) Categorical(13).
 ```
 
-<!--
-TODO
-The factor function for multinomial is `Multinomial`.
-It takes multinomial variables as arguments, and is equivalent to having indicator functions for each combination of variable assignments.
-See this [wiki page](https://github.com/HazyResearch/ddlog/wiki/DDlog-Language-Features) for more details.
--->
 
 
 
@@ -63,7 +54,7 @@ has_spouse(p1_id, p2_id) = NULL :-
     spouse_candidate(p1_id, _, p2_id, _).
 ```
 
-This means we will consider all distinct `p1_id` and `p2_id` pairs found in the `spouse_candidate` relation as the scope of all random variables in the model.
+This means all distinct `p1_id` and `p2_id` pairs found in the `spouse_candidate` relation is considered the scope of all `has_spouse` random variables in the model.
 By using a `NULL` expression on the right hand side, they are considered as unsupervised variables.
 
 On the other hand, the following similar looking rule provides the supervision labels using a sophisticated expression.
@@ -75,58 +66,145 @@ has_spouse(p1_id, p2_id) = if l > 0 then TRUE
 ```
 
 This rule is basically doing a *majority vote*, turning aggregate numbers computed from `spouse_label_resolved` relation into Boolean labels.
-When more than one
 
 
 
-## Writing inference rules
+
+
+## Inference rules
 
 *Inference rules* specify features for a variable and/or the correlations between variables.
-They are basically the templates for the factors in the [factor graph](inference.md), telling DeepDive how to *ground* it based on what input and derived data.
-Again, these rules allow a special syntax for specifying the type of factor in the rules head preceded by a `@weight` declaration as shown below.
+They are basically the templates for the factors in the [factor graph](inference.md), telling DeepDive how to *ground* them based on what input and derived data.
+Again, these rules extend the syntax for normal derivation rules and allows the type of the factor to be specified in the rules head, preceded by a `@weight` declaration as shown below.
 
 ```ddlog
 @weight(...)
 FACTOR_HEAD :- RULE_BODY.
 ```
 
+Here, `RULE_BODY` is the typical conjunctive query also used for normal derivation rules in DDlog.
+The `FACTOR_HEAD` is the part where more than one variable relations can appear with a special syntax.
+Let's first look at the simplest case of describing one variable in the inference rule's head.
 
-### Factor input query
 
-The input query of a factor returns a set of tuples. Each tuple must contain all
-the variables that a factor is using, plus additional columns that are used to
-learn the weight of the factor. It usually takes the form of a join query
-using feature relations produced by extractors, as in the following example:
+### Specifying features
 
-Each rule consists of three components:
-
-- **Variable relation(s)**.
-- **Factor function**, which defines how to connect the variable relation(s) to each factor, and how these variables are related to each other.
-- **Factor weight**, that describes the confidence in the relationship expressed by the factor. This is used during probabilistic inference. Weights can be constants, or automatically learned based on training data.
-
-For instance, in the `has_spouse` example, the inference rule defining whether the `has_spouse` variable between two entities is true or not is written as:
+In common cases, one wants to model a Boolean variable's probability of being true using some set of features.
+Expressing this kind of binary classification problem is very simple in DDlog.
+By writing a rule with just one variable relation in the head, DeepDive creates in the model a *unary factor* that connects to it whose weight is determined by a user-defined feature.
+For instance, in [the spouse example](example-spouse.md), there is an inference rule specifying features for the `has_spouse` variables written as:
 
 ```ddlog
 @weight(f)
 has_spouse(p1_id, p2_id) :-
-  spouse_candidate(p1_id, _, p2_id, _),
-  spouse_feature(p1_id, p2_id, f).
+    spouse_candidate(p1_id, _, p2_id, _),
+    spouse_feature(p1_id, p2_id, f).
 ```
 
-This rule means that each pair of people `(p1_id, p2_id)` in the `has_spouse` variable relation is true or not according to weights tying to the feature column in the spouse_feature relation. <todo> explain more precisely why spouse_candidates has to be used in this declaration </todo>
+This rule means that:
 
-<!--
-#### Using arrays in factor functions
+- A factor should be created for each pair of person mentions found in the `spouse_candidate` relation and each of the corresponding features found in `spouse_feature` relation.
+- Each of those factors connects to a single `has_spouse` variable identified by a pair of mentions `(p1_id, p2_id)` originating from the `spouse_candidate` relation.
+- The feature `f` for a factor determines a *weight* (to be learned for this particular rule) that translates into the factor's potential, which in turn influences the probability of the connected `has_spouse` variable being true or not.
 
-To use array of variables in factor function, in the input query, generate corresponding variable ids in array form, and rename it as `relation.id`, where `relation` is the table containing these variables, i.e., the naming convention for array variables is same as single variables, whereas the only difference is variable ids are in array form.
 
--->
+### Specifying correlations
 
-### Factor Weights
+Now, in almost every problem, the variables are correlated with each other in a special way, and it is desirable to enrich the model with this domain knowledge.
+This is done by creating certain types of factors that connect to those correlated variables, and this is where the special syntax comes into play.
+DDlog syntax borrows heavily from Markov Logic Networks and first-order logic.
 
-- The **factor weight** describes the confidence in the relationship expressed
-  by the factor. This is used during probabilistic inference. Weights can be
-  constants, or automatically learned based on training data.
+For example, the following rule in [the smoke example](example-smoke.md) correlates two variable relations.
+
+```ddlog
+@weight(3)
+smoke(x) => cancer(x) :-
+    person(x).
+```
+
+This rule expresses that if a person smokes, there's an *implication* that he/she will have cancer.
+Here, a constant `3` is used in the `@weight` to express some level of confidence in this rule, instead of learning the weight from the data (explained more later).
+
+#### Implication
+
+[Logical implication or consequence](http://en.wikipedia.org/wiki/Truth_table#Logical_implication) of two or more variables can be expressed using the following syntax.
+
+```ddlog
+@weight(...)  P(x) => Q(y)             :- RULE_BODY.
+@weight(...)  P(x), Q(y) => R(z)       :- RULE_BODY.
+@weight(...)  P(x), Q(y), R(z) => S(k) :- RULE_BODY.
+```
+
+#### Disjunction
+
+[Logical disjunction](http://en.wikipedia.org/wiki/Truth_table#Logical_disjunction) of two or more variables can be expressed using the following syntax.
+
+```ddlog
+@weight(...)  P(x) v Q(y)        :- RULE_BODY.
+@weight(...)  P(x) v Q(y) v R(z) :- RULE_BODY.
+```
+
+#### Conjunction
+
+[Logical conjunction](http://en.wikipedia.org/wiki/Truth_table#Logical_disjunction) of two or more variables can be expressed using the following syntax.
+
+```ddlog
+@weight(...)  P(x) ^ Q(y)        :- RULE_BODY.
+@weight(...)  P(x) ^ Q(y) ^ R(z) :- RULE_BODY.
+```
+
+#### Equality
+
+[Logical equality](http://en.wikipedia.org/wiki/Truth_table#Logical_equality) of two variables can be expressed using the following syntax.
+
+```ddlog
+@weight(...)  P(x) = Q(y) :- RULE_BODY.
+```
+
+#### Negation
+
+Whenever a correlation is expressing a Boolean variable to be false (also referred to as a *negated literal*), then it can be negated using a preceding `!` as shown below.
+
+```ddlog
+@weight(...)    P(x) => ! Q(x) :- RULE_BODY.
+@weight(...)  ! P(x) v  ! Q(x) :- RULE_BODY.
+```
+
+----
+----
+----
+
+<todo>finish below</todo>
+
+#### Multinomial factors
+
+The factor function for multinomial is `Multinomial`. It takes multinomial
+variables as arguments, and is equivalent to having indicator functions for each
+combination of variable assignments.
+
+For examples, if `a` is a variable taking values 0, 1, 2, and `b` is a variable
+taking values 0, 1. Then, `Multinomial(a, b)` is equivalent to the following
+factors between a and b
+
+    I{a = 0, b = 0}
+    I{a = 0, b = 1}
+    I{a = 1, b = 0}
+    I{a = 1, b = 1}
+    I{a = 2, b = 0}
+    I{a = 2, b = 1}
+
+Note that each of the factor above has a corresponding weight, i.e., we have one
+weight for each possible assignment of variables in the multinomial factor.
+
+We include a typical usage example of multinomial variables in the chunking example under `examples/chunking`.
+A walkthrough this example, detailing how to specify Conditional Random Fields and perform Multi-class Logistic Regression is available [here](example-chunking.md).
+
+
+### Specifying weights
+
+The **factor weight** describes the confidence in the relationship expressed by the factor.
+This is used during probabilistic inference.
+Weights can be constants, or automatically learned based on training data.
 
 Each factor is assigned a *weight*, which expresses the confidence in the relationship it express.
 In the probabilistic inference steps, factors with large weights have a greater impact on variables than factors with small weights.
@@ -146,63 +224,12 @@ someFactor.weight: ?
 someFactor.weight: ?(people.gender)
 ```
 
-The annotation `@weight(expression)` expresses the weight of the inference rule, which can be defined by a a feature or by a constant, such that in the _imply_ inference rule in the smoke example:
-
-```ddlog
-@weight(3)
-smoke(x) => cancer(x) :- person(x).
-```
-
-This rule expresses that, if a person smokes, it implies he/she has a cancer. The constant in the `@(weight)` annotation means that the rule's factors all tie to the same weight (here defined by the value 3).
 
 
 
-### Factor function
+<!-- TODO
+#### Using arrays in factor functions
 
-The factor function defines which variables should be connected to the factor, and how they are related.
-All variables used in a factor function must have been previously [defined in the schema](#variable-relations).
+To use array of variables in factor function, in the input query, generate corresponding variable ids in array form, and rename it as `relation.id`, where `relation` is the table containing these variables, i.e., the naming convention for array variables is same as single variables, whereas the only difference is variable ids are in array form.
 
-DeepDive supports [several types of factor functions](inference_rule_functions.md).
-One example of a factor function is the `Imply` function, which expresses a first-order logic statement.
-For example, `Imply(B, C, A)` means "if B and C, then A".
-inference_rule_functions.md#ddlog-syntax
-
-Supported DeepDive factor function and corresponding syntax are:
-
-```ddlog
-Imply  : A1, A2, ... => An
-Equal  : A1 = A2 = ... = An
-And    : A1 ^ A2 ^ ... ^ An
-Or     : A1 v A2 v ... v An
-IsTrue : A
-```
-
-where _As_ are variable relations.
-
-
-
-#### Multinomial factors
-
-The factor function for multinomial is `Multinomial`. It takes multinomial
-variables as arguments, and is equivalent to having indicator functions for each
-combination of variable assignments.
-
-
-For examples, if `a` is a variable taking values 0, 1, 2, and `b` is a variable
-taking values 0, 1. Then, `Multinomial(a, b)` is equivalent to the following
-factors between a and b
-
-    I{a = 0, b = 0}
-    I{a = 0, b = 1}
-    I{a = 1, b = 0}
-    I{a = 1, b = 1}
-    I{a = 2, b = 0}
-    I{a = 2, b = 1}
-
-Note that each of the factor above has a corresponding weight, i.e., we have one
-weight for each possible assignment of variables in the multinomial factor.
-
-### Chunking Example
-
-We include a typical usage example of multinomial variables in the chunking example under `examples/chunking`.
-A walkthrough this example, detailing how to specify Conditional Random Fields and perform Multi-class Logistic Regression is available [here](example-chunking.md).
+-->
