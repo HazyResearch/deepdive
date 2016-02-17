@@ -103,7 +103,7 @@ and
 #### Getting Started
 
 - [Quick Start](quickstart.md) <todo/> <todo/>
-- [Tutorial: Extracting mentions of spouses from the news](example-spouse.md) <todo/>
+- [Tutorial: Extracting mentions of spouses from the news](example-spouse.md)
 
 #### Background Reading
 
@@ -160,7 +160,6 @@ and
     - [Using DeepDive with GreenPlum](using-greenplum.md) <todo/>
     - [Using DeepDive with Postgres-XL](using-pgxl.md)
     - [Using DeepDive on Amazon EC2](using-ec2.md)
-    - [Using DeepDive in Docker](using-docker.md) <todo/> <todo/>
 - References
     - [`deepdive.conf` Reference](configuration.md)
     - [Generic features library](gen_feats.md)
