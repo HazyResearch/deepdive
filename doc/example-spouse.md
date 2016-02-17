@@ -23,7 +23,8 @@ The high-level steps we'll follow are:
 
 4. **Error analysis & debugging.** Finally, we'll show how to use DeepDive's labeling, error analysis and debugging tools.
 
-*_Note the distinction between extraction of facts and extraction of mentions of facts. In this tutorial, we do the latter, however DeepDive supports further downstream methods for tackling the former task in a principled manner._
+*_Note the distinction between extraction of facts and extraction of mentions of facts.
+In this tutorial, we do the latter, however DeepDive supports further downstream methods for tackling the former task in a principled manner._
 
 
 Whenever something isn't clear, you can always refer to [the complete example code at `examples/spouse/`](../examples/spouse/) that contains everything shown in this document.
@@ -339,7 +340,8 @@ spouse_candidate(
 ```
 
 Next, for this operation we don't use any UDF script, instead relying entirely on DDlog operations.
-We simply construct a table of person counts, and then do a join with our filtering conditions. In DDlog this looks like:
+We simply construct a table of person counts, and then do a join with our filtering conditions.
+In DDlog this looks like:
 
 ```ddlog
 num_people(doc_id, sentence_index, COUNT(p)) :-
@@ -517,7 +519,8 @@ We'll download the relevant data, and then map it to our spouse candidate mentio
 #### Extracting & downloading the DBpedia data
 Our goal is to first extract a collection of known married couples from DBpedia and then load this into the `spouses_dbpedia` table in our database.
 To extract known married couples, we use the DBpedia dump present in [Google's BigQuery platform](https://bigquery.cloud.google.com).
-First we extract the URI, name and spouse information from the DBpedia `person` table records in BigQuery for which the field `name` is not NULL. We use the following query:
+First we extract the URI, name and spouse information from the DBpedia `person` table records in BigQuery for which the field `name` is not NULL.
+We use the following query:
 
 ```sql
 SELECT URI,name, spouse
@@ -534,7 +537,8 @@ JOIN EACH [dbpedia.validnames] AS t2
 ON t1.spouse = t2.URI
 ```
 
-The output of the above query is stored in a new table named `dbpedia.spouseraw`. Finally, we use the following query to remove symmetric duplicates.
+The output of the above query is stored in a new table named `dbpedia.spouseraw`.
+Finally, we use the following query to remove symmetric duplicates.
 
 ```sql
 SELECT p1, p2
@@ -669,7 +673,7 @@ The Python UDF named [`udf/supervise_spouse.py`](../examples/spouse/udf/supervis
 ```
 
 Note that the rough theory behind this approach is that we don't need high-quality (e.g., hand-labeled) supervision to learn a high quality model;
-instead, using statistical learning, we can in fact recover high-quality models from a large set of low-quality or **_noisy_**—labels.
+instead, using statistical learning, we can in fact recover high-quality models from a large set of low-quality or **_noisy_** labels.
 
 ### 2.3. Resolving multiple labels per example with majority vote
 Finally, we implement a very simple majority vote procedure, all in DDlog, for resolving scenarios where a single spouse candidate mention has multiple conflicting labels.
