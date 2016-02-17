@@ -163,7 +163,6 @@ and
 - References
     - [`deepdive.conf` Reference](configuration.md)
     - [Generic features library](gen_feats.md)
-    - [Inference rule function reference](inference_rule_functions.md)
     - [High-speed sampler](sampler.md)
     - [Factor graph grounding output reference](factor_graph_schema.md)
     - [Internal database schema](reserved_tables.md)
