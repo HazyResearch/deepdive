@@ -128,9 +128,9 @@ and
 - Debugging a DeepDive Application
     - [Debugging user-defined functions](debugging-udf.md)
     - [Calibration](calibration.md)
-    - [Monitoring descriptive statistics of data](dashboard.md) <todo/>
-    - [Browsing data](browsing.md)
-    - [Labeling data products](labeling.md)
+    - [Browsing DeepDive data with Mindbender](browsing.md)
+    - [Labeling DeepDive data with Mindtagger](labeling.md)
+    - [Monitoring statistics of DeepDive data with Dashboard](dashboard.md)
     - [Generating negative examples](generating_negative_examples.md)
 
 

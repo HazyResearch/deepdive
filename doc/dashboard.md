@@ -1,15 +1,17 @@
 ---
 layout: default
+title: Monitoring statistics of DeepDive data with Dashboard
 ---
 
-<todo> "Renew details: screen dump, paths ? Update to new spouse example? Complete how to interface with DeepDive?"
-these elements were in the todo of the tmp page of Dashboard, certainly not necessary anymore.  </todo>
+# Monitoring statistics of DeepDive data with Dashboard
 
-# Dashboard
+*Dashboard* serves as an interface for viewing and analyzing the results of your DeepDive application runs.
+It provides a structure to organize various report templates that compute app-specific metrics and snapshot of reports produced after every run.
 
-Dashboard which serves as an interface for viewing and analyzing the results of your DeepDive application runs. The reports produced with Dashboard can be easily customized, and user-defined reports that show app-specific metrics can be produced without much hassle.
+This document is composed of two main sections.
+First, we explain how to, from the [user interface](#user-interface), use Dashboards with build-in and user-specified templates, as long as defining tasks and trends.
+Then, in as an [advanced topic](#advanced-topics) and for terminal lovers, we explain how to build all these reports without the user interface, which is less intuitive but fully programmable giving more flexibility.
 
-This document is composed of two main sections. First, we explain how to, from the [user interface](#user-interface), use Dashboards with build-in and user-specified templates, as long as defining tasks and trends. Then, in as an [advanced topic](#advanced-topics) and for terminal lovers, we explain how to build all these reports without the user interface, which is less intuitive but gives more flexibility
 
 ## User Interface
 
@@ -49,11 +51,11 @@ There are two types of report templates:
 
 Parameters allow for the inclusion of variables in report templates which can be set at the time the snapshot is run. A common use case for parameters is when you want to run the same report template on different data sources from your DeepDive application run, or want to make a quick series of snapshots involving a varying number of data items.
 
-The name of a parameter corresponds to the name of the variable in the report template. For example, if the parameter name is "doc\_id", the corresponding template variable is ```$doc_id```.
+The name of a parameter corresponds to the name of the variable in the report template. For example, if the parameter name is "doc\_id", the corresponding template variable is `$doc_id`.
 
 #### Nested Templates
 
-You may notice that the built-in report template names use slashes (```/```) to indicate a hierarchical structure. While this is a helpful strategy for organizing your report templates, the slash also has the effect of "nesting" the report template.
+You may notice that the built-in report template names use slashes (`/`) to indicate a hierarchical structure. While this is a helpful strategy for organizing your report templates, the slash also has the effect of "nesting" the report template.
 
 Nested report templates automatically inherit the parameters from their ancestor report templates, and are shown in grey on a nested report template.
 
@@ -67,7 +69,7 @@ A Snapshot captures all of the data required to generate the reports associated 
 
 A snapshot configuration consists of a list of report templates and the parameter values for each report template. Snapshot configurations are made from the "Run Snapshot" tab.
 
-A default snapshot configuration is included with Dashbaord. You may modify this configuration or create your own by clicking the "Add Configuration" button. You may also copy the contents of an existing configuration to a new configuration using the "Copy Configuration" button from an existing configuration.
+A default snapshot configuration is included with Dashboard. You may modify this configuration or create your own by clicking the "Add Configuration" button. You may also copy the contents of an existing configuration to a new configuration using the "Copy Configuration" button from an existing configuration.
 
 To add a report template to the snapshot configuration, click the "Add Template" button and select the report template of interest from the dropdown menu. You can add additional report templates to the configuration using these same steps. If you want to remove a template from the snapshot configuration, click the red "X" next to the report template dropdown.
 
@@ -138,11 +140,13 @@ When you are ready to run the task, click "Run Task" from the task control inter
 
 As you run more and more snapshots, you may be interested in seeing how certain data values from your reports change over time. Trends provides a simple mechanism through which you can accomplish this.
 
-<todo> can it be done from the UI? </todo>
+Tracking data values can be accomplished via the `report-value` command. For example, if you wish to track a precision value from a report, and assuming the precision is stored in a `$precision` variable, simply include the following in the report template:
 
-Tracking data values can be accomplished via the ```report-value``` command. For example, if you wish to track a precision value from a report, and assuming the precision is stored in a ```$precision``` variable, simply include the following in the report template:
+```bash
+precision=...  # computed somehow
 
-```report-value precision, $precision``` [Jaeho]
+report-value precision="$precision"
+```
 
 Assuming the report is called "my\_report", this command will store the precision in a trend named "my\_report/precision", which is accessible from Trends.
 
@@ -156,7 +160,7 @@ To view an overview of the changes in all trends for all time, visit the "Trends
 
 To view a trend in more detail, click on it from the Trends overview page. This page will display a larger version of the chart shown in the overview, with additional options to limit the time frame and whether to display null trend values. Limiting the time frame can be accomplished by moving either end of the slider at the bottom of the page. The number of snapshots and time range of those snapshots the view has been limited to are shown above the slider.
 
-Toggling the Null Values button will add/remove snapshots from the chart which either did not track the trend at that point in time, or the value of the trend was ```null```.
+Toggling the Null Values button will add/remove snapshots from the chart which either did not track the trend at that point in time, or the value of the trend was `null`.
 
 Clicking on a data point or colored band block will take you to the report in the relevant snapshot for that data value.
 
@@ -180,25 +184,21 @@ For custom templates, you can use [markdown](https://help.github.com/articles/ma
 
 You will also need to specify whether the template is for a Report or Task. If you are creating a Task template, you additionally need to specify the *scope* of the template, which is the report (or set of reports if selecting a hierarchical report name) that the task is valid for.
 
-##### Custom Template Commands
-[Jaeho] <todo> what does this mean exactly ? </todo>
-* deepdive sql: Runs a SQL query. Example: ```deepdive sql "SELECT * FROM table"```
-* report-value
-* ...
-
 
 
 ## Advanced Topics
 
 Here we explore the details of Dashboard, in particular how to write specific commands and scripts such that many built-in and user-defined reports can be run automatically.
 
-More info can be found on the [Mindbender repo](https://github.com/HazyResearch/mindbender/tree/master/dashboard).
+More info can be found on the [Mindbender repo](https://github.com/HazyResearch/mindbender/tree/master/dashboard#readme).
 
 ### DeepDive Snapshots
 
 After each run of a DeepDive app, you can run
 
-```mindbender snapshot```
+```bash
+mindbender snapshot
+```
 
 This command is used to produce a *snapshot* under `snapshot/` of the target app with a unique name beginning with a timestamp, e.g., `snapshot/20150206-1/`.
 
@@ -346,6 +346,7 @@ Because it is often necessary to augment part of an existing report with app-spe
     * Each line of the file should contain a glob pattern matching nested report templates under it.
     * At most one of the line may be wildcard `*`, which denotes the position for the rest of the paths not explicitly mentioned.
     * For example, `variable/reports.order` has the following lines, which orders the summary at the top and the built-in templates in a particular order at the bottom, so any app-specific ones appear first:
+
         ```
         summary
         *
@@ -388,19 +389,40 @@ Several utilities are provided to the executables in report templates to simplif
 #### For producing JSON
 `report-values` command can be used for augmenting named values to the `report.json` file without dealing with JSON parsing and formatting.
 For example, suppose `report.json` already had the following content:
+
 ```json
-{"a":"foo", "b":"bar"}
+{
+  "a": "foo",
+  "b": "bar"
+}
 ```
-Simply running `report-values x=1 y=2.34 b=true c=bar d='[1,"2","three"]'` will update `report.json` to have:
+
+Simply running the command below will update `report.json` to have what follows:
+
+```bash
+report-values x=1 y=2.34 b=true c=bar d='[1,"2","three"]'
+```
+
 ```json
-{"a":"foo", "b":true, "x":1, "y":2.34, "c":"bar", "d":[1,"2","three"]}
+{
+  "a": "foo",
+  "b": true,
+  "x": 1,
+  "y": 2.34,
+  "c": "bar",
+  "d": [
+    1,
+    "2",
+    "three"
+  ]
+}
 ```
+
 As shown in this example, values passed as arguments can be a valid JSON formatted string, or they will be treated as a normal string.
 
 
 #### Running SQL queries
 `deepdive sql` command runs a SQL query against the underlying database for the current DeepDive app, and outputs the result in tab-separated format.
-Currently, only Postgres/Greenplum is supported (a thin wrapper for `psql -c "COPY ... TO STDOUT"`), and the DeepDive app must keep the database credentials in `db.url` at its root.
 
 
 #### Including CSV/TSV data in HTML or Markdown
@@ -408,7 +430,7 @@ Currently, only Postgres/Greenplum is supported (a thin wrapper for `psql -c "CO
 For example, the following executable document runs a SQL query to retrieve 10 sample candidates and presents a table.
 Note the extra `CSV HEADER` arguments to `deepdive sql` for producing a CSV format compatible with this command.
 
-```
+```markdown
 <!-- README.md.in -->
 
 ##### 10 Most Frequent Candidates
@@ -446,10 +468,12 @@ Here are the 10 most frequent candidates extracted by DeepDive:
 `report-warn` will start the message with a `WARNING:` sign to make it stand out.
 
 The following command will print the next two lines below:
+
 ```bash
 report-log "Computing something..."
 report-warn "Something went wrong!"
 ```
+
 ```
 2015-02-21 06:28:12 localhost   Computing something...
 2015-02-21 06:28:13 localhost   WARNING: Something went wrong!
@@ -459,7 +483,7 @@ report-warn "Something went wrong!"
 
 The `<chart>` tag can be used to display a chart (rendered using [Highcharts](http://www.highcharts.com/))  within a custom report template. The attribute values for the `<chart>` tag are outlined below:
 
-```
+```html
 <chart
         highcharts-options="{}"  # Optional highcharts configurations
         data-file="FILE"         # JSON data file from which to render the chart
@@ -474,17 +498,57 @@ The `<chart>` tag can be used to display a chart (rendered using [Highcharts](ht
 
 Either the `data-file` or `data` attribute must be specified, but not both. The format of the JSON data can be in either row-major or column-major order, e.g.:
 
-```
-# Row-major order
-{ "headers": ["num_candidates", "num_features"], "data": [[1, 3], [2, 5], [3, 10], [4, 54]] }
+* Row-major order
 
-# Column-major order
-{ "num_candidates": [1, 2, 3, 4], "num_features": [3, 5, 10, 54] }
-```
+    ```json
+    {
+      "headers": [
+        "num_candidates",
+        "num_features"
+      ],
+      "data": [
+        [
+          1,
+          3
+        ],
+        [
+          2,
+          5
+        ],
+        [
+          3,
+          10
+        ],
+        [
+          4,
+          54
+        ]
+      ]
+    }
+    ```
+
+* Column-major order
+
+    ```json
+    {
+      "num_candidates": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "num_features": [
+        3,
+        5,
+        10,
+        54
+      ]
+    }
+    ```
 
 An example use of the `<chart>` tag is given below:
 
-```
+```html
 <chart
         highcharts-options="{ chart: { width: 500, height: 400 }, title: { text: 'Candidates vs. Features' } }"
         data-file="candidates_features_data"

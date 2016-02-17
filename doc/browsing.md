@@ -1,9 +1,9 @@
 ---
 layout: default
-title: Browsing DeepDive Data
+title: Browsing DeepDive data with Mindbender
 ---
 
-# Browsing DeepDive Data
+# Browsing DeepDive data with Mindbender
 
 This document describes how one can easily bring up an interactive search interface to browse data produced by DeepDive as well as its input/source data.
 Your DeepDive application must be written in DDlog to be able to use this functionality.
@@ -69,7 +69,7 @@ DeepDive applications written in DDlog typically use multiple relations falling 
 1. Relation that holds source (input) data
     * text corpus with NLP markups
     * dictionaries, controlled vocabularies
-    * ontologies, KBs, known relationships
+    * ontologies, knowledge bases, known relationships
 2. Relation that holds extractions
     * candidates
     * mentions, relationship mentions, entity links

@@ -1,12 +1,12 @@
 ---
 layout: default
-title: Labeling Data Products
+title: Labeling DeepDive data with Mindtagger
 ---
 
-# Labeling Data Products of DeepDive
+# Labeling DeepDive data with Mindtagger
 
 This document describes a common data labeling task one has to perform while developing DeepDive applications, and introduces a graphical user interface tool dedicated for accelerating such tasks.
-We use the expressions annotating, marking, and tagging data interchangably with labeling the data.
+We use the expressions annotating, marking, and tagging data interchangeably with labeling the data.
 
 To assess the performance of the DeepDive application, one typically measures the quality of its data products by computing the precision and recall.
 Let's define some terms before we move on.
