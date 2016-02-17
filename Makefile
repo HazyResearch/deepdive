@@ -86,7 +86,7 @@ src/dstruct/factor_graph/factor_graph.cpp src/gibbs.cpp src/app/gibbs/gibbs_samp
 dep:
 	# gtest for tests
 	cd lib;\
-	unzip gtest-1.7.0.zip;\
+	unzip -o gtest-1.7.0.zip;\
 	mkdir gtest;\
 	cd gtest;\
 	cmake ../gtest-1.7.0;\
