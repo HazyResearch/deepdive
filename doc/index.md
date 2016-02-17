@@ -149,7 +149,7 @@ and
 -->
 
 <!-- Toy Examples -->
-- [Cancer/Smoke/Friends inference: a classical toy example for MLNs](example-smoke.md) <todo/>
+- [Cancer/Smoke/Friends: a classical toy example for MLNs](example-smoke.md)
 - [Text chunking with Multinomial](example-chunking.md)
 
 

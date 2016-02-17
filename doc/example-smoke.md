@@ -1,91 +1,71 @@
 ---
 layout: default
-title: "Tutorial: Simple DeepDive Example"
+title: "Cancer/Smoke/Friends: a classical toy example for MLNs"
 ---
 
-<br><todo>
+# Cancer/Smoke/Friends: a classical example for MLNs
 
-- Modernize the example code
-- and migrate content from examples/smoke/README.md
+This simple DeepDive example is based on a classical *Markov Logic Networks* example to show probabilistic inference and factor graphs functionalities of DeepDive.
+You can read more about [probabilistic inference and factor graphs](inference.md) in our detailed documentation.
 
-</todo>
+### Inference rules
 
-#Simple DeepDive Example: Cancer/Smoke/Friends Example
-
-This simple toy example uses a classical Markov Logic Network example to show probabilistic interence and factor graphs functionalities of DeepDive. You can read more about [probabilistic inference and factor graphs](http://deepdive.stanford.edu/doc/general/inference.html) in our detailed documentation.
-
-###Inference rules
-
-The objectives in this example are to infer whether a person smokes, and whether a person has cancer with a some probability using the factor function `imply(A,B)`. Here, `imply(A,B)` means that if `A` is true, then `B` is also true.
+The objectives in this example are to infer whether a person smokes, and whether a person has cancer with a some probability using the factor `A => B`.
+Here, `A => B` reads "`A` implies `B`", meaning that if `A` is true, then `B` is also true.
 
 We introduce two rules:
-        1. If person A smokes, then A might have a cancer.
-        2. If two people A and B are friends and A smokes, then B might also smoke.
 
-The following are examples of inference rules for the two forementioned rules (specified in the deepdive.conf file):
+1. If person A smokes, then A might have a cancer.
 
-<todo>ddlog</todo>
+2. If two people A and B are friends and A smokes, then B might also smoke.
 
-```bash
-deepdive {
-        inference.factors {
-                # rule number 1
-                smokes_cancer {
-                        input_query: """
-                                SELECT person_has_cancer.id as "person_has_cancer.id",
-                                       person_smokes.id as "person_smokes.id",
-                                       person_smokes.smokes as "person_smokes.smokes",
-                                       person_has_cancer.has_cancer as "person_has_cancer.has_cancer"
-                                  FROM person_has_cancer, person_smokes
-                                 WHERE person_has_cancer.person_id = person_smokes.person_id
-                        """
-                        function: "Imply(person_smokes.smokes, person_has_cancer.has_cancer)"
-                        weight: 0.5
-                }
+These rules can be written in DDlog as follows (in the [`app.ddlog` file](../examples/smoke/app.ddlog)):
 
-                # rule number 2
-                friends_smoke {
-                        input_query: """
-                                SELECT p1.id AS "person_smokes.p1.id",
-                                       p2.id AS "person_smokes.p2.id",
-                                       p1.smokes AS "person_smokes.p1.smokes",
-                                       p2.smokes AS "person_smokes.p2.smokes"
-                                  FROM friends INNER JOIN person_smokes AS p1
-                                   ON (friends.person_id = p1.person_id) INNER JOIN person_smokes AS p2
-                                   ON (friends.friend_id = p2.person_id)
-                        """
-                        function: "Imply(person_smokes.p1.smokes, person_smokes.p2.smokes)"
-                        weight: 0.4
-                }
-        }
-}
-
+```ddlog
+{% include examples/smoke/app.ddlog %}
 ```
-### <a name="Setting Up" href="#"></a> Setting Up
 
-Before running the example, please check that DeepDive has been properly [installed](http://deepdive.stanford.edu/doc/basics/installation.html) and the necessary files (app.ddlog, db.url, and deepdive.conf) and directory (input/) that are associated with this example are stored in the current working directory. Input directory should have data files (friends.tsv, person_has_cancer.tsv, person_smokes.tsv, and person.tsv). In order to use DeepDive a database instance must be running to accept requests, and the database location must be specified in the db.url. You can refer to the detailed [tutorial](example-spouse.md) to setup the environemnt.
 
-### <a name="Running" href="#"></a> Running
+### Setup
+
+Before running the example, please check that DeepDive has been properly [installed](installation.md) and the [necessary files (`app.ddlog`, `db.url`, and deepdive.conf) and directories (input/)](deepdiveapp.md) associated with this example are stored in the current working directory.
+Input directory should have [the data files (`friends.tsv`, `person_has_cancer.tsv`, `person_smokes.tsv`, and `person.tsv`)](../examples/smoke/input/).
+In order to use DeepDive, a database instance must be running to accept requests, and the database location must be specified in the `db.url`.
+You can refer to the [tutorial](example-spouse.md) for further detail.
+
+
+
+### Running
 
 Now you are ready to run the example. First, you have to compile the code using the following command.
+
 ```bash
 deepdive compile
 ```
+
 Once it has compiled with no error, you can run the following command to see the list of deepdive targets.
+
 ```bash
 deedive do
 ```
+
 To run the entire pipeline you can run the following command.
+
 ```bash
 deepdive run
 ```
-This will display a plan for deepdive to run your pipeline. To start the pipeline, exit the editor with *:wq* command.
 
-### <a name="Results" href="#"></a> Results
+This will display a plan for deepdive to run your pipeline.
+To start the pipeline, exit the editor with `:wq` command.
 
-Once the pipeline has completed running, you can view the results in the database using sql or ddlog command. The entire database should look like this:
 
-```bash
+
+### Results
+
+Once the pipeline has completed running, you can view the results in the database using SQL or DDlog queries.
+The entire database should look like this:
+
+```
                                             List of relations
  Schema |                         Name                         | Type  | Owner |    Size    | Description
 --------+------------------------------------------------------+-------+-------+------------+-------------
@@ -107,10 +87,16 @@ Once the pipeline has completed running, you can view the results in the databas
  public | person_smokes_label_inference                        | view  | user | 0 bytes    |
 (16 rows)
 ```
-Tables person, friends, person_has_cancer, and person_smokes told the input data we specified in the input/ directory. To see what DeepDive infered from our data you can look at person_smokes_label_inference and  person_has_cancer_label_inference. The two views should look like the following:
+
+Tables `person`, `friends`, `person_has_cancer`, and `person_smokes` hold the input data we prepared under the `input/` directory.
+To see what DeepDive inferred from our data, you can look at `person_smokes_label_inference` and `person_has_cancer_label_inference`.
+The two views should look like the following:
 
 ```bash
-#person_smokes_label_inference
+deepdive sql "SELECT * FROM person_smokes_label_inference"
+```
+
+```
  person_id | id | label | category | expectation
 -----------+----+-------+----------+-------------
          4 |  9 |       |        1 |       0.643
@@ -119,7 +105,13 @@ Tables person, friends, person_has_cancer, and person_smokes told the input data
          5 | 10 |       |        1 |       0.451
 (4 rows)
 
-#person_has_cancer_label_inference
+```
+
+```bash
+deepdive sql "SELECT * FROM person_has_cancer_label_inference"
+```
+
+```
  person_id | id | label | category | expectation
 -----------+----+-------+----------+-------------
          3 |  2 |       |        1 |       0.635
@@ -129,8 +121,8 @@ Tables person, friends, person_has_cancer, and person_smokes told the input data
          4 |  3 |       |        1 |       0.563
          5 |  4 |       |        1 |       0.551
 (6 rows)
+
 ```
 
-The `id` column is for internal usage and can be ignored by the user and `person_id` is the user defined ID in the input data. You can see that DeepDive uses the given data and inference rules to predict whether a person smokes and whether a person has cancer with some expectation.
-
-
+The `id` column is for internal usage and can be ignored by the user and `person_id` is the user defined identifier in the input data.
+You can see that DeepDive uses the given data and inference rules to predict whether a person smokes and whether a person has cancer with some expectation.
