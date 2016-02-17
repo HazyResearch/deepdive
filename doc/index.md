@@ -127,7 +127,7 @@ and
     - [Learning and inference with the statistical model](ops-model.md)
 - Debugging a DeepDive Application
     - [Debugging user-defined functions](debugging-udf.md)
-    - [Calibration](calibration.md) <todo/>
+    - [Calibration](calibration.md)
     - [Monitoring descriptive statistics of data](dashboard.md) <todo/>
     - [Browsing data](browsing.md)
     - [Labeling data products](labeling.md)
