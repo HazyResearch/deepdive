@@ -11,7 +11,7 @@ DeepDive provides several commands to streamline operations on the statistical m
 
 ## Getting the inference result
 
-To simply get the inference results, i.e., the marginal probabilities of the [random variables defined in DDlog](writing-model-ddlog.md) <todo> link to section </todo>, use the following command:
+To simply get the inference results, i.e., the marginal probabilities of the [random variables defined in DDlog](writing-model-ddlog.md#variable-declarations), use the following command:
 
 ```bash
 deepdive do probabilities
@@ -73,7 +73,7 @@ The next several sections describe further detail about the different operations
 
 ## Grounding the factor graph
 
-The [inference rules written in DDlog](writing-model-ddlog.md) give rise to a data structure called *factor graph* DeepDive uses to perform statistical inference.
+The [inference rules written in DDlog](writing-model-ddlog.md#inference-rules) give rise to a data structure called *factor graph* DeepDive uses to perform statistical inference.
 *Grounding* is the process of materializing the factor graph as a set of files by laying down all of its [variables and factors in a particular format](factor_graph_schema.md).
 This process can be performed using the following command:
 
@@ -122,7 +122,7 @@ run/model/grounding/variable_count
 
 ## Learning the weights
 
-DeepDive learns the weights of the grounded factor graph, i.e., estimates the maximum likelihood parameters of the statistical model from the variables that were assigned labels via [distant supervision rules written in DDlog](writing-model-ddlog.md).<todo> link to section </todo>
+DeepDive learns the weights of the grounded factor graph, i.e., estimates the maximum likelihood parameters of the statistical model from the variables that were assigned labels via [distant supervision rules written in DDlog](writing-model-ddlog.md#scoping-and-supervision-rules).
 DimmWitted inference engine uses *Gibbs sampling* with *stochastic gradient descent* to learn the weights.
 
 The following command performs learning using the grounded factor graph (or grounds a new factor graph if needed):

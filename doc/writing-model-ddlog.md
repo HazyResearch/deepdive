@@ -82,8 +82,8 @@ Again, these rules extend the syntax for normal derivation rules and allows the 
 FACTOR_HEAD :- RULE_BODY.
 ```
 
-Here, `RULE_BODY` is the typical conjunctive query also used for normal derivation rules in DDlog.
-The `FACTOR_HEAD` is the part where more than one variable relations can appear with a special syntax.
+Here, *RULE_BODY* denotes the typical conjunctive query also used for normal derivation rules in DDlog.
+*FACTOR_HEAD* denotes the part where more than one variable relations can appear with a special syntax.
 Let's first look at the simplest case of describing one variable in the inference rule's head.
 
 
@@ -111,8 +111,8 @@ This rule means that:
 ### Specifying correlations
 
 Now, in almost every problem, the variables are correlated with each other in a special way, and it is desirable to enrich the model with this domain knowledge.
-This is done by creating certain types of factors that connect to those correlated variables, and this is where the special syntax comes into play.
-DDlog syntax borrows heavily from Markov Logic Networks and first-order logic.
+Such correlations can be modeled by creating certain types of factors that connect to those correlated variables, and this is where a richer syntax in the *FACTOR_HEAD* comes into play.
+DDlog borrows a lot of syntax heavily from [Markov Logic Networks](https://en.wikipedia.org/wiki/Markov_logic_network) and hence [first-order logic](https://en.wikipedia.org/wiki/First-order_logic).
 
 For example, the following rule in [the smoke example](example-smoke.md) correlates two variable relations.
 
@@ -130,27 +130,27 @@ Here, a constant `3` is used in the `@weight` to express some level of confidenc
 [Logical implication or consequence](http://en.wikipedia.org/wiki/Truth_table#Logical_implication) of two or more variables can be expressed using the following syntax.
 
 ```ddlog
-@weight(...)  P(x) => Q(y)             :- RULE_BODY.
-@weight(...)  P(x), Q(y) => R(z)       :- RULE_BODY.
-@weight(...)  P(x), Q(y), R(z) => S(k) :- RULE_BODY.
+@weight(...)  P(x) => Q(y)              :- RULE_BODY.
+@weight(...)  P(x), Q(y) => R(z)        :- RULE_BODY.
+@weight(...)  P(x), Q(y), R(z) => S(k)  :- RULE_BODY.
 ```
 
 #### Disjunction
 
-[Logical disjunction](http://en.wikipedia.org/wiki/Truth_table#Logical_disjunction) of two or more variables can be expressed using the following syntax.
+[Logical disjunction](http://en.wikipedia.org/wiki/Truth_table#Logical_disjunction_.28OR.29) of two or more variables can be expressed using the following syntax.
 
 ```ddlog
-@weight(...)  P(x) v Q(y)        :- RULE_BODY.
-@weight(...)  P(x) v Q(y) v R(z) :- RULE_BODY.
+@weight(...)  P(x) v Q(y)         :- RULE_BODY.
+@weight(...)  P(x) v Q(y) v R(z)  :- RULE_BODY.
 ```
 
 #### Conjunction
 
-[Logical conjunction](http://en.wikipedia.org/wiki/Truth_table#Logical_disjunction) of two or more variables can be expressed using the following syntax.
+[Logical conjunction](http://en.wikipedia.org/wiki/Truth_table#Logical_conjunction_.28AND.29) of two or more variables can be expressed using the following syntax.
 
 ```ddlog
-@weight(...)  P(x) ^ Q(y)        :- RULE_BODY.
-@weight(...)  P(x) ^ Q(y) ^ R(z) :- RULE_BODY.
+@weight(...)  P(x) ^ Q(y)         :- RULE_BODY.
+@weight(...)  P(x) ^ Q(y) ^ R(z)  :- RULE_BODY.
 ```
 
 #### Equality
@@ -158,72 +158,74 @@ Here, a constant `3` is used in the `@weight` to express some level of confidenc
 [Logical equality](http://en.wikipedia.org/wiki/Truth_table#Logical_equality) of two variables can be expressed using the following syntax.
 
 ```ddlog
-@weight(...)  P(x) = Q(y) :- RULE_BODY.
+@weight(...)  P(x) = Q(y)  :- RULE_BODY.
 ```
 
 #### Negation
 
-Whenever a correlation is expressing a Boolean variable to be false (also referred to as a *negated literal*), then it can be negated using a preceding `!` as shown below.
+Whenever a rule has to refer to a case when the Boolean variable is false (also referred to as a [*negative literal*](https://en.wikipedia.org/wiki/Literal_(mathematical_logic))), then it can be negated using a preceding `!` as shown below.
 
 ```ddlog
-@weight(...)    P(x) => ! Q(x) :- RULE_BODY.
-@weight(...)  ! P(x) v  ! Q(x) :- RULE_BODY.
+@weight(...)    P(x) => ! Q(x)  :- RULE_BODY.
+@weight(...)  ! P(x) v  ! Q(x)  :- RULE_BODY.
 ```
-
-----
-----
-----
-
-<todo>finish below</todo>
 
 #### Multinomial factors
 
-The factor function for multinomial is `Multinomial`. It takes multinomial
-variables as arguments, and is equivalent to having indicator functions for each
-combination of variable assignments.
+DeepDive has limited support for expressing correlations of categorical variables.
+The introduced syntax above can be used only for expressing correlations between Boolean variables.
+For categorical variables, DeepDive only allows the conjunction of the variables each taking a certain category value being true to be expressed using a special syntax shown below:
 
-For examples, if `a` is a variable taking values 0, 1, 2, and `b` is a variable
-taking values 0, 1. Then, `Multinomial(a, b)` is equivalent to the following
-factors between a and b
 
-    I{a = 0, b = 0}
-    I{a = 0, b = 1}
-    I{a = 1, b = 0}
-    I{a = 1, b = 1}
-    I{a = 2, b = 0}
-    I{a = 2, b = 1}
+```ddlog
+@weight(...)  Multinomial( P(x), Q(y) )        :- RULE_BODY.
+@weight(...)  Multinomial( P(x), Q(y), R(z) )  :- RULE_BODY.
+```
 
-Note that each of the factor above has a corresponding weight, i.e., we have one
-weight for each possible assignment of variables in the multinomial factor.
+`Multinomial` takes only categorical variables as arguments<sup>*</sup>, and it can be thought as a compact representation of an equivalent model with Boolean variables corresponding to each category connected by a conjunction factor for every combination of category assignments.
 
-We include a typical usage example of multinomial variables in the chunking example under `examples/chunking`.
-A walkthrough this example, detailing how to specify Conditional Random Fields and perform Multi-class Logistic Regression is available [here](example-chunking.md).
+For example, suppose `a` is a variable taking values 0, 1, 2, and `b` is a variable taking values 0, 1.
+Then, `Multinomial(a, b)` is equivalent to having factors between `a` and `b` that correspond to the following indicator functions.
 
+* I{`a` = 0, `b` = 0}
+* I{`a` = 0, `b` = 1}
+* I{`a` = 1, `b` = 0}
+* I{`a` = 1, `b` = 1}
+* I{`a` = 2, `b` = 0}
+* I{`a` = 2, `b` = 1}
+
+Note that each of the factors above has a distinct weight, i.e., one weight for each possible assignment of variables in the `Multinomial` factor.
+For more detail on how to specify Conditional Random Fields and perform Multi-class Logistic Regression using multinomial factor, see [the chunking example](example-chunking.md).
+
+<sup>*</sup> Because of this limitation, categorical variables and multinomial factor support is likely to go away in a near future release, in favor of a more flexible way to express multi-class predictions and mutual exclusions.
+<todo> Emulate categorical variables with functional dependencies in the Boolean variable columns, i.e., `tag?(@key word_id BIGINT, pos TEXT)` rather than `tag?(word_id BIGINT) Categorical(N)`, and replace `Multinomial` factor with conjunction of those Boolean variables with columns having functional dependencies.</todo>
 
 ### Specifying weights
 
-The **factor weight** describes the confidence in the relationship expressed by the factor.
-This is used during probabilistic inference.
-Weights can be constants, or automatically learned based on training data.
+Each factor is assigned a *weight*, which represents the confidence in the correlation it expresses in the model.
+During [statistical inference](inference.md), these weights translate into their potentials that influence the probabilities of the connected variables.
+Factor weights are real numbers and only the relative magnitude to each other matters.
+Factors with larger weights have a greater impact on the connected variables than factors with smaller weights.
+Weights can be fixed to a constant manually, or [they can be learned by DeepDive](ops-model.md#learning-the-weights) from the supervision labels at different granularity.
+Weights can be parameterized by some data originating from the data (in most time referred to as *features*), in which case factors with different parameter values will use different weights.
+In order to learn weights automatically, there must be [enough training data available](relation_extraction.md).
 
-Each factor is assigned a *weight*, which expresses the confidence in the relationship it express.
-In the probabilistic inference steps, factors with large weights have a greater impact on variables than factors with small weights.
-Factor weights are real numbers, and are relative to each other.
-You can assign factor weights manually, or you can let DeepDive learn weights automatically.
-In order to learn weights automatically, you must have enough [training data](relation_extraction.md) available.
-The weight can also be a function of variables, in which case each factor will get a different weight depending on the variable value.
+DDlog syntax for specifying weights for three different cases are shown below.
 
-```hocon
-# Known weight (10 can be treated as positive infinite)
-someFactor.weight: 10
+```ddlog
+Q?(x TEXT).
+data(x TEXT, y TEXT).
 
-# Learn the weight, not depending on any variables. All factors created by this rule will have the same weight.
-someFactor.weight: ?
+# Fixed weight (10 can be treated as positive infinite)
+@weight(10)   Q(x) :- data(x, y).
 
-# Learn the weight. Each factor will get a different weight depending on the value of people.gender
-someFactor.weight: ?(people.gender)
+# Unknown weight, to be learned from the data, but not depending on any variable.
+# All factors created by this rule will have the same weight.
+@weight("?")  Q(x) :- data(x, y).
+
+# Unknown weight, each to be learned from the data per different values of y.
+@weight(y)    Q(x) :- data(x, y).
 ```
-
 
 
 
