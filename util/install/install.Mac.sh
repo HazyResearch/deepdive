@@ -11,8 +11,11 @@ install__deepdive_build_deps() {
     javac -version
     xcode-select --install || true
     has git     || brew install git
-    has unzip   || brew install unzip
+    # coreutils, etc., GNU
     has xz      || brew install xz
+    # sampler build dependencies
+    has unzip   || brew install unzip
+    has cmake   || brew install cmake
 }
 
 install__deepdive_runtime_deps() {
