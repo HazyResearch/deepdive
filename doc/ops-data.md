@@ -104,7 +104,7 @@ This will unload partitions of the rows of relation *bar* to the given sinks in 
 
 ## Running queries against the database
 
-### Running queries in ddlog
+### Running queries in DDlog
 
 It is possible to write simple queries against the database in DDlog and run them using the `deepdive query` command.
 A DDlog query begins with an optional list of expressions, followed by a separator `?-`, then a typical body of a conjunctive query in DDlog.
@@ -167,7 +167,7 @@ deepdive query '
     '
 ```
 
-`@order_by` takes two arguments: 1) `dir` parameter taking either the "ASC" or "DESC" for ascending (default) or descending order and 2) `priority` parameter taking a number for deciding the priority for ordering when there are multiple `@order_by` expressions (smaller the higher priority).
+`@order_by` takes two arguments: 1) `dir` parameter taking either the "ASC" or `"DESC"` for ascending (default) or descending order and 2) `priority` parameter taking a number for deciding the priority for ordering when there are multiple `@order_by` expressions (smaller the higher priority).
 For example, `@order_by("DESC", -1)`, `@order_by("DESC")`, `@order_by(priority=-1)` are all recognized.
 
 

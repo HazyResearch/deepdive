@@ -42,21 +42,18 @@ postgresql://user:password@localhost:5432/database_name?ssl=true&sslfactory=org.
 
 ## input/
 
-Any data to be processed by this application is suggested to be kept under this directory.
-<todo>xref</todo>
+Any [data to be processed by this application](ops-data.md#organizing-input-data) is suggested to be kept under this directory.
 
 ## udf/
 
-Any user-defined function (UDF) code is suggested to be kept under this directory.
+Any [user-defined function (UDF) code](writing-udf-python.md) is suggested to be kept under this directory.
 They can be referenced from deepdive.conf with path names relative to the application root.
-<todo>xref</todo>
 
 ## run/
 
-<todo>xref</todo>
-Each run of the DeepDive application has a corresponding subdirectory under this directory whose name contains the timestamp when the run was started, e.g., `run/20150618/223344.567890/`.
+Each [run/execution of the DeepDive application](ops-execution.md) has a corresponding subdirectory under this directory whose name contains the timestamp when the run was started, e.g., `run/20150618/223344.567890/`.
 All output and log files that belong to the run are kept under that subdirectory.
-There are a few symbolic links with mnemonic names to the most recently started run, last successful run, last failed run for handy access.
+There are a few symbolic links with mnemonic names to the most recently started run (`run/LATEST`), last successful run (`run/FINISHED`), last failed run (`run/ABORTED`) for handy access.
 
 ----
 

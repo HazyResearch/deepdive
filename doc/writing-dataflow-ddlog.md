@@ -89,8 +89,6 @@ DDlog's semantics is based on unification of variables and expressions, i.e., va
 #### Examples
 A comprehensive example of expressions is shown below.
 
-<todo>cover all cases of expressions</todo>
-
 ```ddlog
 a(k int).
 b(k int, p text, q text, r int).
@@ -100,6 +98,8 @@ Q("test", f(123), id) :- a(id), b(id, x,y,z), c(x || y,10,"foo").
 ```
 
 Here tuples of string literal "text", a function `f` applied to 123, and `id` bound by the body of the rule are added to relation `Q`.
+
+<todo>cover all cases of expressions</todo>
 
 <!--
 The repeated use of variables in the body expresses the following conditions expressed in SQL:
@@ -147,8 +147,6 @@ Unary operators
 
 * Negative sign `-`
 * Negation of boolean values `!`
-
-<todo>check with ddlog grammar</todo>
 
 Expressions can be arbitrarily nested, and parentheses can surround them <code>(*expr*)</code> to make the operator association clear.
 

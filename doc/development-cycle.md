@@ -9,7 +9,6 @@ All successful DeepDive applications that achieve high quality are never develop
 A basic version is first written that gives relatively poor result, then it is **improved iteratively** through a series of *error analysis* and debugging.
 DeepDive provides a suite of tools that aim to keep each development iteration as quick and easy as possible.
 
-<todo>add more links to relevant doc pages and papers</todo>
 
 ## 1. Write
 
