@@ -7,15 +7,10 @@ title: "Tutorial: Extracting mentions of spouses from the news"
 
 In this tutorial, we show an example of a prototypical task that DeepDive is often applied to:
 extraction of _structured information_ from _unstructured or 'dark' data_ such as web pages, text documents, images, etc.
-While DeepDive can be used as a more general platform for statistical learning and data processing,
-most of the tooling described herein has been built for this type of use case,
-based on our experience successfully applying DeepDive to [a variety of real-world problems of this type](http://deepdive.stanford.edu/doc/showcase/apps.html).
+While DeepDive can be used as a more general platform for statistical learning and data processing, most of the tooling described herein has been built for this type of use case, based on our experience successfully applying DeepDive to [a variety of real-world problems of this type](showcase/apps.md).
 
-In this setting, our goal is to take in a set of unstructured (and/or structured) inputs,
-and populate a relation database table with extracted outputs,
-along with marginal probabilities for each extraction representing DeepDive's confidence in the extraction.
-More formally, we write a DeepDive application to extract mentions of _relations_ and their constituent _entities_ or _attributes_, according to a specified schema;
-this task is often referred to as **_relation extraction_**.*
+In this setting, our goal is to take in a set of unstructured (and/or structured) inputs, and populate a relation database table with extracted outputs, along with marginal probabilities for each extraction representing DeepDive's confidence in the extraction.
+More formally, we write a DeepDive application to extract mentions of _relations_ and their constituent _entities_ or _attributes_, according to a specified schema; this task is often referred to as **_relation extraction_**.*
 Accordingly, we'll walk through an example scenario where we wish to extract mentions of two people being spouses from news articles.
 
 The high-level steps we'll follow are:
@@ -31,16 +26,17 @@ The high-level steps we'll follow are:
 *_Note the distinction between extraction of facts and mentions of facts. In this tutorial, we do the latter, however DeepDive supports further downstream methods for tackling the former task in a principled manner._
 
 
+Whenever something isn't clear, you can always refer to [the complete example code at `examples/spouse/`](../examples/spouse/) that contains everything shown in this document.
 
 
 
 
 ## 0. Preparation
-First of all, make sure that DeepDive has been [installed](http://deepdive.stanford.edu/doc/basics/installation.html).
+First of all, make sure that [DeepDive has been installed](installation.md).
 
 Next, DeepDive will store all data—input, intermediate, output, etc.—in a relational database;
 currently, Postgres, Greenplum, and MySQL are supported, however Greenplum or Postgres are strongly recommended.
-To set the location of this database, we need to configure a URL in the `db.url` file, e.g.:
+To set the location of this database, we need to configure a URL in the [`db.url` file](../examples/spouse/db.url), e.g.:
 
 ```bash
 echo "postgresql://$USER@$HOSTNAME:5432/deepdive_spouse_$USER" >db.url
@@ -77,7 +73,7 @@ input/articles.tsv.sh
 
 The aforementioned script reads a sample of the corpus (provided as lines of JSON objects), and then using the [jq](https://stedolan.github.io/jq/) language extracts the fields `id` (for document id) and `content` from each entry and converts those to TSV format.
 
-Next, we need to declare the schema of this `articles` table in our `app.ddlog` file; we add the following lines:
+Next, we need to declare the schema of this `articles` table in [our `app.ddlog` file](../examples/spouse/app.ddlog); we add the following lines:
 
 ```ddlog
 articles(
@@ -146,7 +142,7 @@ deepdive query '?- articles(id, _).'
 Next, we'll use Stanford's [CoreNLP](http://stanfordnlp.github.io/CoreNLP/) natural language processing (NLP) system to add useful markups and structure to our input data.
 This step will split up our articles into sentences, and their component _tokens_ (roughly, the words).
 Additionally, we'll also get _lemmas_ (normalized word forms), _part-of-speech (POS) tags_, _named entity recognition (NER) tags_, and a dependency parse of the sentence.
-We declare the output schema of this step in our `app.ddlog`:
+We declare the output schema of this step in [our `app.ddlog`](../examples/spouse/app.ddlog):
 
 ```ddlog
 sentences(
@@ -168,7 +164,7 @@ Note that we declare a compound key of `(doc_id, sentence_index)` for each sente
 -->
 
 Next we declare a DDlog function which takes in the `doc_id` and `content` for an article, and returns rows conforming to the sentences schema we just declared, using the **user-defined function (UDF)** in `udf/nlp_markup.sh`.
-This UDF is a bash script which calls a [wrapper](https://github.com/HazyResearch/bazaar/tree/master/parser) around CoreNLP.
+This UDF is a Bash script which calls [our own wrapper around CoreNLP](https://github.com/HazyResearch/bazaar/tree/master/parser).
 
 ```ddlog
 function nlp_markup over (
@@ -262,10 +258,10 @@ function map_person_mention over (
     implementation "udf/map_person_mention.py" handles tsv lines.
 ```
 
-We'll write a simple UDF in Python that will tag spans of contiguous tokens with the NER tag "PERSON" as person mentions (i.e., we'll essentially rely on CoreNLP's NER module).
-Note that we've already used a bash script as a UDF, and indeed any programming language can be used (DeepDive will just check the path specified in the top line, e.g., `#!/usr/bin/env python`)/
+We'll write a simple UDF in Python that will tag spans of contiguous tokens with the NER tag `PERSON` as person mentions (i.e., we'll essentially rely on CoreNLP's NER module).
+Note that we've already used a bash script as a UDF, and indeed any programming language can be used (DeepDive will just check the path specified in the top line, e.g., `#!/usr/bin/env python`).
 However DeepDive provides some convenient utilities for Python UDFs which handle all IO encoding/decoding.
-To write our UDF, we'll start by specifying that our UDF will handle TSV lines (as specified in the DDlog above);
+To write our UDF ([`udf/map_person_mention.py`](../examples/spouse/udf/map_person_mention.py)), we'll start by specifying that our UDF will handle TSV lines (as specified in the DDlog above);
 additionally we'll specify the exact type schema of both input and output, which DeepDive will check for us:
 
 ```python
@@ -331,7 +327,7 @@ deepdive query '
 #### Mentions of spouses (pairs of people)
 Next, we'll take all pairs of **non-overlapping person mentions that co-occur in a sentence with less than 5 people total,** and consider these as the set of potential ('candidate') spouse mentions.
 We thus filter out sentences with large numbers of people for the purposes of this tutorial; however these could be included if desired.
-Again, to start, we declare the schema for our `spouse_candidate` table—here just the two names, and the two person_mention IDs referred to:
+Again, to start, we declare the schema for our `spouse_candidate` table—here just the two names, and the two `person_mention` IDs referred to:
 
 ```ddlog
 spouse_candidate(
@@ -415,10 +411,11 @@ spouse_feature(
 
 The goal here is to represent each spouse candidate mention by a set of attributes or **_features_** which capture at least the key aspects of the mention, and then let a machine learning model learn how much each feature is correlated with our decision variable ('is this a spouse mention?').
 For those who have worked with machine learning systems before, note that we are using a sparse storage representation-
-you could think of a spouse candidate `(p1_id, p2_id)` as being represented by a vector of length `L = count(distinct(feature))`, consisting of all zeros except for at the indexes specified by the rows with key `(p1_id, p2_id)`.
+you could think of a spouse candidate `(p1_id, p2_id)` as being represented by a vector of length `L = COUNT(DISTINCT feature)`, consisting of all zeros except for at the indexes specified by the rows with key `(p1_id, p2_id)`.
 
-DeepDive includes an automatic feature generation library, DDlib, which we will use here.
-Although many state-of-the-art [applications](http://deepdive.stanford.edu/doc/showcase/apps.html) have been built using purely DDlib-generated features, others can be used and/or added as well.  To use DDlib, we create a list of `ddlib.Word` objects, two `ddlib.Span` objects, and then use the function `get_generic_features_relation`:
+DeepDive includes an [automatic feature generation library, DDlib](gen_feats.md), which we will use here.
+Although many state-of-the-art [applications](showcase/apps.md) have been built using purely DDlib-generated features, others can be used and/or added as well.
+To use DDlib, we create a list of `ddlib.Word` objects, two `ddlib.Span` objects, and then use the function `get_generic_features_relation`, as shown in the following Python code for [`udf/extract_spouse_features.py`](../examples/spouse/udf/extract_spouse_features.py):
 
 ```python
 {% include examples/spouse/udf/extract_spouse_features.py %}
@@ -546,16 +543,20 @@ FROM (SELECT t1_name as p1, t2_name as p2 FROM [dbpedia.spouseraw]),
 WHERE p1 < p2
 ```
 
-The output of this query was stored in a local file `spousesraw.csv`. The file contained duplicate rows (BigQuery does not support `distinct`) and noisy rows where the name field contained a string where the given name family name and multiple aliases where concatenated and reported in a string including the characters `{` and `}`. Using the Unix commands `sed`, `sort` and `uniq` we first removed the lines containing characters `{` and `}` and then duplicate entries. This resulted in an input file `spouses_dbpedia.csv` containing 6,126 entries of married couples.
+The output of this query was stored in a local file.
+The file contained duplicate rows (BigQuery does not support `distinct`) and noisy rows where the name field contained a string where the given name family name and multiple aliases where concatenated and reported in a string including the characters `{` and `}`.
+Using the Unix commands `sed`, `sort` and `uniq` we first removed the lines containing characters `{` and `}` and then duplicate entries.
+This resulted in an input file `spouses_dbpedia.csv` containing 6,126 entries of married couples.
 
 #### Loading DBpedia data to database
-We compress and store `spouses_dbpedia.csv` under the path:
+We [compress and store `spouses_dbpedia.csv`](../examples/spouse/input/spouses_dbpedia.csv.bz2) under the path:
 
-```bash
+```
 input/spouses_dbpedia.csv.bz2
 ```
 
-Notice that for DeepDive to load the data to the corresponding database table the name of the input data again has to be stored in the directory `input/` and has the same name as the target database table. To load the data we execute the command:
+Notice that for DeepDive to load the data to the corresponding database table the name of the input data again has to be stored in the directory `input/` and has the same name as the target database table.
+To load the data we execute the command:
 
 ```bash
 deepdive do spouses_dbpedia
@@ -655,7 +656,7 @@ spouse_label += supervise(
     ).
 ```
 
-The Python UDF contains several heuristic rules:
+The Python UDF named [`udf/supervise_spouse.py`](../examples/spouse/udf/supervise_spouse.py) contains several heuristic rules:
 
 * Candidates with person mentions that are too far apart in the sentence are marked as false.
 * Candidates with person mentions that have another person in between are marked as false.
@@ -739,7 +740,7 @@ For more advanced users: we are specifying a _factor graph_ where the features a
 ### 3.1. Specifying prediction variables
 In our case, we have one variable to predict per spouse candidate mention, namely, **is this mention actually indicating a spousal relation or not?**
 In other words, we want DeepDive to predict the value of a boolean variable for each spouse candidate mention, indicating whether it is true or not.
-We specify this in `app.ddlog` as follows:
+We specify this in [`app.ddlog`](../examples/spouse/app.ddlog) as follows:
 
 ```ddlog
 has_spouse?(
@@ -906,7 +907,7 @@ has_spouse?(
 ).
 ```
 
-The relation `person_mention` as well as the relations it references should have similar annotations (see the [complete `app.ddlog` code](https://github.com/HazyResearch/deepdive/blob/master/examples/spouse/app.ddlog) for full detail).
+The relation `person_mention` as well as the relations it references should have similar annotations (see the [complete `app.ddlog` code](../examples/spouse/app.ddlog) for full detail).
 
 Then repeating the commands to update the search index and load the user interface will allow us to browse the expected marginal probabilities of `has_spouse` as well.
 
@@ -917,7 +918,7 @@ Then repeating the commands to update the search index and load the user interfa
 
 <!-- TODO describe presentation annotations once it's ready -->
 
-In fact, the screenshots above are showing the data presented using a [carefully prepared set of templates under `mindbender/search-templates/`](https://github.com/HazyResearch/deepdive/tree/master/examples/spouse/mindbender/search-template/).
+In fact, the screenshots above are showing the data presented using a [carefully prepared set of templates under `mindbender/search-templates/`](../examples/spouse/mindbender/search-template/).
 In these AngularJS templates, virtually anything you can program in HTML/CSS/JavaScript/CoffeeScript can be added to present the data that is ideal for human consumption, e.g., highlighted text spans rather than token indexes.
 Please see the [documentation about customizing the presentation](browsing.md#customizing-presentation) for further detail.
 
@@ -929,13 +930,13 @@ Please see the [documentation about customizing the presentation](browsing.md#cu
 
 *Mindtagger*, which is part of the Mindbender tool suite, assists data labeling tags to quickly assess the precision and/or recall of the extraction.
 We show how Mindtagger helps us perform a labeling task to estimate the precision of the extraction.
-The necessary set of files shown below already exist [in the example under `labeling/has_spouse-precision/`](https://github.com/HazyResearch/deepdive/tree/master/examples/spouse/labeling/has_spouse-precision/).
+The necessary set of files shown below already exist [in the example under `labeling/has_spouse-precision/`](../examples/spouse/labeling/has_spouse-precision/).
 
 <!-- TODO describe how a task can be created from the search interface instead, once it's ready -->
 
 #### Preparing a data labeling task
 
-First, we can take a random sample of 100 examples from `has_spouse` relation whose expectation is higher than or equal to a 0.9 threshold, and store them in a file called `has_spouse.csv`.
+First, we can take a random sample of 100 examples from `has_spouse` relation whose expectation is higher than or equal to a 0.9 threshold as shown in [the following SQL query](../examples/spouse/labeling/has_spouse-precision/sample-has_spouse.sql), and store them in [a file called `has_spouse.csv`](../examples/spouse/labeling/has_spouse-precision/has_spouse.csv).
 
 <!-- TODO use deepdive-query instead once it allows the @expectation syntax to grab such field for variable relations -->
 
@@ -945,7 +946,7 @@ deepdive sql eval "
 " format=csv header=1 >labeling/has_spouse-precision/has_spouse.csv
 ```
 
-We also prepare the `mindtagger.conf` and `template.html` files under `labeling/has_spouse-precision/` that look like the following:
+We also prepare the [`mindtagger.conf`](../examples/spouse/labeling/has_spouse-precision/mindtagger.conf) and [`template.html`](../examples/spouse/labeling/has_spouse-precision/template.html) files under [`labeling/has_spouse-precision/`](../examples/spouse/labeling/has_spouse-precision/) that look like the following:
 
 ```hocon
 {% include examples/spouse/labeling/has_spouse-precision/mindtagger.conf %}

@@ -76,7 +76,7 @@ fd868d84-0c8b-4f60-8050-77013669a6d5_18_4_5,fd868d84-0c8b-4f60-8050-77013669a6d5
 ### 1.2. Prepare Mindtagger configuration and template
 
 In order to use these sampled data items with Mindtagger, you need to create two more files that define a task in Mindtagger: a configuration and a template.
-Mindtagger configuration that looks like below should go into the `mindtagger.conf` file.
+Mindtagger configuration that looks like below should go into [the `mindtagger.conf` file](../examples/spouse/labeling/has_spouse-precision/mindtagger.conf).
 You can specify the path to the file holding the data items as well as the column names that are the keys, e.g., as `p1_id` and `p2_id` in this example.
 
 ```hocon
