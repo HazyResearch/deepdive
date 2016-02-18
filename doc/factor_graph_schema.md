@@ -3,7 +3,7 @@ layout: default
 title: Factor Graph Grounding Output Reference
 ---
 
-# Factor Graph Grounding Output Schema Reference
+# Factor graph grounding output schema reference
 
 [Grounding](overview.md#grounding) is the process of building the
 factor graph and dumping it to files that the [sampler](sampler.md)
@@ -57,7 +57,7 @@ comma-separated-values format with the following fields:
     Path to factors file
     Path to edges file
 
-### Incremental Grounding Schema Reference
+### Incremental grounding schema reference
 
 For incremental grouding, the weights, variables, metadata files have the same format as above.
 There are two more files, factors and edges files, with the following format
