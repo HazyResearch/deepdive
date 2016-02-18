@@ -77,7 +77,7 @@ traditional distant supervision doesn't necessarily model mention-level
 relations in that way (which I think is called at-least-once semantics).
  -->
 
-### KBC Data flow
+### KBC data flow
 
 In an typical KBC application, the **input** of the system is a collection of
 raw articles in text format, while  the **output** of the system is a database
