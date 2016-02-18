@@ -82,9 +82,9 @@ The head is the relation being defined, and the body is a conjunction of predica
 In this example, the second column of `R` is *unified* with the first column of `S`, i.e., the body is an *equi-join* between relations `R` and `S`.
 
 ### Expressions
-In the atom columns, not just variables but also expressions can be used.
-Expressions in the head atom decide values for the columns of the head relation, while expressions in the body atom constrain the values of the body columns.
+In the atom columns, both variables and expressions can be used.
 DDlog's semantics is based on unification of variables and expressions, i.e., variables with the same name unify the columns, and expressions in the body unify the values with the corresponding columns.
+More concretely, expressions in the head atom decide values for the columns of the head relation, while expressions in the body atom constrain the values of the body columns.
 
 #### Examples
 A few examples of expressions are shown below.
@@ -269,7 +269,7 @@ body, ..., EXISTS[body, body, ...], body, ...
 body, ...,    ALL[body, body, ...], body, ...
 ```
 
-For the variables used both inside and outside of the quantification, the relations inside the quantifier simply express constraints placed on the variables already bound by some relation outside the quantifier.
+For the variables used both inside and outside of the quantification, the relations inside the quantifier express constraints placed on the variables already bound by some relation outside the quantifier.
 `EXISTS` expresses the constraint for such variables that there must exist a combination of values satisfying the quantified body, while `ALL` means for each combination of values for the variables all possible bindings for other variables within the quantified body must be satisfied.
 This makes it possible to express complex conditions using derived values in relations.
 Here are two example rules using quantifiers:
