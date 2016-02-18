@@ -12,9 +12,9 @@ Currently, the functionality only works with PostgreSQL versions 9.3 or later be
 We plan to lift this limitation soon and support Greenplum/PostgreSQL-XL as well as to grow the underlying [Elasticsearch][] cluster for applications with large data.
 
 
-## Quick Start
+## QuicksStart
 
-### 1. Annotate DDlog Relations
+### 1. Annotate DDlog relations
 First of all, you must add some *annotations* to the DDlog schema declarations of the relations to be browsed.
 Annotations are extra information placed before the relation name or column name in DDlog schema declarations that are written like `@extraction` or `@references(relation="foo", column="bar")`.
 There's [an example of a DDlog program annotated for browsing](https://github.com/HazyResearch/mindbender/blob/master/examples/spouse_example/app.ddlog).
@@ -38,7 +38,7 @@ There's [an example of a DDlog program annotated for browsing](https://github.co
 5. `@navigable` columns and `@searchable` columns are used for faceted navigation.
 
 
-### 2. Populate the Search Index
+### 2. Populate the search index
 Next, the relations to be browsed must be added to the search index, powered by [Elasticsearch][].
 
 [Elasticsearch]: https://www.elastic.co/products/elasticsearch
@@ -63,7 +63,7 @@ Point your browser to <http://localhost:8000/#/search> to start searching and br
 
 ----
 
-## Typical Schema in DDlog/DeepDive
+## Typical schema in DDlog/DeepDive
 DeepDive applications written in DDlog typically use multiple relations falling into one of the following categories:
 
 1. Relation that holds source (input) data
@@ -94,7 +94,7 @@ For example, in the spouse example we use in [DeepDive's tutorial](example-spous
 
 
 
-## DDlog Annotations for Browsing
+## DDlog annotations for browsing
 
 DDlog allows relations and columns in the schema to be annotated with any number of annotations with `@name(arguments)` syntax.
 Arguments are optional, e.g., `@tag` is also a valid annotation.
@@ -153,9 +153,9 @@ A sensible presentation of such array of indexes is highlighting the correspondi
 Similarly, tables, figures, images, and other data types all have a similar issue: extra columns of `@extraction`s typically hold extra detail that can be visualized in data-dependent ways.
 
 
-## Customizing Presentation
+## Customizing presentation
 
-### Presentation Templates
+### Presentation templates
 How a browsable relation is presented in the GUI can be fully customized by creating an HTML-like template under the DeepDive application.
 For example, relation `has_spouse` is rendered using a template at `./mindbender/search-template/has_spouse.html` when it exists.
 It is in fact an [AngularJS template](https://docs.angularjs.org/guide/templates) where the object to be rendered is accessible with scope variable `extraction` or `source`, depending on whether the browsable relation is an extraction or source.
@@ -175,7 +175,7 @@ This is improved as shown below by creating the template above in the applicatio
 
 ![`has_spouse` with a proper Presentation Template](images/browsing_with_presentation_template.png)
 
-### AngularJS Extensions
+### AngularJS extensions
 To define further AngularJS extensions, such as directives or filters to be used in the templates, define a `mindbender.extensions` module in `./mindbender/extensions.coffee` or `./mindbender/extensions.js`.
 This can be very useful if you need to share some template fragments or scripts across many browsable relations.
 
