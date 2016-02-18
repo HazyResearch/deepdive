@@ -148,10 +148,10 @@ Similar to the table `layout_align`, this row defines a bounding box that
 contains a special font.
 
 <a id="deepdive_program" href="#"> </a>
-## DeepDive Program
+## DeepDive program
 
 <a id="feature_extractor" href="#"> </a>
-### Feature Extractors
+### Feature extractors
 
 We illustrate the feature extractors in PaleoDeepDive by two examples.
 First, a simple example that extracts entity-mentions for temporal intervals;
