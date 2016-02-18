@@ -125,4 +125,4 @@ deepdive sql "SELECT * FROM person_has_cancer_label_inference"
 ```
 
 The `id` column is for internal usage and can be ignored by the user and `person_id` is the user defined identifier in the input data.
-You can see that DeepDive uses the given data and inference rules to predict whether a person smokes and whether a person has cancer with some expectation.
+You can see that DeepDive uses the given data and inference rules to predict the probability of the person being a smoker or having cancer in the `expectation` column.
