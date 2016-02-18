@@ -4,12 +4,12 @@ title: Installation Guide
 no_toc: true
 ---
 
-# DeepDive Installation Guide
+# DeepDive installation guide
 
 DeepDive runs on Linux or Mac OS X.
 This document explains how to install DeepDive on your system.
 
-## Quick Installation
+## Quick installation
 
 We provide a simple installation method for the following supported systems:
 
@@ -81,7 +81,7 @@ Congratulations! DeepDive is now installed on your system, and you can proceed t
 
 
 
-## Installing from Source
+## Installing from source
 
 Using the quick installation method is recommended unless you want to use a development branch or modify DeepDive engine itself.
 If you still want to build DeepDive from source code yourself, follow the [developer's guide](developer.md#build-test).
