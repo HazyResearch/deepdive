@@ -61,7 +61,7 @@ demonstration purposes only, the presentation is limited to the single-node mode
 of Greenplum. Everything should work also with the multi-node configuration.
 
 
-### Installation Notes
+### Installation notes
 The following is a list of alternative steps that you may have to take in case
 your environment is more complex than usual.
 
@@ -94,7 +94,7 @@ your environment is more complex than usual.
   the shell opens (or remember to run it).
 
 
-### Setting the Greenplum Recommended OS Parameters
+### Setting the Greenplum recommended OS parameters
 
 Set the following parameters in the `/etc/sysctl.conf` file and reboot:
 
