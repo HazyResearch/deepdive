@@ -1,4 +1,4 @@
-#!/usr/bin/env jq-f
+#!/usr/bin/env jq
 # compile-code-dataflow_dot -- Generates dependency graph of processes in Graphviz DOT language
 ##
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env jq-f
+#!/usr/bin/env jq
 include "../testutil";
 
 TEST("calibration settings"; .deepdive_.calibration;

@@ -1,4 +1,4 @@
-#!/usr/bin/env jq-f
+#!/usr/bin/env jq
 # compile-config-2.02-learning_inference -- Adds processes for performing inference with the grounded factor graph
 ##
 

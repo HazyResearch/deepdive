@@ -1,4 +1,4 @@
-#!/usr/bin/env jq-f
+#!/usr/bin/env jq
 # compile-config-2.03-calibration_plots -- Adds processes for producing calibration plots
 ##
 

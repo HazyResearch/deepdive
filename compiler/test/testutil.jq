@@ -1,4 +1,4 @@
-#!/usr/bin/env jq-f
+#!/usr/bin/env jq
 # Useful jq functions for writing tests with expectations for JSON values
 # Note that EXPECT_*/3 functions are designed to be used as third expectations argument to TEST/3
 

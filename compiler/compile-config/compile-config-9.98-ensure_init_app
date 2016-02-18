@@ -1,4 +1,4 @@
-#!/usr/bin/env jq-f
+#!/usr/bin/env jq
 # compile-config-9.98-ensure_init_app -- Ensures process/init/app precedes all other processes
 ##
 .deepdive_ as $deepdive

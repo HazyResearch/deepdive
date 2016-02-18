@@ -1,4 +1,4 @@
-#!/usr/bin/env jq-f
+#!/usr/bin/env jq
 # compile-config-1.00-qualified_names -- Normalizes config to use qualified names
 #
 # - extractor names are prefixed with process/*

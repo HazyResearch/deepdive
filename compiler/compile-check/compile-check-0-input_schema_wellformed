@@ -1,4 +1,4 @@
-#!/usr/bin/env jq-f
+#!/usr/bin/env jq
 # compile-check-0-input_schema_wellformed -- Checks if schema variables are well formed
 ##
 include "util";

@@ -1,4 +1,4 @@
-#!/usr/bin/env jq-f
+#!/usr/bin/env jq
 # compile-check-1-compiled_output_uniquely_defined -- Checks if all outputs are defined by one process
 # Note that this is not equivalent to limiting every process to create only one output.
 ##

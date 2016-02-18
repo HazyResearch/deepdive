@@ -1,4 +1,4 @@
-#!/usr/bin/env jq-f
+#!/usr/bin/env jq
 # compile-config-0.52-input_loaders -- Adds default data loading processes for base relations
 #
 # - a deepdive-load extractor for relations declared in schema but lacking an extractor that outputs it

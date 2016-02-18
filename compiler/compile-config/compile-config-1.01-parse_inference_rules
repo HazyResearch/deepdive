@@ -1,4 +1,4 @@
-#!/usr/bin/env jq-f
+#!/usr/bin/env jq
 # compile-config-0.02-parse_inference_rules -- Parses inference rules in deepdive.inference.factors
 ##
 include "constants";

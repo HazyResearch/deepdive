@@ -1,4 +1,4 @@
-#!/usr/bin/env jq-f
+#!/usr/bin/env jq
 # constants -- Names to some constant values used across compilation steps
 ##
 

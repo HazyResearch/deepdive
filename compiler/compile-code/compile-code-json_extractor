@@ -1,4 +1,4 @@
-#!/usr/bin/env jq-f
+#!/usr/bin/env jq
 # compile-code-json_extractor -- TODO Compiles json_extractors in the normalized JSON into code executable by the runner
 ##
 .deepdive_ as $deepdive

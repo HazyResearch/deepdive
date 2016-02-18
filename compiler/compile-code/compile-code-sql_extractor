@@ -1,4 +1,4 @@
-#!/usr/bin/env jq-f
+#!/usr/bin/env jq
 # compile-code-sql_extractor -- Compiles sql_extractors in the normalized JSON into code executable by the runner
 ##
 .deepdive_ as $deepdive

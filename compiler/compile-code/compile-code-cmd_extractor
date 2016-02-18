@@ -1,4 +1,4 @@
-#!/usr/bin/env jq-f
+#!/usr/bin/env jq
 # compile-cmd_extractor -- Compiles given cmd_extractors in the normalized JSON into a form executable by DeepDive
 ##
 .deepdive_ as $deepdive
