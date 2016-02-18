@@ -62,7 +62,7 @@ Then, check if we have everything there:
 ls -F
 ```
 ```
-README.md  db.url         input/     mindbender/  udf/	app.ddlog  deepdive.conf  labeling/  
+README.md  db.url         input/     mindbender/  udf/	app.ddlog  deepdive.conf  labeling/
 ```
 
 ### 1. Load input
@@ -85,11 +85,11 @@ Here're a few lines in the middle of an example article in the input corpus that
 deepdive query '?- articles("36349778-9942-475d-bdf2-23b7372911c1", content).' format=csv | tail -n +15 | head -5
 ```
 ```
-How could anybody with a brain have ever supported such a facile, drug-addled ignoramus as Bachman, who recently said the only way to avoid war with Iran is to bomb it? But it happens every election, with homicidal crazies urging war on the world to counter false flag threats that have been cynically engineered by the CIA and Mossad. Thanks to a war-mongering media run by the same money men who sell the weapons and commit the colossal crimes, Americans never learn. 
- 
-But just as scary as the bizarre also-rans of history is the list of the people who have actually won presidential elections. Consider in recent years the immoral Bill Clinton, who gave America’s jobs away; George Bush the Younger, who was so dim-witted he had to be left out of the plot to wreck the World Trade Center lest through his stupidity he accidentally revealed the secret Jewish plan; and Barack Obama, who has no verifiable history at all except a suspicious trail of dead homosexual friends and a wife with a male physiognomy. 
- 
-So I guess we shouldn’t be too surprised at the sudden emergence of megalomillionaire Donald Trump as the leader of this year’s pack. He has done what other early leaders have always done, told people exactly what they want to hear. 
+How could anybody with a brain have ever supported such a facile, drug-addled ignoramus as Bachman, who recently said the only way to avoid war with Iran is to bomb it? But it happens every election, with homicidal crazies urging war on the world to counter false flag threats that have been cynically engineered by the CIA and Mossad. Thanks to a war-mongering media run by the same money men who sell the weapons and commit the colossal crimes, Americans never learn.
+
+But just as scary as the bizarre also-rans of history is the list of the people who have actually won presidential elections. Consider in recent years the immoral Bill Clinton, who gave America’s jobs away; George Bush the Younger, who was so dim-witted he had to be left out of the plot to wreck the World Trade Center lest through his stupidity he accidentally revealed the secret Jewish plan; and Barack Obama, who has no verifiable history at all except a suspicious trail of dead homosexual friends and a wife with a male physiognomy.
+
+So I guess we shouldn’t be too surprised at the sudden emergence of megalomillionaire Donald Trump as the leader of this year’s pack. He has done what other early leaders have always done, told people exactly what they want to hear.
 
 ```
 
@@ -132,7 +132,7 @@ deepdive query 'name1, name2 ?-
   '
 ```
 ```
-          name1          |      name2      
+          name1          |      name2
 -------------------------+-----------------
  Bill Clinton            | Donald Trump
  George Bush the Younger | Bill Clinton
@@ -167,7 +167,7 @@ deepdive sql "
 ```
 <!-- TODO switch to DDlog once it gets access to inference results -->
 ```
-      mention_text       |  mention_text   | expectation 
+      mention_text       |  mention_text   | expectation
 -------------------------+-----------------+-------------
  Barack Obama            | Bill Clinton    |       0.002
  Barack Obama            | Bill Clinton    |       0.001

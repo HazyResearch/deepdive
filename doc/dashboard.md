@@ -203,7 +203,6 @@ mindbender snapshot
 This command is used to produce a *snapshot* under `snapshot/` of the target app with a unique name beginning with a timestamp, e.g., `snapshot/20150206-1/`.
 
 * **Reports**.
-* 
   Each snapshot will contain a set of reports that summarize various aspects about the data products of the DeepDive run or the code that produced them.
     * The set of reports to be produced are controlled by a *snapshot configuration* (described in the next section).
     * `reports/` directory that contains all the individually produced reports.
