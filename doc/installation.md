@@ -69,7 +69,7 @@ You can install DeepDive and all its dependencies with a single command.
     * [`greenplum`](using-greenplum.md)
         DeepDive works with recent releases of Greenplum, which is based on PostgreSQL 8 that may lack some features that are required by some advanced DeepDive functionality.
         PL/Python extension is required.
-    * [`mysql`](using-mysql.md)
+    * `mysql`
         DeepDive provides minimal support for MySQL and MySQL Cluster, but PostgreSQL-based databases are strongly recommended.
 
 

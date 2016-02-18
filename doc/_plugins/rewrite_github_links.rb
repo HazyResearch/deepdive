@@ -3,15 +3,15 @@ GITHUB_REPO_BASE_URL = "https://github.com/HazyResearch/deepdive/blob/master"
 def rewrite_markdown_links(page)
     # manipulate Markdown links to map ../examples/* to GitHub repo
     page.content = page.content.gsub(
-        /(\[[^\]]*\]\()(\.\.\/)+(examples\/[^:\)]*)(#[^\)]*)?\)/,
-            "\\1#{GITHUB_REPO_BASE_URL}/\\3\\4)")
+        /(\[[^\]]*\]\()(\.\.\/)+((examples|compiler)\/[^:\)]*)(#[^\)]*)?\)/,
+            "\\1#{GITHUB_REPO_BASE_URL}/\\3\\5)")
 end
 def rewrite_html_links(page)
     # manipulate HTML links as well to map ../examples/* to GitHub repo
     # because Markdown from {% include ... %} don't go through :pre_render
     page.output = page.output.gsub(
-        /href="(\.\.\/)+(examples\/[^":]*)(#[^"]*)?"/,
-            "href=\"#{GITHUB_REPO_BASE_URL}/\\2\\3\"")
+        /href="(\.\.\/)+((examples|compiler)\/[^":]*)(#[^"]*)?"/,
+            "href=\"#{GITHUB_REPO_BASE_URL}/\\2\\4\"")
 end
 
 begin

@@ -164,8 +164,31 @@ For extractions, `source` variable may also point to its provenance source objec
 Here's an example for rendering `has_spouse` in the spouse example as highlighted text spans with two colors.
 The `mindtagger-word-array` and `mindtagger-highlight-words` are AngularJS directives provided by [Mindtagger, a tool for labeling data](labeling.md).
 
-<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/mindbender/blob/master/examples/spouse_example/mindbender/search-template/has_spouse.html?footer=minimal">
-</script>
+<!--
+{% include examples/spouse/mindbender/search-template/has_spouse.html %}
+-->
+{% raw %}
+```html
+<a mb-search-link="{{extraction.p1.mention_text}}"><strong>{{extraction.p1.mention_text}}</strong></a>
+--
+<a mb-search-link="{{extraction.p2.mention_text}}"><strong>{{extraction.p2.mention_text}}</strong></a>
+<br> E=<strong>{{extraction.expectation}}</strong>
+<br><small class="text-muted">See all
+    <a mb-search-link='feature:* "{{extraction.p1_id}}@{{extraction.p2_id}}"'>features</a>
+    /
+    <a mb-search-link='label:*   "{{extraction.p1_id}}@{{extraction.p2_id}}"'>labels</a>
+</small>
+
+<small class="text-muted">
+    in <a mb-search-only="sentences" mb-search-link="{{extraction.p1.doc_id}} sentence_index:{{extraction.p1.sentence_index}}">sentence {{extraction.p1.sentence_index}}</a>
+    in <a mb-search-only="articles"  mb-search-link="{{extraction.p1.doc_id}}">article({{extraction.p1.doc_id}})</a>:
+</small>
+<div mindtagger-word-array="source.tokens">
+    <mindtagger-highlight-words from="extraction.p1.begin_index" to="extraction.p1.end_index" with-style="background-color: yellow;"/>
+    <mindtagger-highlight-words from="extraction.p2.begin_index" to="extraction.p2.end_index" with-style="background-color: cyan;"/>
+</div>
+```
+{% endraw %}
 
 Without the template, the GUI would render by default a `has_spouse` in a hard-to-read format:
 
@@ -176,8 +199,9 @@ This is improved as shown below by creating the template above in the applicatio
 ![`has_spouse` with a proper Presentation Template](images/browsing_with_presentation_template.png)
 
 ### AngularJS extensions
-To define further AngularJS extensions, such as directives or filters to be used in the templates, define a `mindbender.extensions` module in `./mindbender/extensions.coffee` or `./mindbender/extensions.js`.
+To define further AngularJS extensions, such as directives or filters to be used in the templates, define a `mindbender.extensions` module in [`./mindbender/extensions.coffee`](../examples/spouse/mindbender/extensions.coffee) or `./mindbender/extensions.js`.
 This can be very useful if you need to share some template fragments or scripts across many browsable relations.
 
-<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/mindbender/blob/master/gui/backend/extensions.coffee?footer=minimal">
-</script>
+```html
+{% include examples/spouse/mindbender/extensions.coffee %}
+```

@@ -8,7 +8,7 @@ title: deepdive.conf Reference
 This document contains the description of each configuration directive that can
 be specified in an application configuration file.
 
-As a remark, from version [0.8](0.8.0-alpha.md), the user application is described in the [`app.ddlog` file](deepdiveapp.md). Therefore, the configuration file `deepdive.conf` described here doesn't have to be used. However, during a call of `deepdive compile`, the `app.ddlog` and `deepdive.conf` files are combined and compiled together. It is then possible to specify some parameters, arguments or tasks in the `deepdive.conf` file, in addition to the main structure of the application written in DDlog, and both of them will be considered by DeepDive.
+As a remark, from version [0.8](changelog/0.8.0-alpha.md), the user application is described in the [`app.ddlog` file](deepdiveapp.md). Therefore, the configuration file `deepdive.conf` described here doesn't have to be used. However, during a call of `deepdive compile`, the `app.ddlog` and `deepdive.conf` files are combined and compiled together. It is then possible to specify some parameters, arguments or tasks in the `deepdive.conf` file, in addition to the main structure of the application written in DDlog, and both of them will be considered by DeepDive.
 
 ## Overview of configuration structure
 
@@ -352,8 +352,7 @@ The **mandatory** definition directives for each rule are:
   the `input_query` must include the reserved `id` column for each variable.
 
 - `function`: specifies the factor function and the variables connected by the
-  factor. Refer to the [Inference rule function
-  reference](inference_rule_functions.md) for details about the available
+  factor. Refer to the [source code](../compiler/compile-config/compile-config-1.01-parse_inference_rules) for details about the available
   functions. Example usage:
 
 - `weight`: specifies whether the weight of the factor should be a specified
