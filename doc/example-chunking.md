@@ -31,7 +31,7 @@ We include three inference rules, corresponding to *logistic regression*, *linea
 The features and rules we use are very simple, just to illustrate how to use categorical variables and multinomial factors in DeepDive to build applications.
 
 
-## Running the Example
+## Running the example
 
 The complete example is under [the `examples/chunking` directory](../examples/chunking/).
 
@@ -59,7 +59,7 @@ result/eval.sh
 ```
 
 
-## Example Walkthrough
+## Example walkthrough
 
 The application performs the following high-level steps:
 
@@ -68,7 +68,7 @@ The application performs the following high-level steps:
 3. Statistical inference and learning.
 4. Evaluation of the results.
 
-### 1. Data Preprocessing
+### 1. Data preprocessing
 
 The train and test data consist of words, their part-of-speech tag and the chunk tags as derived from the WSJ corpus.
 The raw data is first copied into table `words_raw` by [`input/init_words_raw.sh` script](../examples/chunking/input/init_words_raw.sh).
@@ -106,7 +106,7 @@ The output table `words` looks like
 [...]
 ```
 
-### 2. Feature Extraction
+### 2. Feature extraction
 
 To predict chunking label, we need to add features.
 We use three simple features: the word itself, its part-of-speech tag, and the part-of-speech tag of its previous word.
@@ -149,7 +149,7 @@ The output will look like:
 The user-defined function can be in [`udf/ext_features.py`](../examples/chunking/udf/ext_features.py).
 
 
-### 3. Statistical Learning and Inference
+### 3. Statistical learning and inference
 
 We will predicate the chunk tag for each word, which corresponds to `tag` column of `words` table.
 The variables are declared in [`app.ddlog`](../examples/chunking/app.ddlog):
@@ -196,7 +196,7 @@ We also specify the holdout variables according to task description about traini
 {% include examples/chunking/deepdive.conf %}
 ```
 
-### 4. Evaluation Results
+### 4. Evaluation results
 
 Running the following script will give the evaluation results.
 
@@ -207,7 +207,7 @@ result/eval.sh
 Below are the results for using different rules.
 We can see that by adding CRF rules, we get better results both for precision and recall.
 
-#### Logistic Regression
+#### Logistic regression
 
 ```
   processed 47377 tokens with 23852 phrases; found: 23642 phrases; correct: 19156.
@@ -225,7 +225,7 @@ We can see that by adding CRF rules, we get better results both for precision an
 ```
 
 
-#### LR + Linear-Chain CRF
+#### LR + linear-chain CRF
 
 ```
   processed 47377 tokens with 23852 phrases; found: 22996 phrases; correct: 19746.
@@ -243,7 +243,7 @@ We can see that by adding CRF rules, we get better results both for precision an
                  VP: precision:  90.37%; recall:  90.21%; FB1:  90.29  4650
 ```
 
-#### LR + Linear-Chain CRF + Skip-Chain CRF
+#### LR + linear-chain CRF + skip-chain CRF
 
 ```
   processed 47377 tokens with 23852 phrases; found: 22950 phrases; correct: 19794.
