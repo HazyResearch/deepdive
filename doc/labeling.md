@@ -3,7 +3,7 @@ layout: default
 title: Labeling DeepDive Data with Mindtagger
 ---
 
-# Labeling DeepDive Data with Mindtagger
+# Labeling DeepDive data with Mindtagger
 
 This document describes a common data labeling task one has to perform while developing DeepDive applications and introduces a graphical user interface tool dedicated for accelerating such task.
 In this document we use the terms annotating, marking, and tagging data interchangeably with labeling data.
@@ -26,7 +26,7 @@ In this document, we show how the precision estimation for a DeepDive applicatio
 
 
 
-## Mindtagger: A Tool for Labeling Data
+## Mindtagger: A tool for labeling data
 
 *[Mindtagger][]* is a general data annotation tool that provides a customizable, interactive graphical user interface.
 An annotation task takes a list of items and a template that defines how each item should be rendered and what annotations can be added as inputs.
@@ -36,7 +36,7 @@ These annotations collected over time can be then outputted in various forms (SQ
 Note that Mindtagger currently does not help with the sampling part but only supports the labeling task for the precision/recall estimation. Therefore, producing the right samples for the correct estimation is a Mindtagger user's responsibility.
 
 
-## Use Case 1: Measuring Precision of the Spouse Example
+## Use case 1: Measuring precision of the spouse example
 
 In the following few steps, we explain how Mindtagger can help the user to perform a precision estimation task using the [spouse example in our tutorial](example-spouse.md).
 All commands and path names used in the rest of this section is consistent with the [code under `examples/spouse/`](../examples/spouse/).
@@ -45,7 +45,7 @@ All commands and path names used in the rest of this section is consistent with 
 cd examples/spouse/
 ```
 
-### 1.1. Prepare the Data Items to Inspect
+### 1.1. Prepare the data items to inspect
 
 First, you need to grab a reasonable number of samples for the precision task.
 Using the SQL query shown below, you can get a hundred positive predictions with threshold 0.9 from `has_spouse` relationship with the array of words of the sentence the relationship was mentioned and two text spans mentioning the two persons involved.
@@ -74,7 +74,7 @@ fd868d84-0c8b-4f60-8050-77013669a6d5_18_4_5,fd868d84-0c8b-4f60-8050-77013669a6d5
 [...]
 ```
 
-### 1.2. Prepare the Mindtagger Configuration and Template
+### 1.2. Prepare the Mindtagger configuration and template
 
 In order to use these sampled data items with Mindtagger, you need to create two more files that define a task for Mindtagger: a configuration and a template.
 Mindtagger configuration that looks like below should go into [the `mindtagger.conf` file](../examples/spouse/labeling/has_spouse-precision/mindtagger.conf).
@@ -138,7 +138,7 @@ PORT=12345 mindbender tagger labeling/*/mindtagger.conf
 ```
 
 
-### 1.4. Mark Each Prediction as Correct or Not
+### 1.4. Mark each prediction as correct or not
 
 Now, the user can point the browser to the URL displayed in the output of Mindtagger (or `http://localhost:8000` if that doesn't work).
 The following screenshot shows the annotation task in progress.
@@ -153,14 +153,14 @@ These tags will be very useful later for clustering the false positive errors ba
 
 
 
-### 1.5. Count Annotations
+### 1.5. Count annotations
 
 While inspecting every item, one can quickly check how many items were labeled with each tag using the "Tags" dropdown on the top-right corner.
 
 ![Screenshot of tags frequency display in Mindtagger](images/mindtagger_screenshot_tags.png)
 
 
-### 1.6. Export Annotations
+### 1.6. Export annotations
 
 Suppose one wants to augment the ground truth with the `is_correct` tags marked on each item throughout this task.
 Using Mindtagger's export tags feature ("Export" on the top-right), one can download the tag data as SQL with `UPDATE` or `INSERT` statements, as well as CSV/TSV or JSON.
@@ -190,7 +190,7 @@ In this second example, we will show how one can extend the first example to inc
 This is not a task for simply estimating a quality measure of the result, but rather a more elaborate error analysis task to understand which features are doing well/poorly and to gain more insights for debugging/improving the DeepDive application.
 Using ad-hoc tags will be much more important in this task since they will help to prioritize fixing more common source of errors.
 
-### 2.1. Prepare Mentions with Relevant Features
+### 2.1. Prepare mentions with relevant features
 
 The following SQL query can be used to include the features related to the prediction along with their weights.
 
@@ -209,7 +209,7 @@ p1_id,p2_id,doc_id,sentence_index,label,expectation,tokens,p1_text,p1_start,p1_e
 [...]
 ```
 
-### 2.2. Modify Template to Render Features
+### 2.2. Modify template to render features
 
 Now, we can use the following [Mindtagger template](../examples/spouse/labeling/has_spouse-precision-with_features/template-with_features.html) to enumerate the extra feature information.
 
@@ -262,7 +262,7 @@ Now, we can use the following [Mindtagger template](../examples/spouse/labeling/
 {% endraw %}
 
 
-### 2.3. Browse the Predictions with Features and Weights
+### 2.3. Browse the predictions with features and weights
 
 Now, the user can see all the features next to their learned weights shown below.
 By looking at the features through this task, the user can discover some features that work well or not as well and can come up with a more data-driven idea for improving the application's performance for the next iteration.
