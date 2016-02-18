@@ -152,7 +152,7 @@ stage util/calibration.py                                         util/
 stage util/calibration.plg                                        util/
 
 stage .build/submodule/util/mindbender/@prefix@/                  mindbender/
-symlink ../mindbender/bin/mindbender                              bin/
+stage util/mindbender-wrapper.sh                                  bin/mindbender
 
 # runtime dependencies after building them from source
 stage extern/.build/bundled                                       lib/
