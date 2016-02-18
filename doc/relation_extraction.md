@@ -3,7 +3,7 @@ layout: default
 title: Relation Extraction
 ---
 
-# Relation Extraction
+# Relation extraction
 
 **Relation extraction** plays an important role in extracting **structured information** from
 unstructured sources such as raw text. One may want to find interactions between
@@ -29,7 +29,7 @@ challenges:
 - How do we get training data for our machine learning model?
 - How do we deal with conflicting or uncertain data?
 
-### <a name="entity" href="#"></a> Entity Linking
+### <a name="entity" href="#"></a> Entity linking
 
 Before starting to extract relations, it is a good idea to determine which words
 refer to the same "object" in the real world. These objects are called
