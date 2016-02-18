@@ -40,7 +40,8 @@ Alternatively, if you have access to a database server, you can configure how to
 
 ## Running your first DeepDive app
 
-Now, let's see what DeepDive can do for us. We grab a copy of [the spouse example app explained in the tutorial](example-spouse.md).
+Now, let's see what DeepDive can do for us.
+We grab a copy of [the spouse example app explained in the tutorial](example-spouse.md).
 This app extracts mentions of spouses from [a corpus of news articles][corpus].
 
 [corpus]: http://research.signalmedia.co/newsir16/signal-dataset.html "The Signal Media One-Million News Articles Dataset"
@@ -67,7 +68,8 @@ README.md  db.url         input/     mindbender/  udf/	app.ddlog  deepdive.conf 
 
 ### 1. Load input
 
-You can find a more datasets under `input/`. You can also [download the full corpus][corpus], but let's proceed with the smallest one that has 100 sampled articles:
+You can find some of our sampled datasets under `input/`.
+You can also [download the full corpus][corpus], but let's proceed with the smallest one that has 100 sampled articles:
 
 ```bash
 ln -s articles-100.tsv.bz2 input/articles.tsv.bz2
@@ -79,7 +81,7 @@ deepdive do articles
 This will load the input data into the database.
 *Note that everytime you use the `deepdive do` command, it opens a list of commands to be run in your text editor. You have to confirm it by saving and quiting the editor.*
 
-Here're a few lines from an example article in the input corpus that has been loaded.
+Here are a few lines from an example article in the input corpus that has been loaded.
 
 ```bash
 deepdive query '?- articles("36349778-9942-475d-bdf2-23b7372911c1", content).' format=csv | tail -n +15 | head -5

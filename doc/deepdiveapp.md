@@ -9,8 +9,13 @@ A DeepDive application is a directory that contains the following files and dire
 
 ## app.ddlog
 
-<todo> Seems like we should have more content here </todo>
-Schema, extractors, and inference rules written in our higher-level language, DDlog, are put in this file.
+This file can be thought as the blueprint of a DeepDive application.
+DDlog declarations and rules written in this file tell DeepDive:
+
+* [What each relation looks like and how one is derived from others.](writing-dataflow-ddlog.md)
+* [What user-defined functions are there, what input/output schema they expect, and their implementation details.](writing-udf-python.md)
+* [What random variables are to be modeled, how they are correlated.](writing-model-ddlog.md)
+
 
 ## deepdive.conf
 
