@@ -6,8 +6,8 @@
 
 #sidebar.affix {
     top: 0px;
-    bottom: 0px;
     padding-top: 20px;
+    bottom: 0px;
     padding-bottom: 20px;
     overflow: auto;
 }
@@ -31,6 +31,10 @@
         border: 0.5px solid #08608A;
         border-radius: 5px;
         box-shadow: 1px 1px 10px #888;
+        /* make sure TOC doesn't take up the whole screen */
+        bottom: auto;
+        padding-bottom: 0px;
+        overflow: auto;
     }
     #toc #sidebar.affix       > li { visibility:  hidden; }
     #toc #sidebar.affix:hover > li { visibility: visible; }
