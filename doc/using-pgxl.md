@@ -14,7 +14,7 @@ After installing XL, DeepDive should work well with it. Apart from the
 following caveat below, you should not observe any difference than if you
 were running PostgreSQL.
 
-## Important Caveats
+## Important caveats
 
 First, you should add a `DISTRIBUTE BY HASH` clause in all `CREATE TABLE` commands. **Do
 not use the column `id`** as the distribution key. **Do not use** a distribution
@@ -38,7 +38,7 @@ DeepDive. The steps were tested to install XL on Ubuntu 15.04.
 
 We assume that the user executing these commands has sudo rights.
 
-### Setting OS Parameters
+### Setting OS parameters
 
 Set the following parameters in the `/etc/sysctl.d/50-pgxl.conf` file:
 
@@ -72,7 +72,7 @@ After that, run
 sudo service ssh restart
 ```
 
-### Building XL from Source
+### Building XL from source
 
 ```bash
 sudo apt-get update
