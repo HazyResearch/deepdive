@@ -42,7 +42,7 @@ tag?(word_id bigint) Categorical(13).
 
 
 
-## Scoping and Supervision rules
+## Scoping and supervision rules
 
 After declaring a variable relation, its *scope* needs to be defined along with the *supervision labels*.
 That means, (a) all possible values for the variable relation's columns must be defined by deriving them from other relations, and (b) whether a random variable in the relation is true or false (Boolean), or which value it takes from its domain of categories (Categorical) must be defined using a special syntax.
