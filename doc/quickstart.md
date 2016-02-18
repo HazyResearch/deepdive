@@ -40,7 +40,7 @@ Alternatively, if you have access to a database server, you can configure how to
 
 ## Running your first DeepDive app
 
-Now, to quickly see what DeepDive can do for us, let's grab a copy of [the spouse example app explained in the tutorial](example-spouse.md).
+Now, let's see what DeepDive can do for us. We grab a copy of [the spouse example app explained in the tutorial](example-spouse.md).
 This app extracts mentions of spouses from [a corpus of news articles][corpus].
 
 [corpus]: http://research.signalmedia.co/newsir16/signal-dataset.html "The Signal Media One-Million News Articles Dataset"
@@ -67,7 +67,7 @@ README.md  db.url         input/     mindbender/  udf/	app.ddlog  deepdive.conf 
 
 ### 1. Load input
 
-You can find a few more datasets under `input/` and welcome to [download the full corpus][corpus], but we can quickly proceed with the smallest one that has 100 sampled articles:
+You can find a more datasets under `input/`. You can also [download the full corpus][corpus], but let's proceed with the smallest one that has 100 sampled articles:
 
 ```bash
 ln -s articles-100.tsv.bz2 input/articles.tsv.bz2
@@ -77,9 +77,9 @@ deepdive do articles
 ```
 
 This will load the input data into the database.
-*Note that everytime you use the `deepdive do` command, it will open a list of commands to be run in your text editor to have you confirm it by saving and quiting the editor.*
+*Note that everytime you use the `deepdive do` command, it opens a list of commands to be run in your text editor. You have to confirm it by saving and quiting the editor.*
 
-Here're a few lines in the middle of an example article in the input corpus that has been loaded.
+Here're a few lines from an example article in the input corpus that has been loaded.
 
 ```bash
 deepdive query '?- articles("36349778-9942-475d-bdf2-23b7372911c1", content).' format=csv | tail -n +15 | head -5
@@ -120,7 +120,7 @@ deepdive query '?- sentences("36349778-9942-475d-bdf2-23b7372911c1", _, _, token
 ```
 
 
-We can continue running the processes until candidates of spouse mentions are all mapped, and see the pairs of names from the example article.
+We can continue running the processes until all candidates of spousal mentions are mapped, and see the pairs of names from the example article.
 
 ```bash
 deepdive do spouse_candidate
@@ -144,18 +144,18 @@ deepdive query 'name1, name2 ?-
 (7 rows)
 ```
 
-For supervised machine learning, the app continues to [extract *features*](example-spouse.md#1-4-extracting-features-for-each-candidate) from the context of those candidates and [create a training set](example-spouse.md#3-learning-amp-inference-model-specification) programmatically by finding promising positive and negative examples using [*distant supervision*](distant_supervision.md).
+For supervised machine learning, the app continues with [extracting *features*](example-spouse.md#1-4-extracting-features-for-each-candidate) from the context of those candidates and [creating a training set](example-spouse.md#3-learning-amp-inference-model-specification) programmatically by finding promising positive and negative examples using [*distant supervision*](distant_supervision.md).
 
 ### 3. Run the model
 
-Using the processed data, the app constructs a [statistical inference model](inference.md) to predict whether a mention is a correct mention of spouses or not, estimates the parameters (i.e., learns the weights), and computes their *marginal probabilities*.
+Using the processed data, the app constructs a [statistical inference model](inference.md) to predict whether a mention is a correct mention of spouses or not, estimates the parameters (i.e., learns the weights) of the model, and computes their *marginal probabilities*.
 
 ```bash
 deepdive do probabilities
 ```
 
 As a result, DeepDive gives the expectation (probability) of every variable being true.
-Here're the probabilities computed for the pairs of names from the example article we saw earlier:
+Here are the probabilities computed for the pairs of names from the example article we saw earlier:
 
 ```bash
 deepdive sql "
@@ -193,7 +193,7 @@ For instance, below is a screenshot of an automatic interactive search interface
 
 ## Next steps
 
-* For more detail about the spouse example we just ran here, continue reading [the tutorial](example-spouse.md).
+* For more details about the spouse example we just ran here, continue reading [the tutorial](example-spouse.md).
 
 * Other parts of the documentation will help you pick up more [background knowledge](index.md#background-reading) and learn more about [how DeepDive applications are developed](development-cycle.md).
 
