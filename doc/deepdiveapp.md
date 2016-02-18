@@ -11,6 +11,7 @@ A DeepDive application is a directory that contains the following files and dire
 
 * `app.ddlog`
 
+    <todo> Seemes like there should  be more here </todo>
     Schema, extractors, and inference rules written in our higher-level language, [DDlog][], are put in this file.
 
 * `db.url`
@@ -37,7 +38,7 @@ A DeepDive application is a directory that contains the following files and dire
 * `deepdive.conf`
 
     Extra configuration not expressed in the DDlog program is in this file.
-    Extractors, and inference rules can be also be written in [HOCON][] syntax in this file, although DDlog is the recommended way.
+    Extractors, and inference rules can also be written in [HOCON][] syntax in this file, although DDlog is the recommended way.
     See the [Configuration Reference](configuration.md) for full details.
 
 * `schema.sql`
