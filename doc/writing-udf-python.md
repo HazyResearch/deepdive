@@ -32,8 +32,7 @@ classification(
 ).
 ```
 
-Suppose we want to write a simple UDF to classify each `article` into different topics by adding tuples to the relation `classification`.
-
+In this example, let's suppose we want to write a simple UDF to classify each `article` into different topics by adding tuples to the relation `classification`. The two following sections detail how to declare such a function and how to call it in DDlog.
 
 ### Function Declarations
 A function declaration includes input/output schema as well as a pointer to its implementation.
@@ -146,6 +145,7 @@ Generally, this generator should be placed at the bottom of the program unless t
 Any function or variable used by the decorated generator should be appear before it as the `@tsv_extractor` decorator will immediately start parsing input and calling the generator.
 The generator should not `print` or `sys.stdout.write` anything as that will corrupt the standard output.
 Instead, `print >>sys.stderr` or `sys.stderr.write` can be used for logging useful information.
+More information can be found in the [debugging-udf](debugging-udf.md) section
 
 ### @over and @returns decorators
 
