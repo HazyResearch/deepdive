@@ -3,7 +3,7 @@ layout: default
 title: PaleoDeepDive
 ---
 
-# PaleoDeepDive: A System Walkthrough
+# PaleoDeepDive: A system walkthrough
 
 Here, we walk through the codebase that powers PaleoDeepDive, an application built upon the [DeepDive machine reading infrastructure](index.md).
 The code can be found [here](https://github.com/zhangce/pdd), and
@@ -58,7 +58,7 @@ To produce this factor graph, we use the following relations that contain random
 * [Output ](#output)
 
 <a id="input" href="#"> </a>
-## Input Walkthrough
+## Input walkthrough
 
 There are four tables as input, namely (1) `sentences` (individual sentences within each document) (2) `ddtables` (tables in PDF documents parsed by existing tools),
 (3) `layout_align` (document layout and formatting information), and (4) `layout_fonts` (text fonts). These four tables contain
@@ -157,7 +157,7 @@ We illustrate the feature extractors in PaleoDeepDive by two examples.
 First, a simple example that extracts entity-mentions for temporal intervals;
 Second, a more sophisticated extractors that extract geological rock formations.
 
-#### The Simplest Extractor in PaleoDeepDive
+#### The simplest extractor in PaleoDeepDive
 
 We start from the simplest extractor in PaleoDeepDive. The task is
 to populate the relation `entity_temporal`, where each row
@@ -270,7 +270,7 @@ This script contains three components.
 Note that this example output will produce the example tuple we just show for the table `entity_temporal`.
 
 
-#### A More Sophisticated Extractor
+#### A more sophisticated extractor
 
 Here, the goal is to
 extract the entity-mention for formations (table `entity_formation`). One example tuple
@@ -499,7 +499,7 @@ rule says that if the smaller interval is correct, then we do not want to output
 the larger interval (because it is redundant). This rule is a hard rule, meaning that a large weight is assigned a priori.
 
 <a id="output" href="#"> </a>
-## Output Walkthrough
+## Output walkthrough
 
 The output of DeepDive takes the form of relations, for example the realtion called `relation_formationtemporal_is_correct_inference`,
 which contains tuple:
