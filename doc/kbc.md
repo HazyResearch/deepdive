@@ -3,7 +3,7 @@ layout: default
 title: Knowledge Base Construction
 ---
 
-# Knowledge Base Construction
+# Knowledge base construction
 
 Knowledge base construction (KBC) is the process of populating a knowledge base
 (KB) with facts (or assertions) extracted from data (e.g., text, audio, video,
@@ -29,7 +29,7 @@ about this concept).
   <strong>Figure 1: An example KBC application</strong>
 </p>
 
-### KBC Terminology
+### KBC terminology
 
 KBC uses specific terms to refer to the objects it manipulates. The following is
 a list of the most important ones
