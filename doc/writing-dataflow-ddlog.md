@@ -3,7 +3,7 @@ layout: default
 title: Defining Data Flow in DDlog
 ---
 
-# Defining Data Flow in DDlog
+# Defining data flow in DDlog
 
 DDlog is a higher-level language for writing DeepDive applications in a succinct, Datalog-like syntax.
 Here we focus on describing the general language features for defining the data flow in a DeepDive application.
@@ -15,7 +15,7 @@ A reference for the latest language features can be found [here](https://github.
 -->
 
 
-## DDlog Program
+## DDlog program
 
 A DDlog program is a collection of declarations and rules.
 Each declaration and rule ends with a period (`.`).
@@ -36,7 +36,7 @@ A DDlog program consists of the following parts:
 All DDlog code should be placed in a file named [`app.ddlog` under the DeepDive application](deepdiveapp.md#app-ddlog).
 
 
-## Schema Declarations
+## Schema declarations
 
 First of all, the schema of the *relations* defined and used throughout the program should be declared.
 These relations are mapped to tables in the database configured for the DeepDive application.
@@ -67,7 +67,7 @@ Here we are defining a relation named "article" with four columns, named "id", "
 Each column has it's own type, here utilizing `int`, `text` and `text[]`.
 
 
-## Normal Derivation Rules
+## Normal derivation rules
 
 Typical Datalog-like rules are used for defining how a relation is derived from other relations.
 For example, the following rule states that the tuples of relation `Q` are derived from relations `R` and `S`.
@@ -247,7 +247,7 @@ For example, the following rule groups all values of the third column of `R` by 
 Q(a,b,MAX(c)) :- R(a,b,c).
 ```
 
-### Select Distinct
+### Select distinct
 
 In order to select only distinct elements from other relations, the operator `*:-` can be used. For instance, let's consider the following rule:
 
