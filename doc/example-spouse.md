@@ -9,7 +9,7 @@ In this tutorial, we show an example of a prototypical task that DeepDive is oft
 extraction of _structured information_ from _unstructured or 'dark' data_ such as web pages, text documents, images, etc.
 While DeepDive can be used as a more general platform for statistical learning and data processing, most of the tooling described herein has been built for this type of use case, based on our experience of successfully applying DeepDive to [a variety of real-world problems of this type](showcase/apps.md).
 
-In this setting, our goal is to take in a set of unstructured (and/or structured) inputs, and populate a relation database table with extracted outputs, along with marginal probabilities for each extraction representing DeepDive's confidence in the extraction.
+In this setting, our goal is to take in a set of unstructured (and/or structured) inputs, and populate a relational database table with extracted outputs, along with marginal probabilities for each extraction representing DeepDive's confidence in the extraction.
 More formally, we write a DeepDive application to extract mentions of _relations_ and their constituent _entities_ or _attributes_, according to a specified schema; this task is often referred to as **_relation extraction_**.*
 Accordingly, we'll walk through an example scenario where we wish to extract mentions of two people being spouses from news articles.
 
@@ -17,13 +17,13 @@ The high-level steps we'll follow are:
 
 1. **Data processing.** First, we'll load the raw corpus, add NLP markups, extract a set of _candidate_ relation mentions, and a sparse _feature_ representation of each.
 
-2. **Distant supervision with data & rules.** Next, we'll use various strategies to provide _supervision_ for our dataset, so that we can use machine learning to learn the weights of a model.
+2. **Distant supervision with data and rules.** Next, we'll use various strategies to provide _supervision_ for our dataset, so that we can use machine learning to learn the weights of a model.
 
-3. **Learning & inference: model specification.** Then, we'll specify the high-level configuration of our _model_.
+3. **Learning and inference: model specification.** Then, we'll specify the high-level configuration of our _model_.
 
-4. **Error analysis & debugging.** Finally, we'll show how to use DeepDive's labeling, error analysis and debugging tools.
+4. **Error analysis and debugging.** Finally, we'll show how to use DeepDive's labeling, error analysis and debugging tools.
 
-*_Note the distinction between extraction of facts and extraction of mentions of facts.
+*_Note the distinction between extraction of true, i.e., factual, relations and extraction of mentions of relations.
 In this tutorial, we do the latter, however DeepDive supports further downstream methods for tackling the former task in a principled manner._
 
 
@@ -53,7 +53,7 @@ _Note: DeepDive will drop and then create this database if run from scratch—be
 
 ## 1. Data processing
 
-In this section, we'll generate the traditional inputs of a statistical learning-type problem: candidate objects, represented by a set of features, which we will aim to classify as _actual_ spouse relation mentions or not.
+In this section, we'll generate the traditional inputs of a statistical learning-type problem: candidate spouse relations, represented by a set of features, which we will aim to classify as _actual_ relation mentions or not.
 
 We'll do this in four basic steps:
 
@@ -63,9 +63,9 @@ We'll do this in four basic steps:
 4. Extracting features for each candidate
 
 ### 1.1. Loading raw input data
-Our goal, first of all, is to download and load the raw text of the [articles](http://research.signalmedia.co/newsir16/signal-dataset.html)
+Our first task is to download and load the raw text of the [articles](http://research.signalmedia.co/newsir16/signal-dataset.html)
 into an `articles` table in our database.
-We create a simple shell script that downloads & outputs the news articles in TSV format.
+We create a simple shell script that downloads and outputs the news articles in TSV format.
 DeepDive will automatically create the table, execute the script and load the table if we save it as:
 
 ```bash
@@ -95,8 +95,9 @@ Finally, we tell DeepDive to execute the steps to load the `articles` table:
 deepdive do articles
 ```
 
-DeepDive will output an execution plan, which will pop up in your default text editor;
-save and exit to accept, and DeepDive will run, creating the table and then fetching & loading the data.
+DeepDive will output an execution plan, which will pop up in your default text editor.
+Save and exit to accept.
+DeepDive will run, creating the table and then fetching and loading the data.
 
 After that finishes, we can take a look at the loaded data using the following `deepdive query` command, which enumerates the values for the `id` column of the `articles` table:
 
@@ -141,8 +142,8 @@ deepdive query '?- articles(id, _).'
 
 ### 1.2. Adding NLP markups
 Next, we'll use Stanford's [CoreNLP](http://stanfordnlp.github.io/CoreNLP/) natural language processing (NLP) system to add useful markups and structure to our input data.
-This step will split up our articles into sentences, and their component _tokens_ (roughly, the words).
-Additionally, we'll also get _lemmas_ (normalized word forms), _part-of-speech (POS) tags_, _named entity recognition (NER) tags_, and a dependency parse of the sentence.
+This step will split up our articles into sentences and their component _tokens_ (roughly, the words).
+Additionally, we'll get _lemmas_ (normalized word forms), _part-of-speech (POS) tags_, _named entity recognition (NER) tags_, and a dependency parse of the sentence.
 We declare the output schema of this step in [`app.ddlog`](../examples/spouse/app.ddlog):
 
 ```ddlog
@@ -164,7 +165,7 @@ sentences(
 Note that we declare a compound key of `(doc_id, sentence_index)` for each sentence, and that we declare a `distributed_by` attribute, e.g., primarily for Greenplum, using DDlog annotations.
 -->
 
-Next we declare a DDlog function which takes in the `doc_id` and `content` for an article, and returns rows conforming to the sentences schema we just declared, using the **user-defined function (UDF)** in `udf/nlp_markup.sh`.
+Next we declare a DDlog function which takes in the `doc_id` and `content` for an article and returns rows conforming to the sentences schema we just declared, using the **user-defined function (UDF)** in `udf/nlp_markup.sh`.
 This UDF is a Bash script which calls [our own wrapper around CoreNLP](https://github.com/HazyResearch/bazaar/tree/master/parser).
 
 ```ddlog
@@ -246,8 +247,8 @@ person_mention(
 ).
 ```
 
-We will be storing each person as a row referencing a sentence and beginning and ending indexes.
-Again, we next declare a function which references a UDF and takes as input the sentence tokens and NER tags:
+We will be storing each person as a row referencing a sentence with beginning and ending indexes.
+Again, we next declare a function that references a UDF and takes as input the sentence tokens and NER tags:
 
 ```ddlog
 function map_person_mention over (
@@ -260,17 +261,18 @@ function map_person_mention over (
 ```
 
 We'll write a simple UDF in Python that will tag spans of contiguous tokens with the NER tag `PERSON` as person mentions (i.e., we'll essentially rely on CoreNLP's NER module).
-Note that we've already used a bash script as a UDF, and indeed any programming language can be used (DeepDive will just check the path specified in the top line, e.g., `#!/usr/bin/env python`).
+Note that we've already used a Bash script as a UDF, and indeed any programming language can be used.
+(DeepDive will just check the path specified in the top line, e.g., `#!/usr/bin/env python`.)
 However, DeepDive provides some convenient utilities for Python UDFs which handle all IO encoding/decoding.
-To write our UDF ([`udf/map_person_mention.py`](../examples/spouse/udf/map_person_mention.py)), we'll start by specifying that our UDF will handle TSV lines (as specified in the DDlog above);
-additionally, we'll specify the exact type schema of both input and output, which DeepDive will check for us:
+To write our UDF ([`udf/map_person_mention.py`](../examples/spouse/udf/map_person_mention.py)), we'll start by specifying that our UDF will handle TSV lines (as specified in the DDlog above).
+Additionally, we'll specify the exact type schema of both input and output, which DeepDive will check for us:
 
 ```python
 {% include examples/spouse/udf/map_person_mention.py %}
 ```
 
 Above, we write a simple function which extracts and tags all subsequences of tokens having the NER tag "PERSON".
-Note that the `extract` function must be a generator; (i.e., use a `yield` statement to return output rows).
+Note that the `extract` function must be a generator (i.e., use a `yield` statement to return output rows).
 
 Finally, we specify that the function will be applied to rows from the `sentences` table and append to the `person_mention` table:
 
@@ -281,7 +283,7 @@ person_mention += map_person_mention(
     sentences(doc_id, sentence_index, _, tokens, _, _, ner_tags, _, _, _).
 ```
 
-Again, to run, just compile & execute as in previous steps:
+Again, to run, just compile and execute as in previous steps:
 
 ```bash
 deepdive compile && deepdive do person_mention
@@ -356,7 +358,7 @@ spouse_candidate(p1, p1_name, p2, p2_name) :-
     p1_begin != p2_begin.
 ```
 
-Again, to run, just compile & execute as in previous steps.
+Again, to run, just compile and execute as in previous steps.
 
 ```bash
 deepdive compile && deepdive do spouse_candidate
@@ -453,7 +455,7 @@ spouse_feature += extract_spouse_features(
     sentences(doc_id, sent_index, _, tokens, lemmas, pos_tags, ner_tags, _, dep_types, dep_tokens).
 ```
 
-Again, to run, just compile & execute as in previous steps.
+Again, to run, just compile and execute as in previous steps.
 
 ```bash
 deepdive compile && deepdive do spouse_feature
@@ -494,16 +496,16 @@ deepdive query '| 20 ?- spouse_feature(_, _, feature).'
 
 Now we have generated what looks more like the standard input to a machine learning problem—a set of objects, represented by sets of features, which we want to classify (here, as true or false mentions of a spousal relation).
 However, we **don't have any supervised labels** (i.e., a set of correct answers) for a machine learning algorithm to learn from!
-In most real world applications, a sufficiently large set of supervised labels is _not_ in fact available.
-With DeepDive, we take the approach sometimes referred to as _distant supervision_ or _data programming_, where we instead generate a **noisy set of labels using a mix of mappings from secondary datasets & other heuristic rules**.
+In most real world applications, a sufficiently large set of supervised labels is _not_ available.
+With DeepDive, we take the approach sometimes referred to as _distant supervision_ or _data programming_, where we instead generate a **noisy set of labels using a mix of mappings from secondary datasets and other heuristic rules**.
 
 
 
 
 
 
-## 2. Distant supervision with data & rules
-In this section, we'll use _distant supervision_ (or '_data programming_') to provide a noisy set of labels to supervise our candidate relation mentions, with which we will train a machine learning model.
+## 2. Distant supervision with data and rules
+In this section, we'll use _distant supervision_ (or '_data programming_') to provide a noisy set of labels for candidate relation mentions, with which we will train a machine learning model.
 
 We'll describe two basic categories of approaches:
 
@@ -514,9 +516,9 @@ Finally, we'll describe a simple majority-vote approach to resolving multiple la
 
 ### 2.1. Mapping from secondary data for distant supervision
 First, we'll try using an external structured dataset of known married couples, from [DBpedia](http://wiki.dbpedia.org/), to distantly supervise our dataset.
-We'll download the relevant data, and then map it to our spouse candidate mentions.
+We'll download the relevant data, and then map it to our candidate spouse relations.
 
-#### Extracting & downloading the DBpedia data
+#### Extracting and downloading the DBpedia data
 Our goal is to first extract a collection of known married couples from DBpedia and then load this into the `spouses_dbpedia` table in our database.
 To extract known married couples, we use the DBpedia dump present in [Google's BigQuery platform](https://bigquery.cloud.google.com).
 First we extract the URI, name and spouse information from the DBpedia `person` table records in BigQuery for which the field `name` is not NULL.
@@ -548,7 +550,8 @@ WHERE p1 < p2
 ```
 
 The output of this query is stored in a local file.
-The file contains duplicate rows (BigQuery does not support `distinct`) and noisy rows where the name field contains a string where the given name family name and multiple aliases were concatenated and reported in a string including the characters `{` and `}`.
+The file contains duplicate rows (BigQuery does not support `distinct`).
+It also contains noisy rows where the name field contains a string where the given name family name and multiple aliases were concatenated and reported in a string including the characters `{` and `}`.
 Using the Unix commands `sed`, `sort` and `uniq` we first remove the lines containing characters `{` and `}` and then duplicate entries.
 This results in an input file `spouses_dbpedia.csv` containing 6,126 entries of married couples.
 
@@ -672,8 +675,8 @@ The Python UDF named [`udf/supervise_spouse.py`](../examples/spouse/udf/supervis
 {% include examples/spouse/udf/supervise_spouse.py %}
 ```
 
-Note that the rough theory behind this approach is that we don't need high-quality (e.g., hand-labeled) supervision to learn a high quality model;
-instead, using statistical learning, we can in fact recover high-quality models from a large set of low-quality or **_noisy_** labels.
+Note that the rough theory behind this approach is that we don't need high-quality (e.g., hand-labeled) supervision to learn a high quality model.
+Instead, using statistical learning, we can in fact recover high-quality models from a large set of low-quality or **_noisy_** labels.
 
 ### 2.3. Resolving multiple labels per example with majority vote
 Finally, we implement a very simple majority vote procedure, all in DDlog, for resolving scenarios where a single spouse candidate mention has multiple conflicting labels.
@@ -683,7 +686,7 @@ First, we sum the labels (which are all -1, 0, or 1):
 spouse_label_resolved(p1_id, p2_id, SUM(vote)) :- spouse_label(p1_id, p2_id, vote, rule_id).
 ```
 
-Then, we simply threshold, and add these labels to our decision variable table `has_spouse` (see next section for details here):
+Then, we simply threshold and add these labels to our decision variable table `has_spouse` (see next section for details here):
 
 ```ddlog
 has_spouse(p1_id, p2_id) = if l > 0 then TRUE
@@ -727,7 +730,7 @@ deepdive query 'rule, @order_by COUNT(1) ?- spouse_label(p1,p2, label, rule).'
 ```
 
 
-## 3. Learning & inference: model specification
+## 3. Learning and inference: model specification
 Now, we need to specify the actual model that DeepDive will perform learning and inference over.
 At a high level, this boils down to specifying three things:
 
@@ -737,13 +740,14 @@ At a high level, this boils down to specifying three things:
 
 3. What are the _connections_ between the variables?
 
-One we have specified the model in this way, DeepDive will _learn_ the parameters of the model (the weights of the features and potentially the connections between variables), and then perform _statistical inference_ over the learned model to determine the most likely values of the variables of interest.
+One we have specified the model in this way, DeepDive will _learn_ the parameters of the model (the weights of the features and potentially the connections between variables), and then perform _statistical inference_ over the learned model to determine the probability that each variable of interest is true.
 
-For more advanced users: we are specifying a _factor graph_ where the features are unary factors, and then using SGD and Gibbs Sampling for learning and inference; further technical detail is available [here](#).
+For more advanced users: we are specifying a _factor graph_ where the features are unary factors, and then using SGD and Gibbs sampling for learning and inference.
+Further technical detail is available [here](#).
 
 ### 3.1. Specifying prediction variables
 In our case, we have one variable to predict per spouse candidate mention, namely, **is this mention actually indicating a spousal relation or not?**
-In other words, we want DeepDive to predict the value of a boolean variable for each spouse candidate mention, indicating whether it is true or not.
+In other words, we want DeepDive to predict the value of a Boolean variable for each spouse candidate mention, indicating whether it is true or not.
 We specify this in [`app.ddlog`](../examples/spouse/app.ddlog) as follows:
 
 ```ddlog
@@ -766,7 +770,7 @@ has_spouse(p1_id, p2_id) :-
 ```
 
 ### 3.3. Specifying connections between variables
-Finally, we can specify relations between the prediction variables, with either learned or given weights.
+Finally, we can specify dependencies between the prediction variables, with either learned or given weights.
 Here, we'll specify two such rules, with fixed (given) weights that we specify.
 First, we define a _symmetry_ connection, namely specifying that if the model thinks a person mention `p1` and a person mention `p2` indicate a spousal relationship in a sentence, then it should also think that the reverse is true, i.e., that `p2` and `p1` indicate one too:
 
@@ -795,9 +799,9 @@ Finally, to perform learning and inference using the specified model, we need to
 deepdive compile && deepdive do probabilities
 ```
 
-This will ground the model based on the data in the database, learn the weights, predict the expectations or marginal probabilities of the variables in the model, and then load them back to the database.
+This will ground the model based on the data in the database, learn the weights, infer the expectations or marginal probabilities of the variables in the model, and then load them back to the database.
 
-Let's take a look at the expectation predicted by DeepDive for the `has_spouse` variables.
+Let's take a look at the probabilities inferred by DeepDive for the `has_spouse` variables.
 
 ```bash
 deepdive sql "SELECT p1_id, p2_id, expectation FROM has_spouse_label_inference ORDER BY random() LIMIT 20"
@@ -834,7 +838,7 @@ deepdive sql "SELECT p1_id, p2_id, expectation FROM has_spouse_label_inference O
 
 
 
-## 4. Error analysis & debugging
+## 4. Error analysis and debugging
 
 After finishing a pass of writing and running the DeepDive application, the first thing we want to see is how good the results are.
 In this section, we describe how DeepDive's interactive tools can be used for viewing the results as well as error analysis and debugging.
@@ -842,7 +846,7 @@ In this section, we describe how DeepDive's interactive tools can be used for vi
 
 ### 4.1. Calibration Plots
 
-DeepDive provides *calibration plots* to see how well the probabilities computed by the system are calibrated.
+DeepDive provides *calibration plots* to see how well the expectations computed by the system are calibrated.
 The following command generates a plot for each variable under `run/model/calibration-plots/`.
 
 ```bash
@@ -896,8 +900,8 @@ Then, point your browser to the URL that appears after the command (typically <h
 
 #### Browsing result data
 
-To browse the results, we can add annotations to the derived relations and how they relate to their source relations.
-For example, the `@extraction` and `@references` annotations in the following DDlog declaration tells DeepDive that the variable relation `has_spouse` is derived from pairs of `person_mention`.
+To browse the results, we can add annotations to the inferred relations and how they relate to their source relations.
+For example, the `@extraction` and `@references` annotations in the following DDlog declaration tells DeepDive that the variable relation `has_spouse` is inferred from pairs of `person_mention`.
 
 ```ddlog
 @extraction
@@ -913,7 +917,7 @@ has_spouse?(
 
 The relation `person_mention` as well as the relations it references should have similar annotations (see the [complete `app.ddlog` code](../examples/spouse/app.ddlog) for full detail).
 
-Then repeating the commands to update the search index and load the user interface will allow us to browse the expected marginal probabilities of `has_spouse` as well.
+Then, repeating the commands to update the search index and load the user interface will allow us to browse the expected marginal probabilities of `has_spouse` as well.
 
 ![Screenshot of the search interface showing results](images/browsing_results.png)
 
@@ -932,7 +936,7 @@ Please see the [documentation about customizing the presentation](browsing.md#cu
 
 ### 4.3. Estimating precision with Mindtagger
 
-*Mindtagger*, which is part of the Mindbender tool suite, assists data labeling tags to quickly assess the precision and/or recall of the extraction.
+*Mindtagger*, which is part of the Mindbender tool suite, assists data labeling tasks to quickly assess the precision and/or recall of the extraction.
 We show how Mindtagger helps us perform a labeling task to estimate the precision of the extraction.
 The necessary set of files shown below already exist [in the example under `labeling/has_spouse-precision/`](../examples/spouse/labeling/has_spouse-precision/).
 
@@ -972,9 +976,10 @@ Then, point your browser to the URL that appears after the command (typically <h
 
 ![Screenshot of the labeling interface showing the sampled data](images/mindtagger_screenshot.png)
 
-We can quickly label the sampled 100 examples using the intuitive user interface with buttons for correct/incorrect tags that also supports keyboard shortcuts for entering labels and moving between items.
+We can quickly label the sampled 100 examples using the intuitive user interface with buttons for correct/incorrect tags.
+It also supports keyboard shortcuts for entering labels and moving between items.
 (Press the <kbd>?</kbd> key to view all supported keys.)
-How many were labeled correct as well as other tags are shown in the "Tags" dropdown at the top right corner as shown below.
+How many were labeled correct, as well as other tags, are shown in the "Tags" dropdown at the top right corner as shown below.
 
 ![Screenshot of the labeling interface showing tag statistics](images/mindtagger_screenshot_tags.png)
 
