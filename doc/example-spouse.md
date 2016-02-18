@@ -63,8 +63,7 @@ We'll do this in four basic steps:
 4. Extracting features for each candidate
 
 ### 1.1. Loading raw input data
-Our goal, first of all, is to download and load the raw text of the [articles](http://research.signalmedia.co/newsir16/signal-dataset.html)
-into an `articles` table in our database.
+Our goal, first of all, is to download and load the raw text of [a corpus of news articles provided by Signal Media](http://research.signalmedia.co/newsir16/signal-dataset.html) into an `articles` table in our database.
 We create a simple shell script that downloads & outputs the news articles in TSV format.
 DeepDive will automatically create the table, execute the script and load the table if we save it as:
 

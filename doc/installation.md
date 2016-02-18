@@ -21,7 +21,7 @@ We provide a simple installation method for the following supported systems:
 You can install DeepDive and all its dependencies with a single command.
 
 1. Open your terminal and run this:
-   <pre style="width:80%; margin:0 auto; padding:20px;"><code><big style="font-size:175%;">bash <(curl -fsSL deepdive.stanford.edu/install)</big></code></pre>
+   <pre style="width:80%; margin:0 auto; padding:20px;"><code><big style="font-size:175%;">bash <(curl -fsSL git.io/getdeepdive)</big></code></pre>
 
 2. Select `deepdive` or `deepdive_from_release` when asked.
     Choose the latter option if you simply want to install DeepDive without any of its runtime dependencies.

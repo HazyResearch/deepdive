@@ -102,7 +102,7 @@ and
 
 #### Getting Started
 
-- [Quick Start](quickstart.md) <todo/> <todo/>
+- [Quick Start](quickstart.md)
 - [Tutorial: Extracting mentions of spouses from the news](example-spouse.md)
 
 #### Background Reading
