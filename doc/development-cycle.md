@@ -14,7 +14,7 @@ DeepDive provides a suite of tools that aim to keep each development iteration a
 
 First of all, the user has to write in DDlog a schema that describes the input data and the data to be produced, along with how data should be processed and transformed.
 Data transofmation rules as well as *user-defined functions* (UDFs) written in Python or any other language can be used for defining the data processing operations.
-Then, using the processed data, a statistical inference model describing a set of random variables and their correlations can be defined---also in DDlog---to specify what kind of predictions are to be made by the system.
+Then, using the processed data, a statistical inference model describing a set of random variables and their correlations can be defined&mdashalso in DDlog&mdashto specify what kind of predictions are to be made by the system.
 
 How to write each of these parts [in a DeepDive application](deepdiveapp.md) is described in the following pages:
 
