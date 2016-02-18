@@ -3,16 +3,16 @@ layout: default
 title: DeepDive Developer's Guide
 ---
 
-# DeepDive Developer's Guide
+# DeepDive developer's guide
 
 This document describes useful information for those who want to make modifications to the DeepDive infrastructure itself and contribute new code.
 Most of the content here are irrelevant for DeepDive users who just want to build a DeepDive application.
 
-### DeepDive Project at GitHub
+### DeepDive project at GitHub
 
 Nearly all DeepDive development activities happen over GitHub.
 
-#### Branches and Releases of DeepDive
+#### Branches and releases of DeepDive
 
 * The `master` branch points to the latest code.
 * We use [Semantic Versioning](http://semver.org/).
@@ -22,7 +22,7 @@ Nearly all DeepDive development activities happen over GitHub.
    They usually point to a commit in the release maintenance branch.
 * Any other branch points to someone's work in progress.
 
-#### Contributing Code to DeepDive
+#### Contributing code to DeepDive
 
 1. If you are part of the [Hazy Research group](https://github.com/HazyResearch), you can push your commits to a new branch, then [create a Pull Request](https://github.com/HazyResearch/deepdive/compare/) to `master`.
    Otherwise, you need to first fork our repository, then push your code to that fork to create a Pull Request.
@@ -36,7 +36,7 @@ Nearly all DeepDive development activities happen over GitHub.
 7. Your branch should be deleted after the Pull Request is merged or closed.
 
 
-### DeepDive Code
+### DeepDive code
 
 DeepDive is written in several programming languages.
 
@@ -46,7 +46,7 @@ DeepDive is written in several programming languages.
 * Python is the main language we use for the udfs in our examples.
 * Scala and other mini languages are used for other minor parts.
 
-#### DeepDive Code Structure
+#### DeepDive code structure
 
 * `compiler/` contains the code that compiles DeepDive application configuration into an execution plan.
 * `database/` contains database drivers as well as code implementing other database operations.
@@ -169,7 +169,7 @@ DeepDive source tree includes several git submodules and ports:
 All commands shown above should be run from the top of the source tree.
 
 
-#### Modifying DeepDive Documentation
+#### Modifying DeepDive documentation
 
 DeepDive documentation is written in [Markdown](http://daringfireball.net/projects/markdown/) under `doc/`, and the website is compiled using [Jekyll](http://jekyllrb.com).
 
