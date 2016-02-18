@@ -8,6 +8,8 @@ title: deepdive.conf Reference
 This document contains the description of each configuration directive that can
 be specified in an application configuration file.
 
+As a remark, from version [0.8](0.8.0-alpha.md), the user application is described in the [`app.ddlog` file](deepdiveapp.md). Therefore, the configuration file `deepdive.conf` described here doesn't have to be used. However, during a call of `deepdive compile`, the `app.ddlog` and `deepdive.conf` files are combined and compiled together. It is then possible to specify some parameters, arguments or tasks in the `deepdive.conf` file, in addition to the main structure of the application written in DDlog, and both of them will be considered by DeepDive.
+
 ## Overview of configuration structure
 
 **Global section**: all application configuration directives described in the rest of the document
@@ -47,12 +49,11 @@ In this template, the global section `deepdive` contains following major section
 
 Links to these sections:
 
-- [schema](#schema): variable schema
 - [extraction](#extraction): extraction tasks
 - [inference](#inference-opt): inference rules
+- [schema](#inference-schema): variable schema
 - [calibration](#calibration): calibration parameters
 - [sampler](#sampler): sampler arguments
-- [pipeline](#pipelines): pipeline specifications
 
 
 ## Notation format
