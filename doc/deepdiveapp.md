@@ -9,7 +9,7 @@ A DeepDive application is a directory that contains the following files and dire
 
 ## app.ddlog
 
-<TODO> Seems like we should have more content here </TODO>
+<todo> Seems like we should have more content here </todo>
 Schema, extractors, and inference rules written in our higher-level language, DDlog, are put in this file.
 
 ## deepdive.conf
