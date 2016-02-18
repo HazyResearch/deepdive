@@ -1,7 +1,7 @@
 sudo: false  # to use container-based infra, see: http://docs.travis-ci.com/user/migrating-from-legacy/
 notifications:
   email:
-    - deepdive-dev@lists.stanford.edu
+    - deepdive-dev@googlegroups.com
   webhooks:
     urls:
       # gitter.im/HazyResearch/deepdive
