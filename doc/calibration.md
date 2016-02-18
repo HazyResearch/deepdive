@@ -164,7 +164,7 @@ Common ones are:
 
 
 
-## Recall Errors
+## Recall errors
 
 Recall is the fraction of relevant events that are extracted.
 In information extraction applications there are generally two sources of recall error:
