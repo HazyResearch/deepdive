@@ -13,7 +13,7 @@ esac
 install__deepdive_build_deps() {
     set -x
     sudo apt-get update
-    sudo apt-get install -qq git rsync bzip2 xz-utils build-essential flex make default-jdk
+    sudo apt-get install -qq git rsync bzip2 libbz2-dev xz-utils build-essential flex make default-jdk
     sudo apt-get install -qq ed  # mindbender
     sudo apt-get install -qq gcc-4.8 libnuma-dev cmake unzip  # sampler
 }
