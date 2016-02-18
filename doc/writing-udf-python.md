@@ -34,7 +34,7 @@ classification(
 
 In this example, let's suppose we want to write a simple UDF to classify each `article` into different topics by adding tuples to the relation `classification`. The two following sections detail how to declare such a function and how to call it in DDlog.
 
-### Function Declarations
+### Function declarations
 A function declaration includes input/output schema as well as a pointer to its implementation.
 
 ```ddlog
@@ -66,7 +66,7 @@ This is because the function will not use the rest of the columns as mentioned b
 Next section shows how such input tuples can be derived and fed into a function.
 
 
-### Function Call Rules
+### Function call rules
 The function declared above can be called to derive tuples for another relation of the output type.
 The input tuples for the function call are derived using a syntax similar to a [normal derivation rule](writing-dataflow-ddlog.md#normal-derivation-rules).
 For example, the rule shown below calls the `classify_articles` function to fill the `classification` relation using a subset of columns from the `articles` relation.
