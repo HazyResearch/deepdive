@@ -7,7 +7,7 @@ title: Using DeepDive on EC2
 
 Although we no longer distribute a pre-configured [Amazon EC2 Machine Image](http://aws.amazon.com/ec2/) (AMI), DeepDive can be installed fairly quickly on an EC2 instance.
 
-### Launching an Instance
+### Launching an instance
 
 The following are the steps needed to launch an EC2 instance and start DeepDive in it with Postgres:
 
