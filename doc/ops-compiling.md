@@ -28,8 +28,8 @@ All compiled output is created under the `run/` directory of the app:
 * `run/dataflow.svg`
 
     A data flow diagram showing the dependencies between processes.
-    This file contains a graph of the dataflow and helps understanding better the dependencies between the relations and rules and user-defined functions used to produce them.
-    It is to be opened in a web browser (Chrome or Safari work particularly well for it).
+    This file contains a graph of the dataflow and helps better understand the dependencies among relations, rules and user-defined functions used to produce them.
+    It can be opened in a web browser (Chrome or Safari work particularly well for it).
 
 * `run/Makefile`
 
@@ -76,7 +76,7 @@ Otherwise, the modifications in `app.ddlog` won't be considered, and simply the 
 ## Why compile
 
 Compiling a DeepDive application presents two main advantages.
-First it helps to run the application faster by extracting the correct dependencies between the different operations.
+First, it helps to run the application faster by extracting the correct dependencies between the different operations.
 Second, it provides many checks for the application and helps detecting errors even before running DeepDive.
 
 

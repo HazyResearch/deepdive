@@ -3,9 +3,9 @@ layout: default
 title: Debugging user-defined functions
 ---
 
-# Debugging user-defined functions
+# Debugging User-Defined Functions
 
-Many things can go wrong in user-defined functions, so debugging support is important for the user to write the code and easily verify that it works as expected.
+Many things can go wrong in user-defined functions (UDFs), so debugging support is important for the user to write the code and easily verify that it works as expected.
 UDFs can be implemented in any programming language as long as they take the form of an executable that reads from *standard input* and writes to *standard output*.
 Here are some general tips for printing information to the log and running the UDFs in limited ways to help work through issues without needing to run the entire data flow of the DeepDive application.
 
@@ -56,7 +56,7 @@ Instead, by prefixing the command with `deepdive env`, they can be executed as i
 deepdive env python udf/fn.py
 ```
 
-This will take TSV rows from standard input and print TSV rows to standard output as well as debug logs to standard error, and therefore it can be debugged just like a normal Python program.
+This will take TSV rows from standard input and print TSV rows to standard output as well as debug logs to standard error. It can therefore be debugged just like a normal Python program.
 
 <!--
 <todo>write</todo>

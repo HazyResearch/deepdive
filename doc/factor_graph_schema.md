@@ -8,7 +8,7 @@ title: Factor Graph Grounding Output Reference
 [Grounding](overview.md#grounding) is the process of building the
 factor graph and dumping it to files that the [sampler](sampler.md)
 can take as input. DeepDive uses a custom binary format to encode the factor
-graph. It generates four files, one each for weights, variables, and factors.
+graph. It generates four files, one each for weights, variables, factors and metadata.
 All files resides in the `out/` directory of the latest run. The format
 of these files is as follows, where numbers are in bytes and **network byte
 order** is used.

@@ -9,10 +9,10 @@ This document describes the *generic features* library that is available as part
 of `ddlib`, the utility library included with DeepDive (under
 `$DEEPDIVE_HOME/ddlib/ddlib`).
 
-By 'generic features' we denote a set of features that are not application- or
+By "generic features" we denote a set of features that are not application- or
 domain-dependent and can be used to obtain good baseline quality for mention and
 relation extractions. Feature engineering is indeed one of the most
-time-consuming operation in Knowledge Base Construction and it is often
+time-consuming operation in Knowledge Base Construction (KBC) and it is often
 difficult to start building feature from scratch. The goal of the generic
 features library is to allow users of DeepDive who are not KBC experts to get
 their application off the ground with good starting quality.
@@ -23,7 +23,7 @@ the sentences in the corpus to build the features. Examples of features include:
 the dependency path between two mentions composing a relation mention, the Named
 Entity Recognition tags of the words composing a mention, the dependency path
 between a mention and a keyword from a user-specified dictionary, and many
-others. See below for the complete list.
+others. See [below](#list-of-generic-features) for the complete list.
 
 The user of the library can optionally specify one or more dictionaries. These
 are sets of words that the user believes are relevant for the correct
@@ -31,11 +31,11 @@ classification of mentions and relations, and are often
 domain-/application-specific. The generic features library uses the dictionaries
 to create additional features, allowing the inclusion of domain-knowledge in the
 set of features. More details about dictionaries and their use in the library
-are in the 'Using Dictionaries' section below.
+are in the [Using Dictionaries](#using-the-generic-feature-library) section below.
 
 ## List of Generic Features
 
-The generic feature library creates wo different sets of features for mentions
+The generic feature library creates two different sets of features for mentions
 and relations, due to the different nature of these objects, and to which
 features are more relevant for each type.
 
@@ -101,7 +101,7 @@ to all the generic features;
 
 ## Using the generic feature library
 
-In order to use the 'generic features' functionality, the user must import
+In order to use the "generic features" functionality, the user must import
 `ddlib` in her Python extractor:
 
 ```

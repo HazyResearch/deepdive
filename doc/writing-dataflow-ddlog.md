@@ -87,7 +87,7 @@ Expressions in the head atom decide values for the columns of the head relation,
 DDlog's semantics is based on unification of variables and expressions, i.e., variables with the same name unify the columns, and expressions in the body unify the values with the corresponding columns.
 
 #### Examples
-A comprehensive example of expressions is shown below.
+A few examples of expressions are shown below.
 
 ```ddlog
 a(k int).
@@ -95,11 +95,17 @@ b(k int, p text, q text, r int).
 c(s text, n int, t text).
 
 Q("test", f(123), id) :- a(id), b(id, x,y,z), c(x || y,10,"foo").
+
+R(TRUE, power(abs(x-z), 2)) :- a(x), b(y, _, _, _).
+
+S(if l > 10 then TRUE
+else if l < 10 then FALSE
+else NULL end) :- R ( _, l).
 ```
 
-Here tuples of string literal "text", a function `f` applied to 123, and `id` bound by the body of the rule are added to relation `Q`.
+Here tuples of string literal "text", a function `f` applied to 123, and `id` bound by the body of the rule are added to relation `Q`. Then, we add to the relation `R` the boolean `TRUE` and operations from variables in `a` and `b`. Finally, we fill out the relation `S` by a condition value according to the second variable in `R`.
 
-<todo>cover all cases of expressions</todo>
+We observe that sophisticated queries are realizable in ddlog. The following paragraphes explain in details the different possible operations in ddlog.
 
 <!--
 The repeated use of variables in the body expresses the following conditions expressed in SQL:
@@ -152,7 +158,8 @@ Expressions can be arbitrarily nested, and parentheses can surround them <code>(
 
 #### Comparisons
 
-* Equality `=`, `!=`
+* Equality `=`
+* Distinction `!=`
 * Inequality `<`, `<=`, `>`, `>=`
 * Null <code>*expr* IS NULL</code>, <code>*expr* IS NOT NULL</code>
 * String pattern <code>*exprText* LIKE *exprPattern*</code>
@@ -239,6 +246,16 @@ For example, the following rule groups all values of the third column of `R` by 
 ```ddlog
 Q(a,b,MAX(c)) :- R(a,b,c).
 ```
+
+### Select Distinct
+
+In order to select only distinct elements from other relations, the operator `*:-` can be used. For instance, let's consider the following rule:
+
+```ddlog
+Q(x,y) *:- R(x, y).
+```
+
+In this rule, only disctinct couple of variables `(x,y)` from the relation `R` will be inserted in the head `Q`.
 
 
 ### Quantifiers
