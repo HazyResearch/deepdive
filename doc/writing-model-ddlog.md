@@ -5,19 +5,19 @@ title: Specifying a statistical model in DDlog
 
 # Specifying a statistical model in DDlog
 
-Every DeepDive application can be viewed as defining a [statistical inference](inference.md) problem using every bits of [its input data](ops-data.md#organizing-input-data) and [data derived by a series of data processing steps](ops-execution.md#compiled-processes-and-data-flow).
-This document describes how to declare random variables for a DeepDive application's statistical model, how to define their scope as well as supervision labels, and how to write inference rules for specifying features and correlations.
+Every DeepDive application can be viewed as defining a [statistical inference](inference.md) problem using [input data](ops-data.md#organizing-input-data) and [data derived by a series of data processing steps](ops-execution.md#compiled-processes-and-data-flow).
+This document describes (a) how to declare random variables for a DeepDive application's statistical model, (b) how to define their scope as well as supervision labels, and (c) how to write inference rules for specifying features and correlations.
 
 
 ## Variable declarations
 
-DeepDive requires the user to specify the name and type of the *variable relations* that hold random variables on which to perform inference.
+DeepDive requires the user to specify the name and type of the *variable relations* that hold random variables used during probabilistic inference.
 Currently DeepDive supports Boolean (i.e., Bernoulli) variables and Categorical variables.
 Variable relations are declared in `app.ddlog` with a small twist to the syntax used for [declaring normal relations](writing-dataflow-ddlog.md#schema-declarations).
 
 ### Boolean variables
 
-A question mark after the relation name indicates that it is a variable relation containing random variables in the model rather than a normal relation that is one step removed from the model.
+A question mark after the relation name indicates that it is a variable relation containing random variables rather than a normal relation used for loading or processing data to be later used by the model.
 The columns of the variable relation serve as a key.
 The following is an example declaration of a relation of Boolean variables.
 
@@ -75,23 +75,23 @@ This rule is basically doing a *majority vote*, turning aggregate numbers comput
 
 *Inference rules* specify features for a variable and/or the correlations between variables.
 They are basically the templates for the factors in the [factor graph](inference.md), telling DeepDive how to *ground* them based on what input and derived data.
-Again, these rules extend the syntax for normal derivation rules and allows the type of the factor to be specified in the rules head, preceded by a `@weight` declaration as shown below.
+Again, these rules extend the syntax of normal derivation rules and allow the type of the factor to be specified in the rule's head, preceded by a `@weight` declaration as shown below.
 
 ```ddlog
 @weight(...)
 FACTOR_HEAD :- RULE_BODY.
 ```
 
-Here, *RULE_BODY* denotes the typical conjunctive query also used for normal derivation rules in DDlog.
+Here, *RULE_BODY* denotes a typical conjunctive query also used for normal derivation rules in DDlog.
 *FACTOR_HEAD* denotes the part where more than one variable relations can appear with a special syntax.
-Let's first look at the simplest case of describing one variable in the inference rule's head.
+Let's first look at the simplest case of describing one variable in the head of an inference rule.
 
 
 ### Specifying features
 
-In common cases, one wants to model a Boolean variable's probability of being true using some set of features.
+In common cases, one wants to model the probability of a Boolean variable being true using a set of features.
 Expressing this kind of binary classification problem is very simple in DDlog.
-By writing a rule with just one variable relation in the head, DeepDive creates in the model a *unary factor* that connects to it whose weight is determined by a user-defined feature.
+By writing a rule with just one variable relation in the head, DeepDive creates in the model a *unary factor* that connects to it. The weight of this unary factor is determined by a user-defined feature.
 For instance, in [the spouse example](example-spouse.md), there is an inference rule specifying features for the `has_spouse` variables written as:
 
 ```ddlog
@@ -111,8 +111,8 @@ This rule means that:
 ### Specifying correlations
 
 Now, in almost every problem, the variables are correlated with each other in a special way, and it is desirable to enrich the model with this domain knowledge.
-Such correlations can be modeled by creating certain types of factors that connect to those correlated variables, and this is where a richer syntax in the *FACTOR_HEAD* comes into play.
-DDlog borrows a lot of syntax heavily from [Markov Logic Networks](https://en.wikipedia.org/wiki/Markov_logic_network) and hence [first-order logic](https://en.wikipedia.org/wiki/First-order_logic).
+Such correlations can be modeled by creating certain types of factors that connect multiple correlated variables together. This is where a richer syntax in the *FACTOR_HEAD* comes into play.
+DDlog borrows a lot of syntax from [Markov Logic Networks](https://en.wikipedia.org/wiki/Markov_logic_network), and hence, [first-order logic](https://en.wikipedia.org/wiki/First-order_logic).
 
 For example, the following rule in [the smoke example](example-smoke.md) correlates two variable relations.
 
@@ -122,8 +122,8 @@ smoke(x) => cancer(x) :-
     person(x).
 ```
 
-This rule expresses that if a person smokes, there's an *implication* that he/she will have cancer.
-Here, a constant `3` is used in the `@weight` to express some level of confidence in this rule, instead of learning the weight from the data (explained more later).
+This rule expresses that if a person smokes, there is an *implication* that he/she will have cancer.
+Here, a constant `3` is used in the `@weight` to express some level of confidence in this rule, instead of learning the weight from the data (explained later).
 
 #### Implication
 
