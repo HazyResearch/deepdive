@@ -148,7 +148,19 @@
           {% if page.no_toc %}
             <div class="col-md-10 col-md-offset-1">{{ content }}</div>
           {% else %}
-            <nav id="toc" class="col-md-3 bs-docs-sidebar"></nav>
+            <nav class="col-md-3 bs-docs-sidebar">
+                <!-- a floating logo and title that appears when scrolling further down -->
+                <div class="hide hide-affix-top" id="toc-title">
+                    <a href="#"><img class="deepdive-logo"
+                        style="position:absolute; top:-70px; left:0px; max-width:100%;"
+                        src="{{ site.baseurl }}/images/header_logo.png"/></a>
+                    <div style="margin-top:60px;">
+                        {% if page.title %}<h4>{{ page.title }}</h4>{% endif %}
+                    </div>
+                </div>
+
+                <div id="toc"></div>
+            </nav>
             <div class="col-md-9">{{ content }}</div>
             <script>
                 $("#toc").toc({
@@ -166,9 +178,14 @@
                         .attr({ id: "sidebar" })
                         .addClass("fixed")
                     ;
-                // affix sidebar
+                // add title to sidebar
                 var $sidebar = $("#sidebar");
-                $sidebar.affix({ offset: { top: $("#header").outerHeight() } });
+                $sidebar.prepend(
+                    $("<li>").addClass("hide-affix-top")
+                        .append($("#toc-title").removeClass("hide")));
+                // affix sidebar
+                var affixOffsetTop = {{ page.toc_offset_top | default: 0 }};
+                $sidebar.affix({ offset: { top: $("#header").outerHeight() + affixOffsetTop } });
                 // woraround for mobile to make #sidebar.affix:hover non-sticky
                 $("html").on("touchstart", function(e) {
                     if ($sidebar.has(e.target)) {
@@ -184,7 +201,7 @@
                 });
                 setTimeout(function(){
                     $("body").scrollspy("refresh");
-                    $sidebar.affix({ offset: { top: $("#header").outerHeight() } });
+                    $sidebar.affix({ offset: { top: $("#header").outerHeight() + affixOffsetTop } });
                 }, 1000);
             </script>
           {% endif %}

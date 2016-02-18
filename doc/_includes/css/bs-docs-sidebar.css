@@ -5,7 +5,17 @@
 */
 
 #sidebar.affix {
-    top: 20px;
+    top: 0px;
+    bottom: 0px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    overflow: auto;
+}
+#sidebar.affix .hide-affix-top {
+    display: block;
+}
+#sidebar.affix-top .hide-affix-top {
+    display: none;
 }
 @media only screen and (max-width: 1199px) { #sidebar.affix { width: 205px; } }
 @media only screen and (min-width: 1200px) { #sidebar.affix { width: 255px; } }
