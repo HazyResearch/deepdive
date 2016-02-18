@@ -12,6 +12,10 @@ body {
   color: #373723;
   font-family: 'Lato', 'Lucida Grande', 'Calibri', 'Helvetica Neue', Arial, sans-serif;
   font-size: 14px;
+  background-color: #08608A; /* to keep the background at the far back consistent with header/footer */
+}
+
+.body {
   background-color: #FAFAFA;
 }
 

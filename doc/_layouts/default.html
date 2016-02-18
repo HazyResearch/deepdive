@@ -40,8 +40,8 @@
       </div>
 
       {% if page.path == "index.md" # Only for Front Page %}
-      <section id="carousel" style="margin-top:30px; margin-bottom: -50px;">
-      <div class="container">
+      <section id="carousel" class="body" style="padding-top:20px;">
+      <div class="container" style="margin-top:30px; margin-bottom:-50px;">
         <div id="deepdive-carousel" class="carousel slide" data-ride="carousel" data-pause="false" data-wrap="true">
           <!-- Indicators -->
           <ol class="carousel-indicators">
@@ -142,7 +142,7 @@
       </section>
       {% endif %}
 
-      <section id="main">
+      <section id="main" class="body">
         <div class="container">
           <div class="row">
           {% if page.no_toc %}
