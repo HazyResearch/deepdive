@@ -3,7 +3,7 @@ layout: default
 title: Debugging user-defined functions
 ---
 
-# Debugging User-Defined Functions
+# Debugging user-defined functions
 
 Many things can go wrong in user-defined functions (UDFs), so debugging support is important for the user to write the code and easily verify that it works as expected.
 UDFs can be implemented in any programming language as long as they take the form of an executable that reads from *standard input* and writes to *standard output*.
