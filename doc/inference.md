@@ -3,7 +3,7 @@ layout: default
 title: Probabilistic Inference and Factor Graphs
 ---
 
-# Probabilistic Inference and Factor Graphs
+# Probabilistic inference and factor graphs
 
 This documents presents a high-level overview of **probabilistic inference** and
 an introduction to **factor graphs**, a model used by DeepDive to perform
