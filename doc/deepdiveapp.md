@@ -3,7 +3,7 @@ layout: default
 title: DeepDive Application's Structure and Operations
 ---
 
-# DeepDive Application Structure
+# DeepDive application structure
 
 A DeepDive application is a directory that contains the following files and directories:
 
