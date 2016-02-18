@@ -6,7 +6,7 @@ title: Calibration
 # Calibration
 
 One of the most important aspects of DeepDive is its iterative workflow.
-After having performed [probabilistic inference](inference.md) using DeepDive, it is crucial to evaluate the results and act on the feedback that the system provides to improve the accuracy.
+After performing [probabilistic inference](inference.md) using DeepDive, it is crucial to evaluate the results and act on the feedback that the system provides to improve the accuracy.
 DeepDive produces *calibration plots* to help the user with this task.
 
 ## Defining a holdout set
@@ -17,7 +17,7 @@ DeepDive uses the holdout variables to evaluate its accuracy, and no holdout is 
 
 ### Holdout fraction
 
-When the `holdout_fraction` is set as below in the [application's `deepdive.conf` file](deepdiveapp.md), DeepDive randomly selects the specified fraction of evidence variables, i.e., ones that are labeled can be selected and *holds out* from training.
+When the `holdout_fraction` is set as below in the [application's `deepdive.conf` file](deepdiveapp.md), DeepDive randomly selects the specified fraction of evidence variables, i.e., ones that are labeled can be selected and are *held out* from training.
 
 ```hocon
 deepdive.calibration.holdout_fraction: 0.25
@@ -127,8 +127,8 @@ The accuracy is defined as `num_holdout_true` / `num_holdout_total`.
 
 **Plots (b) and (c)** show the number of total prediction on the test and the training set, respectively.
 Ideally these plots should follow a U-curve.
-That is, the systems makes many predictions with probability 0 (event that are likely to be false), and many predictions with probability > 0.9 (events that are likely to be true).
-Predictions in the range of 0.4 - 0.6 mean that the system is not sure, which may indicate that need more features to make predictions for such events.
+That is, the system makes many predictions with probability 0 (events that are likely to be false), and many predictions with probability > 0.9 (events that are likely to be true).
+Predictions in the range of 0.4 - 0.6 mean that the system is not sure, which may indicate that it needs more features to make predictions for such events.
 
 Note that plots (a) and (b) can only be generated if [a holdout fraction was specified in the configuration](#defining-a-holdout-set).
 
@@ -143,8 +143,8 @@ Common ones are:
     Take a look at variables that were assigned a probability in the 0.4 to 0.6 range, inspect them, and come up with specific features that would push these variables towards a positive or negative probability.
 
 - **Not enough positive evidence:**
-    Without sufficient positive evidence the system will be unable to learn weights that push variables towards a high probability (or low probability if the variables are negated).
-    Having little probability mass on the right side of the graph is often an indicator for not having enough positive evidence, or not using features that uses the positive evidence effectively.
+    Without sufficient positive evidence the system will be unable to learn weights that push variables towards a high probability (or a low probability if the variables are negated).
+    Having little probability mass on the right side of the graph is often an indicator for not having enough positive evidence, or not using features that use the positive evidence effectively.
 
 - **Not enough negative evidence:**
     Without sufficient negative evidence, or with negative evidence that is biased, the system will not be able to distinguish true events from false events.
@@ -157,8 +157,6 @@ Common ones are:
     Check the DeepDive log file for the gradient value at the end of the learning phrase.
     If the value is very large (1000 or more), then it is possible that weight learning was not successful.
     In this case, one may try to increase the number of learning iterations, decrease the learning rate, or use a faster decay.
-    On the other hand, if results converge too fast to a local optimum, the user can try increasing the number of learning iterations, increase the learning rate, or using a slower decay.
-    Check the [DimmWitted sampler documentation](sampler.md) for more details.
 
 - **Weight learning converges to a local optimum:**
     The user can try increasing the learning rate, or using a slower decay.
@@ -171,7 +169,7 @@ Common ones are:
 Recall is the fraction of relevant events that are extracted.
 In information extraction applications there are generally two sources of recall error:
 
-- **Events candidates are not recognized in the text.**
+- **Event candidates are not recognized in the text.**
     In this case, no variables are created are recall errors and these events do not show up in the calibration plots.
     For example, the system may fail to identify "micro soft" as a company name if it is lowercase and misspelled.
     Such errors are difficult to debug, unless there is a complete database to test against, or the user makes a [closed-world assumption](http://en.wikipedia.org/wiki/Closed_world_assumption) on the test set.
