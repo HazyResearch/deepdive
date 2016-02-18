@@ -11,7 +11,7 @@ The actual processing of the data is discussed in a page about [executing the De
 
 ## Preparing the database for the DeepDive app
 
-The database for the DeepDive application is configured through [the `db.url` file](deepdiveapp.md#db-url) or that can be overridden with the `DEEPDIVE_DB_URL` environment variable.
+The database for the DeepDive application is configured through [the `db.url` file](deepdiveapp.md#db-url) or can be overridden with the `DEEPDIVE_DB_URL` environment variable.
 
 ### Initializing the database
 
@@ -56,7 +56,7 @@ deepdive create table-if-not-exists foo ...
 ## Organizing input data
 
 All input data for a DeepDive application should be kept under the `input/` directory.
-DeepDive will rely on a naming convention and assume data for a relation <code>*foo*</code> declared in `app.ddlog` (and not output by an extractor) exists at path <code>input/*foo*.*extension*</code> where <code>*extension*</code> can be one of `tsv`, `csv`, `sql` `tsv.bz2`, `csv.bz2`, `tsv.gz`, `csv.gz`, `tsv.sh`, `csv.sh`. This indicates in what format it is serialized as well as how it is compressed, or whether it's a shell script that emits such data or a file containing the data itself.
+DeepDive relies on a naming convention and assumes data for a relation <code>*foo*</code> declared in `app.ddlog` (and not output by an extractor) exists at path <code>input/*foo*.*extension*</code> where <code>*extension*</code> can be one of `tsv`, `csv`, `sql` `tsv.bz2`, `csv.bz2`, `tsv.gz`, `csv.gz`, `tsv.sh`, `csv.sh`. This indicates in what format it is serialized as well as how it is compressed, or whether it's a shell script that emits such data or a file containing the data itself.
 For example, in the [spouse example](example-spouse.md), the `input/articles.tsv.sh` is a shell script that produces lines with tab-separated values for the "articles" relation.
 
 
@@ -71,7 +71,7 @@ To load such input data for a relation *foo*, run:
 deepdive load foo
 ```
 
-To load data from a particular source such as `source.tsv` or multiple sources `/tmp/source-1.tsv`, `/data/source-2.tsv.bz2` instead, they can passed over as extra arguments:
+To load data from a particular source such as `source.tsv` or multiple sources `/tmp/source-1.tsv`, `/data/source-2.tsv.bz2` instead, they can be passed over as extra arguments:
 
 ```bash
 deepdive load foo  source.tsv
