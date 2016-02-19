@@ -146,7 +146,7 @@ deepdive query 'name1, name2 ?-
 (7 rows)
 ```
 
-For supervised machine learning, the app continues with [extracting *features*](example-spouse.md#1-4-extracting-features-for-each-candidate) from the context of those candidates and [creating a training set](example-spouse.md#3-learning-amp-inference-model-specification) programmatically by finding promising positive and negative examples using [*distant supervision*](distant_supervision.md).
+For supervised machine learning, the app continues with [extracting *features*](example-spouse.md#1-4-extracting-features-for-each-candidate) from the context of those candidates and [creating a training set](example-spouse.md#3-learning-and-inference-model-specification) programmatically by finding promising positive and negative examples using [*distant supervision*](distant_supervision.md).
 
 ### 3. Run the model
 
@@ -186,7 +186,7 @@ deepdive sql "
 (12 rows)
 ```
 
-DeepDive provides [a suite of tools and guidelines](development-cycle.md#3-evaluate-amp-debug) to work with the data produced by the application.
+DeepDive provides [a suite of tools and guidelines](development-cycle.md#3-evaluate-debug) to work with the data produced by the application.
 For instance, below is a screenshot of an automatic interactive search interface DeepDive provides for [browsing the processed data with predicted results](browsing.md).
 
 ![Screenshot of the search interface provided by Mindbender](images/browsing_results.png)

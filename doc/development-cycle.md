@@ -38,7 +38,7 @@ DeepDive provides a suite of commands and conventions to carry out these operati
 - [Learning and inference with the statistical model](ops-model.md)
 
 
-## 3. Evaluate & Debug
+## 3. Evaluate / Debug
 
 Based on our observation of [several successful DeepDive applications](showcase/apps.md), we can say that the more rapid the user moves through the development cycle, the more quick she achieves high-quality.
 Users can identify the most common mode of errors after each iteration by evaluating the predictions made by the system. This is done via formal error analysis supported by interactive tools.

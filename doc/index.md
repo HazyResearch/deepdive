@@ -170,7 +170,7 @@ and
 - [DeepDive Developer's Guide](developer.md)
 
 
-### Updates &amp; Changelog
+### Updates / Changelog
 
 - [Changelog for version 0.8.0-alpha](changelog/0.8.0-alpha.md) (02/1X/2016)
 - [Changelog for version 0.7.1-alpha](changelog/0.7.1-alpha.md) (09/28/2015)
