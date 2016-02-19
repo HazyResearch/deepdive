@@ -50,11 +50,11 @@ This app extracts mentions of spouses from [a corpus of news articles][corpus].
 bash <(curl -fsSL git.io/getdeepdive) spouse_example
 ```
 
-This will download a copy of [the example app's code and data from GitHub](../examples/spouse/) to a folder named `spouse/`.
+This will download a copy of [the example app's code and data from GitHub](../examples/spouse/) to a folder whose name begins with `spouse_example-`.
 So, let's move into it:
 
 ```bash
-cd spouse
+cd spouse_example-*
 ```
 
 Then, check if we have everything there:
@@ -63,7 +63,7 @@ Then, check if we have everything there:
 ls -F
 ```
 ```
-README.md  db.url         input/     mindbender/  udf/	app.ddlog  deepdive.conf  labeling/
+app.ddlog  db.url  deepdive.conf  input/  labeling/  mindbender/  README.md  udf/
 ```
 
 ### 1. Load input

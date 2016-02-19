@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # DeepDive Installer
-set -eu
+set -euo pipefail
 
 : ${RELEASE:=v0.8.0}    # the DeepDive release version to install
 : ${PREFIX:=~/local}    # the path to install deepdive
@@ -117,16 +117,38 @@ install_deepdive() {
 }
 # installs DeepDive examples and tests
 install_deepdive_examples_tests() {
-    local dest=deepdive-${RELEASE#v}
+    download_github_tree "DeepDive examples and tests" \
+        deepdive-${RELEASE#v} \
+        examples test util/test
+}
+install_spouse_example() {
+    download_github_tree "Spouse example DeepDive app" \
+        spouse_example-${RELEASE#v} \
+        examples/spouse
+}
+# how to download a subtree of the GitHub repo
+download_github_tree() {
+    local what=$1; shift
+    local dest=$1; shift
+    # the rest of the arguments are relative paths to download
     if [[ -s "$dest"/.downloaded ]]; then
-        echo "DeepDive examples and tests already downloaded at $(cd "$dest" && pwd)"
+        echo "$what already downloaded at $(cd "$dest" && pwd)"
     else
-        mkdir -p "$dest"
-        touch "$dest"/.downloaded
+        local tarballPrefix=deepdive-"${RELEASE#v}"
+        local tmpdir="$dest".download
+        mkdir -p "$tmpdir"
         set -x
-        curl -fsSL https://github.com/HazyResearch/deepdive/archive/$RELEASE.tar.gz |
-        tar xvzf - -C . "$dest"/{examples,src/test/python,test,util/test}
+        curl -fsSL https://github.com/HazyResearch/deepdive/archive/"$RELEASE".tar.gz |
+        tar xvzf - -C "$tmpdir" "${@/#/$tarballPrefix/}"
+        ! [[ -e "$dest" ]] || mv -f "$dest" "$dest"~
+        if [[ $# -eq 1 && -d "$tmpdir/$tarballPrefix/$1" ]]; then
+            # don't nest things deep when downloading only one path
+            mv -f "$tmpdir/$tarballPrefix/$1" "$dest"
+        else
+            mv -f "$tmpdir/$tarballPrefix" "$dest"
+        fi
         date >"$dest"/.downloaded
+        rm -rf "$tmpdir"
     fi
 }
 # runs tests against installed DeepDive
