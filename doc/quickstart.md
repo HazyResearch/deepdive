@@ -69,10 +69,10 @@ app.ddlog  db.url  deepdive.conf  input/  labeling/  mindbender/  README.md  udf
 ### 1. Load input
 
 You can find some of our sampled datasets under `input/`.
-You can also [download the full corpus][corpus], but let's proceed with the smallest one that has 100 sampled articles:
+You can also [download the full corpus][corpus], but let's proceed with the one that has 1000 sampled articles:
 
 ```bash
-ln -s articles-100.tsv.bz2 input/articles.tsv.bz2
+ln -s articles-1000.tsv.bz2 input/articles.tsv.bz2
 ```
 ```bash
 deepdive do articles
@@ -84,15 +84,19 @@ This will load the input data into the database.
 Here are a few lines from an example article in the input corpus that has been loaded.
 
 ```bash
-deepdive query '?- articles("36349778-9942-475d-bdf2-23b7372911c1", content).' format=csv | tail -n +15 | head -5
+deepdive query '?- articles("5beb863f-26b1-4c2f-ba64-0c3e93e72162", content).' format=csv | grep -v '^$' | tail -n +16 | head
 ```
 ```
-How could anybody with a brain have ever supported such a facile, drug-addled ignoramus as Bachman, who recently said the only way to avoid war with Iran is to bomb it? But it happens every election, with homicidal crazies urging war on the world to counter false flag threats that have been cynically engineered by the CIA and Mossad. Thanks to a war-mongering media run by the same money men who sell the weapons and commit the colossal crimes, Americans never learn.
-
-But just as scary as the bizarre also-rans of history is the list of the people who have actually won presidential elections. Consider in recent years the immoral Bill Clinton, who gave America’s jobs away; George Bush the Younger, who was so dim-witted he had to be left out of the plot to wreck the World Trade Center lest through his stupidity he accidentally revealed the secret Jewish plan; and Barack Obama, who has no verifiable history at all except a suspicious trail of dead homosexual friends and a wife with a male physiognomy.
-
-So I guess we shouldn’t be too surprised at the sudden emergence of megalomillionaire Donald Trump as the leader of this year’s pack. He has done what other early leaders have always done, told people exactly what they want to hear.
-
+8:30 a.m.
+Raeann Meier and Mary Darnell are among the lucky ones to land tickets for Thursday's papal mass at the Basilica of the National Shrine of the Immaculate Conception.
+Meier, who's from Round Hill, Virginia, won a pair of tickets in her church lottery and is bringing fellow parishioner Darnell.
+Meier says of Francis: ""There is just no pope like this one."" She says ""Jesus hung out with the dregs — the tax collectors, the prostitutes"" and ""that's the way this pope is.""
+---
+7:50 a.m.
+An elaborate welcoming ceremony full of American pomp and pageantry awaits Pope Francis when he goes to the White House.
+The pope is scheduled to arrive by motorcade at about 9 a.m., his car pulling slowly up the South Lawn driveway to a red carpet, where President Barack Obama and his wife, Michelle, will be waiting to greet him.
+In front of an estimated 15,000 people who were invited by the White House to witness the historic moment, Obama will then lead Francis to a dais decked out with even more red carpet and red, white and blue bunting, and ringed by military color guards. The Vatican and American national anthems will play. Obama will deliver a welcome address to the pope, followed by the pope's address.
+Francis will also receive a thunderous 21-gun salute.
 ```
 
 <!--
@@ -112,13 +116,19 @@ deepdive do sentences
 After running the NLP markup process, we can see the tokens and NER tags for the example article we saw earlier.
 
 ```bash
-deepdive query '?- sentences("36349778-9942-475d-bdf2-23b7372911c1", _, _, tokens, _, _, ner_tags, _, _, _).' format=csv | grep PERSON | head -5
+deepdive query '?- sentences("5beb863f-26b1-4c2f-ba64-0c3e93e72162", _, _, tokens, _, _, ner_tags, _, _, _).' format=csv | grep PERSON | tail
 ```
 ```
-"{Lying,hypocrites,beg,for,votes,from,the,misinformed,and,unenlightened,By,John,Kaminski,http://renegadetribune.com/author/kaminski/,http://therebel.is/kaminski,Anyone,who,runs,for,president,of,the,United,States,must,supervise,the,robbery,and,murder,of,innocent,countries,"","",promise,to,maintain,the,unjust,slave,system,of,the,international,bankers,"","",and,lie,about,everything,that,pertains,to,the,safety,of,the,American,people,"","",because,there,is,no,safety,for,anyone,in,these,desperate,times,as,long,as,Jewish,controlled,puppets,continue,to,wreak,havoc,on,the,entire,world,.}","{O,O,O,O,O,O,O,O,O,O,O,PERSON,PERSON,O,O,O,O,O,O,O,O,O,LOCATION,LOCATION,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,MISC,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,MISC,O,O,O,O,O,O,O,O,O,O,O}"
-"{Among,the,hundreds,of,delusional,demagogues,who,have,run,for,president,over,the,years,"","",the,most,pathetic,scene,I,ever,witnessed,personally,was,in,the,2012,race,when,a,large,crowd,of,white-haired,retirees,gathered,at,Sarasota,airport,to,enthusiastically,welcome,Minnesota,Rep.,Michelle,Bachman,"","",a,pro-Israel,shill,who,was,later,ridiculed,for,both,her,use,of,anti-depressants,and,her,unflinching,support,for,the,international,bankers,who,have,deliberately,sabotaged,the,American,economy,for,more,than,a,hundred,years,.}","{O,O,O,O,O,O,O,O,O,O,O,O,DURATION,DURATION,O,O,O,O,O,O,O,O,O,O,O,O,DATE,O,O,O,O,O,O,O,O,O,O,LOCATION,O,O,O,O,LOCATION,O,PERSON,PERSON,O,O,MISC,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,MISC,O,O,O,O,O,DURATION,DURATION,O}"
-"{How,could,anybody,with,a,brain,have,ever,supported,such,a,facile,"","",drug-addled,ignoramus,as,Bachman,"","",who,recently,said,the,only,way,to,avoid,war,with,Iran,is,to,bomb,it,?}","{O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,PERSON,O,O,DATE,O,O,O,O,O,O,O,O,LOCATION,O,O,O,O,O}"
-"{Consider,in,recent,years,the,immoral,Bill,Clinton,"","",who,gave,America,'s,jobs,away,;,George,Bush,the,Younger,"","",who,was,so,dim-witted,he,had,to,be,left,out,of,the,plot,to,wreck,the,World,Trade,Center,lest,through,his,stupidity,he,accidentally,revealed,the,secret,Jewish,plan,;,and,Barack,Obama,"","",who,has,no,verifiable,history,at,all,except,a,suspicious,trail,of,dead,homosexual,friends,and,a,wife,with,a,male,physiognomy,So,I,guess,we,should,n't,be,too,surprised,at,the,sudden,emergence,of,megalomillionaire,Donald,Trump,as,the,leader,of,this,year,'s,pack,.}","{O,O,DURATION,DURATION,O,O,PERSON,PERSON,O,O,O,LOCATION,O,O,O,O,PERSON,PERSON,PERSON,PERSON,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,ORGANIZATION,ORGANIZATION,ORGANIZATION,O,O,O,O,O,O,O,O,O,MISC,O,O,O,PERSON,PERSON,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,PERSON,PERSON,O,O,O,O,DATE,DATE,O,O,O}"
+"{An,elaborate,welcoming,ceremony,full,of,American,pomp,and,pageantry,awaits,Pope,Francis,when,he,goes,to,the,White,House,.}","{O,O,O,O,O,O,MISC,O,O,O,O,PERSON,PERSON,O,O,O,O,O,ORGANIZATION,ORGANIZATION,O}"
+"{The,pope,is,scheduled,to,arrive,by,motorcade,at,about,9,a.m.,"","",his,car,pulling,slowly,up,the,South,Lawn,driveway,to,a,red,carpet,"","",where,President,Barack,Obama,and,his,wife,"","",Michelle,"","",will,be,waiting,to,greet,him,.}","{O,O,O,O,O,O,O,O,O,TIME,TIME,TIME,O,O,O,O,O,O,O,LOCATION,LOCATION,O,O,O,O,O,O,O,O,PERSON,PERSON,O,O,O,O,PERSON,O,O,O,O,O,O,O,O}"
+"{In,front,of,an,estimated,""15,000"",people,who,were,invited,by,the,White,House,to,witness,the,historic,moment,"","",Obama,will,then,lead,Francis,to,a,dais,decked,out,with,even,more,red,carpet,and,red,"","",white,and,blue,bunting,"","",and,ringed,by,military,color,guards,.}","{O,O,O,O,O,NUMBER,O,O,O,O,O,O,ORGANIZATION,ORGANIZATION,O,O,O,O,O,O,PERSON,O,O,O,PERSON,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O}"
+"{Obama,will,deliver,a,welcome,address,to,the,pope,"","",followed,by,the,pope,'s,address,.}","{PERSON,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O}"
+"{Francis,will,also,receive,a,thunderous,21-gun,salute,.}","{PERSON,O,O,O,O,O,O,O,O}"
+"{People,hoping,to,catch,a,glimpse,of,Pope,Francis,during,a,late,morning,parade,are,lining,up,for,a,coveted,spot,along,the,route,.}","{O,O,O,O,O,O,O,O,PERSON,O,O,TIME,TIME,O,O,O,O,O,O,O,O,O,O,O,O}"
+"{As,a,head,of,state,"","",Pope,Francis,officially,is,in,the,U.S.,on,what,'s,known,as,a,``,state,visit,.,''}","{O,O,O,O,O,O,O,PERSON,O,O,O,O,LOCATION,O,O,O,O,O,O,O,O,O,O,O}"
+"{For,one,thing,"","",President,Barack,Obama,and,Francis,will,not,review,the,troops,"","",as,presidents,do,with,other,visiting,leaders,.}","{O,NUMBER,O,O,O,PERSON,PERSON,O,PERSON,O,O,O,O,O,O,O,O,O,O,O,O,O,O}"
+"{Nor,will,Francis,return,to,the,White,House,in,the,evening,as,the,guest,at,a,lavish,state,dinner,"","",one,of,the,highlights,of,most,state,visits,.}","{O,O,PERSON,O,O,O,LOCATION,LOCATION,O,O,TIME,O,O,O,O,O,O,O,O,O,NUMBER,O,O,O,O,O,O,O,O}"
+"{That,'s,largely,because,of,Francis,',busy,schedule,.}","{O,O,O,O,O,PERSON,O,O,O,O}"
 ```
 
 
@@ -130,20 +140,21 @@ deepdive do spouse_candidate
 ```bash
 deepdive query 'name1, name2 ?-
     spouse_candidate(p1, name1, p2, name2),
-    person_mention(p1, _, "36349778-9942-475d-bdf2-23b7372911c1", _, _, _).
+    person_mention(p1, _, "5beb863f-26b1-4c2f-ba64-0c3e93e72162", _, _, _).
   '
 ```
 ```
-          name1          |      name2
--------------------------+-----------------
- Bill Clinton            | Donald Trump
- George Bush the Younger | Bill Clinton
- George Bush the Younger | Barack Obama
- George Bush the Younger | Donald Trump
- Barack Obama            | Bill Clinton
- Barack Obama            | Donald Trump
- Bernie Sanders          | Hillary Clinton
-(7 rows)
+    name1     |    name2
+--------------+--------------
+ Raeann Meier | Mary Darnell
+ Meier        | Darnell
+ Meier        | Francis
+ Barack Obama | Francis
+ Francis      | Obama
+ Barack Obama | Michelle
+ Obama        | Francis
+ Barack Obama | Francis
+(8 rows)
 ```
 
 For supervised machine learning, the app continues with [extracting *features*](example-spouse.md#1-4-extracting-features-for-each-candidate) from the context of those candidates and [creating a training set](example-spouse.md#3-learning-and-inference-model-specification) programmatically by finding promising positive and negative examples using [*distant supervision*](distant_supervision.md).
@@ -163,27 +174,25 @@ Here are the probabilities computed for the pairs of names from the example arti
 deepdive sql "
     SELECT p1.mention_text, p2.mention_text, expectation
     FROM has_spouse_label_inference i, person_mention p1, person_mention p2
-    WHERE p1_id LIKE '36349778-9942-475d-bdf2-23b7372911c1%'
+    WHERE p1_id LIKE '5beb863f-26b1-4c2f-ba64-0c3e93e72162%'
       AND p1_id = p1.mention_id AND p2_id = p2.mention_id
   "
 ```
 <!-- TODO switch to DDlog once it gets access to inference results -->
 ```
-      mention_text       |  mention_text   | expectation
--------------------------+-----------------+-------------
- Barack Obama            | Bill Clinton    |       0.002
- Barack Obama            | Bill Clinton    |       0.001
- George Bush the Younger | Bill Clinton    |       0.385
- George Bush the Younger | Barack Obama    |       0.002
- George Bush the Younger | Barack Obama    |           0
- Barack Obama            | Donald Trump    |       0.001
- Barack Obama            | Donald Trump    |           0
- George Bush the Younger | Donald Trump    |           0
- George Bush the Younger | Donald Trump    |           0
- Bill Clinton            | Donald Trump    |           0
- Bill Clinton            | Donald Trump    |           0
- Bernie Sanders          | Hillary Clinton |       0.002
-(12 rows)
+ mention_text | mention_text | expectation
+--------------+--------------+-------------
+ Raeann Meier | Mary Darnell |       0.129
+ Meier        | Darnell      |           0
+ Meier        | Darnell      |           0
+ Meier        | Francis      |       0.009
+ Barack Obama | Francis      |       0.002
+ Francis      | Obama        |       0.011
+ Barack Obama | Michelle     |       0.648
+ Barack Obama | Michelle     |       0.598
+ Obama        | Francis      |       0.014
+ Barack Obama | Francis      |       0.017
+(10 rows)
 ```
 
 DeepDive provides [a suite of tools and guidelines](development-cycle.md#3-evaluate-debug) to work with the data produced by the application.
