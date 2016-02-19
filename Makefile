@@ -41,11 +41,13 @@ $(PACKAGE): build
 # util/install/ can then download and install the binary release directly
 # without building the source tree.
 
+# XXX put coffee and node from mindbender on PATH
+release-%: PATH := $(realpath $(STAGE_DIR)/mindbender/node_modules/.bin):$(realpath $(STAGE_DIR)/mindbender/depends/bundled/.all/bin):$(PATH)
 release-%: GITHUB_REPO = HazyResearch/deepdive
 release-%: RELEASE_VERSION = $*
 release-%: RELEASE_PACKAGE = deepdive-$(RELEASE_VERSION)-$(shell uname).tar.gz
 release-%:
-	git tag --annotate --force $(RELEASE_VERSION)
+	-git tag --annotate $(RELEASE_VERSION) --cleanup=whitespace
 	$(MAKE) RELEASE_VERSION=$(RELEASE_VERSION) $(PACKAGE)
 	ln -sfn $(PACKAGE) $(RELEASE_PACKAGE)
 	# Releasing $(RELEASE_PACKAGE) to GitHub
