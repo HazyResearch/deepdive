@@ -20,9 +20,10 @@ bash <(curl -fsSL git.io/getdeepdive)
 ```
 ### DeepDive installer for Mac
 + curl -fsSL https://github.com/HazyResearch/deepdive/raw/v0.8.x/util/install/install.Mac.sh
-1) deepdive                 4) deepdive_from_source
-2) deepdive_examples_tests  5) postgres
-3) deepdive_from_release    6) run_deepdive_tests
+1) deepdive                 5) postgres
+2) deepdive_examples_tests  6) run_deepdive_tests
+3) deepdive_from_release    7) spouse_example
+4) deepdive_from_source
 # Select what to install (enter for all options, q to quit, or a number)? 1
 ```
 

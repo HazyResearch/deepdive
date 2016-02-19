@@ -119,7 +119,7 @@ install_deepdive() {
 install_deepdive_examples_tests() {
     download_github_tree "DeepDive examples and tests" \
         deepdive-${RELEASE#v} \
-        examples test util/test
+        examples test {compiler,runner,inference,shell,util{,/build}}/test
 }
 install_spouse_example() {
     download_github_tree "Spouse example DeepDive app" \

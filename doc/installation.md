@@ -26,12 +26,16 @@ You can install DeepDive and all its dependencies with a single command.
 2. Select `deepdive` or `deepdive_from_release` when asked.
     Choose the latter option if you simply want to install DeepDive without any of its runtime dependencies.
 
+    ```bash
+    bash <(curl -fsSL git.io/getdeepdive)
     ```
-    $ bash <(curl -fsSL deepdive.stanford.edu/install)
+    ```
     ### DeepDive installer for Mac
-    1) deepdive                 4) deepdive_from_source
-    2) deepdive_examples_tests  5) postgres
-    3) deepdive_from_release    6) run_deepdive_tests
+    + curl -fsSL https://github.com/HazyResearch/deepdive/raw/v0.8.x/util/install/install.Mac.sh
+    1) deepdive                 5) postgres
+    2) deepdive_examples_tests  6) run_deepdive_tests
+    3) deepdive_from_release    7) spouse_example
+    4) deepdive_from_source
     # Select what to install (enter for all options, q to quit, or a number)? 1
     [...]
     ```
@@ -42,7 +46,7 @@ You can install DeepDive and all its dependencies with a single command.
     * If you don't have permission to install the dependencies, you may want to use the `deepdive_from_release` option and ask the system administrator to install DeepDive's runtime dependencies with the following command.
 
         ```bash
-        bash <(curl -fsSL deepdive.stanford.edu/install) _deepdive_runtime_deps
+        bash <(curl -fsSL git.io/getdeepdive) _deepdive_runtime_deps
         ```
     * For installation with `deepdive_from_source` option, extra build dependencies are installed, and DeepDive source tree is cloned at `./deepdive`, then executables are installed under `~/local/bin/`.
     You can run tests in DeepDive's source tree to make sure everything will run fine.
