@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# torque/compute-remote-status -- Tells the submission node to compute status of running jobs
+# This script is meant to run on the submission node, it is not meant to be run
+# direclty by the user.
+# 
+# The script returns a character representing the status for each job, separated by a space.
+# "C" indicates successful completion, "F" indicates failure, and "I" indicates incomplete jobs.
+# "C C C F C C I I C C I" 
+# 
+# To read the output, one can use:
+#   JOB_STATUS_STR=$(compute-remote-status)
+#   IFS=' ' read -ra STATUSES <<< "$JOB_STATUS_STR"
+#   for s in ${STATUSES[@]}; do
+#     echo $s
+#   done
+##
+
+sched_status() {
+  tracejob -q $1 | grep -o Exit_status=[0-9]*$ | sed 's/Exit_status=//g'
+}
+
+STATUSES=""
+# different processing paths if more than one process
+for i in `seq 0 $((NUM_PROCESSES - 1))`; do
+  if [[ $NUM_PROCESSES -gt 1 ]]; then
+    RC=$(sched_status "${JOB_ID}[$i]")
+  else
+    RC=$(sched_status "$JOB_ID")
+  fi
+
+  # If there are multiple processes, then the output path is different
+  if [[ $RC -eq 0 ]] && [[ $NUM_PROCESSES -gt 1 ]] && [[ -f $REMOTE_OUT_DIR-$i ]]; then
+    STATUSES="$STATUSES C"
+  elif [[ $RC -eq 0 ]] && [[ -f $REMOTE_OUT_DIR ]]; then
+    STATUSES="$STATUSES C"
+  elif [[ ! $RC -eq 0 ]]; then
+    STATUSES="$STATUSES F"
+  else
+    STATUSES="$STATUSES I"
+  fi
+done

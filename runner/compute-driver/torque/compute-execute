@@ -88,14 +88,17 @@ echo ""
 echo "DEEPDIVE_APP = $DEEPDIVE_APP"
 echo "DEEPDIVE_CURRENT_PROCESS_NAME = $DEEPDIVE_CURRENT_PROCESS_NAME"
 echo "DEEPDIVE_COMPUTER_CONFIG = $DEEPDIVE_COMPUTER_CONFIG"
+echo "DEEPDIVE_COMPUTER_TYPE = $DEEPDIVE_COMPUTER_TYPE"
 echo ""
 echo "Session information"
 echo " application id : $LOCAL_USER + $DEEPDIVE_APP -> $APP_ID"
 echo " session id     : $DEEPDIVE_CURRENT_PROCESS_NAME -> $APP_ID/$SESSION_ID"
 
 # ensure all the directories needed exist in the remote node. 
-ssh $SSH_INFO "mkdir -p $(dirname $remote_deepdive_app)"
-ssh $SSH_INFO "mkdir -p $remote_deepdive_cwd"
+ssh $SSH_INFO bash -c "'
+  mkdir -p $(dirname $remote_deepdive_app)
+  mkdir -p $remote_deepdive_cwd
+'"
 
 # Slash at the end of DEEPDIVE_APP/ is important, so that rsync doesn't create
 # another folder inside $remote_deepdive_app
@@ -169,16 +172,6 @@ compute_submit() {
   ssh $SSH_INFO "env KRB5CCNAME=FILE:$KRB_DIR qsub -V $REMOTE_SH_DIR" 
 }
 
-# Poll for status. Should return I for incomplete, S for success, or F for fail.
-compute_status() {
-    # turns out qstat really sucks since it doesn't deal with complete jobs. 
-    # ssh $SSH_INFO "qstat -f -1 $JOB_ID | grep job_state | sed 's/.*job_state = //'"
-
-    # at least for torque, tracejob seems to do the job much better. this
-    # will actually return the exit code of the job.
-    ssh $SSH_INFO "tracejob -q $1 | grep -o Exit_status=[0-9]*$ | sed 's/Exit_status=//g'"
-}
-
 # Ensure Kerberos authentication is succesful for user. 
 KRB_DIR="/tmp/krb5cc_${ssh_user}_deepdive"
 if ! ssh $SSH_INFO "klist -s -c $KRB_DIR > /dev/null"; then
@@ -200,67 +193,52 @@ if [[ ! "$JOB_ID" -gt 0 ]]; then
 fi
 echo "Job submitted with job id $JOB_ID."
 
+ssh_with_env() {
+  ssh $SSH_INFO \
+    `env | sed 's/\([^=]*\)=\(.*\)/\1="\2"/' | tr '\n' ' '` \
+    "$1"
+}
+
 # Poll status
 echo "Waiting for job id $JOB_ID to complete"
 STATUS=incomplete
 #while [[ "$(compute_status)" == "Q" ]] && ssh -q $SSH_INFO "[[ ! -f $REMOTE_OUT_DIR ]]"; do
 while [[ "$STATUS" == incomplete ]]; do
-    echo "Waiting for $poll_period_secs seconds..."
-    sleep $poll_period_secs
+  echo "Waiting for $poll_period_secs seconds..."
+  sleep $poll_period_secs
 
-    if [[ $num_processes -gt 1 ]]; then
-        COMPLETE_IDS=""
-        FAILED_IDS=""
-        INCOMPLETE_IDS=""
-        for i in `seq 0 $((num_processes - 1))`; do
-            # XXX: Very costly to check each status. 
-            RC=$(compute_status ${JOB_ID}[$i])
-            if [[ $RC -eq 0 ]] && ssh -q $SSH_INFO "[[ -f $REMOTE_OUT_DIR-$i ]]"; then
-                COMPLETE_IDS="$COMPLETE_IDS $i"
-            elif [[ $RC -gt 0 ]] || [[ $RC -lt 0 ]]; then
-                FAILED_IDS="$FAILED_IDS $i"
-            else
-                INCOMPLETE_IDS="$INCOMPLETE_IDS $i"
-            fi
-        done
+  # Efficient way to compute the status as it lifts the burden of checking each
+  # job in the submissio node. 
+  export JOB_ID NUM_PROCESSES=$num_processes
+  export REMOTE_IN_DIR REMOTE_OUT_DIR REMOTE_OUT_DIR 
+  JOB_STATUSES=$(ssh_with_env "deepdive compute remote-status")
+  
+  # Funny way to count number of jobs. 
+  NUM_COMPLETED=$(grep -o "C" <<< "$JOB_STATUSES" | grep -c "C")
+  NUM_INCOMPLETE=$(grep -o "I" <<< "$JOB_STATUSES" | grep -c "I")
+  NUM_FAILED=$(grep -o "F" <<< "$JOB_STATUSES" | grep -c "F")
 
-        echo "Completed jobs: $COMPLETE_IDS"
-        echo "Failed jobs: $FAILED_IDS"
-        echo "Incomplete jobs: $INCOMPLETE_IDS"
-
-        if [[ -z "$INCOMPLETE_IDS" ]]; then
-            # Job successful if all jobs succeed
-            if [[ -z "$FAILED_IDS" ]]; then
-                STATUS=complete
-            # If there is at least one job that failed, then fail.
-            else
-                STATUS=failed
-            fi
-        fi
+  if [[ $NUM_INCOMPLETE -eq 0 ]]; then
+    if [[ $NUM_FAILED -gt 0 ]]; then
+      STATUS=failed
     else
-        RC=$(compute_status $JOB_ID)
-        if [[ $RC -eq 0 ]] && ssh -q $SSH_INFO "[[ -f $REMOTE_OUT_DIR ]]"; then
-            STATUS=complete
-        elif [[ $RC -gt 0 ]] || [[ $RC -lt 0 ]]; then
-            STATUS=failed
-        else
-            STATUS=incomplete
-        fi
+      STATUS=complete
     fi
+  fi
 done
 
 if [[ "$STATUS" == failed ]]; then
     echo "Job failed!"
     echo "Please inspect $ssh_host:$REMOTE_ERR_DIR for more information"
     echo "----------------------------------------------------------------"
-    ssh $SSH_INFO "tail +1 $REMOTE_ERR_DIR-*" 
+    ssh $SSH_INFO "tail +1 $REMOTE_ERR_DIR*" 
     echo "----------------------------------------------------------------"
 
     if [[ $num_processes -gt 1 ]]; then
         echo "--- Multi-job report ---"
-        echo "Completed jobs: $COMPLETE_IDS"
-        echo "Failed jobs: $FAILED_IDS"
-        echo "Incomplete jobs: $INCOMPLETE_IDS"
+        echo "Completed jobs: $NUM_COMPLETED"
+        echo "Failed jobs: $NUM_FAILED"
+        echo "Incomplete jobs: $NUM_INCOMPLETE"
     fi
     error
 fi
