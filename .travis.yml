@@ -1,6 +1,6 @@
 notifications:
   email:
-    - deepdive-dev@lists.stanford.edu
+    - deepdive-dev@googlegroups.com
 
 sudo: false  # to use container-based infra, see: http://docs.travis-ci.com/user/migrating-from-legacy/
 addons:
