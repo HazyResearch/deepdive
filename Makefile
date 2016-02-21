@@ -120,7 +120,13 @@ end2end-test: $(PROGRAM)
 .PHONY: test unit-test end2end-test
 
 # how to format code
-CLANG_FORMAT = clang-format
+ifndef CLANG_FORMAT
+ifneq ($(shell type clang-format-3.7 2>/dev/null),)
+    CLANG_FORMAT = clang-format-3.7
+else
+    CLANG_FORMAT = clang-format
+endif
+endif
 format:
 	$(CLANG_FORMAT) -i $(SOURCES) $(TEST_SOURCES) $(HEADERS)
 .PHONY: format
