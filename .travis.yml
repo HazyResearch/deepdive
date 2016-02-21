@@ -27,7 +27,7 @@ compiler:
 before_install:
   # code should be already formatted
   - make format CLANG_FORMAT=clang-format-3.7
-  - test $(git status --porcelain | wc -l) -eq 0
+  - test $(git status --porcelain | wc -l) -eq 0 || { git diff; false; }
 install:
   - export CXX="g++-4.8" CC="gcc-4.8"
   # skip preparing dependencies if they're cached
