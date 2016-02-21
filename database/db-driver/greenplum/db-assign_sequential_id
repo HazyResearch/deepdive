@@ -57,12 +57,12 @@ db-execute "
       EXECUTE 'create table tmp_gpsid_count_noagg as select * from tmp_gpsid_count distributed by (sid);';
       EXECUTE 'update tmp_gpsid_count as t set base_id = (SELECT SUM(base_id) FROM tmp_gpsid_count as t2 WHERE t2.sid <= t.sid);';
       RAISE NOTICE 'EXECUTING _fast_seqassign()...';
-      EXECUTE 'select * from _fast_seqassign(''' || quote_ident(tname) || ''', ' || startid || ');';
+      EXECUTE 'select * from _fast_seqassign(''' || quote_ident(tname) || ''', ''' || quote_ident(cname) || ''', ' || startid || ');';
       RETURN '';
     END;
     \$\$ LANGUAGE 'plpgsql';
 
-    CREATE OR REPLACE FUNCTION _fast_seqassign(tname character varying, startid bigint)
+    CREATE OR REPLACE FUNCTION _fast_seqassign(tname character varying, cname character varying, startid bigint)
     RETURNS TEXT AS
     \$\$
     DECLARE
