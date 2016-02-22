@@ -12,10 +12,10 @@ To assess the performance of a DeepDive application, one typically computes prec
 Let's define some terms before we move on.
 A *relevant* set is a set of information one wants to extact, e.g., entities or relationships. DeepDive's *positive* prediction is a set of information extracted by a DeepDive application whose assigned expectation value is greater than a certain threshold.
 *Precision* is a ratio of how much of the relevant set is represented in the DeepDive's positive prediction.
-Precision is 1 if DeepDive makes no mistakes in its positive prediction by assigning high expectations only to those that are also in the relevant set (i.e. no false positives).
-As DeepDive assigns high expectation values to ones that are not in the relevant set, precision decreases (i.e. more false postivies were introduced).
+Precision is 1 if DeepDive makes no mistakes in its positive prediction by assigning high expectations only to those that are also in the relevant set (i.e., no false positives).
+As DeepDive assigns high expectation values to ones that are not in the relevant set, precision decreases (i.e., more false postivies were introduced).
 On the other hand, *recall* is a ratio of how much of the DeepDive's positive prediction set is represented in the relevant set.
-Recall is 1 if DeepDive does not miss any information in the relevant set (i.e. no false negatives).
+Recall is 1 if DeepDive does not miss any information in the relevant set (i.e., no false negatives).
 Recall decreases as DeepDive either assigns low expectation to ones in the relevant set or failes to capture them during the candidate extraction steps.
 
 Because the relevant set of a corpus is usually not known in advance, there must be a human input to inspect a sample of DeepDive's predictions as well as the corpus and to answer whether each of them is relevant or not to estimate the true value.
@@ -89,7 +89,7 @@ A Mindtagger template is a collection of HTML fragments decorated with Mindtagge
 For the precision task at hand, creating [a `template.html` file with contents similar to the following](../examples/spouse/labeling/has_spouse-precision/template.html) will do the job.
 
 <!-- TODO find a way to use Jekyll's tag for AngularJS templates: include examples/spouse/labeling/has_spouse-precision/template.html -->
-{{% raw %}}
+{% raw %}
 ```html
 <mindtagger mode="precision">
 
@@ -115,7 +115,7 @@ For the precision task at hand, creating [a `template.html` file with contents s
 
 </mindtagger>
 ```
-{{% endraw %}}
+{% endraw %}
 
 The template is mostly self explanatory, and there are some JavaScript-like expressions appearing here and there.
 In fact, Mindtagger GUI is implemented with [AngularJS][], and standard AngularJS expressions and directives can be used to extend the template.
