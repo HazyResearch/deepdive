@@ -134,7 +134,7 @@ def print_pgtsv_element(x, n, t, d=0):
         name=n, declared_type=t, value_type=type(x), value=x,
     ))
   if d > 0 and t == 'text':
-    return '"%s"' % str(tok).replace('\\', '\\\\').replace('"', '\\\\"')
+    return '"%s"' % str(x).replace('\\', '\\\\').replace('"', '\\\\"')
   else:
     return str(x)
 
