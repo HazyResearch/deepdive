@@ -6,5 +6,5 @@ cd "$(dirname "$0")"
 . ./env.sh
 {
     # check database version
-    [[ "$(DBNAME=postgres db-execute "COPY (SELECT VERSION() LIKE '%Postgres-XL%') TO STDOUT")" == t ]]  # TODO move this check to db-init?
+    [[ "$(DBNAME=postgres timeout 1s db-execute "COPY (SELECT VERSION() LIKE '%Postgres-XL%') TO STDOUT")" == t ]]  # TODO move this check to db-init?
 } &>/dev/null
