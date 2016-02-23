@@ -15,6 +15,7 @@ setup() {
 }
 
 @test "$DBVARIANT db-assign_sequential_id works" {
+    num_failures=0
     for numrows in 0 1 1000; do
         # set up a table
         echo "Setting up a table of $numrows rows"
@@ -27,10 +28,14 @@ setup() {
                 end=$(($begin + ($numrows - 1) * $increment))
                 echo "Testing assign_sequential_id from $begin to $end by increment $increment ($numrows rows)"
                 # assign sequence
-                deepdive db assign_sequential_id foo y $begin $increment
+                deepdive db assign_sequential_id foo y $begin $increment || let ++num_failures
                 # and compare with what's expected
-                diff -u <(seq $begin $increment $end) <(deepdive sql eval "SELECT y FROM foo ORDER BY y")
+                diff -u <(seq $begin $increment $end) <(deepdive sql eval "SELECT y FROM foo ORDER BY y") || let ++num_failures
             done
         done
     done
+    [[ $num_failures -eq 0 ]] || {
+        echo "Failed $num_failures checks"
+        false
+    }
 }
