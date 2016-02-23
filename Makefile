@@ -101,8 +101,6 @@ dep:
 	./configure --prefix=`pwd`/../tclap;\
 	make;\
 	make install
-	# bats for end-to-end tests
-	git clone https://github.com/sstephenson/bats test/bats
 .PHONY: dep
 
 # how to clean

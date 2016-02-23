@@ -14,9 +14,8 @@ dw_test
 *.la
 *.a
 
-# library
+# build dependencies
 lib/
-/test/bats
 
 # others
 tags
