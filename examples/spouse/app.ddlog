@@ -167,6 +167,9 @@ spouse_label(
     rule_id text
 ).
 
+# make sure all pairs in spouse_candidate are considered as unsupervised examples
+spouse_label(p1,p2, 0, NULL) :- spouse_candidate(p1, _, p2, _).
+
 # distant supervision using data from DBpedia
 spouse_label(p1,p2, 1, "from_dbpedia") :-
     spouse_candidate(p1, p1_name, p2, p2_name),
@@ -213,9 +216,6 @@ spouse_label_resolved(p1_id, p2_id, SUM(vote)) :- spouse_label(p1_id, p2_id, vot
 has_spouse(p1_id, p2_id) = if l > 0 then TRUE
                       else if l < 0 then FALSE
                       else NULL end :- spouse_label_resolved(p1_id, p2_id, l).
-
-# make sure all pairs in spouse_candidate are considered as unsupervised examples
-has_spouse(p1, p2) = NULL::BOOLEAN :- spouse_candidate(p1, _, p2, _).
 
 ###############################################################################
 
