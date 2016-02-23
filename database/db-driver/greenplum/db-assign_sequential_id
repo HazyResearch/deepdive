@@ -14,9 +14,8 @@ Table=$1 Column=$2 BeginId=$3 Increment=${4:-1}
 # See: http://www.postgresql.org/docs/8.2/static/sql-createlanguage.html
 # See: http://www.postgresql.org/docs/8.2/static/plpgsql-overview.html
 # See: http://www.postgresql.org/docs/8.2/static/plpython-funcs.html
-db-execute "CREATE LANGUAGE plpgsql;" || true
-db-execute "CREATE LANGUAGE plpythonu;" || true
-db-execute "
+if db-supports_pg_lang "plpgsql" && db-supports_pg_lang "plpythonu"; then
+    db-execute "
     CREATE OR REPLACE FUNCTION fast_seqassign_init()
     RETURNS INT AS \$\$
       if 'cumulative_cnt' in SD:
@@ -79,8 +78,9 @@ db-execute "
     \$\$ LANGUAGE 'plpgsql';
 
     SELECT fast_seqassign('$Table', '$Column', $BeginId, $Increment);
-" && exit
+"
 
+else # if either plpgsql or plpythonu is not available
 # Fall back to using PostgreSQL sequence generator named after the table and column
 # See: http://www.postgresql.org/docs/current/static/sql-createsequence.html
 seq="dd_seq_${Table}_${Column}"
@@ -90,3 +90,4 @@ deepdive sql "
 
     UPDATE $Table SET $Column = nextval('$seq');
 "
+fi
