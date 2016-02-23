@@ -57,7 +57,7 @@ long long read_weights(string filename, dd::FactorGraph &fg) {
     initial_value = *(double *)&tmp;
 
     // load into factor graph
-    fg.weights[fg.c_nweight] = dd::Weight(id, initial_value, isfixed);
+    fg.weights[id] = dd::Weight(id, initial_value, isfixed);
     fg.c_nweight++;
     count++;
   }
@@ -116,7 +116,7 @@ long long read_variables(string filename, dd::FactorGraph &fg) {
     bool is_observation = isevidence == 2;
     double init_value = is_evidence ? initial_value : 0;
 
-    fg.variables[fg.c_nvar] =
+    fg.variables[id] =
         dd::Variable(id, type_const, is_evidence, 0, upper_bound, init_value,
                      init_value, edge_count, is_observation);
     fg.c_nvar++;

@@ -217,9 +217,6 @@ void dd::FactorGraph::load(const CmdParser &cmd, const bool is_quiet, int inc) {
     std::cout << "LOADED WEIGHTS: #" << n_loaded << std::endl;
   }
 
-  // sort variables and weighs
-  std::sort(&variables[0], &variables[n_var], idsorter<Variable>());
-  std::sort(&weights[0], &weights[n_weight], idsorter<Weight>());
   this->sorted = true;
   infrs->init(variables, weights);
 
