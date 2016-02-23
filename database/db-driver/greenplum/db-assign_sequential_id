@@ -17,73 +17,66 @@ Table=$1 Column=$2 BeginId=$3 Increment=${4:-1}
 db-execute "CREATE LANGUAGE plpgsql;" || true
 db-execute "CREATE LANGUAGE plpythonu;" || true
 db-execute "
-    CREATE OR REPLACE FUNCTION clear_count_1(sid INT) RETURNS INT AS
-    \$\$
-    if '__count_1' in SD:
-      SD['__count_1'] = -1
-      return 1
-    return 0 # XXX why return a confusing 0 when it still counts toward COUNT()?
+    CREATE OR REPLACE FUNCTION fast_seqassign_init()
+    RETURNS INT AS \$\$
+      if 'cumulative_cnt' in SD:
+        SD.pop('cumulative_cnt')
+      return 0
     \$\$ LANGUAGE plpythonu;
 
-    CREATE OR REPLACE FUNCTION updateid(startid BIGINT, increment BIGINT, sid INT, sids INT[], base_ids BIGINT[], base_ids_noagg BIGINT[]) RETURNS BIGINT AS
-    \$\$
-    if '__count_1' in SD:
-      a = SD['__count_2']
-      b = SD['__count_1']
-      SD['__count_2'] = SD['__count_2'] - 1
-      if SD['__count_2'] < 0:
-        SD.pop('__count_1')
-
-    else:
-      for i in range(0, len(sids)):
-        if sids[i] == sid:
-          SD['__count_1'] = base_ids[i] - 1
-          SD['__count_2'] = base_ids_noagg[i] - 1
-      a = SD['__count_2']
-      b = SD['__count_1']
-      SD['__count_2'] = SD['__count_2'] - 1
-      if SD['__count_2'] < 0:
-        SD.pop('__count_1')
-
-    return startid + increment*(b-a)
-
+    CREATE OR REPLACE FUNCTION fast_seqassign_next(startid BIGINT, increment BIGINT, this_gpsid INT, gpsids INT[], cumulative_cnts BIGINT[], cnts BIGINT[])
+    RETURNS BIGINT AS \$\$
+      if 'cumulative_cnt' not in SD:
+        for gpsid, cumulative_cnt, cnt in zip(gpsids, cumulative_cnts, cnts):
+          if gpsid == this_gpsid:
+            # assignment is done using the cumulative count for this segment and a decrementing counter from the size of this segment down to one
+            SD['cumulative_cnt'] = cumulative_cnt
+            SD['remaining'] = cnt
+            break
+      if 'cumulative_cnt' in SD and SD['remaining'] > 0:
+        id = startid + increment * (SD['cumulative_cnt'] - SD['remaining'])
+        SD['remaining'] = SD['remaining'] - 1
+        if SD['remaining'] <= 0:
+          SD.pop('cumulative_cnt')
+        return id
+      else:
+        # XXX no segment was found
+        raise plpy.ERROR('No non-empty id range was assigned for segment %s in the initial partition' % str(this_gpsid))
     \$\$ LANGUAGE plpythonu;
 
-    CREATE OR REPLACE FUNCTION fast_seqassign(tname character varying, cname character varying, startid bigint, increment bigint) RETURNS TEXT AS
-    \$\$
+    CREATE OR REPLACE FUNCTION fast_seqassign(tname CHARACTER VARYING, cname CHARACTER VARYING, startid BIGINT, increment BIGINT)
+    RETURNS TEXT AS \$\$
     BEGIN
-      EXECUTE 'DROP TABLE IF EXISTS tmp_gpsid_count       CASCADE;';
-      EXECUTE 'DROP TABLE IF EXISTS tmp_gpsid_count_noagg CASCADE;';
-      EXECUTE 'CREATE TABLE tmp_gpsid_count       AS SELECT gp_segment_id AS sid, COUNT(clear_count_1(gp_segment_id)) AS base_id FROM ' || QUOTE_IDENT(tname) || ' GROUP BY gp_segment_id ORDER BY sid DISTRIBUTED BY (sid);';
-      EXECUTE 'CREATE TABLE tmp_gpsid_count_noagg AS SELECT *                                                                    FROM tmp_gpsid_count                                                  DISTRIBUTED BY (sid);';
-      EXECUTE 'UPDATE tmp_gpsid_count AS t SET base_id = (SELECT SUM(base_id) FROM tmp_gpsid_count AS t2 WHERE t2.sid <= t.sid);';
-      RAISE NOTICE 'EXECUTING _fast_seqassign()...';
-      EXECUTE 'SELECT * FROM _fast_seqassign(''' || QUOTE_IDENT(tname) || ''', ''' || QUOTE_IDENT(cname) || ''', ' || startid || ', ' || increment || ');';
-      RETURN '';
+      EXECUTE 'CREATE TEMPORARY VIEW dd_tmp_id_ranges_by_gpsid AS
+               SELECT gpsid
+                    , cnt
+                    , SUM(cnt) OVER (ORDER BY gpsid) AS cumulative_cnt
+                 FROM (
+                    SELECT gp_segment_id AS gpsid
+                         , COUNT(1)      AS cnt
+                      FROM ' || QUOTE_IDENT(tname) || '
+                     GROUP BY gpsid
+                     ORDER BY gpsid
+                 ) histogram;';
+      DECLARE
+        gpsids          INT[]    := ARRAY(SELECT gpsid          FROM dd_tmp_id_ranges_by_gpsid ORDER BY gpsid);
+        cumulative_cnts BIGINT[] := ARRAY(SELECT cumulative_cnt FROM dd_tmp_id_ranges_by_gpsid ORDER BY gpsid);
+        cnts            BIGINT[] := ARRAY(SELECT cnt            FROM dd_tmp_id_ranges_by_gpsid ORDER BY gpsid);
+      BEGIN
+        EXECUTE 'SELECT fast_seqassign_init();';
+        EXECUTE 'UPDATE ' || tname || ' SET ' || cname || ' = fast_seqassign_next(
+            ' || startid || ',
+            ' || increment || ',
+            gp_segment_id,
+            ARRAY[' || ARRAY_TO_STRING(         gpsids, ',')::TEXT || '],
+            ARRAY[' || ARRAY_TO_STRING(cumulative_cnts, ',')::TEXT || '],
+            ARRAY[' || ARRAY_TO_STRING(           cnts, ',')::TEXT || ']
+          );';
+        RETURN 'fast_seqassign done for segments [' || ARRAY_TO_STRING(gpsids, ',') || ']' ||
+               ' with counts [' || ARRAY_TO_STRING(cnts, ',') || ']';
+      END;
     END;
     \$\$ LANGUAGE 'plpgsql';
-
-    CREATE OR REPLACE FUNCTION _fast_seqassign(tname CHARACTER VARYING, cname CHARACTER VARYING, startid BIGINT, increment BIGINT)
-    RETURNS TEXT AS
-    \$\$
-    DECLARE
-      sids              INT[]    := ARRAY(SELECT sid     FROM tmp_gpsid_count       ORDER BY sid);
-      base_ids          BIGINT[] := ARRAY(SELECT base_id FROM tmp_gpsid_count       ORDER BY sid);
-      base_ids_noagg    BIGINT[] := ARRAY(SELECT base_id FROM tmp_gpsid_count_noagg ORDER BY sid);
-      tsids             TEXT;
-      tbase_ids         TEXT;
-      tbase_ids_noagg   TEXT;
-    BEGIN
-      SELECT INTO tsids           ARRAY_TO_STRING(sids, ',');
-      SELECT INTO tbase_ids       ARRAY_TO_STRING(base_ids, ',');
-      SELECT INTO tbase_ids_noagg ARRAY_TO_STRING(base_ids_noagg, ',');
-      IF ('UPDATE ' || tname || ' SET ' || cname || ' = updateid(' || startid || ', ' || increment || ', gp_segment_id, ARRAY[' || tsids || '], ARRAY[' || tbase_ids || '], ARRAY[' || tbase_ids_noagg || ']);')::TEXT IS NOT NULL THEN
-        EXECUTE 'UPDATE ' || tname || ' SET ' || cname || ' = updateid(' || startid || ', ' || increment || ', gp_segment_id, ARRAY[' || tsids || '], ARRAY[' || tbase_ids || '], ARRAY[' || tbase_ids_noagg || ']);';
-      END IF;
-      RETURN '';
-    END;
-    \$\$
-    LANGUAGE 'plpgsql';
 
     SELECT fast_seqassign('$Table', '$Column', $BeginId, $Increment);
 " && exit
