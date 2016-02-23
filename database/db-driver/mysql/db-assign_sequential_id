@@ -13,6 +13,6 @@ Table=$1 Column=$2 BeginId=$3 Increment=${4:-1}
 # Use user-defined variable to assign sequential integers
 # See: http://dev.mysql.com/doc/refman/5.0/en/user-variables.html
 db-execute "
-    SET @id = $BeginId - 1;
+    SET @id = $BeginId - $Increment;
     UPDATE $Table SET $Column = @id := @id + $Increment;
 "
