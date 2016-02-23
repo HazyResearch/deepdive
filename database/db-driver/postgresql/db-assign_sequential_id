@@ -16,7 +16,7 @@ seq="dd_seq_${Table}_${Column}"
 
 db-execute "
     DROP SEQUENCE IF EXISTS $seq CASCADE;
-    CREATE TEMPORARY SEQUENCE $seq INCREMENT BY $Increment MINVALUE -1 START $BeginId;
+    CREATE TEMPORARY SEQUENCE $seq INCREMENT BY $Increment MINVALUE $(($BeginId - 1)) START $BeginId;
 
     UPDATE $Table SET $Column = nextval('$seq');
 "
