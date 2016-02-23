@@ -1,6 +1,9 @@
 notifications:
   email:
-    - deepdive-dev@googlegroups.com
+    - deepdive-notifications@cs.stanford.edu
+    # XXX Routing notifications through cs.stanford.edu as Travis cannot directly send to googlegroups.com
+    # See: https://github.com/travis-ci/travis-ci/issues/2513
+    #- deepdive-dev@googlegroups.com
 
 sudo: false  # to use container-based infra, see: http://docs.travis-ci.com/user/migrating-from-legacy/
 addons:
