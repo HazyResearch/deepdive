@@ -15,10 +15,13 @@ Table=$1 Column=$2 BeginId=$3 Increment=${4:-1}
 # Use PostgreSQL sequence generator named after the table and column
 # See: http://www.postgresql.org/docs/current/static/sql-createsequence.html
 seq="dd_seq_${Table}_${Column}"
-
+minMaxValues=
+if   [[ $Increment -gt 0 && $BeginId -le 0 ]]; then minMaxValues="MINVALUE $BeginId NO MAXVALUE"
+elif [[ $Increment -lt 0 && $BeginId -ge 0 ]]; then minMaxValues="NO MINVALUE MAXVALUE $BeginId"
+fi
 db-execute "
     DROP SEQUENCE IF EXISTS $seq CASCADE;
-    CREATE TEMPORARY SEQUENCE $seq INCREMENT BY $Increment MINVALUE $(($BeginId - 1)) START $BeginId;
+    CREATE TEMPORARY SEQUENCE $seq INCREMENT BY $Increment $minMaxValues START $BeginId NO CYCLE;
 
     UPDATE $Table SET $Column = nextval('$seq');
 "
