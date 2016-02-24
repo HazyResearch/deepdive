@@ -35,6 +35,7 @@ setup() {
 }
 
 @test "$DBVARIANT spouse example extraction/grounding" {
+    deepdive model weights init
     deepdive do model/factorgraph
 }
 
