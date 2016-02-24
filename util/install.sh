@@ -35,6 +35,15 @@ error() {
     fi
     false
 } >&2
+timeout_or_do() {
+    local timeout=${1:?Missing timeout in seconds}; shift
+    local msg=${1:?Missing prompt message}; shift
+    if [[ -t 0 ]]; then
+        if read -p "$msg" -t "$timeout" -n 1 -s; echo; [[ -n "$REPLY" ]]; then
+            "$@"
+        fi
+    fi
+}
 INSTALLER_TEMP_DIR=
 init_INSTALLER_TEMP_DIR() {
     # makes sure INSTALLER_TEMP_DIR points to a temporary directory
@@ -98,9 +107,39 @@ install_deepdive_from_source() {
     # install runtime dependencies
     run_installer_for _deepdive_runtime_deps
 }
+# utilities to allow selecting a different RELEASE interactively
+timeout_or_select_release() {
+    local forWhat=${1:?Missing description of release}; shift
+    "$@"  # show what will happen with the current release
+    timeout_or_do 2 "# Press any key to select a different release or Enter to proceed..." \
+        select_release "$forWhat" "$@"
+}
+select_release() {
+    local forWhat=${1:?Missing description of release}; shift
+    PS3="# Select a release${forWhat:+ $forWhat}: "
+    select release in $(list_releases_having_download_for_this_os); do
+        case $release in
+            "") break ;;
+            *)
+                RELEASE=$release
+                "$@"  # show what will happen with the selected release
+                break
+        esac
+    done
+}
+list_deepdive_releases() {
+    # find all links to a GitHub tree from the release page
+    curl -fsSL https://github.com/HazyResearch/deepdive/releases/ | sed '
+        \:/.*/tree/:!d
+        s/.*href="//; s/".*$//
+        s:.*/tree/::
+        s:/.*$::
+    '
+}
 # installs DeepDive with a release binary
 install_deepdive_from_release() {
-    # TODO allow overriding RELEASE interactively
+    timeout_or_select_release "to install" \
+        eval 'echo "# Installing DeepDive release $RELEASE..."'
     local os=$(uname)
     local tarball="deepdive-${RELEASE}-${os}.tar.gz"
     local url="https://github.com/HazyResearch/deepdive/releases/download/${RELEASE}/$tarball"
@@ -115,9 +154,9 @@ install_deepdive_from_release() {
     tar xzvf "$tarball" -C "$PREFIX"
     ) || return $?
     echo
-    echo "DeepDive release $RELEASE has been installed at $PREFIX"
-    echo "Please add the following line to your ~/.bash_profile:"
-    echo "  export PATH=\"$PREFIX/bin:\$PATH\""
+    echo "# DeepDive release $RELEASE has been installed at $PREFIX"
+    echo "# Please add the following line to your ~/.bash_profile:"
+    echo "export PATH=\"$PREFIX/bin:\$PATH\""
 }
 # installs DeepDive with a release binary and runtime dependencies
 install_deepdive() {
@@ -126,11 +165,15 @@ install_deepdive() {
 }
 # installs DeepDive examples and tests
 install_deepdive_examples_tests() {
+    timeout_or_select_release "to download examples and tests from" \
+        eval 'echo "# Downloading examples and tests (from $RELEASE)..."'
     download_deepdive_github_tree "DeepDive examples and tests" \
         deepdive-${RELEASE#v} \
         examples test {compiler,runner,inference,shell,util{,/build}}/test
 }
 install_spouse_example() {
+    timeout_or_select_release "to download spouse example from" \
+        eval 'echo "# Downloading spouse example (from $RELEASE)..."'
     download_deepdive_github_tree "Spouse example DeepDive app" \
         spouse_example-${RELEASE#v} \
         examples/spouse
@@ -141,7 +184,7 @@ download_deepdive_github_tree() {
     local dest=$1; shift
     # the rest of the arguments are relative paths to download
     if [[ -s "$dest"/.downloaded ]]; then
-        echo "$what already downloaded at $(cd "$dest" && pwd)"
+        echo "# $what already downloaded at $(cd "$dest" && pwd)"
     else
         local tarballPrefix=deepdive-"${RELEASE#v}"
         local tmpdir="$dest".download
@@ -315,7 +358,7 @@ if [[ $# -eq 0 ]]; then
         interactive_installer
     else
         # otherwise, show options
-        echo "Specify what to install as command-line arguments:"
+        echo "# Specify what to install as command-line arguments:"
         list_installer_names all
         # TODO show what each installer does
         false
