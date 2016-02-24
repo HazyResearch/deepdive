@@ -33,6 +33,9 @@ setup() {
                 diff -u <(seq $begin $increment $end) <(deepdive sql eval "SELECT y FROM foo ORDER BY y") || let ++num_failures
             done
         done
+
+        echo "Testing if zero increment is rejected"
+        ! deepdive db assign_sequential_id foo y $begin 0 || let ++num_failures
     done
     [[ $num_failures -eq 0 ]] || {
         echo "Failed $num_failures checks"

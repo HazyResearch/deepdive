@@ -10,6 +10,8 @@ set -euo pipefail
 [[ $# -gt 2 ]] || usage "$0" "Missing BEGIN_ID"
 Table=$1 Column=$2 BeginId=$3 Increment=${4:-1}
 
+[[ $Increment -ne 0 ]] || usage "$0" "INCREMENT must be non-zero"
+
 # Use PostgreSQL sequence generator named after the table and column
 # See: http://www.postgresql.org/docs/current/static/sql-createsequence.html
 seq="dd_seq_${Table}_${Column}"
