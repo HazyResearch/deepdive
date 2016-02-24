@@ -227,11 +227,21 @@ source_os_script() { source_script install."$os"."$1".sh; }
 list_installer_names() {
     local show_only=${1:-visible}
     # find installer names from all defined install_* functions
-    declare -F | sed 's/^declare -f //; /^install_/!d; s/^install_//' |
+    _list_installer_names() {
+        declare -F | sed 's/^declare -f //; /^install_/!d; s/^install_//'
+    }
     # unless the first argument is 'all', hide installers whose name begins with underscore
-    case ${show_only:-visible} in
-        all) cat ;;
-        *) sed '/^_/d'
+    case $show_only in
+        all)
+            list_installer_names visible
+            list_installer_names hidden
+            ;;
+        hidden)
+            _list_installer_names | sed '/^_/!d'
+            ;;
+        visible)
+            _list_installer_names | sed '/^_/d'
+            ;;
     esac
 }
 run_installer_for() {
@@ -266,12 +276,37 @@ run_installer_for() {
 if [[ $# -eq 0 ]]; then
     if [[ -t 0 ]]; then
         # ask user what to install if input is a tty
-        PS3="# Select what to install (enter for all options, q to quit, or a number)? "
         set +e  # dont abort the select loop on installer error
-        select option in $(list_installer_names); do
-            [[ -n "$option" ]] || break
-            run_installer_for "$option"
-        done
+        interactive_installer() {
+            local show_only=${1:-visible}
+            case $show_only in
+                all)
+                    PS3="# Install what (enter to repeat options, q to quit, or a number)? "
+                    ;;
+                *)
+                    PS3="# Install what (enter to repeat options, a to see all, q to quit, or a number)? "
+                    ;;
+            esac
+            select option in $(list_installer_names $show_only); do
+                if [[ -n "$option" ]]; then
+                    run_installer_for "$option"
+                else
+                    case $REPLY in
+                        ""|q) # quit
+                            break ;;
+                        a) # show all options (including hidden ones)
+                            case $show_only in
+                                all) invalid_choice ;;
+                                *) interactive_installer all; break ;;
+                            esac ;;
+                        *) invalid_choice
+                    esac
+                    continue
+                fi
+            done
+        }
+        invalid_choice() { error "$REPLY: Invalid option"; }
+        interactive_installer
     else
         # otherwise, show options
         echo "Specify what to install as command-line arguments:"
