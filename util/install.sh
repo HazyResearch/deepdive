@@ -81,15 +81,18 @@ install__deepdive_git_repo() {
     git clone --recursive --branch "$INSTALLER_BRANCH" https://github.com/HazyResearch/deepdive.git "$GITCLONE"
 }
 # installs DeepDive from source by going through the full build
-install_deepdive_from_source() {
-    # prepare fetching and building source
-    run_installer_for _deepdive_build_deps
+install_deepdive_from_source_no_dependencies() {
     # clone git repo if necessary
     run_installer_for _deepdive_git_repo
     cd "$GITCLONE"
     echo "# Installing from DeepDive source at $PWD"
     # install DeepDive from source
     make install PREFIX="$PREFIX"
+}
+install_deepdive_from_source() {
+    # prepare fetching and building source
+    run_installer_for _deepdive_build_deps
+    run_installer_for deepdive_from_source_no_dependencies
     # install runtime dependencies
     run_installer_for _deepdive_runtime_deps
 }
