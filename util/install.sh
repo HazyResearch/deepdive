@@ -70,6 +70,9 @@ install__deepdive_runtime_deps() {
 # fetches DeepDive source tree
 install__deepdive_git_repo() {
     $running_from_git ||
+        # or already has a git clone and can checkout the branch
+        { [[ -e deepdive/.git ]] && (cd deepdive && git checkout "$INSTALLER_BRANCH"); } ||
+        # or were able to grab a clone with git
         git clone --recursive --branch "$INSTALLER_BRANCH" https://github.com/HazyResearch/deepdive.git
 }
 # installs DeepDive from source by going through the full build
