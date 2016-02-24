@@ -12,10 +12,11 @@ esac
 
 install__deepdive_build_deps() {
     set -x
+    sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test  # for gcc >= 4.8 on Precise (12.04)
     sudo apt-get update
-    sudo apt-get install -qq git rsync bzip2 libbz2-dev xz-utils build-essential flex make default-jdk
-    sudo apt-get install -qq ed  # mindbender
-    sudo apt-get install -qq gcc-4.8 g++-4.8 libnuma-dev cmake unzip  # sampler
+    sudo apt-get install -qy git rsync bzip2 libbz2-dev xz-utils build-essential flex make default-jdk
+    sudo apt-get install -qy ed  # mindbender
+    sudo apt-get install -qy gcc-4.8 g++-4.8 cmake unzip libnuma-dev  # sampler
 }
 
 install__deepdive_runtime_deps() {
@@ -26,11 +27,11 @@ install__deepdive_runtime_deps() {
     # Many dependencies are already available in TravisCI
     if [ -z "${TRAVIS:-}" ]; then
         # install dependencies for deepdive
-        sudo apt-get install -y python-software-properties default-jre-headless
+        sudo apt-get install -qy coreutils python-software-properties default-jre-headless perl libltdl7
     fi
 
     # install additional packages for deepdive
-    sudo apt-get install -y gnuplot bc
+    sudo apt-get install -qy gnuplot bc
 }
 
 install_postgres_xl() {
@@ -40,7 +41,7 @@ install_postgres_xl() {
 install_postgres() {
     set -x
     sudo apt-get update
-    sudo apt-get install -y postgresql
+    sudo apt-get install -qy postgresql
     local pgversion=$(ls -1 /var/lib/postgresql/ | head -n 1)
     if [ -z "${TRAVIS:-}" ]; then
         # add user to postgresql and trust all connections to localhost
