@@ -18,29 +18,30 @@ if db-supports_pg_lang "plpgsql" && db-supports_pg_lang "plpythonu"; then
     db-execute "
     CREATE OR REPLACE FUNCTION fast_seqassign_init()
     RETURNS INT AS \$\$
-      if 'cumulative_cnt' in SD:
-        SD.pop('cumulative_cnt')
+      if 'cur_id' in SD:
+        SD.pop('cur_id')
       return 0
     \$\$ LANGUAGE plpythonu;
 
     CREATE OR REPLACE FUNCTION fast_seqassign_next(startid BIGINT, increment BIGINT, this_gpsid INT, gpsids INT[], cumulative_cnts BIGINT[], cnts BIGINT[])
     RETURNS BIGINT AS \$\$
-      if 'cumulative_cnt' not in SD:
+      if 'cur_id' not in SD:
         for gpsid, cumulative_cnt, cnt in zip(gpsids, cumulative_cnts, cnts):
           if gpsid == this_gpsid:
-            # assignment is done using the cumulative count for this segment and a decrementing counter from the size of this segment down to one
-            SD['cumulative_cnt'] = cumulative_cnt
-            SD['remaining'] = cnt
+            # find the id range using the cumulative count and the size of this segment
+            SD['cur_id'] = startid + increment * (cumulative_cnt - cnt)
+            SD['end_id'] = startid + increment *  cumulative_cnt
             break
-      if 'cumulative_cnt' in SD and SD['remaining'] > 0:
-        id = startid + increment * (SD['cumulative_cnt'] - SD['remaining'])
-        SD['remaining'] = SD['remaining'] - 1
-        if SD['remaining'] <= 0:
-          SD.pop('cumulative_cnt')
+        if 'cur_id' not in SD:
+          # XXX no segment was found
+          plpy.fatal('No non-empty id range was assigned for segment %s in the initial partition' % str(this_gpsid))
+      # generate fresh id as long as it's within the assigned range
+      id = SD['cur_id']
+      if id != SD['end_id']:
+        SD['cur_id'] += increment
         return id
       else:
-        # XXX no segment was found
-        raise plpy.ERROR('No non-empty id range was assigned for segment %s in the initial partition' % str(this_gpsid))
+        plpy.fatal('Insufficient id range was assigned for segment %s' % str(this_gpsid))
     \$\$ LANGUAGE plpythonu;
 
     CREATE OR REPLACE FUNCTION fast_seqassign(tname CHARACTER VARYING, cname CHARACTER VARYING, startid BIGINT, increment BIGINT)
@@ -61,9 +62,10 @@ if db-supports_pg_lang "plpgsql" && db-supports_pg_lang "plpythonu"; then
         gpsids          INT[]    := ARRAY(SELECT gpsid          FROM dd_tmp_id_ranges_by_gpsid ORDER BY gpsid);
         cumulative_cnts BIGINT[] := ARRAY(SELECT cumulative_cnt FROM dd_tmp_id_ranges_by_gpsid ORDER BY gpsid);
         cnts            BIGINT[] := ARRAY(SELECT cnt            FROM dd_tmp_id_ranges_by_gpsid ORDER BY gpsid);
+        update_query    TEXT;
       BEGIN
         EXECUTE 'SELECT fast_seqassign_init();';
-        EXECUTE 'UPDATE ' || tname || ' SET ' || cname || ' = fast_seqassign_next(
+        update_query := 'UPDATE ' || tname || ' SET ' || cname || ' = fast_seqassign_next(
             ' || startid || ',
             ' || increment || ',
             gp_segment_id,
@@ -71,6 +73,10 @@ if db-supports_pg_lang "plpgsql" && db-supports_pg_lang "plpythonu"; then
             ARRAY[' || ARRAY_TO_STRING(cumulative_cnts, ',')::TEXT || '],
             ARRAY[' || ARRAY_TO_STRING(           cnts, ',')::TEXT || ']
           );';
+        IF update_query::TEXT IS NOT NULL THEN
+          -- update_query IS NULL for empty tables, hence this guard is necessary
+          EXECUTE update_query;
+        END IF;
         RETURN 'fast_seqassign done for segments [' || ARRAY_TO_STRING(gpsids, ',') || ']' ||
                ' with counts [' || ARRAY_TO_STRING(cnts, ',') || ']';
       END;
