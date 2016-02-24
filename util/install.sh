@@ -4,6 +4,7 @@ set -euo pipefail
 
 : ${RELEASE:=v0.8.0}    # the DeepDive release version to install
 : ${PREFIX:=~/local}    # the path to install deepdive
+: ${GITCLONE:=deepdive} # the path to clone deepdive's repo
 
 : ${INSTALLER_BRANCH:=${BRANCH:-v0.8.x}}    # the branch from which the installer scripts should be downloaded
 INSTALLER_HOME_URL=https://github.com/HazyResearch/deepdive/raw/"${INSTALLER_BRANCH}"/util/install
@@ -15,6 +16,11 @@ INSTALLER_HOME_DIR=$(dirname "$0")/install
     exec bash <(set -x; curl -fsSL "${INSTALLER_HOME_URL}.sh") "$@"
 
 running_from_git=true; [[ -e "$INSTALLER_HOME_DIR"/../../.git ]] || running_from_git=false
+! $running_from_git ||
+    # set GITCLONE to the containing git working copy when running from it
+    case $(declare -p GITCLONE) in "declare --"*) false ;; *) true ;; esac ||
+    GITCLONE="$INSTALLER_HOME_DIR"/../..
+
 has() { type "$@"; } &>/dev/null
 error() {
     if [ -t 1 ]; then
@@ -69,25 +75,20 @@ install__deepdive_runtime_deps() {
 }
 # fetches DeepDive source tree
 install__deepdive_git_repo() {
-    $running_from_git ||
-        # or already has a git clone and can checkout the branch
-        { [[ -e deepdive/.git ]] && (cd deepdive && git checkout "$INSTALLER_BRANCH"); } ||
-        # or were able to grab a clone with git
-        git clone --recursive --branch "$INSTALLER_BRANCH" https://github.com/HazyResearch/deepdive.git
+    # $GITCLONE already points to a git clone and the branch can be checked out
+    { [[ -e "$GITCLONE"/.git ]] && (cd "$GITCLONE" && git checkout "$INSTALLER_BRANCH"); } ||
+    # or grab a clone with git
+    git clone --recursive --branch "$INSTALLER_BRANCH" https://github.com/HazyResearch/deepdive.git "$GITCLONE"
 }
 # installs DeepDive from source by going through the full build
 install_deepdive_from_source() {
     # prepare fetching and building source
     run_installer_for _deepdive_build_deps
+    # clone git repo if necessary
+    run_installer_for _deepdive_git_repo
+    cd "$GITCLONE"
+    echo "# Installing from DeepDive source at $PWD"
     # install DeepDive from source
-    if $running_from_git; then
-        cd "$INSTALLER_HOME_DIR"/../..
-        echo "# DeepDive source already at $PWD"
-    else
-        run_installer_for _deepdive_git_repo
-        cd deepdive
-        echo "# DeepDive source cloned at $PWD"
-    fi
     make install PREFIX="$PREFIX"
     # install runtime dependencies
     run_installer_for _deepdive_runtime_deps
@@ -120,17 +121,17 @@ install_deepdive() {
 }
 # installs DeepDive examples and tests
 install_deepdive_examples_tests() {
-    download_github_tree "DeepDive examples and tests" \
+    download_deepdive_github_tree "DeepDive examples and tests" \
         deepdive-${RELEASE#v} \
         examples test {compiler,runner,inference,shell,util{,/build}}/test
 }
 install_spouse_example() {
-    download_github_tree "Spouse example DeepDive app" \
+    download_deepdive_github_tree "Spouse example DeepDive app" \
         spouse_example-${RELEASE#v} \
         examples/spouse
 }
-# how to download a subtree of the GitHub repo
-download_github_tree() {
+# how to download a subtree of DeepDive's GitHub repo
+download_deepdive_github_tree() {
     local what=$1; shift
     local dest=$1; shift
     # the rest of the arguments are relative paths to download
