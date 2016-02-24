@@ -7,5 +7,5 @@ set -euo pipefail
 
 Lang=$1; shift
 
-[[ $(db-query "SELECT COUNT(*) FROM pg_catalog.pg_language WHERE lanname = '$Lang'") -gt 1 ]] ||
+[[ $(db-query "SELECT COUNT(*) FROM pg_catalog.pg_language WHERE lanname = '$Lang'" tsv 0) -gt 0 ]] ||
     db-execute "CREATE LANGUAGE $Lang"
