@@ -6,7 +6,7 @@ set -euo pipefail
 : ${PREFIX:=~/local}    # the path to install deepdive
 : ${GITCLONE:=deepdive} # the path to clone deepdive's repo
 
-: ${INSTALLER_BRANCH:=${BRANCH:-v0.8.x}}    # the branch from which the installer scripts should be downloaded
+: ${INSTALLER_BRANCH:=master}   # the branch from which the installer scripts should be downloaded
 INSTALLER_HOME_URL=https://github.com/HazyResearch/deepdive/raw/"${INSTALLER_BRANCH}"/util/install
 INSTALLER_HOME_DIR=$(dirname "$0")/install
 
@@ -15,7 +15,7 @@ running_from_git=true; [[ -e "$INSTALLER_HOME_DIR"/../../.git ]] || running_from
 ! $running_from_git ||
     # set GITCLONE to the containing git working copy when running from it
     case $(declare -p GITCLONE) in "declare --"*) false ;; *) true ;; esac ||
-    GITCLONE="$INSTALLER_HOME_DIR"/../.. INSTALLER_BRANCH=HEAD
+    GITCLONE="$INSTALLER_HOME_DIR"/../.. INSTALLER_BRANCH=HEAD BRANCH=HEAD
 
 $running_from_git || # unless this is running directly from a git repo
 # run the correct installer directly from GitHub if BRANCH is specified
@@ -87,9 +87,9 @@ install__deepdive_runtime_deps() {
 # fetches DeepDive source tree
 install__deepdive_git_repo() {
     # $GITCLONE already points to a git clone and the branch can be checked out
-    { [[ -e "$GITCLONE"/.git ]] && (cd "$GITCLONE" && git checkout "$INSTALLER_BRANCH"); } ||
+    { [[ -e "$GITCLONE"/.git ]] && (cd "$GITCLONE" && git checkout "$BRANCH"); } ||
     # or grab a clone with git
-    git clone --recursive --branch "$INSTALLER_BRANCH" https://github.com/HazyResearch/deepdive.git "$GITCLONE"
+    git clone --recursive --branch "$BRANCH" https://github.com/HazyResearch/deepdive.git "$GITCLONE"
 }
 # installs DeepDive from source by going through the full build
 install_deepdive_from_source_no_dependencies() {
