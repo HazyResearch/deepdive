@@ -3,6 +3,7 @@
 set -euo pipefail
 
 : ${RELEASE:=v0.8.0}    # the DeepDive release version to install
+: ${BRANCH:=v0.8.x}     # the DeepDive branch to clone, download, and build
 : ${PREFIX:=~/local}    # the path to install deepdive
 : ${GITCLONE:=deepdive} # the path to clone deepdive's repo
 
