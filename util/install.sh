@@ -176,9 +176,9 @@ case $(uname) in
             # Ubuntu/Debian
             os=Ubuntu
         # TODO support other Linux distros
-        #elif [[ -e /etc/redhat-release ]]; then
-        #    # CentOS/RedHat
-        #    os=RedHat
+        elif [[ -e /etc/redhat-release ]]; then
+            # CentOS/RedHat
+            os=RedHat
         else # unrecognized Linux distro
             os=
             # try to grab a Linux distro identifier
