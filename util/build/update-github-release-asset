@@ -49,7 +49,7 @@ if [[ -n $releaseName ]]; then
     set -x
     type gist || gem install gist
     cd .github-release-assets/"$GITHUB_REPO"/"$releaseName"
-    gist --raw ${GITHUB_RELEASE_ASSETS_GIST_ID:+-u "$GITHUB_RELEASE_ASSETS_GIST_ID"} *
+    gist ${GITHUB_RELEASE_ASSETS_GIST_ID:+-u "$GITHUB_RELEASE_ASSETS_GIST_ID"} *
     set +x &>/dev/null
 else
     true  # nothing to do
