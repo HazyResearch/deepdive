@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# update-github-release-asset -- Release built binaries to GitHub automatically for certain branches
+#
+# Generate a new token scoped for public_repo and gist from
+# https://github.com/settings/tokens for a dedicated user (e.g.,
+# @deepdiveDeployBot), then set it up in ~/.netrc.  When running on Travis
+# CI, ~/.netrc can be created from an encrypted file in the repo by following
+# instructions at https://docs.travis-ci.com/user/encrypting-files/.
+#
+#     {
+#         echo "machine github.com"
+#         echo "  login $GITHUB_RELEASE_USER"
+#         echo "  password $GITHUB_RELEASE_OAUTH_TOKEN"
+#     } >.travis.netrc
+#     chmod go= .travis.netrc
+#     travis encrypt-file .travis.netrc
+#     # modify .travis.yml
+#     git add .travis.netrc.enc .travis.yml
+#     git commit
+#
+##
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2016-02-25
+set -euo pipefail
+
+: ${GITHUB_REPO:=HazyResearch/deepdive}
+: ${GITHUB_RELEASE_ASSETS_GIST_ID:=https://gist.github.com/1726a55e358e3ae3f2ec}
+
+currentBranch=$(git name-rev --name-only HEAD)
+releaseName=
+case $currentBranch in
+    master)
+        releaseName=UNSTABLE
+        ;;
+
+    v*.*.x)
+        releaseName="$currentBranch"-STABLE
+        ;;
+esac
+
+if [[ -n $releaseName ]]; then
+    # update the tag and upload new release
+    set -x
+    git tag -f "$releaseName"
+    make release-"$releaseName"
+    set +x &>/dev/null
+
+    # archive previous .github-release-assets/ metadata
+    set -x
+    type gist || gem install gist
+    cd .github-release-assets/"$GITHUB_REPO"/"$releaseName"
+    gist --raw ${GITHUB_RELEASE_ASSETS_GIST_ID:+-u "$GITHUB_RELEASE_ASSETS_GIST_ID"} *
+    set +x &>/dev/null
+else
+    true  # nothing to do
+fi
