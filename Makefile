@@ -58,6 +58,14 @@ release-%:
 	    tag=$(RELEASE_VERSION)
 	# Released $(RELEASE_PACKAGE) to GitHub
 
+# Encrypted deepdiveDeployBot credentials for Travis
+.travis.tar.enc: .travis.tar
+	travis encrypt-file $< $@
+	git add .travis.tar.enc
+.travis.tar: .travis
+	chmod -R go= .travis
+	tar cvf $@ $^
+
 ### build recipes #############################################################
 
 # binary format converter for sampler
