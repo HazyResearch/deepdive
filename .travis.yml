@@ -85,10 +85,16 @@ script:
 
 # update GitHub releases for some select branches (master and v*.*.x)
 deploy:
-  provider: script
-  script: util/build/update-github-release-asset
-  skip_cleanup: true
-  on:
-    repo: HazyResearch/deepdive
-    all_branches: true
-    # TODO condition: "$TRAVIS_BRANCH = master || $TRAVIS_BRANCH = v*.*.x"
+  - provider: script
+    script: util/build/update-github-release-asset
+    skip_cleanup: true
+    on:
+      repo: HazyResearch/deepdive
+      all_branches: true
+      # TODO condition: "$TRAVIS_BRANCH = master || $TRAVIS_BRANCH = v*.*.x"
+  - provider: script
+    script: util/build/update-github-release-asset
+    skip_cleanup: true
+    on:
+      repo: HazyResearch/deepdive
+      tag: true
