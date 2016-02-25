@@ -117,7 +117,7 @@ timeout_or_select_release() {
 select_release() {
     local forWhat=${1:?Missing description of release}; shift
     PS3="# Select a release${forWhat:+ $forWhat}: "
-    select release in $(list_releases_having_download_for_this_os); do
+    select release in $(list_deepdive_releases); do
         case $release in
             "") break ;;
             *)
