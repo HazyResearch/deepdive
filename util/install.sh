@@ -10,16 +10,18 @@ set -euo pipefail
 INSTALLER_HOME_URL=https://github.com/HazyResearch/deepdive/raw/"${INSTALLER_BRANCH}"/util/install
 INSTALLER_HOME_DIR=$(dirname "$0")/install
 
-# run the correct installer directly from GitHub if BRANCH is specified
-[[ -z "${BRANCH:-}" || -n "${INSTALLER_REMOTE_EXEC:-}" ]] ||
-    INSTALLER_REMOTE_EXEC=true \
-    exec bash <(set -x; curl -fsSL "${INSTALLER_HOME_URL}.sh") "$@"
-
+# see if running from the git repo
 running_from_git=true; [[ -e "$INSTALLER_HOME_DIR"/../../.git ]] || running_from_git=false
 ! $running_from_git ||
     # set GITCLONE to the containing git working copy when running from it
     case $(declare -p GITCLONE) in "declare --"*) false ;; *) true ;; esac ||
-    GITCLONE="$INSTALLER_HOME_DIR"/../..
+    GITCLONE="$INSTALLER_HOME_DIR"/../.. INSTALLER_BRANCH=HEAD
+
+$running_from_git || # unless this is running directly from a git repo
+# run the correct installer directly from GitHub if BRANCH is specified
+[[ -z "${BRANCH:-}" || -n "${INSTALLER_REMOTE_EXEC:-}" ]] ||
+    INSTALLER_REMOTE_EXEC=true \
+    exec bash <(set -x; curl -fsSL "${INSTALLER_HOME_URL}.sh") "$@"
 
 has() { type "$@"; } &>/dev/null
 error() {
