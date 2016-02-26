@@ -1,4 +1,4 @@
-       SELECT 123::bigint as i
+NastySQL="SELECT 123::bigint as i
             , 45.678 as float
             , TRUE as t
             , FALSE as f
@@ -48,4 +48,5 @@
                    , E'"'{"csv in a json": "a,b c,\\",\\",\\"line '\'\''1'\'\'$'\n''bogus,NULL,null,\\\\N,N,line \\"\\"2\\"\\"",  "foo":123,'$'\n''"bar":45.678, "null": "\\\\N"}'"'
                      -- XXX Greenplum (or older PostgreSQL 8.x) treats backslashes as escapes in strings '...'
                      -- and E'...' is a consistent way to write backslashes in string literal across versions
-                   ] AS torture_arr
+                   ] AS torture_arr"
+deepdive sql eval "$NastySQL" format=tsv

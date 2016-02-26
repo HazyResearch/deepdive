@@ -271,11 +271,11 @@ NastyJSON='
 @test "$DBVARIANT @tsv_extractor and @returns work correctly" {
     cd "$BATS_TEST_DIRNAME"/parsing_tsv_from_udf
     deepdive compile
-    deepdive do process/ext_nasty_output_by_ext_identity
+    deepdive do data/nasty_output
 
     #Checking that the nasty TSV is parsed correctly. TODO: to be tested, not sure it's needed though
-    # actual=$(deepdive sql eval "select * from nasty_output" format=tsv)
-    # diff -u <(echo "$NastyTSV")  <(echo "$actual")
+    actual=$(deepdive sql eval "select * from nasty_output" format=tsv)
+    diff -u <(echo "$NastyTSV")  <(echo "$actual")
 }
 
 ###############################################################################

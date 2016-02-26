@@ -4,10 +4,12 @@ from deepdive import *
 
 @tsv_extractor
 @returns(lambda
-v1 = "bigint",
+v1 = "text",
 v2 = "float",
-v3 = "boolean",
-v4 = "boolean",
+#v3 = "boolean",
+#v4 = "boolean",
+v3 = "text",
+v4 = "text",
 v5 = "text",
 v6 = "text",
 v7 = "text",
@@ -24,10 +26,12 @@ v17 = "text[]",
 :[])
 
 def identity_func(
-v1 = "bigint",
+v1 = "text",
 v2 = "float",
-v3 = "boolean",
-v4 = "boolean",
+#v3 = "boolean",
+#v4 = "boolean",
+v3 = "text",
+v4 = "text",
 v5 = "text",
 v6 = "text",
 v7 = "text",
