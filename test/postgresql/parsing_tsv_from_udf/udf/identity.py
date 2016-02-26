@@ -7,7 +7,7 @@ from deepdive import *
 v1 = "bigint",
 v2 = "float",
 v3 = "boolean",
-v4 = "boolean", 
+v4 = "boolean",
 v5 = "text",
 v6 = "text",
 v7 = "text",
