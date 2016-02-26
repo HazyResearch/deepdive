@@ -267,6 +267,16 @@ NastyJSON='
 }
 
 
+# adding test to check that the @tsv_extractor and @returns annotations in a udf work correctly
+@test "$DBVARIANT @tsv_extractor and @returns work correctly" { 
+    cd "$BATS_TEST_DIRNAME"/parsing_tsv_from_udf
+    deepdive compile
+    deepdive do process/ext_nasty_output_by_ext_identity
+
+    #Checking that the nasty TSV is parsed correctly. TODO: not correct currently
+     [[ $(deepdive sql eval "select * from output_table") -eq 0 ]]
+}
+
 ###############################################################################
 ## a case where NULL is in an array
 NullInArraySQL="SELECT 1 AS i

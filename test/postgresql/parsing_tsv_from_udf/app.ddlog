@@ -1,0 +1,45 @@
+nasty(
+v1  bigint ,
+v2  float ,
+v3  boolean ,
+v4  boolean ,
+v5  text ,
+v6  text ,
+v7  text ,
+v8  text ,
+v9  text ,
+v10  text ,
+v11  text ,
+v12  int[] ,
+v13  float[] ,
+v14  text[] ,
+v15  text[] ,
+v16  text[] ,
+v17  text[]).
+
+nasty_output(
+v1  bigint ,
+v2  float ,
+v3  boolean ,
+v4  boolean ,
+v5  text ,
+v6  text ,
+v7  text ,
+v8  text ,
+v9  text ,
+v10  text ,
+v11  text ,
+v12  int[] ,
+v13  float[] ,
+v14  text[] ,
+v15  text[] ,
+v16  text[] ,
+v17  text[]).
+
+
+function ext_identity over rows like ext_identity_input
+returns rows like nasty_output
+implementation "udf/identity.py" handles tsv lines.
+
+nasty_output += ext_identity(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17) :-
+nasty(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17).
