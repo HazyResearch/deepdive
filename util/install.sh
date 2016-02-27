@@ -40,7 +40,8 @@ timeout_or_do() {
     local timeout=${1:?Missing timeout in seconds}; shift
     local msg=${1:?Missing prompt message}; shift
     if [[ -t 0 ]]; then
-        if read -p "$msg" -t "$timeout" -n 1 -s; echo; [[ -n "$REPLY" ]]; then
+        local key=
+        if read -p "$msg" -t "$timeout" -n 1 -s key; echo; [[ -n "$key" ]]; then
             "$@"
         fi
     fi
