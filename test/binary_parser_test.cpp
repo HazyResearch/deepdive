@@ -70,3 +70,24 @@ TEST(BinaryParserTest, read_edges) {
   EXPECT_EQ(fg.factors[1].tmp_variables[0].n_position, 0);
   EXPECT_EQ(fg.factors[1].tmp_variables[0].is_positive, true);
 }
+
+// test read domains
+TEST(BinaryParserTest, read_domains) {
+  int num_variables = 5, domain_size = 12;
+  dd::FactorGraph fg(num_variables, 1, 1, 1);
+  // add variables
+  for (int i = 0; i < num_variables; i++) {
+    fg.variables[i] = dd::Variable(i, 0, 0, 0, domain_size, 0, 0, 0, 0);
+  }
+  read_domains("./test/domains/graph.domains", fg);
+
+  EXPECT_EQ(fg.variables[1].domain.size(), domain_size);
+  EXPECT_EQ(fg.variables[1].domain_map.size(), domain_size);
+  for (int i = 0; i < domain_size; i++) {
+    EXPECT_EQ(fg.variables[1].domain[i], i);
+  }
+  for (auto it = fg.variables[1].domain_map.begin(); it != fg.variables[1].domain_map.end(); it++) {
+    EXPECT_EQ(fg.variables[1].domain[it->second], it->first);
+  }
+}
+

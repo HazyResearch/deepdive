@@ -51,4 +51,7 @@ long long read_factors_inc(string filename, dd::FactorGraph &);
  */
 long long read_edges_inc(string filename, dd::FactorGraph &);
 
+// Loads domains for multinomial variables
+void read_domains(string filename, dd::FactorGraph &fg);
+
 #endif

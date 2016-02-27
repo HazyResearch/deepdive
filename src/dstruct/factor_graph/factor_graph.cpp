@@ -82,20 +82,21 @@ long dd::FactorGraph::get_multinomial_weight_id(
   /**
    * The weight ids are aligned in a continuous region according
    * to the numerical order of variable values.
-   * Say for two variables v1, v2, v3, with cardinality d. The numerical value
-   * is
-   * v1 * d^2 + v2 * d + v3.
+   * Say for two variables v1, v2, v3, with cardinality d1, d2, and d3.
+   * The numerical value is
+   * v1 * d2 * d3 + v2 * d3 + index of v3 in domain vector.
    */
   long weight_offset = 0;
   // for each variable in the factor
   for (long i = fs.n_start_i_vif; i < fs.n_start_i_vif + fs.n_variables; i++) {
     const VariableInFactor &vif = vifs[i];
+    Variable &variable = variables[vif.vid];
     if (vif.vid == vid) {
-      weight_offset =
-          weight_offset * (variables[vif.vid].upper_bound + 1) + proposal;
+      weight_offset = weight_offset * variable.domain.size() +
+                      variable.domain_map[proposal];
     } else {
-      weight_offset = weight_offset * (variables[vif.vid].upper_bound + 1) +
-                      assignments[vif.vid];
+      weight_offset = weight_offset * variable.domain.size() +
+                      variable.domain_map[(int)assignments[vif.vid]];
     }
   }
   long base_offset = &fs - compact_factors;  // note c++ will auto scale by
@@ -236,6 +237,8 @@ void dd::FactorGraph::load(const CmdParser &cmd, const bool is_quiet, int inc) {
     std::cout << "LOADED FACTORS: #" << n_loaded << std::endl;
   }
 
+  read_domains(cmd.domain_file, *this);
+
   if (inc) {
     // sort edges
     // NOTE This is very important, as read_edges assume variables,
@@ -362,7 +365,7 @@ void dd::FactorGraph::organize_graph_by_edge() {
     variable.n_start_i_factors = c_edge;
     if (variable.domain_type == DTYPE_MULTINOMIAL) {
       variable.n_start_i_tally = ntallies;
-      ntallies += variable.upper_bound - variable.lower_bound + 1;
+      ntallies += variable.domain.size();
     }
     for (const long &fid : variable.tmp_factor_ids) {
       factor_ids[c_edge] = fid;

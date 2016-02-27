@@ -221,8 +221,8 @@ namespace dd{
     infrs->assignments_evid[variable.id] = new_value;
     infrs->agg_means[variable.id] += new_value;
     infrs->agg_nsamples[variable.id]  ++ ;
-    if(variable.domain_type == DTYPE_MULTINOMIAL){
-      infrs->multinomial_tallies[variable.n_start_i_tally + (int)(new_value) - variable.lower_bound] ++;
+    if (variable.domain_type == DTYPE_MULTINOMIAL) {
+      infrs->multinomial_tallies[variable.n_start_i_tally + variable.domain_map[(int)new_value]] ++;
     }
   }
 

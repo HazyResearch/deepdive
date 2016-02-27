@@ -1,5 +1,6 @@
 
 #include <vector>
+#include <map>
 
 #ifndef _VARIABLE_H_
 #define _VARIABLE_H_
@@ -38,6 +39,9 @@ namespace dd{
     // where v1, v2 are two multinomial variables, with domain 1-m, and 1-n respectively.
     // n_start_i_tally is the start position for the variable values in the array
     long n_start_i_tally;
+
+    std::vector<VariableValue> domain; // domain of multinomial variable
+    std::map<VariableValue, int> domain_map; // map from value to index in the domain vector
 
     std::vector<long> tmp_factor_ids; // factor ids the variable connects to
 

@@ -148,7 +148,7 @@ inline int dd::SingleThreadSampler::draw_sample(Variable &variable,
 
     case DTYPE_MULTINOMIAL:
       // varlen_potential_buffer contains potential for each proposals
-      while (variable.upper_bound >= varlen_potential_buffer.size()) {
+      while (variable.domain.size() >= varlen_potential_buffer.size()) {
         varlen_potential_buffer.push_back(0.0);
       }
 
@@ -157,25 +157,24 @@ inline int dd::SingleThreadSampler::draw_sample(Variable &variable,
       proposal = -1;
 
       // calculate potential for each proposal
-      for (int propose = variable.lower_bound; propose <= variable.upper_bound;
-           propose++) {
+      for (size_t i = 0; i < variable.domain.size(); i++) {
+        int propose = variable.domain[i];
         if (is_free_sample) {
-          varlen_potential_buffer[propose] =
+          varlen_potential_buffer[i] =
               p_fg->template potential<true>(variable, propose);
         } else {
-          varlen_potential_buffer[propose] =
+          varlen_potential_buffer[i] =
               p_fg->template potential<false>(variable, propose);
         }
-        sum = logadd(sum, varlen_potential_buffer[propose]);
+        sum = logadd(sum, varlen_potential_buffer[i]);
       }
 
       // flip a coin
       *this->p_rand_obj_buf = erand48(this->p_rand_seed);
-      for (int propose = variable.lower_bound; propose <= variable.upper_bound;
-           propose++) {
-        acc += exp(varlen_potential_buffer[propose] - sum);
+      for (size_t i = 0; i < variable.domain.size(); i++) {
+        acc += exp(varlen_potential_buffer[i] - sum);
         if (*this->p_rand_obj_buf <= acc) {
-          proposal = propose;
+          proposal = variable.domain[i];
           break;
         }
       }

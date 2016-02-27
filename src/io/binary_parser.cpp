@@ -119,6 +119,13 @@ long long read_variables(string filename, dd::FactorGraph &fg) {
     fg.variables[id] =
         dd::Variable(id, type_const, is_evidence, 0, upper_bound, init_value,
                      init_value, edge_count, is_observation);
+
+    // set up the default domains for multinomial
+    for (int i = 0; i < cardinality; i++) {
+      fg.variables[id].domain.push_back(i);
+      fg.variables[id].domain_map[i] = i;
+    }
+
     fg.c_nvar++;
     if (is_evidence) {
       fg.n_evid++;
@@ -275,4 +282,37 @@ long long read_edges_inc(string filename, dd::FactorGraph &fg) {
   }
   file.close();
   return count;
+}
+
+// read domains for multinomial
+void read_domains(std::string filename, dd::FactorGraph &fg) {
+  ifstream file;
+  file.open(filename.c_str(), ios::in | ios::binary);
+  long id, value;
+  long cardinality;
+  while (true) {
+    file.read((char *)&id, 8);
+    if (!file.good()) break;
+
+    id = bswap_64(id);
+    dd::Variable &variable = fg.variables[id];
+    cardinality = variable.upper_bound - variable.lower_bound;
+    long domain_size;
+    file.read((char *)&domain_size, 8);
+    domain_size = bswap_64(domain_size);
+    assert(cardinality == domain_size);
+    variable.domain.clear();
+    variable.domain_map.clear();
+
+    for (int i = 0; i < cardinality; i++) {
+      file.read((char *)&value, 8);
+      value = bswap_64(value);
+      variable.domain.push_back(value);
+    }
+
+    std::sort(variable.domain.begin(), variable.domain.end());
+    for (int i = 0; i < cardinality; i++) {
+      variable.domain_map[variable.domain[i]] = i;
+    }
+  }
 }
