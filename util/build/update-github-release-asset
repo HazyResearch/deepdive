@@ -37,10 +37,18 @@ set -euo pipefail
 : ${GITHUB_REPO:=HazyResearch/deepdive}
 : ${GITHUB_RELEASE_ASSETS_GIST_ID:=https://gist.github.com/1726a55e358e3ae3f2ec}
 
-releaseName=
-# don't touch tags when this was a Travis build for a tag
-if [[ -z $TRAVIS_TAG ]]; then
+: ${TRAVIS_TAG:=} ${TRAVIS_BRANCH:=}
+
+shouldReleaseToGitHub=true releaseName=
+if [[ -n $TRAVIS_TAG ]]; then
+    # don't touch tags when this was a Travis build for a tag
+    releaseName=$TRAVIS_TAG
+else
+    # don't touch tags when this was a Travis build for a tag
+    shouldUpdateTag=true
     currentBranch=$(git name-rev --name-only HEAD)
+    currentBranch=${currentBranch%^0}
+    currentBranch=${currentBranch##*/}
     case $currentBranch in
         master)
             releaseName=UNSTABLE
@@ -49,21 +57,23 @@ if [[ -z $TRAVIS_TAG ]]; then
         v*.*.x)
             releaseName="${currentBranch%.x}"-STABLE
             ;;
+
+        UNSTABLE|v*.*-STABLE)
+            shouldUpdateTag=false releaseName=$currentBranch
+            ;;
     esac
     # update tag
-    if [[ -n $releaseName ]]; then
+    if $shouldUpdateTag && [[ -n $releaseName ]]; then
         set -x
         git tag -f "$releaseName"
         git push -f https://github.com/"$GITHUB_REPO".git "$releaseName"
         set +x &>/dev/null
     fi
     # don't upload when this is a Travis build since the build for the tag will go over another test and upload
-    [[ -z $TRAVIS_BRANCH ]] || releaseName=
-else
-    releaseName=$TRAVIS_TAG
+    [[ -z $TRAVIS_BRANCH ]] || shouldReleaseToGitHub=false releaseName=
 fi
 
-if [[ -n $releaseName ]]; then
+if $shouldReleaseToGitHub && [[ -n $releaseName ]]; then
     # upload new package to the release
     set -x
     make release-"$releaseName" || {
