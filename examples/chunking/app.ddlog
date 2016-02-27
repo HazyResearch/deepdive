@@ -1,8 +1,11 @@
-tags(
-  tag text,
-  tag_id int
+chunk?(
+    @key sent_id bigint,
+    @key word_id bigint,
+    tag text
 ).
+tags(tag text).
 
+# input data ##################################################################
 words_raw(
   sent_id bigint,
   word_id bigint,
@@ -17,56 +20,62 @@ words(
   word text,
   pos text,
   true_tag text,
-  tag int
+  tag text
 ).
 
+# supervision / scope of tags #################################################
+chunk(s, word, tag) = (
+  if tag = tag_supervised then TRUE
+                          else NULL
+  end
+) :-
+  words(s, word, _, _, _, tag_supervised),
+  tags(tag).
+
+# TODO the following if-then-else can go directly to the supervision rule once DDlog supports true unification (tag_supervised = if ... end in the body)
+words(sent_id, word_id, word, pos, true_tag,
+             if true_tag = "B-UCP"        then NULL
+        else if true_tag = "I-UCP"        then NULL
+        else if strpos(true_tag, "-") > 0 then split_part(true_tag, "-", 2)
+        else if true_tag = "O"            then "O"
+        else                                   NULL
+        end) :-
+  words_raw(sent_id, word_id, word, pos, true_tag).
+
+# features ####################################################################
 word_features(
+  sent_id bigint,
   word_id bigint,
   feature text
 ).
 
-words(sent_id, word_id, word, pos, true_tag, tag_id) :-
-  words_raw(sent_id, word_id, word, pos, true_tag),
-  tags(tag, tag_id),
-  if true_tag = "B-UCP" then ""
-  else if true_tag = "I-UCP" then ""
-  else if strpos(true_tag, "-") > 0 then
-     split_part(true_tag, "-", 2)
-  else if true_tag = "O" then "O"
-  else ""
-  end = tag.
-
 function ext_features
-  over (word_id1 bigint, word1 text, pos1 text, word2 text, pos2 text)
+  over (sent_id bigint, word_id1 bigint, word1 text, pos1 text, word2 text, pos2 text)
   returns rows like word_features
   implementation "udf/ext_features.py" handles tsv lines.
 
 word_features +=
-  ext_features(word_id1, word1, pos1, word2, pos2) :-
-  words(sent_id, word_id1, word1, pos1, _, _),
-  words(sent_id, word_id2, word2, pos2, _, _),
-  [word_id1 = word_id2 + 1],
+  ext_features(s, w1, word1, pos1, word2, pos2) :-
+  words(s, w1, word1, pos1, _, _),
+  words(s, w2, word2, pos2, _, _),
+  [w1 = w2 + 1],
   word1 IS NOT NULL.
 
+@weight(f, tag)
+chunk(s, w, tag) :-
+                      words(s, w, _, _, _, _), tags(tag), # XXX just to make it compile. remove after fixing https://github.com/HazyResearch/ddlog/issues/72
+  word_features(s, w, f).
 
-tag?(word_id bigint) Categorical(13).
+# linear chains ###############################################################
+@weight(tag1, tag2)
+chunk(s, w1, tag1) ^ chunk(s, w2, tag2) :-
+                      words(s, w1, _, _, _, _), words(s, w2, _, _, _, _), tags(tag1), tags(tag2), # XXX just to make it compile. remove after fixing https://github.com/HazyResearch/ddlog/issues/72
+  w2 = w1 + 1.
 
-@label(tag)
-tag(word_id) :- words(_, word_id, _, _, _, tag).
-
-@weight(f)
-tag(word_id) :- word_features(word_id, f).
-
-@weight("?")
-Multinomial(tag(word_id_1), tag(word_id_2)) :-
-  words(_, word_id_1, _, _, _, _),
-  words(_, word_id_2, _, _, _, _),
-  word_id_2=word_id_1+1.
-
-@weight("?")
-Multinomial(tag(word_id_1), tag(word_id_2)) :-
-  words(sent_id, word_id_1, word, _, _, tag),
-  words(sent_id, word_id_2, word, _, _, _),
+# skip chain ##################################################################
+@weight(tag1, tag2)
+chunk(s, w1, tag1) ^ chunk(s, w2, tag2) :-
+  words(s, w1, _, _, _, tag),
+                      words(s, w2, _, _, _, _), tags(tag1), tags(tag2), # XXX just to make it compile. remove after fixing https://github.com/HazyResearch/ddlog/issues/72
   tag IS NOT NULL,
-  word_id_1<word_id_2.
-
+  w1 < w2.
