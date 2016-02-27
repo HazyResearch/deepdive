@@ -2,10 +2,10 @@
 # DeepDive Installer
 set -euo pipefail
 
-: ${RELEASE:=v0.8.0}    # the DeepDive release version to install
-: ${BRANCH:=v0.8.x}     # the DeepDive branch to clone, download, and build
-: ${PREFIX:=~/local}    # the path to install deepdive
-: ${GITCLONE:=deepdive} # the path to clone deepdive's repo
+: ${RELEASE:=v0.8-STABLE}   # the DeepDive release version to install
+: ${BRANCH:=v0.8.x}         # the DeepDive branch to clone, download, and build
+: ${PREFIX:=~/local}        # the path to install deepdive
+: ${GITCLONE:=deepdive}     # the path to clone deepdive's repo
 
 : ${INSTALLER_BRANCH:=master}   # the branch from which the installer scripts should be downloaded
 INSTALLER_HOME_URL=https://github.com/HazyResearch/deepdive/raw/"${INSTALLER_BRANCH}"/util/install
