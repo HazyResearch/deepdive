@@ -53,10 +53,8 @@ void SingleThreadSampler::sample_sgd_single_variable(long vid) {
   int proposal = 0;
 
   // sample the variable with evidence unchanged
-  if (variable.is_evid == false) {
-    proposal = draw_sample(variable, false);
-    p_fg->update_evid(variable, (double)proposal);
-  }
+  proposal = draw_sample(variable, false);
+  p_fg->update_evid(variable, (double)proposal);
 
   // sample the variable regardless of whether it's evidence
   proposal = draw_sample(variable, true);
@@ -119,8 +117,8 @@ void SingleThreadSampler::sample_single_variable(long vid, bool is_inc) {
 }
 }
 
-int dd::SingleThreadSampler::draw_sample(Variable &variable,
-                                         bool is_free_sample) {
+inline int dd::SingleThreadSampler::draw_sample(Variable &variable,
+                                                bool is_free_sample) {
   if (variable.is_evid && !is_free_sample) return variable.assignment_evid;
 
   int proposal = 0;
@@ -186,9 +184,7 @@ int dd::SingleThreadSampler::draw_sample(Variable &variable,
       break;
 
     default:
-      std::cerr
-          << "[ERROR] Only Boolean and Multinomial variables are supported now!"
-          << std::endl;
+      // unsupported variable types
       abort();
   }
 

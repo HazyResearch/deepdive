@@ -85,7 +85,7 @@ namespace dd{
     void sample_single_variable(long vid, bool is_inc);
 
     // sample a single variable
-    int draw_sample(Variable &variable, bool is_free_sample);
+    inline int draw_sample(Variable &variable, bool is_free_sample);
 
   };
 
