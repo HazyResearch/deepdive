@@ -29,35 +29,29 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
       case fdecl: FunctionDeclaration => fdecl.functionName -> fdecl
     } toMap
 
+  val schemaDeclarationByRelationName: Map[String, SchemaDeclaration] =
+    statements collect {
+      case decl: SchemaDeclaration => decl.a.name -> decl
+    } toMap
+
+  val inferenceRules = statements collect { case s: InferenceRule => s }
+
+  val statementsByHeadName: Map[String, List[Statement]] =
+    statements collect {
+      case s: ExtractionRule       => s.headName -> s
+      case s: FunctionCallRule     => s.output -> s
+    } groupBy(_._1) mapValues(_ map {_._2})
+
+  val statementsByRepresentative: Map[Statement, List[Statement]] =
+    statementsByHeadName map { case (name, stmts) => stmts(0) -> stmts }
+
+  val representativeStatements : Set[Statement] =
+    statementsByHeadName.values map { _(0) } toSet
+
   // The dependency graph between statements.
   var dependencies : Map[Statement, Set[Statement]] = new HashMap()
 
-  // The statement whether will compile or union to other statements
-  var visible : Set[Statement] = Set()
-
-  var variableTableNames : Set[String] = Set()
-
-  // Mapping head names to the actual statements
-  var schemaDeclarationGroupByHead  : Map[String, List[SchemaDeclaration]] = new HashMap[String, List[SchemaDeclaration]]()
-  var extractionRuleGroupByHead     : Map[String, List[ExtractionRule]] = new HashMap[String, List[ExtractionRule]]()
-  var functionCallRuleGroupByOutput : Map[String, List[FunctionCallRule]] = new HashMap[String, List[FunctionCallRule]]()
-  var functionCallList              : List[FunctionCallRule] = Nil
-  var inferenceRules                : List[InferenceRule] = Nil
-
-  def init() = {
-    // generate the statements.
-    functionCallList = statements collect { case s: FunctionCallRule => s }
-    inferenceRules   = statements collect { case s: InferenceRule    => s }
-    groupByHead(statements)
-    analyzeVisible(statements)
-    analyzeDependency(statements)
-  }
-
-  init()
-
-  def schemaDeclaration(name: String): Option[SchemaDeclaration] = {
-    schemaDeclarationGroupByHead get (name) map (_(0))
-  }
+  analyzeDependency(statements)
 
   def error(message: String) {
     throw new RuntimeException(message)
@@ -74,7 +68,9 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
       // Extra numbering is necessary because there can be many function calls to the same head relation
       // XXX This comes right after the prefix to prevent potential collision with user's name
       val functionCallsForSameOutputAndFunction =
-        (functionCallRuleGroupByOutput getOrElse(f.output, Set.empty) toList).filter (_.function == f.function)
+        statementsByHeadName getOrElse(f.output, List.empty) filter {
+          case s:FunctionCallRule => s.function == f.function
+        }
       val idx = functionCallsForSameOutputAndFunction indexOf f
       optionalIndex(idx)
     }_${f.output}_by_${f.function}"
@@ -113,45 +109,16 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
 
   // has schema declared
   def hasSchemaDeclared(relName: String) : Boolean = {
-    schemaDeclarationGroupByHead contains relName
-  }
-
-  // Group statements by head
-  def groupByHead(statements: List[Statement]) = {
-    // Compile compilation states by head name based on type
-    val schemaDeclarationToCompile = new ListBuffer[SchemaDeclaration]()
-    val extractionRuleToCompile    = new ListBuffer[ExtractionRule]()
-    val inferenceRuleToCompile     = new ListBuffer[InferenceRule]()
-    val functionCallRuleToCompile  = new ListBuffer[FunctionCallRule]()
-
-    statements foreach (_ match {
-      case s: SchemaDeclaration    => schemaDeclarationToCompile += s
-      case s: ExtractionRule       => extractionRuleToCompile += s
-      case s: FunctionCallRule     => functionCallRuleToCompile += s
-      case s: InferenceRule        => inferenceRuleToCompile += s
-      case _                       =>
-    })
-
-    schemaDeclarationGroupByHead = schemaDeclarationToCompile.toList.groupBy(_.a.name)
-    extractionRuleGroupByHead      = extractionRuleToCompile.toList.groupBy(_.headName)
-    functionCallRuleGroupByOutput  = functionCallRuleToCompile.toList.groupBy(_.output)
-  }
-
-  // Analyze the block visibility among statements
-  def analyzeVisible(statements: List[Statement]) = {
-    extractionRuleGroupByHead.values foreach { visible += _(0) }
-    functionCallList foreach { visible += _ }
+    schemaDeclarationByRelationName contains relName
   }
 
   // Analyze the dependency between statements and construct a graph.
   def analyzeDependency(statements: List[Statement]) = {
-    val stmtByHeadName = (extractionRuleGroupByHead.toSeq ++
-      functionCallRuleGroupByOutput.toSeq).groupBy(_._1).mapValues(_.map(_._2).toList)
 
     def collectUsedRelations(bodies: List[List[Body]]): Set[Statement] = {
       // FIXME need to be recursively defined on QuantifiedBody
       (bodies.flatten collect { case x: BodyAtom => x.name }
-      flatMap (stmtByHeadName get _)).toSet.flatten.flatten
+      flatMap (statementsByHeadName get _)).flatten toSet
     }
 
     // Look at the body of each statement to construct a dependency graph
@@ -169,7 +136,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   def generateDependenciesOfCompiledBlockFor(statements: List[Statement]): String = {
     var dependentExtractorBlockNames = Set[String]()
     for (statement <- statements) {
-      dependentExtractorBlockNames ++= ((dependencies getOrElse (statement, Set())) & visible) map resolveExtractorBlockName
+      dependentExtractorBlockNames ++= ((dependencies getOrElse (statement, Set())) & representativeStatements) map resolveExtractorBlockName
     }
     if (dependentExtractorBlockNames.size == 0) "" else {
       val depStr = dependentExtractorBlockNames map {" \"" + _ + "\" "} mkString(", ")
@@ -466,37 +433,21 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
 
   def escape4sh(arg: String): String = s"'${arg.replaceAll("'", "'\\\\''")}'"
 
-  // Generate schema and cleanup part for database
-  def compileSchemaDeclarations(stmts: List[SchemaDeclaration], ss: CompilationState): CompiledBlocks = {
-    var schemas = new ListBuffer[String]()
-    for (stmt <- stmts) {
-        var columnDecls = stmt.a.terms.zipWithIndex map {
-          case (name,i) => s"${name} ${stmt.a.types(i)}"
-        }
-        if (stmt.isQuery) {
-          val labelColumn = stmt.variableType match {
-            case Some(BooleanType())        => "label boolean"
-            case Some(MultinomialType(_)) => "label int"
-          }
-          columnDecls = columnDecls :+ "id bigint" :+ labelColumn
-        }
-        val indentation = " " * stmt.a.name.length
-        val blockName = ss.resolveExtractorBlockName(stmt)
-        schemas += s"""
-          deepdive.extraction.extractors.${blockName} {
-            sql: \"\"\" DROP TABLE IF EXISTS ${stmt.a.name} CASCADE;
-            CREATE TABLE
-            ${stmt.a.name}(${columnDecls.mkString(",\n" + indentation)})
-            \"\"\"
-            style: "sql_extractor"
-          }"""
-    }
-    schemas.toList
+  def compile(stmt: SchemaDeclaration, ss: CompilationState): CompiledBlocks = {
+    // Nothing to compile
+    List()
   }
 
+  def compile(stmt: FunctionDeclaration, ss: CompilationState): CompiledBlocks = {
+    // Nothing to compile
+    List()
+  }
 
   // Generate extraction rule part for deepdive
-  def compileExtractionRules(stmts: List[ExtractionRule], ss: CompilationState): CompiledBlocks = {
+  def compile(stmt: ExtractionRule, ss: CompilationState): CompiledBlocks = {
+    val stmts = ss.statementsByRepresentative getOrElse(stmt, List.empty) collect { case s: ExtractionRule => s }
+    if (stmts isEmpty) return List()
+
     var inputQueries = new ListBuffer[String]()
     for (stmt <- stmts) {
       for (cqBody <- stmt.q.bodies) {
@@ -550,7 +501,10 @@ ${if (createTable) {
     List(extractor)
   }
 
-  def compileFunctionCallRules(stmts: List[FunctionCallRule], ss: CompilationState): CompiledBlocks = {
+  def compile(stmt: FunctionCallRule, ss: CompilationState): CompiledBlocks = {
+    val stmts = ss.statementsByRepresentative getOrElse(stmt, List.empty) collect { case s: FunctionCallRule => s }
+    if (stmts isEmpty) return List()
+
     var extractors = new ListBuffer[String]()
     for (stmt <- stmts) {
 
@@ -587,9 +541,10 @@ ${if (createTable) {
   }
 
   // generate inference rule part for deepdive
-  def compileInferenceRules(stmts: List[InferenceRule], ss: CompilationState): CompiledBlocks = {
-    var blocks = List[String]()
-    for (stmt <- stmts) {
+  def compile(stmt: InferenceRule, ss: CompilationState): CompiledBlocks = {
+      val stmts = List(stmt)  // XXX remove this
+
+      var blocks = List[String]()
       var inputQueries = new ListBuffer[String]()
       var func = ""
       var weight = ""
@@ -613,7 +568,7 @@ ${if (createTable) {
         // TODO self-join?
         val varInBody = (fakeBody.zipWithIndex flatMap {
           case (x: BodyAtom, i) =>
-            if (ss.schemaDeclaration(x.name) map(_.isQuery) getOrElse(false))
+            if (ss.schemaDeclarationByRelationName get(x.name) map(_.isQuery) getOrElse(false))
               Some(s"""R${fakeBody indexOf x}.id AS "${x.name}.R${fakeBody indexOf x}.id" """)
             else
               None
@@ -646,7 +601,7 @@ ${if (createTable) {
             case FactorFunction.Linear() => "Linear"
             case FactorFunction.Ratio()  => "Ratio"
             case FactorFunction.IsTrue() =>
-              ss.schemaDeclaration(stmt.head.terms(0).name) map(_.variableType) match {
+              ss.schemaDeclarationByRelationName get(stmt.head.terms(0).name) map(_.variableType) match {
                 case Some(Some(MultinomialType(_))) => "Multinomial"
                 case _ => "Imply" // TODO fix to IsTrue
               }
@@ -684,15 +639,22 @@ ${if (createTable) {
             ) mkString("\n            ", "\n            ", "\n          ")}]
         }
       """
-    }
     blocks.reverse
   }
 
+  def compile(stmt: Statement, ss: CompilationState): CompiledBlocks = stmt match {
+    case s: SchemaDeclaration => compile(s, ss)
+    case s: FunctionDeclaration => compile(s, ss)
+    case s: ExtractionRule => compile(s, ss)
+    case s: FunctionCallRule => compile(s, ss)
+    case s: InferenceRule => compile(s, ss)
+    case _ => sys.error(s"Compiler does not recognize statement: ${stmt}")
+  }
 
   // generate application.conf pipelines
   def compilePipelines(ss: CompilationState): CompiledBlocks = {
     val run = "deepdive.pipeline.run: ${PIPELINE}"
-    val extraction = (ss.visible map {s => ss.resolveExtractorBlockName(s)}).mkString("\n  ")
+    val extraction = (ss.representativeStatements map { s => ss.resolveExtractorBlockName(s)}).mkString("\n  ")
     val extraction_pipeline = if (extraction.length > 0) s"deepdive.pipeline.pipelines.extraction: [\n  ${extraction}\n]" else ""
     val inference = (ss.inferenceRules map {s => ss.resolveInferenceBlockName(s)}).mkString("\n  ")
     val inference_pipeline = if (inference.length > 0) s"deepdive.pipeline.pipelines.inference: [\n  ${inference}\n]" else ""
@@ -736,11 +698,7 @@ ${if (createTable) {
     val blocks = (
       compileVariableSchema(programToCompile, state)
       :::
-        (state.extractionRuleGroupByHead.values.toList flatMap (compileExtractionRules(_, state)))
-      :::
-        (state.functionCallList flatMap { fncall => compileFunctionCallRules(List(fncall), state)})
-      :::
-        (state.inferenceRules flatMap {inf => compileInferenceRules(List(inf), state)})
+      (programToCompile flatMap (compile(_, state)))
       :::
       compilePipelines(state)
     )

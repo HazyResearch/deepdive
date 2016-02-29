@@ -47,22 +47,22 @@ FROM S_2 R0
       }
     
 
-      deepdive.extraction.extractors.ext_T__3 {
-        cmd: """
-
-	deepdive create view T__3 as 'SELECT R0.a AS column_0
-FROM T R0
-        '
-	
-        """
-          output_relation: "T__3"
-        style: "cmd_extractor"
-          dependencies: [ "ext_T" ]
+        deepdive.extraction.extractors.ext_T___0_by_f {
+          input: """ SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
+FROM R R0
+        WHERE R0.a > 1000
+          """
+          output_relation: "T___0"
+          udf: ${APP_HOME}"//bin/false"
+          style: "tsv_extractor" 
+          
           input_relations: [
-            T
+            R
           ]
-      }
-    
+          input_batch_size: ${INPUT_BATCH_SIZE}
+          parallelism: ${PARALLELISM}
+        }
+      
 
       deepdive.extraction.extractors.ext_T {
         cmd: """
@@ -98,23 +98,6 @@ FROM T___3 R0
           ]
       }
     
-
-        deepdive.extraction.extractors.ext_T___0_by_f {
-          input: """ SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
-FROM R R0
-        WHERE R0.a > 1000
-          """
-          output_relation: "T___0"
-          udf: ${APP_HOME}"//bin/false"
-          style: "tsv_extractor" 
-          
-          input_relations: [
-            R
-          ]
-          input_batch_size: ${INPUT_BATCH_SIZE}
-          parallelism: ${PARALLELISM}
-        }
-      
 
         deepdive.extraction.extractors.ext_T___1_by_f {
           input: """ SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
@@ -279,6 +262,23 @@ FROM R R0
           ]
         }
       
+
+      deepdive.extraction.extractors.ext_T__3 {
+        cmd: """
+
+	deepdive create view T__3 as 'SELECT R0.a AS column_0
+FROM T R0
+        '
+	
+        """
+          output_relation: "T__3"
+        style: "cmd_extractor"
+          dependencies: [ "ext_T" ]
+          input_relations: [
+            T
+          ]
+      }
+    
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.extraction: [
   ext_S_1_by_f

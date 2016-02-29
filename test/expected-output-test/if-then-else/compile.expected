@@ -4,31 +4,6 @@
       }
     
 
-      deepdive.extraction.extractors.ext_labels_resolved {
-        cmd: """
-
-	# TODO use temporary table
-	deepdive create table "labels_resolved"
-	deepdive sql 'INSERT INTO labels_resolved SELECT R0.x AS "labels.R0.x", SUM(
-CASE WHEN R0.l IS NULL THEN 0
-     WHEN R0.l = true THEN 1
-     ELSE -1
-END) AS column_1
-FROM labels R0
-        
-        GROUP BY R0.x'
-	# TODO rename temporary table to replace output_relation
-	
-        """
-          output_relation: "labels_resolved"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            labels
-          ]
-      }
-    
-
       deepdive.extraction.extractors.ext_q {
         cmd: """
 
@@ -73,6 +48,31 @@ FROM labels R0
 	
         """
           output_relation: "p"
+        style: "cmd_extractor"
+          
+          input_relations: [
+            labels
+          ]
+      }
+    
+
+      deepdive.extraction.extractors.ext_labels_resolved {
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "labels_resolved"
+	deepdive sql 'INSERT INTO labels_resolved SELECT R0.x AS "labels.R0.x", SUM(
+CASE WHEN R0.l IS NULL THEN 0
+     WHEN R0.l = true THEN 1
+     ELSE -1
+END) AS column_1
+FROM labels R0
+        
+        GROUP BY R0.x'
+	# TODO rename temporary table to replace output_relation
+	
+        """
+          output_relation: "labels_resolved"
         style: "cmd_extractor"
           
           input_relations: [

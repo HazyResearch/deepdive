@@ -5,27 +5,6 @@ cancer.label: Boolean
       }
     
 
-      deepdive.extraction.extractors.ext_cancer {
-        cmd: """
-
-	# TODO use temporary table
-	deepdive create table "cancer"
-	deepdive sql 'INSERT INTO cancer SELECT DISTINCT R0.person_id, 0 AS id, R0.has_cancer AS label
-          FROM person_has_cancer R0
-        
-          '
-	# TODO rename temporary table to replace output_relation
-	
-        """
-          output_relation: "cancer"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            person_has_cancer
-          ]
-      }
-    
-
       deepdive.extraction.extractors.ext_smoke {
         cmd: """
 
@@ -43,6 +22,27 @@ cancer.label: Boolean
           
           input_relations: [
             person_smokes
+          ]
+      }
+    
+
+      deepdive.extraction.extractors.ext_cancer {
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "cancer"
+	deepdive sql 'INSERT INTO cancer SELECT DISTINCT R0.person_id, 0 AS id, R0.has_cancer AS label
+          FROM person_has_cancer R0
+        
+          '
+	# TODO rename temporary table to replace output_relation
+	
+        """
+          output_relation: "cancer"
+        style: "cmd_extractor"
+          
+          input_relations: [
+            person_has_cancer
           ]
       }
     

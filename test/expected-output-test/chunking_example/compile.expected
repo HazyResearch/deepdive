@@ -4,27 +4,6 @@
       }
     
 
-      deepdive.extraction.extractors.ext_tag {
-        cmd: """
-
-	# TODO use temporary table
-	deepdive create table "tag"
-	deepdive sql 'INSERT INTO tag SELECT DISTINCT R0.sent_id, 0 AS id, R0.true_tag AS label
-          FROM words R0
-        
-          '
-	# TODO rename temporary table to replace output_relation
-	
-        """
-          output_relation: "tag"
-        style: "cmd_extractor"
-          dependencies: [ "ext_words_by_ext_training" ]
-          input_relations: [
-            words
-          ]
-      }
-    
-
         deepdive.extraction.extractors.ext_words_by_ext_training {
           input: """ SELECT R0.word_id AS "words_raw.R0.word_id", R0.word AS "words_raw.R0.word", R0.pos AS "words_raw.R0.pos", R0.tag AS "words_raw.R0.tag"
 FROM words_raw R0
@@ -59,6 +38,27 @@ FROM words R0, words R1
         }
       
 
+      deepdive.extraction.extractors.ext_tag {
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "tag"
+	deepdive sql 'INSERT INTO tag SELECT DISTINCT R0.sent_id, 0 AS id, R0.true_tag AS label
+          FROM words R0
+        
+          '
+	# TODO rename temporary table to replace output_relation
+	
+        """
+          output_relation: "tag"
+        style: "cmd_extractor"
+          dependencies: [ "ext_words_by_ext_training" ]
+          input_relations: [
+            words
+          ]
+      }
+    
+
         deepdive.inference.factors.inf_istrue_tag {
           input_query: """
           SELECT R0.id AS "tag.R0.id" , R1.feature AS "dd_weight_column_0" 
@@ -75,16 +75,16 @@ FROM words R0, words R1
       
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.extraction: [
-  ext_tag
   ext_words_by_ext_training
+  ext_tag
   ext_word_features_by_ext_features
 ]
 deepdive.pipeline.pipelines.inference: [
   inf_istrue_tag
 ]
 deepdive.pipeline.pipelines.endtoend: [
-  ext_tag
   ext_words_by_ext_training
+  ext_tag
   ext_word_features_by_ext_features
   inf_istrue_tag
 ]
