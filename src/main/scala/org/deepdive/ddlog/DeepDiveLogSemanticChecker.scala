@@ -161,13 +161,10 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     if (schemaDeclaration contains b.name)
     b.terms.zipWithIndex.foreach {
       case (`supVariable`, index) => {
-        val expColumnType =
-          if (expType.isInstanceOf[BooleanType.type])
-            // binary
-            "boolean"
-          else
-            // multinomial
-            "int"
+        val expColumnType = expType match {
+          case BooleanType() => "boolean"
+          case MultinomialType(_) => "int"
+        }
         if (schemaDeclaration(b.name).a.types(index).toLowerCase != expColumnType) {
           val actualColumnType = schemaDeclaration(b.name).a.types(index).toLowerCase
           error(s, s"Supervision column ${supVariable.name} should be ${expColumnType} type, but is ${actualColumnType} type")

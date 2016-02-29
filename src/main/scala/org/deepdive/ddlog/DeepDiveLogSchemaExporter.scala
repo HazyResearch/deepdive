@@ -32,10 +32,10 @@ object DeepDiveLogSchemaExporter extends DeepDiveLogHandler {
       schema += "annotations" -> exportAnnotations(decl.annotation)
     // what type of random variable this relation is
     if (decl.isQuery)
-      decl.variableType getOrElse { BooleanType } match {
+      decl.variableType getOrElse { BooleanType() } match {
         case ty =>
           schema += "variable_type" -> (ty match {
-            case BooleanType        => "boolean"
+            case BooleanType()      => "boolean"
             case MultinomialType(n) => "multinomial"
           })
           schema += "variable_cardinality" -> ty.cardinality

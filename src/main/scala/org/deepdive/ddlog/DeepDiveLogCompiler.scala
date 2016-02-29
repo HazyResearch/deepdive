@@ -156,7 +156,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
 
   // Given an inference rule, resolve its name for the compiled inference block.
   def resolveInferenceBlockName(s: InferenceRule): String = {
-    val factorFuncName: String = s.head.function.toString.toLowerCase
+    val factorFuncName: String = s.head.function.getClass.getSimpleName.toLowerCase
     val idxInInferenceRulesSharingHead = inferenceRules filter(_.head equals s.head) indexOf(s)
     mode match {
       case INCREMENTAL => s"dd_delta_inf${
@@ -393,8 +393,8 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
         val resolvedLhs = s"${compileCond(lhs, level + 1)}"
         val resolvedRhs = s"${compileCond(rhs, level + 1)}"
         val sql = op match {
-          case LogicOperator.AND => s"${resolvedLhs} AND ${resolvedRhs}"
-          case LogicOperator.OR  => s"${resolvedLhs} OR ${resolvedRhs}"
+          case LogicOperator.AND() => s"${resolvedLhs} AND ${resolvedRhs}"
+          case LogicOperator.OR()  => s"${resolvedLhs} OR ${resolvedRhs}"
         }
         if (level == 0) sql else s"(${sql})"
       }
@@ -574,7 +574,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         }
         if (stmt.isQuery) {
           val labelColumn = stmt.variableType match {
-            case Some(BooleanType)        => "label boolean"
+            case Some(BooleanType())        => "label boolean"
             case Some(MultinomialType(_)) => "label int"
           }
           columnDecls = columnDecls :+ "id bigint" :+ labelColumn
@@ -777,17 +777,17 @@ ${if (createTable) {
           })
 
           val function = stmt.head.function match {
-            case FactorFunction.Imply  => "Imply"
-            case FactorFunction.And    => "And"
-            case FactorFunction.Or     => "Or"
-            case FactorFunction.Equal  => "Equal"
-            case FactorFunction.Linear => "Linear"
-            case FactorFunction.Ratio  => "Ratio"
-            case FactorFunction.IsTrue => ss.variableType get stmt.head.terms(0).name match {
-              case Some(BooleanType)        => "Imply"
+            case FactorFunction.Imply()  => "Imply"
+            case FactorFunction.And()    => "And"
+            case FactorFunction.Or()     => "Or"
+            case FactorFunction.Equal()  => "Equal"
+            case FactorFunction.Linear() => "Linear"
+            case FactorFunction.Ratio()  => "Ratio"
+            case FactorFunction.IsTrue() => ss.variableType get stmt.head.terms(0).name match {
+              case Some(BooleanType())        => "Imply"
               case Some(MultinomialType(_)) => "Multinomial"
             }
-            case FactorFunction.Multinomial => "Multinomial"
+            case FactorFunction.Multinomial() => "Multinomial"
           }
           func = s"""${function}(${funcBody.mkString(", ")})"""
         }
@@ -899,7 +899,7 @@ ${if (createTable) {
       case decl: SchemaDeclaration =>
         if (decl.isQuery) {
           val variableTypeDecl = decl.variableType match {
-            case Some(BooleanType)        => "Boolean"
+            case Some(BooleanType())        => "Boolean"
             case Some(MultinomialType(x)) => s"Categorical(${x})"
           }
           schema += s"${decl.a.name}.label: ${variableTypeDecl}"
