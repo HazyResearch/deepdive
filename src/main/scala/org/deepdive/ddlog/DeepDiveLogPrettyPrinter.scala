@@ -197,14 +197,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {
-    val programToPrint =
-      // derive the program based on mode information
-      config.mode match {
-        case ORIGINAL => parsedProgram
-        case INCREMENTAL => DeepDiveLogDeltaDeriver.derive(parsedProgram)
-        case MATERIALIZATION => parsedProgram
-        case MERGE => DeepDiveLogMergeDeriver.derive(parsedProgram)
-      }
+    val programToPrint = parsedProgram
     // pretty print in original syntax
     programToPrint foreach {stmt => println(print(stmt))}
   }

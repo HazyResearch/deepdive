@@ -1,5 +1,7 @@
 package org.deepdive.ddlog
 
+import org.deepdive.ddlog.DeepDiveLog.{Config, Program}
+
 import scala.collection.mutable.ListBuffer
 
 
@@ -12,7 +14,7 @@ object Mode extends Enumeration {
 }
 import Mode._
 
-object DeepDiveLogDeltaDeriver{
+object DeepDiveLogDeltaDeriver extends DeepDiveLogHandler {
 
   // Default prefix for incremental tables
   val deltaPrefix = "dd_delta_"
@@ -166,4 +168,9 @@ object DeepDiveLogDeltaDeriver{
     }
     incrementalProgram.toList
   }
+
+  override def run(program: Program, config: Config): Unit = {
+    DeepDiveLogPrettyPrinter.run(derive(program), config)
+  }
+
 }

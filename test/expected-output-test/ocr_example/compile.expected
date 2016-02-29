@@ -1,17 +1,4 @@
 
-  deepdive.db.default {
-    driver: "org.postgresql.Driver"
-    url: "jdbc:postgresql://"${PGHOST}":"${PGPORT}"/"${DBNAME}
-    user: ${PGUSER}
-    password: ${PGPASSWORD}
-    dbname: ${DBNAME}
-    host: ${PGHOST}
-    port: ${PGPORT}
-    incremental_mode: ORIGINAL
-    }
-    
-
-
       deepdive.schema.variables {
         q1.label: Boolean
 q2.label: Boolean

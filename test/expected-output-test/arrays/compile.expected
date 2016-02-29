@@ -1,17 +1,4 @@
 
-  deepdive.db.default {
-    driver: "org.postgresql.Driver"
-    url: "jdbc:postgresql://"${PGHOST}":"${PGPORT}"/"${DBNAME}
-    user: ${PGUSER}
-    password: ${PGPASSWORD}
-    dbname: ${DBNAME}
-    host: ${PGHOST}
-    port: ${PGPORT}
-    incremental_mode: ORIGINAL
-    }
-    
-
-
       deepdive.schema.variables {
         
       }
@@ -20,10 +7,10 @@
       deepdive.extraction.extractors.ext_U {
         cmd: """
 
-  deepdive create view U as 'SELECT R1.x AS column_0
+	deepdive create view U as 'SELECT R1.x AS column_0
 FROM R R0, S R1
         WHERE (R1.x + f(R1.x + 1)[(R1.x + R0.x[1])]) = R1.y[R1.x]'
-  
+	
         """
           output_relation: "U"
         style: "cmd_extractor"
@@ -38,10 +25,10 @@ FROM R R0, S R1
       deepdive.extraction.extractors.ext_T {
         cmd: """
 
-  deepdive create view T as 'SELECT R0.x[3] AS column_0, R1.x AS column_1
+	deepdive create view T as 'SELECT R0.x[3] AS column_0, R1.x AS column_1
 FROM R R0, S R1
         WHERE R0.x[1] = R1.y[1] AND R0.x[2] = R1.y[2]'
-  
+	
         """
           output_relation: "T"
         style: "cmd_extractor"
