@@ -1,10 +1,10 @@
 
       deepdive.schema.variables {
-        a.label: Boolean
-f.label: Boolean
-e.label: Boolean
-d.label: Boolean
+    a.label: Boolean
 c.label: Boolean
+d.label: Boolean
+e.label: Boolean
+f.label: Boolean
       }
     
 

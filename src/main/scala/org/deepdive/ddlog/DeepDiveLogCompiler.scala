@@ -124,7 +124,7 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
   // conditions, select, etc.)
   var query_schema = new HashMap[ String, Tuple2[String,Variable] ]()
 
-  // maps each variable name to a canonical version of itself (first occurence in body in left-to-right order)
+  // maps each variable name to a canonical version of itself (first occurrence in body in left-to-right order)
   // index is the index of the subgoal/atom this variable is found in the body.
   // variable is the complete Variable type for the found variable.
   def generateCanonicalVar()  = {
@@ -407,9 +407,8 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     val stmts = ss.statementsByRepresentative getOrElse(stmt, List.empty) collect { case s: ExtractionRule => s }
     if (stmts isEmpty) return List()
 
-    var inputQueries = new ListBuffer[String]()
-    for (stmt <- stmts) {
-      for (cqBody <- stmt.q.bodies) {
+    val inputQueries = stmts flatMap { case stmt =>
+      stmt.q.bodies map { case cqBody =>
         val tmpCq = stmt.q.copy(bodies = List(cqBody))
         // Generate the body of the query.
         val qc              = new QueryCompiler(tmpCq, ss)
@@ -418,7 +417,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           if (stmt.q.bodies.length > 1) sys.error(s"Scoping rule does not allow disjunction.\n")
           val headStr = qc.generateSQLHead(NoAlias)
           val labelCol = qc.compileExpr(stmt.supervision.get)
-          inputQueries += s"""SELECT DISTINCT ${ headStr }, 0 AS id, ${labelCol} AS label
+          s"""SELECT DISTINCT ${ headStr }, 0 AS id, ${labelCol} AS label
           ${ qc.generateSQLBody(cqBody) }
           """
         } else {
@@ -427,7 +426,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           // views uses view alias
           val aliasStyle = if (!ss.hasSchemaDeclared(stmt.headName)) ViewAlias
               else TableAlias
-          inputQueries += qc.generateSQL(aliasStyle)
+          qc.generateSQL(aliasStyle)
         }
       }
     }
@@ -463,9 +462,7 @@ ${if (createTable) {
     val stmts = ss.statementsByRepresentative getOrElse(stmt, List.empty) collect { case s: FunctionCallRule => s }
     if (stmts isEmpty) return List()
 
-    var extractors = new ListBuffer[String]()
-    for (stmt <- stmts) {
-
+    stmts map { case stmt =>
       val function = ss.functionDeclarationByName(stmt.function)
       val udfDetails = (function.implementations collectFirst {
         case impl: RowWiseLineHandler =>
@@ -479,7 +476,7 @@ ${if (createTable) {
 
       val blockName = ss.resolveExtractorBlockName(stmt)
       val parallelism = stmt.parallelism getOrElse("${PARALLELISM}")
-      val extractor = s"""
+      s"""
         deepdive.extraction.extractors.${blockName} {
           input: \"\"\" ${new QueryCompiler(stmt.q, ss).generateSQL(TableAlias)}
           \"\"\"
@@ -492,30 +489,25 @@ ${if (createTable) {
           parallelism: ${parallelism}
         }
       """
-      extractors += extractor
     }
-    extractors.toList
   }
 
   // generate inference rule part for deepdive
   def compile(stmt: InferenceRule, ss: CompilationState): CompiledBlocks = {
-      val stmts = List(stmt)  // XXX remove this
+    val headAsBody = stmt.head.terms map { x =>
+      BodyAtom(x.name, x.terms map {
+        case x: VarExpr => VarPattern(x.name)
+        case x: Expr    => ExprPattern(x)
+      })
+    }
 
-      var blocks = List[String]()
-      var inputQueries = new ListBuffer[String]()
-      var func = ""
-      var weight = ""
-      for (cqBody <- stmt.q.bodies) {
+    val inputQueries =
+      stmt.q.bodies map { case cqBody =>
         // edge query
         // Here we need to select from the bodies atoms as well as the head atoms,
         // which are the variable relations.
         // This is achieved by puting head atoms into the body.
-        val headAsBody = stmt.head.terms map { x =>
-          BodyAtom(x.name, x.terms map {
-            case x: VarExpr => VarPattern(x.name)
-            case x: Expr    => ExprPattern(x)
-          })
-        }
+
         val fakeBody        = headAsBody ++ cqBody
         val fakeCQ          = stmt.q.copy(bodies = List(fakeBody))
         val fakeBodyAtoms   = fakeBody.collect { case x: BodyAtom => x }
@@ -541,61 +533,63 @@ ${if (createTable) {
         val selectStr = List(varInBody, uwStr).filterNot(_.isEmpty).mkString(", ")
 
         // factor input query
-        inputQueries += s"""
+        s"""
           SELECT ${selectStr}
           ${ qc.generateSQLBody(fakeBody) }"""
-        // factor function
-        if (func.length == 0) {
-          val funcBody = (headAsBody zip stmt.head.terms map { case(x, y) =>
-            s"""${if (y.isNegated) "!" else ""}${x.name}.R${fakeBody indexOf x}.label"""
-          })
+      }
 
-          val function = stmt.head.function match {
-            case FactorFunction.Imply()  => "Imply"
-            case FactorFunction.And()    => "And"
-            case FactorFunction.Or()     => "Or"
-            case FactorFunction.Equal()  => "Equal"
-            case FactorFunction.Linear() => "Linear"
-            case FactorFunction.Ratio()  => "Ratio"
-            case FactorFunction.IsTrue() =>
-              ss.schemaDeclarationByRelationName get(stmt.head.terms(0).name) map(_.variableType) match {
-                case Some(Some(MultinomialType(_))) => "Multinomial"
-                case _ => "Imply" // TODO fix to IsTrue
-              }
-            case FactorFunction.Multinomial() => "Multinomial"
+    // factor function
+    val func = {
+      val funcBody = (headAsBody zip stmt.head.terms map { case(x, y) =>
+        s"""${if (y.isNegated) "!" else ""}${x.name}.R${headAsBody indexOf x}.label"""
+      })
+
+      val function = stmt.head.function match {
+        case FactorFunction.Imply()  => "Imply"
+        case FactorFunction.And()    => "And"
+        case FactorFunction.Or()     => "Or"
+        case FactorFunction.Equal()  => "Equal"
+        case FactorFunction.Linear() => "Linear"
+        case FactorFunction.Ratio()  => "Ratio"
+        case FactorFunction.IsTrue() =>
+          ss.schemaDeclarationByRelationName get(stmt.head.terms(0).name) map(_.variableType) match {
+            case Some(Some(MultinomialType(_))) => "Multinomial"
+            case _ => "Imply" // TODO fix to IsTrue
           }
-          func = s"""${function}(${funcBody.mkString(", ")})"""
-        }
-        // weight
-        if (weight.length == 0) {
-          // note error cases should be handled in semantic checker
-          weight = stmt.weights.variables(0) match {
-            case IntConst(value) => value.toString
-            case DoubleConst(value) => value.toString
-            case StringConst(value) => "?"
-            case _ => {
-              val weightVars = stmt.weights.variables.zipWithIndex.flatMap {
-                case(s: Expr, i) => Some(s"dd_weight_column_${i}")
-              } mkString(", ")
-              s"?(${weightVars})"
-            }
-          }
+        case FactorFunction.Multinomial() => "Multinomial"
+      }
+      s"""${function}(${funcBody.mkString(", ")})"""
+    }
+
+    // weight
+    val weight = {
+      // note error cases should be handled in semantic checker
+      // FIXME check if all weights.variables are ConstExpr to determine whether it's a fixed or unknown weight
+      stmt.weights.variables(0) match {
+        case IntConst(value) => value.toString
+        case DoubleConst(value) => value.toString
+        case StringConst(value) => "?"
+        case _ => {
+          val weightVars = stmt.weights.variables.zipWithIndex.flatMap {
+            case(s: Expr, i) => Some(s"dd_weight_column_${i}")
+          } mkString(", ")
+          s"?(${weightVars})"
         }
       }
-      val blockName = ss.resolveInferenceBlockName(stmt)
-      blocks ::= s"""
-        deepdive.inference.factors.${blockName} {
+    }
+
+    List(s"""
+        deepdive.inference.factors.${ss.resolveInferenceBlockName(stmt)} {
           input_query: \"\"\"${inputQueries.mkString(" UNION ALL ")}\"\"\"
           function: "${func}"
           weight: "${weight}"
           input_relations: [${
-            val relationsInHead = stmts flatMap (_.head.terms map (_.name))
-            val relationsInBody = stmts flatMap ss.relationNamesUsedByStatement
+            val relationsInHead = stmt.head.terms map (_.name)
+            val relationsInBody = ss.relationNamesUsedByStatement getOrElse(stmt, List.empty)
             ((relationsInHead ++ relationsInBody) distinct
             ) mkString("\n            ", "\n            ", "\n          ")}]
         }
-      """
-    blocks.reverse
+      """)
   }
 
   def compile(stmt: Statement, ss: CompilationState): CompiledBlocks = stmt match {
@@ -621,25 +615,19 @@ ${if (createTable) {
 
   // generate variable schema statements
   def compileVariableSchema(statements: DeepDiveLog.Program, ss: CompilationState): CompiledBlocks = {
-    var schema = Set[String]()
     // generate the statements.
-    statements.foreach {
-      case decl: SchemaDeclaration =>
-        if (decl.isQuery) {
-          val variableTypeDecl = decl.variableType match {
-            case Some(BooleanType())        => "Boolean"
-            case Some(MultinomialType(x)) => s"Categorical(${x})"
-          }
-          schema += s"${decl.a.name}.label: ${variableTypeDecl}"
-        }
-      case _ => ()
-    }
-    val ddSchema = s"""
+    List(s"""
       deepdive.schema.variables {
-        ${schema.mkString("\n")}
+    ${statements collect {
+      case decl: SchemaDeclaration if decl.isQuery =>
+          val variableTypeDecl = decl.variableType match {
+            case Some(MultinomialType(x)) => s"Categorical(${x})"
+            case _ => "Boolean"
+          }
+          s"${decl.a.name}.label: ${variableTypeDecl}"
+    } mkString("\n")}
       }
-    """
-    List(ddSchema)
+    """)
   }
 
   // entry point for compilation
