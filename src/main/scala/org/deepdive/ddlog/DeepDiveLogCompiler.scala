@@ -3,61 +3,6 @@ package org.deepdive.ddlog
 // DeepDiveLog compiler
 // See: https://docs.google.com/document/d/1SBIvvki3mnR28Mf0Pkin9w9mWNam5AA0SpIGj1ZN2c4
 
-// TODO update the following comment to new syntax.
-/*
- This file parses an extended form of datalog like sugar.
-
- It allows schema declarations
-
- SomeOther(realname, otherattribute)
-
- And queries
-
- Q(x,y) :- R(x,y), SomeOther(y, z)
-
- Using the schema can SQLized as
-
- SELECT R1.x,R2.y
- FROM   R as R1,SomeOther as R2
- WHERE  R1.y = R2.realname
-
- We translate by introducing aliases R1, R2 , etc. to deal with
- repeated symbols.
-
- TODO:
- =================
-
- Our schema needs to know whether a symbol is this a query table (and
- so should contain an _id) field or is a regular table from the
- user.
-
- If a head term is not mentioned in the schema, its assumed it is a
- query table that this code must create.
-
- If one wants to explicilty mention a query table in the schema, they
- do so with a trailing exclamation point as follows
-
- Q(x,y)!;
-
-Consider
-
- Q(x) :- R(x,f) weight=f
-
- ... R is likely *not* a variable table ... we record its translation below.
-
- In contrast, Q(x) :- R(x),S(x) ... coule be treated as variable tables. Hence, the schema has:
-
- R(x,f) // regular table
- R(x,f)! // variable table.
-
- */
-
-/* TODOs:
-
- Refactor schema object and introduce error checking (unsafe queries,
- unordered attributes, etc.).
-*/
-
 import scala.collection.immutable.HashMap
 import org.apache.commons.lang3.StringEscapeUtils
 import scala.collection.mutable.ListBuffer
@@ -72,22 +17,17 @@ object AliasStyle extends Enumeration {
 }
 import AliasStyle._
 
-// This handles the schema statements.
-// It can tell you if a predicate is a "query" predicate or a "ground prediate"
-// and it resolves Variables their correct and true name in the schema, i.e. R(x,y) then x could be Attribute1 declared.
 class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.Config )  {
-    // TODO: refactor the schema into a class that constructs and
-    // manages these maps. Also it should have appropriate
-    // abstractions and error handling for missing values.
-    // ** Start refactor.
-  var schema : Map[ Tuple2[String,Int], String ] = new HashMap[ Tuple2[String,Int], String ]()
+  val attrNameForRelationAndPosition: Map[ Tuple2[String,Int], String ] =
+    (statements collect {
+      case decl: SchemaDeclaration =>
+        decl.a.terms.zipWithIndex.map { case (n, i) => (decl.a.name, i) -> n }
+    } flatten) toMap
 
-  var ground_relations : Map[ String, Boolean ]  = new HashMap[ String, Boolean ]()
-
-  // map relation name -> variable type
-  var variableType : Map[String, VariableType]   = new HashMap[String, VariableType]()
-
-  var function_schema : Map[String, FunctionDeclaration] = new HashMap[ String, FunctionDeclaration]()
+  val functionDeclarationByName: Map[String, FunctionDeclaration] =
+    statements collect {
+      case fdecl: FunctionDeclaration => fdecl.functionName -> fdecl
+    } toMap
 
   // The dependency graph between statements.
   var dependencies : Map[Statement, Set[Statement]] = new HashMap()
@@ -106,20 +46,6 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
 
   def init() = {
     // generate the statements.
-    statements.foreach {
-      case decl: SchemaDeclaration => {
-        val r = decl.a.name
-        decl.a.terms.zipWithIndex.foreach {
-          case (n, i) =>
-            schema           += { (r, i) -> n }
-            ground_relations += { r -> !decl.isQuery } // record whether a query or a ground term.
-            if (decl.isQuery) variableType += { r -> decl.variableType.get }
-        }
-        if (decl.isQuery) variableTableNames += r
-      }
-      case fdecl : FunctionDeclaration => function_schema += {fdecl.functionName -> fdecl}
-      case _ =>
-    }
     functionCallList = statements collect { case s: FunctionCallRule => s }
     inferenceRules   = statements collect { case s: InferenceRule    => s }
     groupByHead(statements)
@@ -128,6 +54,10 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   }
 
   init()
+
+  def schemaDeclaration(name: String): Option[SchemaDeclaration] = {
+    schemaDeclarationGroupByHead get (name) map (_(0))
+  }
 
   def error(message: String) {
     throw new RuntimeException(message)
@@ -172,22 +102,13 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   // odd has happened.
   def resolveName( v : Variable ) : String = {
     v match { case Variable(v,relName,i) =>
-      if(schema contains (relName,i)) {
-        schema(relName,i)
+      if(attrNameForRelationAndPosition contains (relName,i)) {
+        attrNameForRelationAndPosition(relName,i)
       } else {
         // for views, columns names are in the form of "column_index"
         return s"column_${i}"
       }
     }
-  }
-
-  def resolveFunctionName( v : String ) : FunctionDeclaration = {
-    function_schema(v)
-  }
-
-  // The default is query term.
-  def isQueryTerm( relName : String ): Boolean = {
-    if( ground_relations contains relName ) !ground_relations(relName) else true
   }
 
   // has schema declared
@@ -418,7 +339,7 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
               // expression patterns indicate a filter condition on the column
               case ExprPattern(expr) => {
                 val resolved = compileExpr(expr)
-                val attr = ss.schema(relName, termIndex)
+                val attr = ss.attrNameForRelationAndPosition(relName, termIndex)
                 Some(s"R${bodyIndex}.${attr} = ${resolved}")
               }
             }
@@ -633,7 +554,7 @@ ${if (createTable) {
     var extractors = new ListBuffer[String]()
     for (stmt <- stmts) {
 
-      val function = ss.resolveFunctionName(stmt.function)
+      val function = ss.functionDeclarationByName(stmt.function)
       val udfDetails = (function.implementations collectFirst {
         case impl: RowWiseLineHandler =>
           s"""udf: $${APP_HOME}\"/${StringEscapeUtils.escapeJava(impl.command)}\"
@@ -692,7 +613,7 @@ ${if (createTable) {
         // TODO self-join?
         val varInBody = (fakeBody.zipWithIndex flatMap {
           case (x: BodyAtom, i) =>
-            if (ss.variableTableNames contains x.name)
+            if (ss.schemaDeclaration(x.name) map(_.isQuery) getOrElse(false))
               Some(s"""R${fakeBody indexOf x}.id AS "${x.name}.R${fakeBody indexOf x}.id" """)
             else
               None
@@ -724,10 +645,11 @@ ${if (createTable) {
             case FactorFunction.Equal()  => "Equal"
             case FactorFunction.Linear() => "Linear"
             case FactorFunction.Ratio()  => "Ratio"
-            case FactorFunction.IsTrue() => ss.variableType get stmt.head.terms(0).name match {
-              case Some(BooleanType())        => "Imply"
-              case Some(MultinomialType(_)) => "Multinomial"
-            }
+            case FactorFunction.IsTrue() =>
+              ss.schemaDeclaration(stmt.head.terms(0).name) map(_.variableType) match {
+                case Some(Some(MultinomialType(_))) => "Multinomial"
+                case _ => "Imply" // TODO fix to IsTrue
+              }
             case FactorFunction.Multinomial() => "Multinomial"
           }
           func = s"""${function}(${funcBody.mkString(", ")})"""
@@ -810,16 +732,15 @@ ${if (createTable) {
     // take an initial pass to analyze the parsed program
     val state = new CompilationState( programToCompile, config )
 
-    val body = new ListBuffer[String]()
-    state.extractionRuleGroupByHead foreach {keyVal => body ++= compileExtractionRules(keyVal._2, state)}
-    state.functionCallList          foreach {func   => body ++= compileFunctionCallRules(List(func), state)}
-    state.inferenceRules            foreach {inf    => body ++= compileInferenceRules(List(inf), state)}
-
     // compile the program into blocks of application.conf
     val blocks = (
       compileVariableSchema(programToCompile, state)
       :::
-      body.toList
+        (state.extractionRuleGroupByHead.values.toList flatMap (compileExtractionRules(_, state)))
+      :::
+        (state.functionCallList flatMap { fncall => compileFunctionCallRules(List(fncall), state)})
+      :::
+        (state.inferenceRules flatMap {inf => compileInferenceRules(List(inf), state)})
       :::
       compilePipelines(state)
     )
