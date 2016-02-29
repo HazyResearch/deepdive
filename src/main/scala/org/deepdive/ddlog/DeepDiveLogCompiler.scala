@@ -4,15 +4,13 @@ package org.deepdive.ddlog
 // See: https://docs.google.com/document/d/1SBIvvki3mnR28Mf0Pkin9w9mWNam5AA0SpIGj1ZN2c4
 
 import scala.collection.immutable.HashMap
-import org.apache.commons.lang3.StringEscapeUtils
-import scala.collection.mutable.ListBuffer
-import org.deepdive.ddlog.DeepDiveLog.Mode._
 import scala.language.postfixOps
 
 // Compiler that takes parsed program as input and turns into blocks of deepdive.conf
-class DeepDiveLogCompiler( program : DeepDiveLog.Program, config : DeepDiveLog.Config )  {
-  type CompiledBlock = String
-  type CompiledBlocks = List[CompiledBlock]
+class DeepDiveLogCompiler( program : DeepDiveLog.Program, config : DeepDiveLog.Config ) {
+  type CompiledBlocks = List[(String, Any)]  // TODO be more specific
+
+  case class QuotedString(value: String)
 
   val statements = program
 
@@ -396,18 +394,18 @@ class QueryCompiler(cq : ConjunctiveQuery) {
 
   def compile(stmt: SchemaDeclaration): CompiledBlocks = {
     // Nothing to compile
-    List()
+    List.empty
   }
 
   def compile(stmt: FunctionDeclaration): CompiledBlocks = {
     // Nothing to compile
-    List()
+    List.empty
   }
 
   // Generate extraction rule part for deepdive
   def compile(stmt: ExtractionRule): CompiledBlocks = {
     val stmts = statementsByRepresentative getOrElse(stmt, List.empty) collect { case s: ExtractionRule => s }
-    if (stmts isEmpty) return List()
+    if (stmts isEmpty) return List.empty
 
     val inputQueries = stmts flatMap { case stmt =>
       stmt.q.bodies map { case cqBody =>
@@ -434,10 +432,8 @@ class QueryCompiler(cq : ConjunctiveQuery) {
     }
     val blockName = resolveExtractorBlockName(stmts(0))
     val createTable = hasSchemaDeclared(stmts(0).headName)
-    val extractor = s"""
-      deepdive.extraction.extractors.${blockName} {
-        cmd: \"\"\"
-${if (createTable) {
+    List(s"deepdive.extraction.extractors.${blockName}" -> Map(
+      "cmd" -> QuotedString(if (createTable) {
 	s"""
 	# TODO use temporary table
 	deepdive create table "${stmts(0).headName}"
@@ -448,29 +444,25 @@ ${if (createTable) {
 	s"""
 	deepdive create view ${stmts(0).headName} as ${escape4sh(inputQueries.mkString("\nUNION ALL\n"))}
 	"""
-}}
-        \"\"\"
-          output_relation: \"${stmts(0).headName}\"
-        style: "cmd_extractor"
-          input_relations: [${
-            (stmts flatMap relationNamesUsedByStatement distinct
-            ) mkString("\n            ", "\n            ", "\n          ")}]
-      }
-    """
-    List(extractor)
+}),
+      "output_relation" -> stmts(0).headName,
+      "style" -> "cmd_extractor",
+      "input_relations" -> (stmts flatMap relationNamesUsedByStatement distinct)
+    ))
   }
 
   def compile(stmt: FunctionCallRule): CompiledBlocks = {
     val stmts = statementsByRepresentative getOrElse(stmt, List.empty) collect { case s: FunctionCallRule => s }
-    if (stmts isEmpty) return List()
+    if (stmts isEmpty) return List.empty
 
     stmts map { case stmt =>
       val function = functionDeclarationByName(stmt.function)
-      val udfDetails = (function.implementations collectFirst {
-        case impl: RowWiseLineHandler =>
-          s"""udf: $${APP_HOME}\"/${StringEscapeUtils.escapeJava(impl.command)}\"
-          style: \"${impl.style}_extractor\" """
-      })
+      val udfDetails = function.implementations collectFirst {
+        case impl: RowWiseLineHandler => List(
+            "udf" -> QuotedString(impl.command),
+            "style" -> s"${impl.style}_extractor"
+          )
+      }
 
       if (udfDetails.isEmpty)
         sys.error(s"Cannot find compilable implementation for function ${stmt.function} among:\n  "
@@ -478,19 +470,13 @@ ${if (createTable) {
 
       val blockName = resolveExtractorBlockName(stmt)
       val parallelism = stmt.parallelism getOrElse("${PARALLELISM}")
-      s"""
-        deepdive.extraction.extractors.${blockName} {
-          input: \"\"\" ${new QueryCompiler(stmt.q).generateSQL(TableAlias)}
-          \"\"\"
-          output_relation: \"${stmt.output}\"
-          ${udfDetails.get}
-          input_relations: [${
-            (List(stmt) flatMap relationNamesUsedByStatement distinct
-            ) mkString("\n            ", "\n            ", "\n          ")}]
-          input_batch_size: $${INPUT_BATCH_SIZE}
-          parallelism: ${parallelism}
-        }
-      """
+      s"deepdive.extraction.extractors.${blockName}" -> (Map(
+        "input" -> QuotedString(new QueryCompiler(stmt.q).generateSQL(TableAlias)),
+        "output_relation" -> stmt.output,
+        "input_relations" -> (List(stmt) flatMap relationNamesUsedByStatement distinct),
+        "input_batch_size" -> "${INPUT_BATCH_SIZE}",
+        "parallelism" -> parallelism
+        ) ++ udfDetails.get)
     }
   }
 
@@ -580,18 +566,16 @@ ${if (createTable) {
       }
     }
 
-    List(s"""
-        deepdive.inference.factors.${resolveInferenceBlockName(stmt)} {
-          input_query: \"\"\"${inputQueries.mkString(" UNION ALL ")}\"\"\"
-          function: "${func}"
-          weight: "${weight}"
-          input_relations: [${
-            val relationsInHead = stmt.head.terms map (_.name)
-            val relationsInBody = relationNamesUsedByStatement getOrElse(stmt, List.empty)
-            ((relationsInHead ++ relationsInBody) distinct
-            ) mkString("\n            ", "\n            ", "\n          ")}]
+    List(s"deepdive.inference.factors.${resolveInferenceBlockName(stmt)}" -> Map(
+        "input_query" -> QuotedString(inputQueries.mkString(" UNION ALL ")),
+        "function" -> QuotedString(func),
+        "weight" -> QuotedString(weight),
+        "input_relations" -> {
+          val relationsInHead = stmt.head.terms map (_.name)
+          val relationsInBody = relationNamesUsedByStatement getOrElse(stmt, List.empty)
+          (relationsInHead ++ relationsInBody) distinct
         }
-      """)
+    ))
   }
 
   def compile(stmt: Statement): CompiledBlocks = stmt match {
@@ -605,38 +589,35 @@ ${if (createTable) {
 
   // generate application.conf pipelines
   def compilePipelines(): CompiledBlocks = {
-    val run = "deepdive.pipeline.run: ${PIPELINE}"
-    val extraction = (representativeStatements map { s => resolveExtractorBlockName(s)}).mkString("\n  ")
-    val extraction_pipeline = if (extraction.length > 0) s"deepdive.pipeline.pipelines.extraction: [\n  ${extraction}\n]" else ""
-    val inference = (inferenceRules map {s => resolveInferenceBlockName(s)}).mkString("\n  ")
-    val inference_pipeline = if (inference.length > 0) s"deepdive.pipeline.pipelines.inference: [\n  ${inference}\n]" else ""
-    val endtoend = List(extraction, inference).filter(_ != "").mkString("\n  ")
-    val endtoend_pipeline = if (endtoend.length > 0) s"deepdive.pipeline.pipelines.endtoend: [\n  ${endtoend}\n]" else ""
-    List(run, extraction_pipeline, inference_pipeline, endtoend_pipeline).filter(_ != "")
+    val run = List("deepdive.pipeline.run" -> "${PIPELINE}")
+    val extraction = statements filter(representativeStatements contains _) map resolveExtractorBlockName
+    val extraction_pipeline = if (extraction nonEmpty) List("deepdive.pipeline.pipelines.extraction" -> extraction) else List.empty
+    val inference = inferenceRules map resolveInferenceBlockName
+    val inference_pipeline = if (inference nonEmpty) List("deepdive.pipeline.pipelines.inference" -> inference) else List.empty
+    val endtoend = extraction ++ inference
+    val endtoend_pipeline = if (endtoend nonEmpty) List("deepdive.pipeline.pipelines.endtoend" -> endtoend) else List.empty
+
+    run ++ extraction_pipeline ++ inference_pipeline ++ endtoend_pipeline
   }
 
   // generate variable schema statements
   def compileVariableSchema(): CompiledBlocks = {
     // generate the statements.
-    List(s"""
-      deepdive.schema.variables {
-    ${statements collect {
+    List("deepdive.schema.variables" -> (statements collect {
       case decl: SchemaDeclaration if decl.isQuery =>
-          val variableTypeDecl = decl.variableType match {
-            case Some(MultinomialType(x)) => s"Categorical(${x})"
-            case _ => "Boolean"
-          }
-          s"${decl.a.name}.label: ${variableTypeDecl}"
-    } mkString("\n")}
-      }
-    """)
+        s"${decl.a.name}.label" -> (decl.variableType match {
+          case Some(MultinomialType(x)) => s"Categorical(${x})"
+          case _ => "Boolean"
+        })
+      } toMap)
+    )
   }
 
   def compile(): CompiledBlocks = (
     compileVariableSchema()
-    :::
+    ++
     (statements flatMap compile)
-    :::
+    ++
     compilePipelines()
   )
 
@@ -653,10 +634,39 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     // take an initial pass to analyze the parsed program
     val compiler = new DeepDiveLogCompiler( programToCompile, config )
 
-    // compile the program into blocks of application.conf
+    // compile the program into blocks of deepdive.conf
     val blocks = compiler.compile()
 
-    // emit the generated code
-    blocks foreach println
+    // codegen HOCON
+    def codegenValue(value: Any): String = value match {
+      case compiler.QuotedString(s) => // multi-line string
+        s"""\"\"\"${s replaceAll("\"\"\"", "\\\"\\\"\\\"")}\"\"\""""
+      case _ =>
+        value.toString
+    }
+    def codegen(key: String, value: Any): String = value match {
+      case m: Map[_, _] => // map
+        s"""${key} {
+           |${m map { case (k, v) => codegen(k.toString, v) } mkString("")}
+           |}
+           |""".stripMargin
+
+      case l: List[_] => // lists
+        s"""${key}: [${l map codegenValue mkString("\n  ", "\n  ", "")}
+           |]
+           |""".stripMargin
+      case l: Set[_] => // sets
+        s"""${key}: [${l map codegenValue mkString("\n  ", "\n  ", "")}
+           |]
+           |""".stripMargin
+
+      case _ =>
+        s"""${key}: ${codegenValue(value)}
+           |""".stripMargin
+
+    }
+
+    blocks foreach { case (key, value) => println(codegen(key, value)) }
   }
+
 }

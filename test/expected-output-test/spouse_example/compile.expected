@@ -1,62 +1,57 @@
+deepdive.schema.variables {
+has_spouse.label: Boolean
 
-      deepdive.schema.variables {
-        has_spouse.label: Boolean
-      }
-    
+}
 
-        deepdive.extraction.extractors.ext_people_mentions_by_ext_people {
-          input: """ SELECT R0.sentence_id AS "sentences.R0.sentence_id", ARRAY_TO_STRING(R0.words, '~^~') AS column_1, ARRAY_TO_STRING(R0.ner_tags, '~^~') AS column_2
+deepdive.extraction.extractors.ext_people_mentions_by_ext_people {
+parallelism: ${PARALLELISM}
+input_relations: [
+  sentences
+]
+style: tsv_extractor
+output_relation: people_mentions
+udf: """udf/ext_people.py"""
+input_batch_size: ${INPUT_BATCH_SIZE}
+input: """SELECT R0.sentence_id AS "sentences.R0.sentence_id", ARRAY_TO_STRING(R0.words, '~^~') AS column_1, ARRAY_TO_STRING(R0.ner_tags, '~^~') AS column_2
 FROM sentences R0
-        
-          """
-          output_relation: "people_mentions"
-          udf: ${APP_HOME}"/udf/ext_people.py"
-          style: "tsv_extractor" 
-          input_relations: [
-            sentences
-          ]
-          input_batch_size: ${INPUT_BATCH_SIZE}
-          parallelism: ${PARALLELISM}
-        }
-      
+        """
 
-        deepdive.extraction.extractors.ext_has_spouse_candidates_by_ext_has_spouse {
-          input: """ SELECT R0.sentence_id AS "people_mentions.R0.sentence_id", R0.mention_id AS "people_mentions.R0.mention_id", R0.text AS "people_mentions.R0.text", R1.mention_id AS "people_mentions.R1.mention_id", R1.text AS "people_mentions.R1.text"
+}
+
+deepdive.extraction.extractors.ext_has_spouse_candidates_by_ext_has_spouse {
+parallelism: ${PARALLELISM}
+input_relations: [
+  people_mentions
+]
+style: tsv_extractor
+output_relation: has_spouse_candidates
+udf: """udf/ext_has_spouse.py"""
+input_batch_size: ${INPUT_BATCH_SIZE}
+input: """SELECT R0.sentence_id AS "people_mentions.R0.sentence_id", R0.mention_id AS "people_mentions.R0.mention_id", R0.text AS "people_mentions.R0.text", R1.mention_id AS "people_mentions.R1.mention_id", R1.text AS "people_mentions.R1.text"
 FROM people_mentions R0, people_mentions R1
-        WHERE R1.sentence_id = R0.sentence_id 
-          """
-          output_relation: "has_spouse_candidates"
-          udf: ${APP_HOME}"/udf/ext_has_spouse.py"
-          style: "tsv_extractor" 
-          input_relations: [
-            people_mentions
-          ]
-          input_batch_size: ${INPUT_BATCH_SIZE}
-          parallelism: ${PARALLELISM}
-        }
-      
+        WHERE R1.sentence_id = R0.sentence_id """
 
-        deepdive.extraction.extractors.ext_has_spouse_features_by_ext_has_spouse_features {
-          input: """ SELECT ARRAY_TO_STRING(R0.words, '~^~') AS column_0, R1.relation_id AS "has_spouse_candidates.R1.relation_id", R2.start_position AS "people_mentions.R2.start_position", R2.length AS "people_mentions.R2.length", R3.start_position AS "people_mentions.R3.start_position", R3.length AS "people_mentions.R3.length"
+}
+
+deepdive.extraction.extractors.ext_has_spouse_features_by_ext_has_spouse_features {
+parallelism: ${PARALLELISM}
+input_relations: [
+  sentences
+  has_spouse_candidates
+  people_mentions
+]
+style: tsv_extractor
+output_relation: has_spouse_features
+udf: """udf/ext_has_spouse_features.py"""
+input_batch_size: ${INPUT_BATCH_SIZE}
+input: """SELECT ARRAY_TO_STRING(R0.words, '~^~') AS column_0, R1.relation_id AS "has_spouse_candidates.R1.relation_id", R2.start_position AS "people_mentions.R2.start_position", R2.length AS "people_mentions.R2.length", R3.start_position AS "people_mentions.R3.start_position", R3.length AS "people_mentions.R3.length"
 FROM sentences R0, has_spouse_candidates R1, people_mentions R2, people_mentions R3
-        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id 
-          """
-          output_relation: "has_spouse_features"
-          udf: ${APP_HOME}"/udf/ext_has_spouse_features.py"
-          style: "tsv_extractor" 
-          input_relations: [
-            sentences
-            has_spouse_candidates
-            people_mentions
-          ]
-          input_batch_size: ${INPUT_BATCH_SIZE}
-          parallelism: ${PARALLELISM}
-        }
-      
+        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id """
 
-      deepdive.extraction.extractors.ext_has_spouse {
-        cmd: """
+}
 
+deepdive.extraction.extractors.ext_has_spouse {
+cmd: """
 	# TODO use temporary table
 	deepdive create table "has_spouse"
 	deepdive sql 'INSERT INTO has_spouse SELECT DISTINCT R0.relation_id, 0 AS id, R0.is_true AS label
@@ -64,44 +59,48 @@ FROM sentences R0, has_spouse_candidates R1, people_mentions R2, people_mentions
         
           '
 	# TODO rename temporary table to replace output_relation
-	
-        """
-          output_relation: "has_spouse"
-        style: "cmd_extractor"
-          input_relations: [
-            has_spouse_candidates
-          ]
-      }
-    
+	"""
+output_relation: has_spouse
+style: cmd_extractor
+input_relations: [
+  has_spouse_candidates
+]
 
-        deepdive.inference.factors.inf_istrue_has_spouse {
-          input_query: """
+}
+
+deepdive.inference.factors.inf_istrue_has_spouse {
+input_query: """
           SELECT R0.id AS "has_spouse.R0.id" , R2.feature AS "dd_weight_column_0" 
           FROM has_spouse R0, has_spouse_candidates R1, has_spouse_features R2
         WHERE R1.relation_id = R0.relation_id  AND R2.relation_id = R0.relation_id """
-          function: "Imply(has_spouse.R0.label)"
-          weight: "?(dd_weight_column_0)"
-          input_relations: [
-            has_spouse
-            has_spouse_candidates
-            has_spouse_features
-          ]
-        }
-      
-deepdive.pipeline.run: ${PIPELINE}
-deepdive.pipeline.pipelines.extraction: [
-  ext_has_spouse
-  ext_people_mentions_by_ext_people
-  ext_has_spouse_features_by_ext_has_spouse_features
-  ext_has_spouse_candidates_by_ext_has_spouse
+function: """Imply(has_spouse.R0.label)"""
+weight: """?(dd_weight_column_0)"""
+input_relations: [
+  has_spouse
+  has_spouse_candidates
+  has_spouse_features
 ]
+
+}
+
+deepdive.pipeline.run: ${PIPELINE}
+
+deepdive.pipeline.pipelines.extraction: [
+  ext_people_mentions_by_ext_people
+  ext_has_spouse_candidates_by_ext_has_spouse
+  ext_has_spouse_features_by_ext_has_spouse_features
+  ext_has_spouse
+]
+
 deepdive.pipeline.pipelines.inference: [
   inf_istrue_has_spouse
 ]
+
 deepdive.pipeline.pipelines.endtoend: [
-  ext_has_spouse
   ext_people_mentions_by_ext_people
-  ext_has_spouse_features_by_ext_has_spouse_features
   ext_has_spouse_candidates_by_ext_has_spouse
+  ext_has_spouse_features_by_ext_has_spouse_features
+  ext_has_spouse
   inf_istrue_has_spouse
 ]
+

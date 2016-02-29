@@ -1,47 +1,45 @@
+deepdive.schema.variables {
 
-      deepdive.schema.variables {
-        
-      }
-    
+}
 
-      deepdive.extraction.extractors.ext_A {
-        cmd: """
-
+deepdive.extraction.extractors.ext_A {
+cmd: """
 	deepdive create view A as 'SELECT R0.a AS column_0, R0.a + R0.b AS column_1
 FROM R R0
         '
-	
-        """
-          output_relation: "A"
-        style: "cmd_extractor"
-          input_relations: [
-            R
-          ]
-      }
-    
+	"""
+output_relation: A
+style: cmd_extractor
+input_relations: [
+  R
+]
 
-      deepdive.extraction.extractors.ext_B {
-        cmd: """
+}
 
+deepdive.extraction.extractors.ext_B {
+cmd: """
 	deepdive create view B as 'SELECT R0.column_0 AS column_0, R1.b AS column_1
 FROM A R0, R R1
         WHERE R1.a = R0.column_1 '
-	
-        """
-          output_relation: "B"
-        style: "cmd_extractor"
-          input_relations: [
-            A
-            R
-          ]
-      }
-    
+	"""
+output_relation: B
+style: cmd_extractor
+input_relations: [
+  A
+  R
+]
+
+}
+
 deepdive.pipeline.run: ${PIPELINE}
+
 deepdive.pipeline.pipelines.extraction: [
   ext_A
   ext_B
 ]
+
 deepdive.pipeline.pipelines.endtoend: [
   ext_A
   ext_B
 ]
+

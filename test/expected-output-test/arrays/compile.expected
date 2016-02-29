@@ -1,48 +1,46 @@
+deepdive.schema.variables {
 
-      deepdive.schema.variables {
-        
-      }
-    
+}
 
-      deepdive.extraction.extractors.ext_T {
-        cmd: """
-
+deepdive.extraction.extractors.ext_T {
+cmd: """
 	deepdive create view T as 'SELECT R0.x[3] AS column_0, R1.x AS column_1
 FROM R R0, S R1
         WHERE R0.x[1] = R1.y[1] AND R0.x[2] = R1.y[2]'
-	
-        """
-          output_relation: "T"
-        style: "cmd_extractor"
-          input_relations: [
-            R
-            S
-          ]
-      }
-    
+	"""
+output_relation: T
+style: cmd_extractor
+input_relations: [
+  R
+  S
+]
 
-      deepdive.extraction.extractors.ext_U {
-        cmd: """
+}
 
+deepdive.extraction.extractors.ext_U {
+cmd: """
 	deepdive create view U as 'SELECT R1.x AS column_0
 FROM R R0, S R1
         WHERE (R1.x + f(R1.x + 1)[(R1.x + R0.x[1])]) = R1.y[R1.x]'
-	
-        """
-          output_relation: "U"
-        style: "cmd_extractor"
-          input_relations: [
-            R
-            S
-          ]
-      }
-    
+	"""
+output_relation: U
+style: cmd_extractor
+input_relations: [
+  R
+  S
+]
+
+}
+
 deepdive.pipeline.run: ${PIPELINE}
+
 deepdive.pipeline.pipelines.extraction: [
-  ext_U
   ext_T
+  ext_U
 ]
+
 deepdive.pipeline.pipelines.endtoend: [
-  ext_U
   ext_T
+  ext_U
 ]
+

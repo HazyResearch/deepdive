@@ -1,43 +1,46 @@
-
-      deepdive.schema.variables {
-        S.label: Boolean
+deepdive.schema.variables {
+S.label: Boolean
 Q.label: Boolean
-      }
-    
 
-        deepdive.inference.factors.inf_imply_Q_Q {
-          input_query: """
+}
+
+deepdive.inference.factors.inf_imply_Q_Q {
+input_query: """
           SELECT R0.id AS "Q.R0.id" , R1.id AS "Q.R1.id" , R1.x AS "dd_weight_column_0" 
           FROM Q R0, Q R1, R R2
         WHERE R2.a = R0.x  AND R2.b = R1.x """
-          function: "Imply(Q.R0.label, Q.R1.label)"
-          weight: "?(dd_weight_column_0)"
-          input_relations: [
-            Q
-            R
-          ]
-        }
-      
+function: """Imply(Q.R0.label, Q.R1.label)"""
+weight: """?(dd_weight_column_0)"""
+input_relations: [
+  Q
+  R
+]
 
-        deepdive.inference.factors.inf_equal_Q_Q {
-          input_query: """
+}
+
+deepdive.inference.factors.inf_equal_Q_Q {
+input_query: """
           SELECT R0.id AS "Q.R0.id" , R1.id AS "Q.R1.id" , R1.x AS "dd_weight_column_0" 
           FROM Q R0, Q R1, R R2
         WHERE R2.a = R0.x  AND R2.b = R1.x """
-          function: "Equal(Q.R0.label, !Q.R1.label)"
-          weight: "?(dd_weight_column_0)"
-          input_relations: [
-            Q
-            R
-          ]
-        }
-      
+function: """Equal(Q.R0.label, !Q.R1.label)"""
+weight: """?(dd_weight_column_0)"""
+input_relations: [
+  Q
+  R
+]
+
+}
+
 deepdive.pipeline.run: ${PIPELINE}
+
 deepdive.pipeline.pipelines.inference: [
   inf_imply_Q_Q
   inf_equal_Q_Q
 ]
+
 deepdive.pipeline.pipelines.endtoend: [
   inf_imply_Q_Q
   inf_equal_Q_Q
 ]
+

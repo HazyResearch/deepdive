@@ -1,44 +1,40 @@
+deepdive.schema.variables {
+tag.label: Categorical(13)
 
-      deepdive.schema.variables {
-        tag.label: Categorical(13)
-      }
-    
+}
 
-        deepdive.extraction.extractors.ext_words_by_ext_training {
-          input: """ SELECT R0.word_id AS "words_raw.R0.word_id", R0.word AS "words_raw.R0.word", R0.pos AS "words_raw.R0.pos", R0.tag AS "words_raw.R0.tag"
+deepdive.extraction.extractors.ext_words_by_ext_training {
+parallelism: ${PARALLELISM}
+input_relations: [
+  words_raw
+]
+style: tsv_extractor
+output_relation: words
+udf: """udf/ext_training.py"""
+input_batch_size: ${INPUT_BATCH_SIZE}
+input: """SELECT R0.word_id AS "words_raw.R0.word_id", R0.word AS "words_raw.R0.word", R0.pos AS "words_raw.R0.pos", R0.tag AS "words_raw.R0.tag"
 FROM words_raw R0
-        
-          """
-          output_relation: "words"
-          udf: ${APP_HOME}"/udf/ext_training.py"
-          style: "tsv_extractor" 
-          input_relations: [
-            words_raw
-          ]
-          input_batch_size: ${INPUT_BATCH_SIZE}
-          parallelism: ${PARALLELISM}
-        }
-      
+        """
 
-        deepdive.extraction.extractors.ext_word_features_by_ext_features {
-          input: """ SELECT R0.word_id AS "words.R0.word_id", R0.word AS "words.R0.word", R0.pos AS "words.R0.pos", R1.word AS "words.R1.word", R1.pos AS "words.R1.pos"
+}
+
+deepdive.extraction.extractors.ext_word_features_by_ext_features {
+parallelism: ${PARALLELISM}
+input_relations: [
+  words
+]
+style: tsv_extractor
+output_relation: word_features
+udf: """udf/ext_features.py"""
+input_batch_size: ${INPUT_BATCH_SIZE}
+input: """SELECT R0.word_id AS "words.R0.word_id", R0.word AS "words.R0.word", R0.pos AS "words.R0.pos", R1.word AS "words.R1.word", R1.pos AS "words.R1.pos"
 FROM words R0, words R1
-        WHERE R1.sent_id = R0.sent_id 
-          """
-          output_relation: "word_features"
-          udf: ${APP_HOME}"/udf/ext_features.py"
-          style: "tsv_extractor" 
-          input_relations: [
-            words
-          ]
-          input_batch_size: ${INPUT_BATCH_SIZE}
-          parallelism: ${PARALLELISM}
-        }
-      
+        WHERE R1.sent_id = R0.sent_id """
 
-      deepdive.extraction.extractors.ext_tag {
-        cmd: """
+}
 
+deepdive.extraction.extractors.ext_tag {
+cmd: """
 	# TODO use temporary table
 	deepdive create table "tag"
 	deepdive sql 'INSERT INTO tag SELECT DISTINCT R0.sent_id, 0 AS id, R0.true_tag AS label
@@ -46,41 +42,45 @@ FROM words R0, words R1
         
           '
 	# TODO rename temporary table to replace output_relation
-	
-        """
-          output_relation: "tag"
-        style: "cmd_extractor"
-          input_relations: [
-            words
-          ]
-      }
-    
+	"""
+output_relation: tag
+style: cmd_extractor
+input_relations: [
+  words
+]
 
-        deepdive.inference.factors.inf_istrue_tag {
-          input_query: """
+}
+
+deepdive.inference.factors.inf_istrue_tag {
+input_query: """
           SELECT R0.id AS "tag.R0.id" , R1.feature AS "dd_weight_column_0" 
           FROM tag R0, word_features R1
         WHERE R1.word_id = R0.word_id """
-          function: "Multinomial(tag.R0.label)"
-          weight: "?(dd_weight_column_0)"
-          input_relations: [
-            tag
-            word_features
-          ]
-        }
-      
+function: """Multinomial(tag.R0.label)"""
+weight: """?(dd_weight_column_0)"""
+input_relations: [
+  tag
+  word_features
+]
+
+}
+
 deepdive.pipeline.run: ${PIPELINE}
+
 deepdive.pipeline.pipelines.extraction: [
   ext_words_by_ext_training
-  ext_tag
   ext_word_features_by_ext_features
+  ext_tag
 ]
+
 deepdive.pipeline.pipelines.inference: [
   inf_istrue_tag
 ]
+
 deepdive.pipeline.pipelines.endtoend: [
   ext_words_by_ext_training
-  ext_tag
   ext_word_features_by_ext_features
+  ext_tag
   inf_istrue_tag
 ]
+
