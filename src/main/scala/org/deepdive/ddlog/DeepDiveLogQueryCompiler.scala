@@ -8,7 +8,7 @@ object DeepDiveLogQueryCompiler extends DeepDiveLogHandler {
     val (query, extraRules) = (new DeepDiveLogParser).parseQuery(config.query)
 
     // make sure extraRules don't have name clashes with the program
-    DeepDiveLogSemanticChecker.checkNoRedefinition(program, extraRules)
+    new DeepDiveLogSemanticChecker(program).checkNoRedefinition(program, extraRules)
 
     // run typical checks for correct semantics
     val programToCheck = ExtractionRule(q = query, headName = "") :: extraRules ++ program
