@@ -48,8 +48,21 @@ object DeepDiveLogSchemaExporter extends DeepDiveLogHandler {
     var a = jsonMap(
       "name" -> anno.name
     )
-    if (anno.args nonEmpty)
-      a += "args" -> (anno.args.get fold (JSONObject, JSONArray))
+    if (anno.args nonEmpty) {
+      def toValue(e: Expr): Any = e match {
+        case IntConst(v) => v
+        case StringConst(v) => v
+        case DoubleConst(v) => v
+        case BooleanConst(v) => v
+        case NullConst() => null
+        case _ => sys.error(s"Cannot export non-constant value in annotation: ${DeepDiveLogPrettyPrinter.printAnnotations(List(anno))}")
+      }
+      def toJSONObject(nameExprMap: Map[String,Expr]) = {
+        JSONObject (nameExprMap mapValues toValue)
+      }
+      def toJSONArray(exprs: List[Expr]) = JSONArray(exprs map toValue)
+      a += "args" -> (anno.args.get fold (toJSONObject, toJSONArray))
+    }
     JSONObject(a)
   }
 
