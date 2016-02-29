@@ -19,7 +19,6 @@ cancer.label: Boolean
         """
           output_relation: "smoke"
         style: "cmd_extractor"
-          
           input_relations: [
             person_smokes
           ]
@@ -40,7 +39,6 @@ cancer.label: Boolean
         """
           output_relation: "cancer"
         style: "cmd_extractor"
-          
           input_relations: [
             person_has_cancer
           ]
@@ -54,7 +52,6 @@ cancer.label: Boolean
         WHERE R1.person_id = R0.person_id  AND R2.person_id = R0.person_id """
           function: "Imply(smoke.R0.label, cancer.R1.label)"
           weight: "0.5"
-          
           input_relations: [
             smoke
             cancer
@@ -70,7 +67,6 @@ cancer.label: Boolean
         WHERE R2.person_id = R0.person_id  AND R2.friend_id = R1.person_id """
           function: "Imply(smoke.R0.label, smoke.R1.label)"
           weight: "0.4"
-          
           input_relations: [
             smoke
             friends

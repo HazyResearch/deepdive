@@ -12,7 +12,6 @@ FROM words_raw R0
           output_relation: "words"
           udf: ${APP_HOME}"/udf/ext_training.py"
           style: "tsv_extractor" 
-          
           input_relations: [
             words_raw
           ]
@@ -29,7 +28,6 @@ FROM words R0, words R1
           output_relation: "word_features"
           udf: ${APP_HOME}"/udf/ext_features.py"
           style: "tsv_extractor" 
-          dependencies: [ "ext_words_by_ext_training" ]
           input_relations: [
             words
           ]
@@ -52,7 +50,6 @@ FROM words R0, words R1
         """
           output_relation: "tag"
         style: "cmd_extractor"
-          dependencies: [ "ext_words_by_ext_training" ]
           input_relations: [
             words
           ]
@@ -66,7 +63,6 @@ FROM words R0, words R1
         WHERE R1.word_id = R0.word_id """
           function: "Multinomial(tag.R0.label)"
           weight: "?(dd_weight_column_0)"
-          dependencies: [ "ext_word_features_by_ext_features" ]
           input_relations: [
             tag
             word_features

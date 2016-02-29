@@ -12,7 +12,6 @@ Q.label: Boolean
         WHERE R2.a = R0.x  AND R2.b = R1.x """
           function: "Imply(Q.R0.label, Q.R1.label)"
           weight: "?(dd_weight_column_0)"
-          
           input_relations: [
             Q
             R
@@ -27,7 +26,6 @@ Q.label: Boolean
         WHERE R2.a = R0.x  AND R2.b = R1.x """
           function: "Equal(Q.R0.label, !Q.R1.label)"
           weight: "?(dd_weight_column_0)"
-          
           input_relations: [
             Q
             R

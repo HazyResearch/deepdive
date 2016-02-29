@@ -14,7 +14,6 @@ FROM a R0, b R1, c R2
         """
           output_relation: "Q"
         style: "cmd_extractor"
-          
           input_relations: [
             a
             b
@@ -34,7 +33,6 @@ FROM a R0, b R1
         """
           output_relation: "P"
         style: "cmd_extractor"
-          
           input_relations: [
             a
             b
@@ -52,7 +50,6 @@ FROM b R0
         """
           output_relation: "A"
         style: "cmd_extractor"
-          
           input_relations: [
             b
           ]
@@ -69,7 +66,6 @@ FROM b R0
         """
           output_relation: "B"
         style: "cmd_extractor"
-          
           input_relations: [
             b
           ]
@@ -86,7 +82,6 @@ FROM b R0
         """
           output_relation: "C"
         style: "cmd_extractor"
-          
           input_relations: [
             b
           ]
@@ -103,7 +98,6 @@ FROM b R0
         """
           output_relation: "D"
         style: "cmd_extractor"
-          
           input_relations: [
             b
           ]
@@ -120,7 +114,6 @@ FROM b R0
         """
           output_relation: "E"
         style: "cmd_extractor"
-          
           input_relations: [
             b
           ]
@@ -137,7 +130,6 @@ FROM b R0
         """
           output_relation: "F"
         style: "cmd_extractor"
-          
           input_relations: [
             b
           ]
@@ -154,7 +146,6 @@ FROM b R0
         """
           output_relation: "G"
         style: "cmd_extractor"
-          
           input_relations: [
             b
           ]
@@ -171,7 +162,6 @@ FROM b R0
         """
           output_relation: "H"
         style: "cmd_extractor"
-          
           input_relations: [
             b
           ]
@@ -188,7 +178,6 @@ FROM b R0
         """
           output_relation: "I"
         style: "cmd_extractor"
-          
           input_relations: [
             b
           ]
@@ -205,7 +194,6 @@ FROM b R0
         """
           output_relation: "J"
         style: "cmd_extractor"
-          
           input_relations: [
             b
           ]
@@ -222,7 +210,6 @@ FROM b R0
         """
           output_relation: "K"
         style: "cmd_extractor"
-          
           input_relations: [
             b
           ]
@@ -240,7 +227,6 @@ LIMIT 100'
         """
           output_relation: "L"
         style: "cmd_extractor"
-          
           input_relations: [
             b
           ]
@@ -257,7 +243,6 @@ FROM b R0
         """
           output_relation: "M"
         style: "cmd_extractor"
-          
           input_relations: [
             b
             c
@@ -275,7 +260,6 @@ FROM b R0
         """
           output_relation: "N"
         style: "cmd_extractor"
-          
           input_relations: [
             b
             c
@@ -293,7 +277,6 @@ FROM b R0
         """
           output_relation: "O"
         style: "cmd_extractor"
-          
           input_relations: [
             b
             c
@@ -312,7 +295,6 @@ FROM b R0 LEFT OUTER JOIN c R1_0 ON R1_0.n = R0.k
         """
           output_relation: "S"
         style: "cmd_extractor"
-          
           input_relations: [
             b
             c
@@ -330,7 +312,6 @@ FROM b R0 LEFT OUTER JOIN c R1_0 ON R1_0.n = R0.k  AND R1_0.s > R0.p
         """
           output_relation: "T"
         style: "cmd_extractor"
-          
           input_relations: [
             b
             c
@@ -348,7 +329,6 @@ FROM b R0_0 ON  FULL OUTER JOIN c R1_0 ON R1_0.n = R0_0.k
         """
           output_relation: "U"
         style: "cmd_extractor"
-          
           input_relations: [
             b
             c
@@ -366,7 +346,6 @@ FROM a R0
         """
           output_relation: "W"
         style: "cmd_extractor"
-          
           input_relations: [
             a
             c
@@ -384,7 +363,6 @@ FROM c R0, a R1
         """
           output_relation: "V"
         style: "cmd_extractor"
-          
           input_relations: [
             c
             a
@@ -402,7 +380,6 @@ FROM b R0, c R1
         """
           output_relation: "X"
         style: "cmd_extractor"
-          
           input_relations: [
             b
             c

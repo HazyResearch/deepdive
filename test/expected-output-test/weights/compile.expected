@@ -15,7 +15,6 @@ c.label: Boolean
         WHERE R1.k = R0.k """
           function: "Imply(a.R0.label)"
           weight: "?(dd_weight_column_0)"
-          
           input_relations: [
             a
             b
@@ -30,7 +29,6 @@ c.label: Boolean
         WHERE R1.k = R0.k """
           function: "Imply(c.R0.label)"
           weight: "?"
-          
           input_relations: [
             c
             b
@@ -45,7 +43,6 @@ c.label: Boolean
         WHERE R1.k = R0.k """
           function: "Imply(d.R0.label)"
           weight: "?(dd_weight_column_0, dd_weight_column_1)"
-          
           input_relations: [
             d
             b
@@ -60,7 +57,6 @@ c.label: Boolean
         WHERE R1.k = R0.k """
           function: "Imply(e.R0.label)"
           weight: "-10"
-          
           input_relations: [
             e
             b
@@ -75,7 +71,6 @@ c.label: Boolean
         WHERE R1.k = R0.k """
           function: "Imply(f.R0.label)"
           weight: "-0.3"
-          
           input_relations: [
             f
             b

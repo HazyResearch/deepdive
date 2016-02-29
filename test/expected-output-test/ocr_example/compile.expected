@@ -19,7 +19,6 @@ q2.label: Boolean
         """
           output_relation: "q1"
         style: "cmd_extractor"
-          
           input_relations: [
             label1
           ]
@@ -40,7 +39,6 @@ q2.label: Boolean
         """
           output_relation: "q2"
         style: "cmd_extractor"
-          
           input_relations: [
             label2
           ]
@@ -54,7 +52,6 @@ q2.label: Boolean
         WHERE R1.word_id = R0.wid """
           function: "Imply(q1.R0.label)"
           weight: "?(dd_weight_column_0)"
-          
           input_relations: [
             q1
             features
@@ -69,7 +66,6 @@ q2.label: Boolean
         WHERE R1.word_id = R0.wid """
           function: "Imply(q2.R0.label)"
           weight: "?(dd_weight_column_0)"
-          
           input_relations: [
             q2
             features

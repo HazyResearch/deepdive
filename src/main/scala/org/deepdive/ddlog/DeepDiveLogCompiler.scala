@@ -48,11 +48,6 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   val representativeStatements : Set[Statement] =
     statementsByHeadName.values map { _(0) } toSet
 
-  // The dependency graph between statements.
-  var dependencies : Map[Statement, Set[Statement]] = new HashMap()
-
-  analyzeDependency(statements)
-
   def error(message: String) {
     throw new RuntimeException(message)
   }
@@ -110,38 +105,6 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   // has schema declared
   def hasSchemaDeclared(relName: String) : Boolean = {
     schemaDeclarationByRelationName contains relName
-  }
-
-  // Analyze the dependency between statements and construct a graph.
-  def analyzeDependency(statements: List[Statement]) = {
-
-    def collectUsedRelations(bodies: List[List[Body]]): Set[Statement] = {
-      // FIXME need to be recursively defined on QuantifiedBody
-      (bodies.flatten collect { case x: BodyAtom => x.name }
-      flatMap (statementsByHeadName get _)).flatten toSet
-    }
-
-    // Look at the body of each statement to construct a dependency graph
-    statements foreach {
-      case f : FunctionCallRule => dependencies += {
-        f -> collectUsedRelations(f.q.bodies) }
-      case e : ExtractionRule   => dependencies += {
-        e -> collectUsedRelations(e.q.bodies) }
-      case e : InferenceRule    => dependencies += {
-        e -> collectUsedRelations(e.q.bodies) }
-      case _ =>
-    }
-  }
-  // Generates a "dependencies" value for a compiled block of given statement.
-  def generateDependenciesOfCompiledBlockFor(statements: List[Statement]): String = {
-    var dependentExtractorBlockNames = Set[String]()
-    for (statement <- statements) {
-      dependentExtractorBlockNames ++= ((dependencies getOrElse (statement, Set())) & representativeStatements) map resolveExtractorBlockName
-    }
-    if (dependentExtractorBlockNames.size == 0) "" else {
-      val depStr = dependentExtractorBlockNames map {" \"" + _ + "\" "} mkString(", ")
-      s"dependencies: [${depStr}]"
-    }
   }
 
   def collectUsedRelations1(body: Body): List[String] = body match {
@@ -492,7 +455,6 @@ ${if (createTable) {
         \"\"\"
           output_relation: \"${stmts(0).headName}\"
         style: "cmd_extractor"
-          ${ss.generateDependenciesOfCompiledBlockFor(stmts)}
           input_relations: [${
             (stmts flatMap ss.relationNamesUsedByStatement distinct
             ) mkString("\n            ", "\n            ", "\n          ")}]
@@ -527,7 +489,6 @@ ${if (createTable) {
           \"\"\"
           output_relation: \"${stmt.output}\"
           ${udfDetails.get}
-          ${ss.generateDependenciesOfCompiledBlockFor(List(stmt))}
           input_relations: [${
             (List(stmt) flatMap ss.relationNamesUsedByStatement distinct
             ) mkString("\n            ", "\n            ", "\n          ")}]
@@ -631,7 +592,6 @@ ${if (createTable) {
           input_query: \"\"\"${inputQueries.mkString(" UNION ALL ")}\"\"\"
           function: "${func}"
           weight: "${weight}"
-          ${ss.generateDependenciesOfCompiledBlockFor(stmts)}
           input_relations: [${
             val relationsInHead = stmts flatMap (_.head.terms map (_.name))
             val relationsInBody = stmts flatMap ss.relationNamesUsedByStatement

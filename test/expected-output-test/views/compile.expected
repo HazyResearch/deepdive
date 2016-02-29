@@ -14,7 +14,6 @@ FROM R R0
         """
           output_relation: "A"
         style: "cmd_extractor"
-          
           input_relations: [
             R
           ]
@@ -31,7 +30,6 @@ FROM A R0, R R1
         """
           output_relation: "B"
         style: "cmd_extractor"
-          dependencies: [ "ext_A" ]
           input_relations: [
             A
             R
