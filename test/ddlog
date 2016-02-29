@@ -21,7 +21,8 @@ Self=$(readlink -f "$0" 2>/dev/null || {
 Here=$(dirname "$Self")
 
 # set up environment
-classpathFile="$Here"/../target/scala-2.10/classpath
+classpathFile=("$Here"/../target/scala-*/classpath)
+classpathFile=${classpathFile[0]}
 [[ -s "$classpathFile" ]] || {
     echo "ERROR: missing $classpathFile"
     echo 'Run `make` before using test/ddlog!'
