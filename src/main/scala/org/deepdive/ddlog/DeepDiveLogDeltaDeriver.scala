@@ -39,7 +39,7 @@ object DeepDiveLogDeltaDeriver extends DeepDiveLogHandler {
       // We don't support deriving delta rules for modifiers
       bodies foreach {
         case _: Cond | _: BodyAtom => // supported
-        case _ => throw new RuntimeException("Deriving delta rules for modifier atom is not supported!")
+        case _ => sys.error("Deriving delta rules for modifier atom is not supported!")
       }
       // Delta body
       val incDeltaBody = bodies collect {

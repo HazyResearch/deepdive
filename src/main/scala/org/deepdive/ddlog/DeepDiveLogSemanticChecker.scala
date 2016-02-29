@@ -269,8 +269,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
 
   // throw exception
   def error(stmt: Statement, message: String) {
-    val stmtStr = DeepDiveLogPrettyPrinter.print(stmt)
-    throw new RuntimeException(message + s"\n${stmtStr}")
+    sys.error(message + s"\n${DeepDiveLogPrettyPrinter.print(stmt)}")
   }
 
   // run the checker

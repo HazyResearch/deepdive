@@ -48,10 +48,6 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   val representativeStatements : Set[Statement] =
     statementsByHeadName.values map { _(0) } toSet
 
-  def error(message: String) {
-    throw new RuntimeException(message)
-  }
-
   def optionalIndex(idx: Int) =
     if (idx < 1) "" else s"${idx}"
 
@@ -419,7 +415,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         val qc              = new QueryCompiler(tmpCq, ss)
 
         if (stmt.supervision != None) {
-          if (stmt.q.bodies.length > 1) ss.error(s"Scoping rule does not allow disjunction.\n")
+          if (stmt.q.bodies.length > 1) sys.error(s"Scoping rule does not allow disjunction.\n")
           val headStr = qc.generateSQLHead(NoAlias)
           val labelCol = qc.compileExpr(stmt.supervision.get)
           inputQueries += s"""SELECT DISTINCT ${ headStr }, 0 AS id, ${labelCol} AS label
@@ -478,7 +474,7 @@ ${if (createTable) {
       })
 
       if (udfDetails.isEmpty)
-        ss.error(s"Cannot find compilable implementation for function ${stmt.function} among:\n  "
+        sys.error(s"Cannot find compilable implementation for function ${stmt.function} among:\n  "
           + (function.implementations mkString "\n  "))
 
       val blockName = ss.resolveExtractorBlockName(stmt)
