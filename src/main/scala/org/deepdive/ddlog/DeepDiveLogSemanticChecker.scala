@@ -37,11 +37,11 @@ class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
     checkRelationDefined(stmt)
     checkFunctionDefined(stmt)
     checkVariableRelationSchema(stmt)
+    checkMultinomialFactors(stmt)
     checkNumberOfColumns(stmt)
     checkQuantifiedBody(stmt)
     checkWeight(stmt)
     checkVariableBindings(stmt)
-    checkSupervisionLabelType(stmt)
   }
 
   // iterate over all atoms contained in the body list and apply the checker
@@ -94,10 +94,23 @@ class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
             if (reservedSet contains name)
               error(stmt, s"""variable relation contains reserved column "${name}" """)
           }
+          // TODO check if none or all columns are annotated with @key
         }
       }
       case _ =>
     }
+  }
+
+  // TODO check if all factors have only isQuery relations in their heads
+
+  // check if any factors are defined across categorical and Boolean variables
+  def checkMultinomialFactors(stmt: Statement) = stmt match {
+    case s: InferenceRule =>
+      val categoricalVars = s.head.terms filter { t =>
+        schemaDeclarationByName get(t.name) map(_.categoricalColumns nonEmpty) getOrElse(false) }
+      if (! (categoricalVars.size == 0 || s.head.terms.size == categoricalVars.size))
+        error(s, "None or all variables must be categorical")
+    case _ =>
   }
 
   // check if the number of columns match schema declaration
@@ -158,55 +171,6 @@ class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
       case s: InferenceRule => {
         if ((s.weights.variables collect { case x: ConstExpr => x }).size >= 2)
           error(stmt, s"Weight variables can contain at most one constant")
-      }
-      case _ =>
-    }
-  }
-
-  def checkSupervisionLabelType(s: ExtractionRule, expType: VariableType, supVariable: VarPattern, b: BodyAtom) {
-    if (schemaDeclarationByName contains b.name)
-      b.terms.zipWithIndex.foreach {
-        case (`supVariable`, index) => {
-          val expColumnType = expType match {
-            case BooleanType() => "boolean"
-            case MultinomialType(_) => "int"
-          }
-          if (schemaDeclarationByName(b.name).a.types(index).toLowerCase != expColumnType) {
-            val actualColumnType = schemaDeclarationByName(b.name).a.types(index).toLowerCase
-            error(s, s"Supervision column ${supVariable.name} should be ${expColumnType} type, but is ${actualColumnType} type")
-          }
-        }
-        case _ =>
-      }
-  }
-
-  def checkSupervisionLabelType(s: ExtractionRule, expType: VariableType, supVariable: VarPattern, body: Body) {
-    body match {
-      case qb: QuantifiedBody => qb.bodies.foreach { b => checkSupervisionLabelType(s, expType, supVariable, b) }
-      case b: BodyAtom => checkSupervisionLabelType(s, expType, supVariable, b)
-      case _ =>
-    }
-  }
-
-  def checkSupervisionLabelType(stmt: Statement) {
-    stmt match {
-      case s: ExtractionRule if (schemaDeclarationByName contains s.headName) && (schemaDeclarationByName(s.headName).variableType nonEmpty) => {
-        val headType = schemaDeclarationByName(s.headName).variableType.get
-        s.supervision foreach {
-          case b: BooleanConst => {
-            if (headType != BooleanType) {
-              error(s, s"Supervision column ${s.supervision} should be boolean type but is ${headType} type")
-            }
-          }
-          case VarExpr(varname) =>
-            s.q.bodies.foreach { bodies: List[Body] =>
-              bodies.foreach { b =>
-                checkSupervisionLabelType(s, headType, VarPattern(varname), b)
-              }
-            }
-          case _ =>
-          // XXX assume the rest of the expressions are correct
-        }
       }
       case _ =>
     }

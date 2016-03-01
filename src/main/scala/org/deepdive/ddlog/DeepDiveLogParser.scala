@@ -70,17 +70,6 @@ object LogicOperator {
   case class OR() extends LogicOperator
 }
 
-// variable type
-sealed trait VariableType {
-  def cardinality: Long
-}
-case class BooleanType() extends VariableType {
-  def cardinality = 2
-}
-case class MultinomialType(numCategories: Int) extends VariableType {
-  def cardinality = numCategories
-}
-
 case class FactorWeight(variables: List[Expr])
 
 // factor function
@@ -91,7 +80,6 @@ object FactorFunction {
   case class Or()          extends FactorFunction
   case class And()         extends FactorFunction
   case class Equal()       extends FactorFunction
-  case class Multinomial() extends FactorFunction
   case class Linear()      extends FactorFunction
   case class Ratio()       extends FactorFunction
 }
@@ -110,9 +98,19 @@ case class RowWiseLineHandler(style: String, command: String) extends FunctionIm
 trait Statement
 case class SchemaDeclaration( a : Attribute
                             , isQuery : Boolean
-                            , variableType : Option[VariableType]
                             , annotation : List[Annotation] = List.empty // optional annotation
                             ) extends Statement // atom and whether this is a query relation.
+{
+  // infer whether this is a categorical variable based on column annotations
+  val categoricalColumns =
+    if (isQuery) {
+      val keyColumns = a.terms.zip(a.annotations) collect {
+        case (term, annos) if annos exists (_.name == "key") => term
+      }
+      if (keyColumns isEmpty) List.empty  // treat all columns as key if none were annotated
+      else a.terms diff keyColumns toList  // otherwise, the rest of the columns define categories
+    } else List.empty
+}
 case class FunctionDeclaration( functionName: String, inputType: FunctionInputOutputType,
   outputType: FunctionInputOutputType, implementations: List[FunctionImplementationDeclaration]) extends Statement
 case class ExtractionRule(headName: String, q : ConjunctiveQuery, supervision: Option[Expr] = None) extends Statement // Extraction rule
@@ -190,22 +188,14 @@ class DeepDiveLogParser extends JavaTokenParsers {
       case(anno ~ name ~ ty) => Column(name, ty, anno)
     }
 
-  def CategoricalParser = "Categorical" ~> "(" ~> """\d+""".r <~ ")" ^^ { n => MultinomialType(n.toInt) }
-  def BooleanParser = "Boolean" ^^ { s => BooleanType() }
-  def dataType = CategoricalParser | BooleanParser
-
   def schemaDeclaration: Parser[SchemaDeclaration] =
     rep(annotation) ~
-    relationName ~ opt("?") ~ "(" ~ rep1sep(columnDeclaration, ",") ~ ")" ~ opt(dataType) ^^ {
-      case (anno ~ r ~ isQuery ~ "(" ~ attrs ~ ")" ~ vType) => {
+    relationName ~ opt("?") ~ ("(" ~> rep1sep(columnDeclaration, ",") <~ ")") ^^ {
+      case (anno ~ r ~ isQuery ~ attrs) => {
         val vars = attrs map (_.name)
         var types = attrs map (_.t)
         val annos = attrs map (_.annotation)
-        val variableType = vType match {
-          case None => if (isQuery != None) Some(BooleanType()) else None
-          case Some(s) => Some(s)
-        }
-        SchemaDeclaration(Attribute(r, vars, types, annos), (isQuery != None), variableType, anno)
+        SchemaDeclaration(Attribute(r, vars, types, annos), (isQuery != None), anno)
       }
     }
 
@@ -402,9 +392,6 @@ class DeepDiveLogParser extends JavaTokenParsers {
     }
   | headAtom ~ "v" ~ rep1sep(headAtom, "v") ^^ { case (a ~ _ ~ b) =>
       InferenceRuleHead(FactorFunction.Or(), a +: b)
-    }
-  | "Multinomial" ~> "(" ~> rep1sep(headAtom, ",") <~ ")" ^^ {
-      InferenceRuleHead(FactorFunction.Multinomial(), _)
     }
   | headAtom ^^ {
       x => InferenceRuleHead(FactorFunction.IsTrue(), List(x))

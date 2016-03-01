@@ -1,20 +1,53 @@
 deepdive.schema.variables {
-tag.label: Categorical(13)
+chunk {
+tag: Categorical
 
 }
 
-deepdive.extraction.extractors.ext_words_by_ext_training {
-parallelism: ${PARALLELISM}
+}
+
+deepdive.extraction.extractors.ext_chunk {
+cmd: """
+	# TODO use temporary table
+	deepdive create table "chunk"
+	deepdive sql 'INSERT INTO chunk SELECT DISTINCT R0.sent_id, R0.word_id, R1.tag, 0 AS id, 
+CASE WHEN R1.tag = R0.tag THEN true
+     ELSE NULL
+END AS label
+          FROM words R0, tags R1
+        
+          '
+	# TODO rename temporary table to replace output_relation
+	"""
+output_relation: chunk
+style: cmd_extractor
+input_relations: [
+  words
+  tags
+]
+
+}
+
+deepdive.extraction.extractors.ext_words {
+cmd: """
+	# TODO use temporary table
+	deepdive create table "words"
+	deepdive sql 'INSERT INTO words SELECT R0.sent_id AS "words_raw.R0.sent_id", R0.word_id AS "words_raw.R0.word_id", R0.word AS "words_raw.R0.word", R0.pos AS "words_raw.R0.pos", R0.true_tag AS "words_raw.R0.true_tag", 
+CASE WHEN R0.true_tag = '\''B-UCP'\'' THEN NULL
+     WHEN R0.true_tag = '\''I-UCP'\'' THEN NULL
+     WHEN strpos(R0.true_tag, '\''-'\'') > 0 THEN split_part(R0.true_tag, '\''-'\'', 2)
+     WHEN R0.true_tag = '\''O'\'' THEN '\''O'\''
+     ELSE NULL
+END AS column_5
+FROM words_raw R0
+        '
+	# TODO rename temporary table to replace output_relation
+	"""
+output_relation: words
+style: cmd_extractor
 input_relations: [
   words_raw
 ]
-style: tsv_extractor
-output_relation: words
-udf: """udf/ext_training.py"""
-input_batch_size: ${INPUT_BATCH_SIZE}
-input: """SELECT R0.word_id AS "words_raw.R0.word_id", R0.word AS "words_raw.R0.word", R0.pos AS "words_raw.R0.pos", R0.tag AS "words_raw.R0.tag"
-FROM words_raw R0
-        """
 
 }
 
@@ -27,40 +60,54 @@ style: tsv_extractor
 output_relation: word_features
 udf: """udf/ext_features.py"""
 input_batch_size: ${INPUT_BATCH_SIZE}
-input: """SELECT R0.word_id AS "words.R0.word_id", R0.word AS "words.R0.word", R0.pos AS "words.R0.pos", R1.word AS "words.R1.word", R1.pos AS "words.R1.pos"
+input: """SELECT R0.sent_id AS "words.R0.sent_id", R0.word_id AS "words.R0.word_id", R0.word AS "words.R0.word", R0.pos AS "words.R0.pos", R1.word AS "words.R1.word", R1.pos AS "words.R1.pos"
 FROM words R0, words R1
-        WHERE R1.sent_id = R0.sent_id """
+        WHERE R1.sent_id = R0.sent_id  AND R0.word_id = (R1.word_id + 1) AND R0.word IS NOT NULL"""
 
 }
 
-deepdive.extraction.extractors.ext_tag {
-cmd: """
-	# TODO use temporary table
-	deepdive create table "tag"
-	deepdive sql 'INSERT INTO tag SELECT DISTINCT R0.sent_id, 0 AS id, R0.true_tag AS label
-          FROM words R0
-        
-          '
-	# TODO rename temporary table to replace output_relation
-	"""
-output_relation: tag
-style: cmd_extractor
+deepdive.inference.factors.inf_istrue_chunk {
+input_query: """
+          SELECT R0.id AS "chunk.R0.id" , R3.feature AS "dd_weight_column_0" , R0.tag AS "dd_weight_column_1" 
+          FROM chunk R0, words R1, tags R2, word_features R3
+        WHERE R1.sent_id = R0.sent_id  AND R1.word_id = R0.word_id  AND R2.tag = R0.tag  AND R3.sent_id = R0.sent_id  AND R3.word_id = R0.word_id """
+function: """Multinomial(chunk.R0.label)"""
+weight: """?(dd_weight_column_0, dd_weight_column_1)"""
 input_relations: [
+  chunk
   words
+  tags
+  word_features
 ]
 
 }
 
-deepdive.inference.factors.inf_istrue_tag {
+deepdive.inference.factors.inf_and_chunk_chunk {
 input_query: """
-          SELECT R0.id AS "tag.R0.id" , R1.feature AS "dd_weight_column_0" 
-          FROM tag R0, word_features R1
-        WHERE R1.word_id = R0.word_id """
-function: """Multinomial(tag.R0.label)"""
-weight: """?(dd_weight_column_0)"""
+          SELECT R0.id AS "chunk.R0.id" , R1.id AS "chunk.R1.id" , R0.tag AS "dd_weight_column_0" , R1.tag AS "dd_weight_column_1" 
+          FROM chunk R0, chunk R1, words R2, words R3, tags R4, tags R5
+        WHERE R1.sent_id = R0.sent_id  AND R2.sent_id = R0.sent_id  AND R2.word_id = R0.word_id  AND R3.sent_id = R0.sent_id  AND R3.word_id = R1.word_id  AND R4.tag = R0.tag  AND R5.tag = R1.tag  AND R1.word_id = (R0.word_id + 1)"""
+function: """Multinomial(chunk.R0.label, chunk.R1.label)"""
+weight: """?(dd_weight_column_0, dd_weight_column_1)"""
 input_relations: [
-  tag
-  word_features
+  chunk
+  words
+  tags
+]
+
+}
+
+deepdive.inference.factors.inf1_and_chunk_chunk {
+input_query: """
+          SELECT R0.id AS "chunk.R0.id" , R1.id AS "chunk.R1.id" , R0.tag AS "dd_weight_column_0" , R1.tag AS "dd_weight_column_1" 
+          FROM chunk R0, chunk R1, words R2, words R3, tags R4, tags R5
+        WHERE R1.sent_id = R0.sent_id  AND R2.sent_id = R0.sent_id  AND R2.word_id = R0.word_id  AND R3.sent_id = R0.sent_id  AND R3.word_id = R1.word_id  AND R4.tag = R0.tag  AND R5.tag = R1.tag  AND R2.tag IS NOT NULL AND R0.word_id < R1.word_id"""
+function: """Multinomial(chunk.R0.label, chunk.R1.label)"""
+weight: """?(dd_weight_column_0, dd_weight_column_1)"""
+input_relations: [
+  chunk
+  words
+  tags
 ]
 
 }
@@ -68,19 +115,23 @@ input_relations: [
 deepdive.pipeline.run: ${PIPELINE}
 
 deepdive.pipeline.pipelines.extraction: [
-  ext_words_by_ext_training
+  ext_chunk
+  ext_words
   ext_word_features_by_ext_features
-  ext_tag
 ]
 
 deepdive.pipeline.pipelines.inference: [
-  inf_istrue_tag
+  inf_istrue_chunk
+  inf_and_chunk_chunk
+  inf1_and_chunk_chunk
 ]
 
 deepdive.pipeline.pipelines.endtoend: [
-  ext_words_by_ext_training
+  ext_chunk
+  ext_words
   ext_word_features_by_ext_features
-  ext_tag
-  inf_istrue_tag
+  inf_istrue_chunk
+  inf_and_chunk_chunk
+  inf1_and_chunk_chunk
 ]
 

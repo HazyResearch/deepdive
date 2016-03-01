@@ -1,0 +1,8 @@
+P?(x int).
+Q?(@key y int, category text).
+
+@weight(1.0)
+P(x) => Q(y, c) :- R(x), R(y), C(c).
+
+R(x int).
+C(c text).

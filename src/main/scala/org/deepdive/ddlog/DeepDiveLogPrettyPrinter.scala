@@ -176,7 +176,6 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
       case FactorFunction.Or()     => printHead(head.terms, " v ")
       case FactorFunction.Equal()  => printHead(head.terms, " = ")
       case FactorFunction.IsTrue() => printHead(head.terms, "")
-      case FactorFunction.Multinomial() => s"""Multinomial(${printHead(head.terms, ", ")})"""
     }
   }
 

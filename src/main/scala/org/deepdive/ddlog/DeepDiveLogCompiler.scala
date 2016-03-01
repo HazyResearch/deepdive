@@ -30,6 +30,9 @@ class DeepDiveLogCompiler( program : DeepDiveLog.Program, config : DeepDiveLog.C
       case decl: SchemaDeclaration => decl.a.name -> decl
     } toMap
 
+  def isCategoricalRelation(name: String): Boolean =
+    schemaDeclarationByRelationName get(name) map (_.categoricalColumns.size > 0) getOrElse(false)
+
   val inferenceRules = statements collect { case s: InferenceRule => s }
 
   val statementsByHeadName: Map[String, List[Statement]] =
@@ -532,19 +535,29 @@ class QueryCompiler(cq : ConjunctiveQuery) {
         s"""${if (y.isNegated) "!" else ""}${x.name}.R${headAsBody indexOf x}.label"""
       })
 
-      val function = stmt.head.function match {
-        case FactorFunction.Imply()  => "Imply"
-        case FactorFunction.And()    => "And"
-        case FactorFunction.Or()     => "Or"
-        case FactorFunction.Equal()  => "Equal"
-        case FactorFunction.Linear() => "Linear"
-        case FactorFunction.Ratio()  => "Ratio"
-        case FactorFunction.IsTrue() =>
-          schemaDeclarationByRelationName get(stmt.head.terms(0).name) map(_.variableType) match {
-            case Some(Some(MultinomialType(_))) => "Multinomial"
-            case _ => "Imply" // TODO fix to IsTrue
+      val categoricalVars = stmt.head.terms filter { t => isCategoricalRelation(t.name) }
+      val isMultinomialFactor =
+        if (categoricalVars.size == 0 || stmt.head.terms.size == categoricalVars.size)
+          categoricalVars.size > 0
+        else
+          sys.error("None or all variables must be categorical")
+
+      val function =
+        if (isMultinomialFactor) {
+          stmt.head.function match {
+            case FactorFunction.IsTrue() | FactorFunction.And() => "Multinomial"
+            case f => sys.error(s"Unsupported factor over categorical variables: ${f}")
           }
-        case FactorFunction.Multinomial() => "Multinomial"
+        } else { // Boolean
+          stmt.head.function match {
+            case FactorFunction.Imply()  => "Imply"
+            case FactorFunction.And()    => "And"
+            case FactorFunction.Or()     => "Or"
+            case FactorFunction.Equal()  => "Equal"
+            case FactorFunction.Linear() => "Linear"
+            case FactorFunction.Ratio()  => "Ratio"
+            case FactorFunction.IsTrue() => "Imply" // TODO fix to IsTrue
+          }
       }
       s"""${function}(${funcBody.mkString(", ")})"""
     }
@@ -605,10 +618,10 @@ class QueryCompiler(cq : ConjunctiveQuery) {
     // generate the statements.
     List("deepdive.schema.variables" -> (statements collect {
       case decl: SchemaDeclaration if decl.isQuery =>
-        s"${decl.a.name}.label" -> (decl.variableType match {
-          case Some(MultinomialType(x)) => s"Categorical(${x})"
-          case _ => "Boolean"
-        })
+        if (isCategoricalRelation(decl.a.name)) {
+          decl.a.name -> (decl.categoricalColumns map (_ -> "Categorical") toMap)
+        } else // Boolean variables
+          s"${decl.a.name}.label" -> "Boolean"
       } toMap)
     )
   }
