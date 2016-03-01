@@ -72,7 +72,7 @@ stage compiler/compile-code                                       util/
 stage compiler/compile-codegen                                    util/
 
 stage compiler/ddlog-wrapper.sh                                   bin/ddlog
-stage .build/submodule/compiler/ddlog/target/scala-2.10/ddlog-assembly-0.1-SNAPSHOT.jar  lib/ddlog.jar
+stage .build/submodule/compiler/ddlog/target/scala-2.11/ddlog-assembly-0.1-SNAPSHOT.jar  lib/ddlog.jar
 stage .build/submodule/compiler/hocon2json/hocon2json.sh                                util/hocon2json
 stage .build/submodule/compiler/hocon2json/target/scala-2.10/hocon2json-assembly-*.jar  util/hocon2json.jar
 

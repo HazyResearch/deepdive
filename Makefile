@@ -128,7 +128,7 @@ build: build-mindbender
 
 .PHONY: build-ddlog
 build-ddlog:
-	@util/build/build-submodule-if-needed compiler/ddlog target/scala-2.10/ddlog-assembly-0.1-SNAPSHOT.jar
+	@util/build/build-submodule-if-needed compiler/ddlog target/scala-2.11/ddlog-assembly-0.1-SNAPSHOT.jar
 build: build-ddlog
 
 .PHONY: build-mkmimo
