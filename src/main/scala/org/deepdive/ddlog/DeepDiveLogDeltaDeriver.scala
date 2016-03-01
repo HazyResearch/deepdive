@@ -1,5 +1,7 @@
 package org.deepdive.ddlog
 
+import org.deepdive.ddlog.DeepDiveLog.{Config, Program}
+
 import scala.collection.mutable.ListBuffer
 
 
@@ -12,7 +14,7 @@ object Mode extends Enumeration {
 }
 import Mode._
 
-object DeepDiveLogDeltaDeriver{
+object DeepDiveLogDeltaDeriver extends DeepDiveLogHandler {
 
   // Default prefix for incremental tables
   val deltaPrefix = "dd_delta_"
@@ -37,7 +39,7 @@ object DeepDiveLogDeltaDeriver{
       // We don't support deriving delta rules for modifiers
       bodies foreach {
         case _: Cond | _: BodyAtom => // supported
-        case _ => throw new RuntimeException("Deriving delta rules for modifier atom is not supported!")
+        case _ => sys.error("Deriving delta rules for modifier atom is not supported!")
       }
       // Delta body
       val incDeltaBody = bodies collect {
@@ -166,4 +168,9 @@ object DeepDiveLogDeltaDeriver{
     }
     incrementalProgram.toList
   }
+
+  override def run(program: Program, config: Config): Unit = {
+    DeepDiveLogPrettyPrinter.run(derive(program), config)
+  }
+
 }

@@ -71,36 +71,11 @@ expectedOutputExistsFor() {
 }
 
 
-## tests for --incremental support
-
-# compare the compiled output of the incremental version with what's expected
-@test "$it compiles --incremental input as expected" {
-    expectedOutputExistsFor "compile-incremental" || skip
-    ddlog compile --incremental "$TESTDIR"/input.ddlog >"$actualOutput"
-    diff "$expectedOutput" "$actualOutput"
-}
+## tests for incremental support
 
 # compare the pretty-printed output of the incremental version with what's expected
-@test "$it prints --incremental input as expected" {
+@test "$it prints incremental input as expected" {
     expectedOutputExistsFor "print-incremental" || skip
-    ddlog print --incremental "$TESTDIR"/input.ddlog >"$actualOutput"
-    diff "$expectedOutput" "$actualOutput"
-}
-
-## tests for --merge support
-
-# compare the compiled output of the merge version with what's expected
-@test "$it compiles --merge input as expected" {
-    expectedOutputExistsFor "compile-merge" || skip
-    ddlog compile --merge "$TESTDIR"/input.ddlog >"$actualOutput"
-    diff "$expectedOutput" "$actualOutput"
-}
-
-## tests for --materialization support
-
-# compare the compiled output of the merge version with what's expected
-@test "$it compiles --materialization input as expected" {
-    expectedOutputExistsFor "compile-materialization" || skip
-    ddlog compile --materialization "$TESTDIR"/input.ddlog >"$actualOutput"
+    ddlog print-incremental "$TESTDIR"/input.ddlog >"$actualOutput"
     diff "$expectedOutput" "$actualOutput"
 }

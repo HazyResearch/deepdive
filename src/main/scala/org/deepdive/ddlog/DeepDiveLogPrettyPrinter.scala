@@ -128,8 +128,8 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
       case NegationCond(c) => s"[!${print(c)}]"
       case CompoundCond(lhs, op, rhs) => {
         op match {
-          case LogicOperator.AND => s"[${print(lhs)}, ${print(rhs)}]"
-          case LogicOperator.OR  => s"[${print(lhs)}; ${print(rhs)}]"
+          case LogicOperator.AND() => s"[${print(lhs)}, ${print(rhs)}]"
+          case LogicOperator.OR()  => s"[${print(lhs)}; ${print(rhs)}]"
         }
       }
     }
@@ -169,14 +169,14 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     def printImplyHead = s"""${printHead(head.terms.dropRight(1), ", ")} => ${print(head.terms.last)}"""
     def printHead(a: List[HeadAtom], delim: String) : String = a map print mkString(delim)
     head.function match {
-      case FactorFunction.Imply  => printImplyHead
-      case FactorFunction.Linear => s"""@semantics("linear")\n${printImplyHead}"""
-      case FactorFunction.Ratio  => s"""@semantics("ratio")\n${printImplyHead}"""
-      case FactorFunction.And    => printHead(head.terms, " ^ ")
-      case FactorFunction.Or     => printHead(head.terms, " v ")
-      case FactorFunction.Equal  => printHead(head.terms, " = ")
-      case FactorFunction.IsTrue => printHead(head.terms, "")
-      case FactorFunction.Multinomial => s"""Multinomial(${printHead(head.terms, ", ")})"""
+      case FactorFunction.Imply()  => printImplyHead
+      case FactorFunction.Linear() => s"""@semantics("linear")\n${printImplyHead}"""
+      case FactorFunction.Ratio()  => s"""@semantics("ratio")\n${printImplyHead}"""
+      case FactorFunction.And()    => printHead(head.terms, " ^ ")
+      case FactorFunction.Or()     => printHead(head.terms, " v ")
+      case FactorFunction.Equal()  => printHead(head.terms, " = ")
+      case FactorFunction.IsTrue() => printHead(head.terms, "")
+      case FactorFunction.Multinomial() => s"""Multinomial(${printHead(head.terms, ", ")})"""
     }
   }
 
@@ -197,14 +197,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {
-    val programToPrint =
-      // derive the program based on mode information
-      config.mode match {
-        case ORIGINAL => parsedProgram
-        case INCREMENTAL => DeepDiveLogDeltaDeriver.derive(parsedProgram)
-        case MATERIALIZATION => parsedProgram
-        case MERGE => DeepDiveLogMergeDeriver.derive(parsedProgram)
-      }
+    val programToPrint = parsedProgram
     // pretty print in original syntax
     programToPrint foreach {stmt => println(print(stmt))}
   }

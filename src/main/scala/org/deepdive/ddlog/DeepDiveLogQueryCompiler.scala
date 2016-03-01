@@ -8,26 +8,26 @@ object DeepDiveLogQueryCompiler extends DeepDiveLogHandler {
     val (query, extraRules) = (new DeepDiveLogParser).parseQuery(config.query)
 
     // make sure extraRules don't have name clashes with the program
-    DeepDiveLogSemanticChecker.checkNoRedefinition(program, extraRules)
+    new DeepDiveLogSemanticChecker(program).checkNoRedefinition(program, extraRules)
 
     // run typical checks for correct semantics
     val programToCheck = ExtractionRule(q = query, headName = "") :: extraRules ++ program
     DeepDiveLogSemanticChecker.run(programToCheck, config)
 
     // use schema declarations, etc. in given program
-    val compilationState = new CompilationState(
+    val compiler = new DeepDiveLogCompiler(
       config = config,
-      statements = extraRules ++ program
+      program = extraRules ++ program
     )
     val sql = (extraRules collect {
       // compile supporting rules as CREATE TEMP TABLE queries
       case rule: ExtractionRule =>
-        val qc = new QueryCompiler(rule.q, compilationState)
+        val qc = new compiler.QueryCompiler(rule.q)
         s"""CREATE TEMPORARY TABLE ${rule.headName} AS\n${
-          qc.generateSQL(AliasStyle.ViewAlias)}"""
+          qc.generateSQL(compiler.ViewAlias)}"""
     }) ++ List({
       // compile the query
-      s"""${new QueryCompiler(query, compilationState).generateSQL(AliasStyle.UseVariableAsAlias)}"""
+      s"""${new compiler.QueryCompiler(query).generateSQL(compiler.UseVariableAsAlias)}"""
     }) mkString(";\n\n")
     println(sql)
   }

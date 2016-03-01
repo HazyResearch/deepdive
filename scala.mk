@@ -17,15 +17,16 @@
 #   be measured.
 
 # Some path names for Scala
+SCALA_VERSION                 = 2.11
 SCALA_BUILD_FILES             = build.sbt $(wildcard project/*.*)
 SCALA_MAIN_SOURCES            = $(shell find src/main/scala -name '*.scala' 2>/dev/null)
-SCALA_MAIN_CLASSES_DIR        = target/scala-2.10/classes
-SCALA_MAIN_CLASSPATH_EXPORTED = target/scala-2.10/classpath
+SCALA_MAIN_CLASSES_DIR        = target/scala-$(SCALA_VERSION)/classes
+SCALA_MAIN_CLASSPATH_EXPORTED = target/scala-$(SCALA_VERSION)/classpath
 SCALA_TEST_SOURCES            = $(shell find src/test/scala -name '*.scala' 2>/dev/null)
-SCALA_TEST_CLASSES_DIR        = target/scala-2.10/test-classes
-SCALA_TEST_CLASSPATH_EXPORTED = target/scala-2.10/test-classpath
-SCALA_COVERAGE_DIR            = target/scala-2.10/scoverage-data
-SCALA_ASSEMBLY_JAR            = target/scala-2.10/*-assembly-*.jar
+SCALA_TEST_CLASSES_DIR        = target/scala-$(SCALA_VERSION)/test-classes
+SCALA_TEST_CLASSPATH_EXPORTED = target/scala-$(SCALA_VERSION)/test-classpath
+SCALA_COVERAGE_DIR            = target/scala-$(SCALA_VERSION)/scoverage-data
+SCALA_ASSEMBLY_JAR            = target/scala-$(SCALA_VERSION)/*-assembly-*.jar
 
 # SBT settings
 PATH := $(PATH):$(shell pwd)/sbt

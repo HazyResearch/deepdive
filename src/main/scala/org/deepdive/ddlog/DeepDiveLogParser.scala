@@ -20,7 +20,7 @@ case class StringConst(value: String) extends ConstExpr
 case class IntConst(value: Int) extends ConstExpr
 case class DoubleConst(value: Double) extends ConstExpr
 case class BooleanConst(value: Boolean) extends ConstExpr
-case class NullConst extends ConstExpr
+case class NullConst() extends ConstExpr
 case class FuncExpr(function: String, args: List[Expr], isAggregation: Boolean) extends Expr
 case class BinaryOpExpr(lhs: Expr, op: String, rhs: Expr) extends Expr
 case class TypecastExpr(lhs: Expr, rhs: String) extends Expr
@@ -29,7 +29,7 @@ case class IfThenElseExpr(ifCondThenExprPairs: List[(Cond, Expr)], elseExpr: Opt
 sealed trait Pattern
 case class VarPattern(name: String) extends Pattern
 case class ExprPattern(expr: Expr) extends Pattern
-case class PlaceholderPattern extends Pattern
+case class PlaceholderPattern() extends Pattern
 
 sealed trait Body
 case class BodyAtom(name : String, terms : List[Pattern]) extends Body
@@ -37,8 +37,8 @@ case class QuantifiedBody(modifier: BodyModifier, bodies: List[Body]) extends Bo
 
 sealed trait BodyModifier
 case class ExistModifier(negated: Boolean) extends BodyModifier
-case class OuterModifier extends BodyModifier
-case class AllModifier extends BodyModifier
+case class OuterModifier() extends BodyModifier
+case class AllModifier() extends BodyModifier
 
 case class Attribute(name : String, terms : List[String], types : List[String], annotations : List[List[Annotation]])
 case class ConjunctiveQuery(headTerms: List[Expr], bodies: List[List[Body]], isDistinct: Boolean = false, limit: Option[Int] = None,
@@ -64,16 +64,17 @@ case class NegationCond(cond: Cond) extends Cond
 case class CompoundCond(lhs: Cond, op: LogicOperator.LogicOperator, rhs: Cond) extends Cond
 
 // logic operators
-object LogicOperator extends Enumeration {
-  type LogicOperator = Value
-  val  AND, OR = Value
+object LogicOperator {
+  sealed trait LogicOperator
+  case class AND() extends LogicOperator
+  case class OR() extends LogicOperator
 }
 
 // variable type
 sealed trait VariableType {
   def cardinality: Long
 }
-case object BooleanType extends VariableType {
+case class BooleanType() extends VariableType {
   def cardinality = 2
 }
 case class MultinomialType(numCategories: Int) extends VariableType {
@@ -83,9 +84,16 @@ case class MultinomialType(numCategories: Int) extends VariableType {
 case class FactorWeight(variables: List[Expr])
 
 // factor function
-object FactorFunction extends Enumeration {
-  type FactorFunction = Value
-  val  IsTrue, Imply, Or, And, Equal, Multinomial, Linear, Ratio = Value
+object FactorFunction {
+  sealed trait FactorFunction
+  case class IsTrue()      extends FactorFunction
+  case class Imply()       extends FactorFunction
+  case class Or()          extends FactorFunction
+  case class And()         extends FactorFunction
+  case class Equal()       extends FactorFunction
+  case class Multinomial() extends FactorFunction
+  case class Linear()      extends FactorFunction
+  case class Ratio()       extends FactorFunction
 }
 case class HeadAtom(name : String, terms : List[Expr], isNegated: Boolean = false)
 case class InferenceRuleHead(function: FactorFunction.FactorFunction, terms: List[HeadAtom])
@@ -110,6 +118,19 @@ case class FunctionDeclaration( functionName: String, inputType: FunctionInputOu
 case class ExtractionRule(headName: String, q : ConjunctiveQuery, supervision: Option[Expr] = None) extends Statement // Extraction rule
 case class FunctionCallRule(output: String, function: String, q : ConjunctiveQuery, mode: Option[String], parallelism: Option[Int]) extends Statement // Extraction rule
 case class InferenceRule(head: InferenceRuleHead, q : ConjunctiveQuery, weights : FactorWeight, mode: Option[String] = None) extends Statement // Weighted rule
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Parser
 class DeepDiveLogParser extends JavaTokenParsers {
@@ -170,7 +191,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
     }
 
   def CategoricalParser = "Categorical" ~> "(" ~> """\d+""".r <~ ")" ^^ { n => MultinomialType(n.toInt) }
-  def BooleanParser = "Boolean" ^^ { s => BooleanType }
+  def BooleanParser = "Boolean" ^^ { s => BooleanType() }
   def dataType = CategoricalParser | BooleanParser
 
   def schemaDeclaration: Parser[SchemaDeclaration] =
@@ -181,7 +202,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
         var types = attrs map (_.t)
         val annos = attrs map (_.annotation)
         val variableType = vType match {
-          case None => if (isQuery != None) Some(BooleanType) else None
+          case None => if (isQuery != None) Some(BooleanType()) else None
           case Some(s) => Some(s)
         }
         SchemaDeclaration(Attribute(r, vars, types, annos), (isQuery != None), variableType, anno)
@@ -215,7 +236,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | double ^^ { DoubleConst(_) }
     | integer ^^ { IntConst(_) }
     | ("TRUE" | "FALSE") ^^ { x => BooleanConst(x.toBoolean) }
-    | "NULL" ^^ { _ => new NullConst }
+    | "NULL" ^^ { _ => NullConst() }
     | functionName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ {
         case (name ~ _ ~ args ~ _) => FuncExpr(name, args, (aggregationFunctions contains name))
       }
@@ -233,12 +254,12 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   def cond : Parser[Cond] =
     ( acond ~ (";") ~ cond ^^ { case (lhs ~ op ~ rhs) =>
-        CompoundCond(lhs, LogicOperator.OR, rhs)
+        CompoundCond(lhs, LogicOperator.OR(), rhs)
       }
     | acond
     )
   def acond : Parser[Cond] =
-    ( lcond ~ (",") ~ acond ^^ { case (lhs ~ op ~ rhs) => CompoundCond(lhs, LogicOperator.AND, rhs) }
+    ( lcond ~ (",") ~ acond ^^ { case (lhs ~ op ~ rhs) => CompoundCond(lhs, LogicOperator.AND(), rhs) }
     | lcond
     )
   // ! has higher priority...
@@ -264,9 +285,9 @@ class DeepDiveLogParser extends JavaTokenParsers {
   }
   def quantifiedBody = (opt("!") ~ "EXISTS" | "OPTIONAL" | "ALL") ~ "[" ~ rep1sep(cqBody, ",") ~ "]" ^^ { case (m ~ _ ~ b ~ _) =>
     val modifier = m match {
-      case (not ~ "EXISTS") => new ExistModifier(not != None)
-      case "OPTIONAL" => new OuterModifier
-      case "ALL" => new AllModifier
+      case (not ~ "EXISTS") => ExistModifier(not != None)
+      case "OPTIONAL" => OuterModifier()
+      case "ALL" => AllModifier()
     }
     QuantifiedBody(modifier, b)
   }
@@ -365,28 +386,28 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   def inferenceRuleHead =
   ( implyHeadAtoms ^^ {
-      InferenceRuleHead(FactorFunction.Imply, _)
+      InferenceRuleHead(FactorFunction.Imply(), _)
     }
   | "@semantics" ~> commit("(" ~> stringLiteralAsString <~ ")" ^? ({
-      case "linear" => FactorFunction.Linear
-      case "ratio"  => FactorFunction.Ratio
+      case "linear" => FactorFunction.Linear()
+      case "ratio"  => FactorFunction.Ratio()
     }, (s) => s"${s}: unrecognized semantics")) ~ implyHeadAtoms ^^ {
       case (s ~ h) => InferenceRuleHead(s, h)
     }
   | headAtom ~ "=" ~ rep1sep(headAtom, "=") ^^ { case (a ~ _ ~ b) =>
-      InferenceRuleHead(FactorFunction.Equal, a +: b)
+      InferenceRuleHead(FactorFunction.Equal(), a +: b)
     }
   | headAtom ~ "^" ~ rep1sep(headAtom, "^") ^^ { case (a ~ _ ~ b) =>
-      InferenceRuleHead(FactorFunction.And, a +: b)
+      InferenceRuleHead(FactorFunction.And(), a +: b)
     }
   | headAtom ~ "v" ~ rep1sep(headAtom, "v") ^^ { case (a ~ _ ~ b) =>
-      InferenceRuleHead(FactorFunction.Or, a +: b)
+      InferenceRuleHead(FactorFunction.Or(), a +: b)
     }
   | "Multinomial" ~> "(" ~> rep1sep(headAtom, ",") <~ ")" ^^ {
-      InferenceRuleHead(FactorFunction.Multinomial, _)
+      InferenceRuleHead(FactorFunction.Multinomial(), _)
     }
   | headAtom ^^ {
-      x => InferenceRuleHead(FactorFunction.IsTrue, List(x))
+      x => InferenceRuleHead(FactorFunction.IsTrue(), List(x))
     }
   )
 

@@ -1,50 +1,10 @@
+deepdive.schema.variables {
+q.label: Boolean
 
-  deepdive.db.default {
-    driver: "org.postgresql.Driver"
-    url: "jdbc:postgresql://"${PGHOST}":"${PGPORT}"/"${DBNAME}
-    user: ${PGUSER}
-    password: ${PGPASSWORD}
-    dbname: ${DBNAME}
-    host: ${PGHOST}
-    port: ${PGPORT}
-    incremental_mode: ORIGINAL
-    }
-    
+}
 
-
-      deepdive.schema.variables {
-        q.label: Boolean
-      }
-    
-
-      deepdive.extraction.extractors.ext_labels_resolved {
-        cmd: """
-
-	# TODO use temporary table
-	deepdive create table "labels_resolved"
-	deepdive sql 'INSERT INTO labels_resolved SELECT R0.x AS "labels.R0.x", SUM(
-CASE WHEN R0.l IS NULL THEN 0
-     WHEN R0.l = true THEN 1
-     ELSE -1
-END) AS column_1
-FROM labels R0
-        
-        GROUP BY R0.x'
-	# TODO rename temporary table to replace output_relation
-	
-        """
-          output_relation: "labels_resolved"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            labels
-          ]
-      }
-    
-
-      deepdive.extraction.extractors.ext_q {
-        cmd: """
-
+deepdive.extraction.extractors.ext_q {
+cmd: """
 	# TODO use temporary table
 	deepdive create table "q"
 	deepdive sql 'INSERT INTO q SELECT DISTINCT R0.x, 0 AS id, 
@@ -56,20 +16,17 @@ END AS label
         
           '
 	# TODO rename temporary table to replace output_relation
-	
-        """
-          output_relation: "q"
-        style: "cmd_extractor"
-          dependencies: [ "ext_labels_resolved" ]
-          input_relations: [
-            labels_resolved
-          ]
-      }
-    
+	"""
+output_relation: q
+style: cmd_extractor
+input_relations: [
+  labels_resolved
+]
 
-      deepdive.extraction.extractors.ext_p {
-        cmd: """
+}
 
+deepdive.extraction.extractors.ext_p {
+cmd: """
 	deepdive create view p as 'SELECT R0.x AS column_0, 
 CASE WHEN abs(R0.l) > 10 THEN true
      ELSE false
@@ -83,24 +40,48 @@ CASE WHEN (R0.x % 10) = 0 THEN false
 END AS column_1
 FROM labels R0
         '
-	
-        """
-          output_relation: "p"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            labels
-          ]
-      }
-    
+	"""
+output_relation: p
+style: cmd_extractor
+input_relations: [
+  labels
+]
+
+}
+
+deepdive.extraction.extractors.ext_labels_resolved {
+cmd: """
+	# TODO use temporary table
+	deepdive create table "labels_resolved"
+	deepdive sql 'INSERT INTO labels_resolved SELECT R0.x AS "labels.R0.x", SUM(
+CASE WHEN R0.l IS NULL THEN 0
+     WHEN R0.l = true THEN 1
+     ELSE -1
+END) AS column_1
+FROM labels R0
+        
+        GROUP BY R0.x'
+	# TODO rename temporary table to replace output_relation
+	"""
+output_relation: labels_resolved
+style: cmd_extractor
+input_relations: [
+  labels
+]
+
+}
+
 deepdive.pipeline.run: ${PIPELINE}
+
 deepdive.pipeline.pipelines.extraction: [
-  ext_labels_resolved
   ext_q
   ext_p
+  ext_labels_resolved
 ]
+
 deepdive.pipeline.pipelines.endtoend: [
-  ext_labels_resolved
   ext_q
   ext_p
+  ext_labels_resolved
 ]
+

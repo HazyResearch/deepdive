@@ -1,101 +1,84 @@
-
-  deepdive.db.default {
-    driver: "org.postgresql.Driver"
-    url: "jdbc:postgresql://"${PGHOST}":"${PGPORT}"/"${DBNAME}
-    user: ${PGUSER}
-    password: ${PGPASSWORD}
-    dbname: ${DBNAME}
-    host: ${PGHOST}
-    port: ${PGPORT}
-    incremental_mode: ORIGINAL
-    }
-    
-
-
-      deepdive.schema.variables {
-        a.label: Boolean
-f.label: Boolean
-e.label: Boolean
-d.label: Boolean
+deepdive.schema.variables {
 c.label: Boolean
-      }
-    
+d.label: Boolean
+a.label: Boolean
+e.label: Boolean
+f.label: Boolean
 
-        deepdive.inference.factors.inf_istrue_a {
-          input_query: """
+}
+
+deepdive.inference.factors.inf_istrue_a {
+input_query: """
           SELECT R0.id AS "a.R0.id" , R0.k + R1.p AS "dd_weight_column_0" 
           FROM a R0, b R1
         WHERE R1.k = R0.k """
-          function: "Imply(a.R0.label)"
-          weight: "?(dd_weight_column_0)"
-          
-          input_relations: [
-            a
-            b
-          ]
-        }
-      
+function: """Imply(a.R0.label)"""
+weight: """?(dd_weight_column_0)"""
+input_relations: [
+  a
+  b
+]
 
-        deepdive.inference.factors.inf_istrue_c {
-          input_query: """
+}
+
+deepdive.inference.factors.inf_istrue_c {
+input_query: """
           SELECT R0.id AS "c.R0.id" 
           FROM c R0, b R1
         WHERE R1.k = R0.k """
-          function: "Imply(c.R0.label)"
-          weight: "?"
-          
-          input_relations: [
-            c
-            b
-          ]
-        }
-      
+function: """Imply(c.R0.label)"""
+weight: """?"""
+input_relations: [
+  c
+  b
+]
 
-        deepdive.inference.factors.inf_istrue_d {
-          input_query: """
+}
+
+deepdive.inference.factors.inf_istrue_d {
+input_query: """
           SELECT R0.id AS "d.R0.id" , R0.k AS "dd_weight_column_0" , R1.p AS "dd_weight_column_1" 
           FROM d R0, b R1
         WHERE R1.k = R0.k """
-          function: "Imply(d.R0.label)"
-          weight: "?(dd_weight_column_0, dd_weight_column_1)"
-          
-          input_relations: [
-            d
-            b
-          ]
-        }
-      
+function: """Imply(d.R0.label)"""
+weight: """?(dd_weight_column_0, dd_weight_column_1)"""
+input_relations: [
+  d
+  b
+]
 
-        deepdive.inference.factors.inf_istrue_e {
-          input_query: """
+}
+
+deepdive.inference.factors.inf_istrue_e {
+input_query: """
           SELECT R0.id AS "e.R0.id" 
           FROM e R0, b R1
         WHERE R1.k = R0.k """
-          function: "Imply(e.R0.label)"
-          weight: "-10"
-          
-          input_relations: [
-            e
-            b
-          ]
-        }
-      
+function: """Imply(e.R0.label)"""
+weight: """-10"""
+input_relations: [
+  e
+  b
+]
 
-        deepdive.inference.factors.inf_istrue_f {
-          input_query: """
+}
+
+deepdive.inference.factors.inf_istrue_f {
+input_query: """
           SELECT R0.id AS "f.R0.id" 
           FROM f R0, b R1
         WHERE R1.k = R0.k """
-          function: "Imply(f.R0.label)"
-          weight: "-0.3"
-          
-          input_relations: [
-            f
-            b
-          ]
-        }
-      
+function: """Imply(f.R0.label)"""
+weight: """-0.3"""
+input_relations: [
+  f
+  b
+]
+
+}
+
 deepdive.pipeline.run: ${PIPELINE}
+
 deepdive.pipeline.pipelines.inference: [
   inf_istrue_a
   inf_istrue_c
@@ -103,6 +86,7 @@ deepdive.pipeline.pipelines.inference: [
   inf_istrue_e
   inf_istrue_f
 ]
+
 deepdive.pipeline.pipelines.endtoend: [
   inf_istrue_a
   inf_istrue_c
@@ -110,3 +94,4 @@ deepdive.pipeline.pipelines.endtoend: [
   inf_istrue_e
   inf_istrue_f
 ]
+

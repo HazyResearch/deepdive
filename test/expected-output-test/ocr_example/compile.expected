@@ -1,26 +1,11 @@
-
-  deepdive.db.default {
-    driver: "org.postgresql.Driver"
-    url: "jdbc:postgresql://"${PGHOST}":"${PGPORT}"/"${DBNAME}
-    user: ${PGUSER}
-    password: ${PGPASSWORD}
-    dbname: ${DBNAME}
-    host: ${PGHOST}
-    port: ${PGPORT}
-    incremental_mode: ORIGINAL
-    }
-    
-
-
-      deepdive.schema.variables {
-        q1.label: Boolean
+deepdive.schema.variables {
+q1.label: Boolean
 q2.label: Boolean
-      }
-    
 
-      deepdive.extraction.extractors.ext_q1 {
-        cmd: """
+}
 
+deepdive.extraction.extractors.ext_q1 {
+cmd: """
 	# TODO use temporary table
 	deepdive create table "q1"
 	deepdive sql 'INSERT INTO q1 SELECT DISTINCT R0.wid, 0 AS id, R0.val AS label
@@ -28,20 +13,17 @@ q2.label: Boolean
         
           '
 	# TODO rename temporary table to replace output_relation
-	
-        """
-          output_relation: "q1"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            label1
-          ]
-      }
-    
+	"""
+output_relation: q1
+style: cmd_extractor
+input_relations: [
+  label1
+]
 
-      deepdive.extraction.extractors.ext_q2 {
-        cmd: """
+}
 
+deepdive.extraction.extractors.ext_q2 {
+cmd: """
 	# TODO use temporary table
 	deepdive create table "q2"
 	deepdive sql 'INSERT INTO q2 SELECT DISTINCT R0.wid, 0 AS id, R0.val AS label
@@ -49,58 +31,59 @@ q2.label: Boolean
         
           '
 	# TODO rename temporary table to replace output_relation
-	
-        """
-          output_relation: "q2"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            label2
-          ]
-      }
-    
+	"""
+output_relation: q2
+style: cmd_extractor
+input_relations: [
+  label2
+]
 
-        deepdive.inference.factors.inf_istrue_q1 {
-          input_query: """
+}
+
+deepdive.inference.factors.inf_istrue_q1 {
+input_query: """
           SELECT R0.id AS "q1.R0.id" , R1.feature_id AS "dd_weight_column_0" 
           FROM q1 R0, features R1
         WHERE R1.word_id = R0.wid """
-          function: "Imply(q1.R0.label)"
-          weight: "?(dd_weight_column_0)"
-          
-          input_relations: [
-            q1
-            features
-          ]
-        }
-      
+function: """Imply(q1.R0.label)"""
+weight: """?(dd_weight_column_0)"""
+input_relations: [
+  q1
+  features
+]
 
-        deepdive.inference.factors.inf_istrue_q2 {
-          input_query: """
+}
+
+deepdive.inference.factors.inf_istrue_q2 {
+input_query: """
           SELECT R0.id AS "q2.R0.id" , R1.feature_id AS "dd_weight_column_0" 
           FROM q2 R0, features R1
         WHERE R1.word_id = R0.wid """
-          function: "Imply(q2.R0.label)"
-          weight: "?(dd_weight_column_0)"
-          
-          input_relations: [
-            q2
-            features
-          ]
-        }
-      
+function: """Imply(q2.R0.label)"""
+weight: """?(dd_weight_column_0)"""
+input_relations: [
+  q2
+  features
+]
+
+}
+
 deepdive.pipeline.run: ${PIPELINE}
+
 deepdive.pipeline.pipelines.extraction: [
   ext_q1
   ext_q2
 ]
+
 deepdive.pipeline.pipelines.inference: [
   inf_istrue_q1
   inf_istrue_q2
 ]
+
 deepdive.pipeline.pipelines.endtoend: [
   ext_q1
   ext_q2
   inf_istrue_q1
   inf_istrue_q2
 ]
+

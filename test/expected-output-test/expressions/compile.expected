@@ -1,475 +1,395 @@
+deepdive.schema.variables {
 
-  deepdive.db.default {
-    driver: "org.postgresql.Driver"
-    url: "jdbc:postgresql://"${PGHOST}":"${PGPORT}"/"${DBNAME}
-    user: ${PGUSER}
-    password: ${PGPASSWORD}
-    dbname: ${DBNAME}
-    host: ${PGHOST}
-    port: ${PGPORT}
-    incremental_mode: ORIGINAL
-    }
-    
+}
 
-
-      deepdive.schema.variables {
-        
-      }
-    
-
-      deepdive.extraction.extractors.ext_E {
-        cmd: """
-
-	deepdive create view E as 'SELECT (R0.k :: INT) AS column_0
-FROM b R0
-        '
-	
-        """
-          output_relation: "E"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            b
-          ]
-      }
-    
-
-      deepdive.extraction.extractors.ext_X {
-        cmd: """
-
-	deepdive create view X as 'SELECT R0.k AS column_0
-FROM b R0, c R1
-        WHERE R1.n = R0.k '
-	
-        """
-          output_relation: "X"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            b
-            c
-          ]
-      }
-    
-
-      deepdive.extraction.extractors.ext_N {
-        cmd: """
-
-	deepdive create view N as 'SELECT R0.k AS column_0
-FROM b R0
-        WHERE EXISTS (SELECT 1 FROM c R1_0 WHERE R1_0.n = R0.k  AND R1_0.s > '\''a'\'')'
-	
-        """
-          output_relation: "N"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            b
-            c
-          ]
-      }
-    
-
-      deepdive.extraction.extractors.ext_T {
-        cmd: """
-
-	deepdive create view T as 'SELECT R0.k AS column_0
-FROM b R0 LEFT OUTER JOIN c R1_0 ON R1_0.n = R0.k  AND R1_0.s > R0.p
-        WHERE R1_0.s > R0.p'
-	
-        """
-          output_relation: "T"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            b
-            c
-          ]
-      }
-    
-
-      deepdive.extraction.extractors.ext_J {
-        cmd: """
-
-	deepdive create view J as 'SELECT R0.k AS column_0
-FROM b R0
-        WHERE ((R0.k + R0.r) = 100 OR NOT R0.k > 50)'
-	
-        """
-          output_relation: "J"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            b
-          ]
-      }
-    
-
-      deepdive.extraction.extractors.ext_U {
-        cmd: """
-
-	deepdive create view U as 'SELECT R0_0.k AS column_0
-FROM b R0_0 ON  FULL OUTER JOIN c R1_0 ON R1_0.n = R0_0.k 
-        '
-	
-        """
-          output_relation: "U"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            b
-            c
-          ]
-      }
-    
-
-      deepdive.extraction.extractors.ext_F {
-        cmd: """
-
-	deepdive create view F as 'SELECT (R0.k :: INT) + (R0.r :: INT) AS column_0
-FROM b R0
-        '
-	
-        """
-          output_relation: "F"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            b
-          ]
-      }
-    
-
-      deepdive.extraction.extractors.ext_A {
-        cmd: """
-
-	deepdive create view A as 'SELECT R0.k + (R0.r * (R0.k + R0.r)) AS column_0
-FROM b R0
-        '
-	
-        """
-          output_relation: "A"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            b
-          ]
-      }
-    
-
-      deepdive.extraction.extractors.ext_M {
-        cmd: """
-
-	deepdive create view M as 'SELECT R0.k AS column_0
-FROM b R0
-        WHERE EXISTS (SELECT 1 FROM c R1_0 WHERE R1_0.n = R0.k )'
-	
-        """
-          output_relation: "M"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            b
-            c
-          ]
-      }
-    
-
-      deepdive.extraction.extractors.ext_I {
-        cmd: """
-
-	deepdive create view I as 'SELECT R0.k AS column_0
-FROM b R0
-        WHERE ((R0.k + R0.r) = 100 OR (R0.k > 50 AND R0.r < 10))'
-	
-        """
-          output_relation: "I"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            b
-          ]
-      }
-    
-
-      deepdive.extraction.extractors.ext_G {
-        cmd: """
-
-	deepdive create view G as 'SELECT R0.k AS column_0
-FROM b R0
-        WHERE (R0.k + R0.r) = 100'
-	
-        """
-          output_relation: "G"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            b
-          ]
-      }
-    
-
-      deepdive.extraction.extractors.ext_V {
-        cmd: """
-
-	deepdive create view V as 'SELECT R0.n AS column_0
-FROM c R0, a R1
-        WHERE R1.k = R0.n '
-	
-        """
-          output_relation: "V"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            c
-            a
-          ]
-      }
-    
-
-      deepdive.extraction.extractors.ext_Q {
-        cmd: """
-
+deepdive.extraction.extractors.ext_Q {
+cmd: """
 	deepdive create view Q as 'SELECT DISTINCT ('\''test'\'' :: TEXT) AS column_0, 123 AS column_1, R0.k AS column_2, unnest(R1.q) AS column_3
 FROM a R0, b R1, c R2
         WHERE R1.k = R0.k  AND R2.s = R1.p || R1.q AND R2.n = 10 AND R2.t = '\''foo'\'' AND (R1.r > 100 OR (NOT R1.r < 20 AND R1.r < 50))'
-	
-        """
-          output_relation: "Q"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            a
-            b
-            c
-          ]
-      }
-    
+	"""
+output_relation: Q
+style: cmd_extractor
+input_relations: [
+  a
+  b
+  c
+]
 
-      deepdive.extraction.extractors.ext_L {
-        cmd: """
+}
 
-	deepdive create view L as 'SELECT DISTINCT R0.k AS column_0
-FROM b R0
-        
-LIMIT 100'
-	
-        """
-          output_relation: "L"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            b
-          ]
-      }
-    
-
-      deepdive.extraction.extractors.ext_B {
-        cmd: """
-
-	deepdive create view B as 'SELECT func(R0.k + (R0.r + R0.k)) AS column_0
-FROM b R0
-        '
-	
-        """
-          output_relation: "B"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            b
-          ]
-      }
-    
-
-      deepdive.extraction.extractors.ext_P {
-        cmd: """
-
+deepdive.extraction.extractors.ext_P {
+cmd: """
 	deepdive create view P as 'SELECT R1.p AS column_0, R1.q AS column_1, MAX(R1.r) AS column_2
 FROM a R0, b R1
         WHERE R1.k = R0.k 
         GROUP BY R1.p, R1.q'
-	
-        """
-          output_relation: "P"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            a
-            b
-          ]
-      }
-    
+	"""
+output_relation: P
+style: cmd_extractor
+input_relations: [
+  a
+  b
+]
 
-      deepdive.extraction.extractors.ext_C {
-        cmd: """
+}
 
+deepdive.extraction.extractors.ext_A {
+cmd: """
+	deepdive create view A as 'SELECT R0.k + (R0.r * (R0.k + R0.r)) AS column_0
+FROM b R0
+        '
+	"""
+output_relation: A
+style: cmd_extractor
+input_relations: [
+  b
+]
+
+}
+
+deepdive.extraction.extractors.ext_B {
+cmd: """
+	deepdive create view B as 'SELECT func(R0.k + (R0.r + R0.k)) AS column_0
+FROM b R0
+        '
+	"""
+output_relation: B
+style: cmd_extractor
+input_relations: [
+  b
+]
+
+}
+
+deepdive.extraction.extractors.ext_C {
+cmd: """
 	deepdive create view C as 'SELECT func(func(func(R0.k))) AS column_0
 FROM b R0
         '
-	
-        """
-          output_relation: "C"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            b
-          ]
-      }
-    
+	"""
+output_relation: C
+style: cmd_extractor
+input_relations: [
+  b
+]
 
-      deepdive.extraction.extractors.ext_H {
-        cmd: """
+}
 
-	deepdive create view H as 'SELECT R0.k AS column_0
-FROM b R0
-        WHERE (R0.k + R0.r) = 100 AND R0.k > 50'
-	
-        """
-          output_relation: "H"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            b
-          ]
-      }
-    
-
-      deepdive.extraction.extractors.ext_W {
-        cmd: """
-
-	deepdive create view W as 'SELECT R0.k AS column_0
-FROM a R0
-        WHERE NOT EXISTS (SELECT 1 FROM c R1_0 WHERE NOT (R1_0.n < R0.k))'
-	
-        """
-          output_relation: "W"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            a
-            c
-          ]
-      }
-    
-
-      deepdive.extraction.extractors.ext_K {
-        cmd: """
-
-	deepdive create view K as 'SELECT R0.k AS column_0
-FROM b R0
-        WHERE ((R0.k + R0.r) = 100 AND (NOT R0.k > 50 OR R0.k = 40))'
-	
-        """
-          output_relation: "K"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            b
-          ]
-      }
-    
-
-      deepdive.extraction.extractors.ext_O {
-        cmd: """
-
-	deepdive create view O as 'SELECT R0.k AS column_0
-FROM b R0
-        WHERE EXISTS (SELECT 1 FROM c R1_0, a R1_1 WHERE R1_0.n = R0.k  AND R1_1.k = R0.k )'
-	
-        """
-          output_relation: "O"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            b
-            c
-            a
-          ]
-      }
-    
-
-      deepdive.extraction.extractors.ext_D {
-        cmd: """
-
+deepdive.extraction.extractors.ext_D {
+cmd: """
 	deepdive create view D as 'SELECT func(R0.k * func2(R0.r + R0.k)) + R0.k AS column_0
 FROM b R0
         '
-	
-        """
-          output_relation: "D"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            b
-          ]
-      }
-    
+	"""
+output_relation: D
+style: cmd_extractor
+input_relations: [
+  b
+]
 
-      deepdive.extraction.extractors.ext_S {
-        cmd: """
+}
 
+deepdive.extraction.extractors.ext_E {
+cmd: """
+	deepdive create view E as 'SELECT (R0.k :: INT) AS column_0
+FROM b R0
+        '
+	"""
+output_relation: E
+style: cmd_extractor
+input_relations: [
+  b
+]
+
+}
+
+deepdive.extraction.extractors.ext_F {
+cmd: """
+	deepdive create view F as 'SELECT (R0.k :: INT) + (R0.r :: INT) AS column_0
+FROM b R0
+        '
+	"""
+output_relation: F
+style: cmd_extractor
+input_relations: [
+  b
+]
+
+}
+
+deepdive.extraction.extractors.ext_G {
+cmd: """
+	deepdive create view G as 'SELECT R0.k AS column_0
+FROM b R0
+        WHERE (R0.k + R0.r) = 100'
+	"""
+output_relation: G
+style: cmd_extractor
+input_relations: [
+  b
+]
+
+}
+
+deepdive.extraction.extractors.ext_H {
+cmd: """
+	deepdive create view H as 'SELECT R0.k AS column_0
+FROM b R0
+        WHERE (R0.k + R0.r) = 100 AND R0.k > 50'
+	"""
+output_relation: H
+style: cmd_extractor
+input_relations: [
+  b
+]
+
+}
+
+deepdive.extraction.extractors.ext_I {
+cmd: """
+	deepdive create view I as 'SELECT R0.k AS column_0
+FROM b R0
+        WHERE ((R0.k + R0.r) = 100 OR (R0.k > 50 AND R0.r < 10))'
+	"""
+output_relation: I
+style: cmd_extractor
+input_relations: [
+  b
+]
+
+}
+
+deepdive.extraction.extractors.ext_J {
+cmd: """
+	deepdive create view J as 'SELECT R0.k AS column_0
+FROM b R0
+        WHERE ((R0.k + R0.r) = 100 OR NOT R0.k > 50)'
+	"""
+output_relation: J
+style: cmd_extractor
+input_relations: [
+  b
+]
+
+}
+
+deepdive.extraction.extractors.ext_K {
+cmd: """
+	deepdive create view K as 'SELECT R0.k AS column_0
+FROM b R0
+        WHERE ((R0.k + R0.r) = 100 AND (NOT R0.k > 50 OR R0.k = 40))'
+	"""
+output_relation: K
+style: cmd_extractor
+input_relations: [
+  b
+]
+
+}
+
+deepdive.extraction.extractors.ext_L {
+cmd: """
+	deepdive create view L as 'SELECT DISTINCT R0.k AS column_0
+FROM b R0
+        
+LIMIT 100'
+	"""
+output_relation: L
+style: cmd_extractor
+input_relations: [
+  b
+]
+
+}
+
+deepdive.extraction.extractors.ext_M {
+cmd: """
+	deepdive create view M as 'SELECT R0.k AS column_0
+FROM b R0
+        WHERE EXISTS (SELECT 1 FROM c R1_0 WHERE R1_0.n = R0.k )'
+	"""
+output_relation: M
+style: cmd_extractor
+input_relations: [
+  b
+  c
+]
+
+}
+
+deepdive.extraction.extractors.ext_N {
+cmd: """
+	deepdive create view N as 'SELECT R0.k AS column_0
+FROM b R0
+        WHERE EXISTS (SELECT 1 FROM c R1_0 WHERE R1_0.n = R0.k  AND R1_0.s > '\''a'\'')'
+	"""
+output_relation: N
+style: cmd_extractor
+input_relations: [
+  b
+  c
+]
+
+}
+
+deepdive.extraction.extractors.ext_O {
+cmd: """
+	deepdive create view O as 'SELECT R0.k AS column_0
+FROM b R0
+        WHERE EXISTS (SELECT 1 FROM c R1_0, a R1_1 WHERE R1_0.n = R0.k  AND R1_1.k = R0.k )'
+	"""
+output_relation: O
+style: cmd_extractor
+input_relations: [
+  b
+  c
+  a
+]
+
+}
+
+deepdive.extraction.extractors.ext_S {
+cmd: """
 	deepdive create view S as 'SELECT R0.k AS column_0
 FROM b R0 LEFT OUTER JOIN c R1_0 ON R1_0.n = R0.k 
         '
-	
-        """
-          output_relation: "S"
-        style: "cmd_extractor"
-          
-          input_relations: [
-            b
-            c
-          ]
-      }
-    
+	"""
+output_relation: S
+style: cmd_extractor
+input_relations: [
+  b
+  c
+]
+
+}
+
+deepdive.extraction.extractors.ext_T {
+cmd: """
+	deepdive create view T as 'SELECT R0.k AS column_0
+FROM b R0 LEFT OUTER JOIN c R1_0 ON R1_0.n = R0.k  AND R1_0.s > R0.p
+        WHERE R1_0.s > R0.p'
+	"""
+output_relation: T
+style: cmd_extractor
+input_relations: [
+  b
+  c
+]
+
+}
+
+deepdive.extraction.extractors.ext_U {
+cmd: """
+	deepdive create view U as 'SELECT R0_0.k AS column_0
+FROM b R0_0 ON  FULL OUTER JOIN c R1_0 ON R1_0.n = R0_0.k 
+        '
+	"""
+output_relation: U
+style: cmd_extractor
+input_relations: [
+  b
+  c
+]
+
+}
+
+deepdive.extraction.extractors.ext_W {
+cmd: """
+	deepdive create view W as 'SELECT R0.k AS column_0
+FROM a R0
+        WHERE NOT EXISTS (SELECT 1 FROM c R1_0 WHERE NOT (R1_0.n < R0.k))'
+	"""
+output_relation: W
+style: cmd_extractor
+input_relations: [
+  a
+  c
+]
+
+}
+
+deepdive.extraction.extractors.ext_V {
+cmd: """
+	deepdive create view V as 'SELECT R0.n AS column_0
+FROM c R0, a R1
+        WHERE R1.k = R0.n '
+	"""
+output_relation: V
+style: cmd_extractor
+input_relations: [
+  c
+  a
+]
+
+}
+
+deepdive.extraction.extractors.ext_X {
+cmd: """
+	deepdive create view X as 'SELECT R0.k AS column_0
+FROM b R0, c R1
+        WHERE R1.n = R0.k '
+	"""
+output_relation: X
+style: cmd_extractor
+input_relations: [
+  b
+  c
+]
+
+}
+
 deepdive.pipeline.run: ${PIPELINE}
+
 deepdive.pipeline.pipelines.extraction: [
-  ext_M
   ext_Q
-  ext_B
-  ext_U
-  ext_F
-  ext_I
-  ext_N
-  ext_T
-  ext_A
   ext_P
-  ext_K
-  ext_E
-  ext_W
-  ext_J
-  ext_D
-  ext_O
-  ext_L
-  ext_G
-  ext_X
-  ext_S
+  ext_A
+  ext_B
   ext_C
-  ext_V
+  ext_D
+  ext_E
+  ext_F
+  ext_G
   ext_H
+  ext_I
+  ext_J
+  ext_K
+  ext_L
+  ext_M
+  ext_N
+  ext_O
+  ext_S
+  ext_T
+  ext_U
+  ext_W
+  ext_V
+  ext_X
 ]
+
 deepdive.pipeline.pipelines.endtoend: [
-  ext_M
   ext_Q
-  ext_B
-  ext_U
-  ext_F
-  ext_I
-  ext_N
-  ext_T
-  ext_A
   ext_P
-  ext_K
-  ext_E
-  ext_W
-  ext_J
-  ext_D
-  ext_O
-  ext_L
-  ext_G
-  ext_X
-  ext_S
+  ext_A
+  ext_B
   ext_C
-  ext_V
+  ext_D
+  ext_E
+  ext_F
+  ext_G
   ext_H
+  ext_I
+  ext_J
+  ext_K
+  ext_L
+  ext_M
+  ext_N
+  ext_O
+  ext_S
+  ext_T
+  ext_U
+  ext_W
+  ext_V
+  ext_X
 ]
+
