@@ -15,10 +15,6 @@
 #   done
 ##
 
-sched_status() {
-  tracejob -q $1 | grep -o Exit_status=[0-9]*$ | sed 's/Exit_status=//g'
-}
-
 STATUSES=""
 # different processing paths if more than one process
 for i in `seq 0 $((NUM_PROCESSES - 1))`; do

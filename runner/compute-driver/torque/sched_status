@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+tracejob -q $1 | grep -o Exit_status=[0-9]*$ | sed 's/Exit_status=//g'
