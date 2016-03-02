@@ -207,6 +207,7 @@ while [[ "$STATUS" == incomplete ]]; do
   echo "Waiting for $poll_period_secs seconds..."
   sleep $poll_period_secs
 
+  set -x
   # Efficient way to compute the status as it lifts the burden of checking each
   # job in the submissio node. 
   export JOB_ID 
