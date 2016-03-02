@@ -19,7 +19,7 @@ include "util";
         { variableName         : $relationName
         , variablesTable       : $relationName
         , variablesIdsTable    : "\(deepdivePrefixForVariablesIdsTable)\($relationName)"
-        , variablesKeyColumns  : [ $deepdive.schema.relations[$relationName].columns | to_entries?[] ]
+        , variablesKeyColumns  : [ [ $deepdive.schema.relations[$relationName].columns | to_entries[]? ]
             | [.[] | select([.value.annotations[]? | .name == "key"] | any)] as $keyColumns
             | if $keyColumns | length == 0
             then .  # all user columns are considered keys if none were annotated as @key
