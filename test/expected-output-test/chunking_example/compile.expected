@@ -10,7 +10,7 @@ deepdive.extraction.extractors.ext_chunk {
 cmd: """
 	# TODO use temporary table
 	deepdive create table "chunk"
-	deepdive sql 'INSERT INTO chunk SELECT DISTINCT R0.sent_id, R0.word_id, R1.tag, 0 AS id, 
+	deepdive sql 'INSERT INTO chunk SELECT DISTINCT R0.sent_id, R0.word_id, R1.tag, 
 CASE WHEN R1.tag = R0.tag THEN true
      ELSE NULL
 END AS label

@@ -8,7 +8,7 @@ deepdive.extraction.extractors.ext_q1 {
 cmd: """
 	# TODO use temporary table
 	deepdive create table "q1"
-	deepdive sql 'INSERT INTO q1 SELECT DISTINCT R0.wid, 0 AS id, R0.val AS label
+	deepdive sql 'INSERT INTO q1 SELECT DISTINCT R0.wid, R0.val AS label
           FROM label1 R0
         
           '
@@ -26,7 +26,7 @@ deepdive.extraction.extractors.ext_q2 {
 cmd: """
 	# TODO use temporary table
 	deepdive create table "q2"
-	deepdive sql 'INSERT INTO q2 SELECT DISTINCT R0.wid, 0 AS id, R0.val AS label
+	deepdive sql 'INSERT INTO q2 SELECT DISTINCT R0.wid, R0.val AS label
           FROM label2 R0
         
           '

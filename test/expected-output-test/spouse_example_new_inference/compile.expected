@@ -54,7 +54,7 @@ deepdive.extraction.extractors.ext_has_spouse {
 cmd: """
 	# TODO use temporary table
 	deepdive create table "has_spouse"
-	deepdive sql 'INSERT INTO has_spouse SELECT DISTINCT R0.relation_id, 0 AS id, R0.is_true AS label
+	deepdive sql 'INSERT INTO has_spouse SELECT DISTINCT R0.relation_id, R0.is_true AS label
           FROM has_spouse_candidates R0
         
           '

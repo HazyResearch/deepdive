@@ -7,7 +7,7 @@ deepdive.extraction.extractors.ext_q {
 cmd: """
 	# TODO use temporary table
 	deepdive create table "q"
-	deepdive sql 'INSERT INTO q SELECT DISTINCT R0.x, 0 AS id, 
+	deepdive sql 'INSERT INTO q SELECT DISTINCT R0.x, 
 CASE WHEN R0.l > 0 THEN true
      WHEN R0.l < 0 THEN false
      ELSE NULL

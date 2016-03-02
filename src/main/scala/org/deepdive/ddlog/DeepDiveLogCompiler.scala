@@ -420,7 +420,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
           if (stmt.q.bodies.length > 1) sys.error(s"Scoping rule does not allow disjunction.\n")
           val headStr = qc.generateSQLHead(NoAlias)
           val labelCol = qc.compileExpr(stmt.supervision.get)
-          s"""SELECT DISTINCT ${ headStr }, 0 AS id, ${labelCol} AS label
+          s"""SELECT DISTINCT ${ headStr }, ${labelCol} AS label
           ${ qc.generateSQLBody(cqBody) }
           """
         } else {
