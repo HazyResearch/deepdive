@@ -70,11 +70,14 @@ addons:
     - libnuma-dev
     - gcc-4.8
     - g++-4.8
+      # for ddlog
+    - oracle-java8-installer
       # for mindbender
     - ed
 
 install:
 #  - make depends # XXX does not work on container-based infra
+  - jdk_switcher use oraclejdk8
   - export CXX="g++-4.8" CC="gcc-4.8" # necessary for building sampler
   - make test-build
 
