@@ -124,10 +124,13 @@ def withRedefinitionsWithJoinsForIdColumns:
 
         RANGE_BEGIN=0 \\
         partition_id_range \($deepdive.schema.variables_ | map(.variablesIdsTable | @sh) | join(" ")) | {
+            # variable names
+            set -- \($deepdive.schema.variables_ | map(.variableName | @sh) | join(" "))
             # record the base
             variableCountTotal=0
             while read table begin excludeEnd; do
-                varPath=\"$DEEPDIVE_GROUNDING_DIR\"/variable/${table}
+                varName=$1; shift
+                varPath=\"$DEEPDIVE_GROUNDING_DIR\"/variable/${varName}
                 mkdir -p \"$varPath\"
                 cd \"$varPath\"
                 echo $begin                      >id_begin
@@ -392,9 +395,11 @@ def withRedefinitionsWithJoinsForIdColumns:
         # partition the id range for weights
         RANGE_BEGIN=0 RANGE_STEP=1 \\
         partition_id_range \([ $deepdive.inference.factors_[] | "\(.weightsTable | @sh)" ] | join(" ")) | {
+            # factor names
+            set -- \($deepdive.inference.factors_ | map(.factorName | @sh) | join(" "))
             weightsCountTotal=0
             while read table begin excludeEnd; do
-                factor=${table#\(deepdivePrefixForWeightsTable | @sh)}
+                factor=$1; shift
                 facPath=\"$DEEPDIVE_GROUNDING_DIR\"/factor/${factor}
                 mkdir -p \"$facPath\"
                 cd \"$facPath\"
