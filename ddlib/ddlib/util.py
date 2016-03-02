@@ -60,22 +60,22 @@ def parse_pgtsv_element(s, t, sep='|^|', sep2='|~|', d=0):
       s_orig = s
       s = s[1:-1] # to strip curly braces
       def unescapeTSVBackslashes(matches):
-	c = matches.group(1)
-	return escapeCodeToSpecial[c] if c in escapeCodeToSpecial else c
+        c = matches.group(1)
+        return escapeCodeToSpecial[c] if c in escapeCodeToSpecial else c
       s = re.sub(r'\\(.)', unescapeTSVBackslashes, s)
       s = re.sub(r'\\(.)', lambda(m): '""' if m.group(1) == '"' else m.group(1), s) # XXX quotes and backslashes in arrays are escaped another time
       values = []
       v = None
       print >>sys.stderr, "============="
       while len(s) > 0:
-	if s[0] == ',':  # found the end of a value
+        if s[0] == ',':  # found the end of a value
           print >>sys.stderr, len(v), v is None, v
           print >>sys.stderr, ">>",
           print >>sys.stderr, s
           values.append(v)
           v = None
           s = s[1:]
-	elif s[0] == '"': # found a quote
+        elif s[0] == '"': # found a quote
           # TODO is_quoted = True and error checking if quoting mixed
           # e.g.: 1,this"is an error",2,3
           if v is None:  # this is a new value
@@ -83,7 +83,7 @@ def parse_pgtsv_element(s, t, sep='|^|', sep2='|~|', d=0):
           else:  # this an escaped quote, append to the current value
             v += '"'
           # find the other end of the quote and consume
-	  m = re.match(r'^"([^"]*)"', s)
+          m = re.match(r'^"([^"]*)"', s)
           if m:
             v += m.group(1)
             s = s[len(m.group(0)):]

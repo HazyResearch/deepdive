@@ -8,7 +8,7 @@ setup() {
     db-execute "SELECT 1" &>/dev/null || db-init
 }
 
-# 
+
 TSVHeader=                         TSV=
 TSVHeader+=$'\t''i'                TSV+=$'\t''123'
 TSVHeader+=$'\t''float'            TSV+=$'\t''45.678'
@@ -45,3 +45,4 @@ NastyTSVHeader=$TSVHeader NastyTSV=$TSV
 @test "ddlib.util (@tsv_extractor and @returns) works against nasty input" {
     diff -u <(echo "$NastyTSV" | tr '\t' '\n')  <(deepdive env python "$BATS_TEST_DIRNAME"/identity.py <<<"$NastyTSV" | tr '\t' '\n')
 }
+
