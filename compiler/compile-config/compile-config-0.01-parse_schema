@@ -19,14 +19,14 @@ include "util";
         { variableName         : $relationName
         , variablesTable       : $relationName
         , variablesIdsTable    : "\(deepdivePrefixForVariablesIdsTable)\($relationName)"
-        , variablesKeyColumns  : ($deepdive.schema.relations[$relationName].columns | to_entries
+        , variablesKeyColumns  : [ $deepdive.schema.relations[$relationName].columns | to_entries?[] ]
             | [.[] | select([.value.annotations[]? | .name == "key"] | any)] as $keyColumns
             | if $keyColumns | length == 0
             then .  # all user columns are considered keys if none were annotated as @key
             else $keyColumns  # or use only the key columns to find distinct variables
             end
             | map(.key)
-            )
+            ]
         , variables : $columnName # FIXME remove this
         , variablesLabelColumn : $columnName
         , variableType : ($variableType | trimWhitespace | ascii_downcase
