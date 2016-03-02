@@ -23,6 +23,9 @@ v14 = "text[]",
 v15 = "text[]",
 v16 = "text[]",
 v17 = "text[]",
+v18 = "text[]",
+v19 = "text[]",
+v20 = "text[]",
 :[])
 
 def identity_func(
@@ -45,10 +48,13 @@ v14 = "text[]",
 v15 = "text[]",
 v16 = "text[]",
 v17 = "text[]",
+v18 = "text[]",
+v19 = "text[]",
+v20 = "text[]",
  ):
  import sys
- for i, x in enumerate([v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17]):
+ for i, x in enumerate([v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20]):
   print >>sys.stderr, "v%d =\t" % i,
   print >>sys.stderr, x
- yield [v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17]
+ yield [v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20]
 

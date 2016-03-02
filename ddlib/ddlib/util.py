@@ -2,13 +2,21 @@ from collections import namedtuple,OrderedDict
 import re
 import sys
 from inspect import isgeneratorfunction,getargspec
-import csv
 from StringIO import StringIO
 
 def print_error(err_string):
   """Function to write to stderr"""
   sys.stderr.write("ERROR[UDF]: " + str(err_string) + "\n")
 
+escapeCodeToSpecial = {
+  '\\': '\\',
+  'b': '\b',
+  'f': '\f',
+  'r': '\r',
+  't': '\t',
+  'n': '\n',
+}
+specialToEscapeCode = {v: k for k, v in escapeCodeToSpecial.items()}
 
 BOOL_PARSER = {
   't' : True,
@@ -18,7 +26,7 @@ BOOL_PARSER = {
 }
 
 TYPE_PARSERS = {
-  'text' : lambda x : str(x.replace('\n', ' ')),
+  'text' : lambda x : str(x),
   'int' : lambda x : int(x.strip()),
   'float' : lambda x : float(x.strip()),
   'boolean' : lambda x : BOOL_PARSER(x.lower().strip())
@@ -30,33 +38,71 @@ def parse_pgtsv_element(s, t, sep='|^|', sep2='|~|', d=0):
   Parse an element in psql-compatible tsv format, i.e. {-format arrays
   based on provided type and type-parser dictionary
   """
-  # Quoting only will occur within a psql array with strings
-  quoted = (len(s) > 1 and s[0] == '"' and s[-1] == '"')
-  if quoted and d > 0:
-    if t == 'text':
-      s = s[1:-1]
-    else:
-      raise Exception("Type mismatch with quoted array element:\n%s" % s)
-  elif quoted and t != 'text':
-    raise Exception("Type mismatch with quoted array element:\n%s" % s)
+  if s is None:
+    return s
 
-  # Interpret nulls correctly according to postgres convention
-  # Note for arrays: {,} --> NULLS, {"",""} --> empty strings
-  if s == '\\N':
-    return None
-  elif len(s) == 0 and (t != 'text' or (d > 0 and not quoted)):
+  if d > 0:
+    # Quoting only will occur within a psql array with strings
+    quoted = (len(s) > 1 and s[0] == '"' and s[-1] == '"')
+    if quoted:
+      if t == 'text':
+        s = s[1:-1]
+      else:
+        raise Exception("Type mismatch with quoted array element:\n%s" % s)
+
+  if s == '\\N' and d == 0:
+    # Interpret nulls correctly according to postgres convention
+    # Note for arrays: {,} --> NULLS, {"",""} --> empty strings
     return None
 
-  # Handle lists recursively
-  elif '[]' in t:
+  elif '[]' in t: # Handle lists recursively
     if s[0] == '{' and s[-1] == '}':
-      split = list(csv.reader(StringIO(s[1:-1])))[0]
+      s_orig = s
+      s = s[1:-1] # to strip curly braces
+      def unescapeTSVBackslashes(matches):
+	c = matches.group(1)
+	return escapeCodeToSpecial[c] if c in escapeCodeToSpecial else c
+      s = re.sub(r'\\(.)', unescapeTSVBackslashes, s)
+      s = re.sub(r'\\(.)', lambda(m): '""' if m.group(1) == '"' else m.group(1), s) # XXX quotes and backslashes in arrays are escaped another time
+      values = []
+      v = None
+      print >>sys.stderr, "============="
+      while len(s) > 0:
+	if s[0] == ',':  # found the end of a value
+          print >>sys.stderr, len(v), v is None, v
+          print >>sys.stderr, ">>",
+          print >>sys.stderr, s
+          values.append(v)
+          v = None
+          s = s[1:]
+	elif s[0] == '"': # found a quote
+          # TODO is_quoted = True and error checking if quoting mixed
+          # e.g.: 1,this"is an error",2,3
+          if v is None:  # this is a new value
+            v = ""
+          else:  # this an escaped quote, append to the current value
+            v += '"'
+          # find the other end of the quote and consume
+	  m = re.match(r'^"([^"]*)"', s)
+          if m:
+            v += m.group(1)
+            s = s[len(m.group(0)):]
+          else:
+            raise Exception("Unterminated quote in '%s'" % s_orig)
+        else:
+          m = re.match(r'^([^,]*)', s)
+          if m: # find the next comma to consume up to it
+            v = m.group(1)
+          else: # or consume the rest of the string as the value
+            v = s
+          s = s[len(v):]
+      values.append(v)
+      split = values
     else:
       split = s.split(sep)
     return [parse_pgtsv_element(ss, t[:-2], sep=sep2, d=d+1) for ss in split]
 
-  # Else parse using parser
-  else:
+  else: # parse correct value using the parser corresponding to the type
     try:
       parser = TYPE_PARSERS[t]
     except KeyError:
@@ -135,10 +181,15 @@ def print_pgtsv_element(x, n, t, d=0):
     ))
   x = str(x)
   if d > 0 and t == 'text':
-    if re.search('[^a-zA-Z0-9_.\[\]()]', x) or x in ["NULL", "null"]:
-      return '"%s"' % x.replace('"', '\\"')
-    else:
-      return x
+    def escapeWithTSVBackslashes(x):
+      return re.sub(r'[\b\f\n\r\t\\]', lambda(m): "\\" + specialToEscapeCode[m.group(0)], x)
+    if re.search(r'^[a-zA-Z0-9_.\x1c\x1d\x1e\x1f\x7f\[\]()]+$|^[\b]$', x) \
+        and x not in ["", "NULL", "null"]:
+      # we don't need to quote the value in some special cases
+      return escapeWithTSVBackslashes(x)
+    else: # otherwise, surround value with quotes
+      x = re.sub(r'[\\"]', lambda(m): '\\' +  m.group(0), x) # XXX quotes and backslashes in arrays are escaped another time
+      return '"%s"' % escapeWithTSVBackslashes(x) # then, the TSV escaping
   else:
     return x
 
