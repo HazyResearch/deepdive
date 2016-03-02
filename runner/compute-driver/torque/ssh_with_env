@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# ssh_with_env -- Executes a command through SSH while passing specified environment variables
+# > ssh_with_env [KEY=VALUE... --] REST
+#
+# Assumes SSH_INFO exists in the environment. 
+#
+# Example command:
+#   ssh_with_env NUM_PROCESSES=10 -- "deepdive compute remote-status"
+##
+set -euo pipefail
+
+join_expand() { 
+  for k in "$@"; do
+    eval "echo -n \"$k=\$$k \""
+  done
+}
+
+ENV_VARS=()
+while [[ $# -gt 0 && $1 != "--" ]]; do
+  ENV_VARS+=("$1"); shift
+done
+[[ ${1:-} = "--" ]] || usage "$0" "Missing -- before COMMAND"
+shift
+COMMAND="$@"
+
+echo ssh $SSH_INFO "$(join_expand ${ENV_VARS[@]})" "$(escape4sh $COMMAND)"

@@ -209,9 +209,10 @@ while [[ "$STATUS" == incomplete ]]; do
 
   # Efficient way to compute the status as it lifts the burden of checking each
   # job in the submissio node. 
-  export JOB_ID NUM_PROCESSES=$num_processes
-  export REMOTE_IN_DIR REMOTE_OUT_DIR REMOTE_OUT_DIR 
-  JOB_STATUSES=$(ssh_with_env "deepdive compute remote-status")
+  export JOB_ID 
+  export NUM_PROCESSES=$num_processes
+  export REMOTE_OUT_DIR
+  JOB_STATUSES=$(ssh_with_env JOB_ID NUM_PROCESSES REMOTE_OUT_DIR -- "deepdive compute remote-status")
   
   # Funny way to count number of jobs. 
   NUM_COMPLETED=$(grep -o "C" <<< "$JOB_STATUSES" | grep -c "C")
