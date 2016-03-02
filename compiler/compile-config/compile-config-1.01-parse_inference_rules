@@ -102,11 +102,6 @@ include "util";
         # TODO check if all .variables type are categorical for multinomial function
         )
 
-    # XXX set up an exploded table to dump for multinomial factors
-    | .weightsTableForDumping =
-        if .function_.name != "multinomial" then .weightsTable
-        else "\(deepdivePrefixForMultinomialWeightsTable)\($factorName)"
-        end
 ]
 
 # create a map to make it easy to access a factor by its name

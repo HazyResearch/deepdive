@@ -30,7 +30,7 @@ Command=$1; shift
 case $Command in
     # shorthands for repeating groups of processes related to the model
     ground)
-        exec deepdive-redo process/grounding/{variable_id_partition,combine_factorgraph}
+        exec deepdive-redo process/grounding/{from_grounding,combine_factorgraph}
         ;;
 
     learn)

@@ -8,10 +8,8 @@ def generate_create_table_sql(schema, table):
   columns_json = schema["relations"][table]["columns"]
   # variable relation
   if "variable_type" in schema["relations"][table]:
-    columns = range(len(columns_json) + 2)
-    columns[-2] = "id bigint"
-    label_type = "boolean" if schema["relations"][table]["variable_type"] == "boolean" else "int"
-    columns[-1] = "label " + label_type
+    columns = range(len(columns_json) + 1)
+    columns[-1] = "label BOOLEAN"  # FIXME to dd_label or so to avoid name collision
   else:
     columns = range(len(columns_json))
   for k, v in columns_json.iteritems():

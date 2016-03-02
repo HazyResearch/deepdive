@@ -18,11 +18,97 @@ def factorWeightDescriptionSqlExpr:
               ELSE \(asSqlIdent) || ''  -- XXX CAST(... AS TEXT) unsupported by MySQL
           END"
       )
-    ] | join(" ||\("-" | asSqlLiteral)|| ");
+    ] | join(" ||\("-" | asSqlLiteral)|| ")
+    ;
+
+# generate a SQL CTE for redefining user's variable table names to have id columns with joins
+# necessary for .deepdive.inference.factors.*.input_query as well as .deepdive.calibration.holdout_query
+def withRedefinitionsWithJoinsForIdColumns:
+    if length > 0 then "WITH \(
+        [ .[]
+        | "\(.variablesTable | asSqlIdent) AS (\(
+            { SELECT:
+                [ { alias: deepdiveVariableIdColumn, table: "i", column: "id" }
+                , ( .variablesKeyColumns[], .variablesCategoryColumns[]
+                | { alias: ., table: "v", column: . } )
+                ]
+            , FROM: { alias: "v", table: .variablesTable }
+            , JOIN:
+                [ { LEFT_OUTER: { alias: "i", table: .variablesIdsTable }
+                  , ON: { and: [ .variablesKeyColumns[]
+                               | { eq: [ { table: "i", column: "_\(.)" }
+                                       , { table: "v", column: . } ]
+                                 } ] }
+                  } ]
+            } | asSql))"
+        ] | join("\n   , "))"
+    else "" end
+    ;
 
 .deepdive_ as $deepdive
 
 ###############################################################################
+
+## variable/*/distinct
+# Each internal variable table holding distinct variables should be
+# materialized first for correct id assignment, etc.
+| .deepdive_.execution.processes += merge($deepdive.schema.variables_[] | {
+    "process/grounding/variable/\(.variableName)/distinct": {
+        dependencies_: [
+            "process/grounding/from_grounding",
+            "data/\(.variablesTable)"
+        ],
+        style: "cmd_extractor", cmd: "
+        : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
+
+        \(if .variableType == "categorical" then "
+        # generate a table holding all distinct categories for categorical variables
+        # so a unique id can be assigned to each of them
+        deepdive create table \(.variablesCategoriesTable | @sh) as \(
+        { SELECT:
+            [ (.variablesCategoryColumns[]
+            | { alias: "_\(.)", table: "v", column: . })
+            , { alias: "count", expr: "COUNT(1)"             }
+            , { alias: "id"   , expr: "CAST(NULL AS BIGINT)" }
+            ]
+        , FROM: [ { alias: "v", table: .variablesTable } ]
+        , GROUP_BY: [ .variablesCategoryColumns[] | { column: "_\(.)" } ]
+        } | asSql | @sh)
+        # assign unique id to every distinct category
+        deepdive db assign_sequential_id \(.variablesCategoriesTable | @sh) id 0
+        " else "" end)
+
+        # generate a table holding all distinct variables identified by @key columns
+        # so a unique id can be assigned to each of them
+        deepdive create table \(.variablesIdsTable | @sh) as \(
+        { SELECT:
+            [ (.variablesKeyColumns[]
+            | { alias: "_\(.)", table: "v", column: . })
+            , { alias: "label", expr:
+                # boolean variables just take one label, so aggregate with AND
+                ( if .variableType == "boolean" then "EVERY(label)"
+                # categorical variables should point to the category id that has a true label column
+                else "MIN(CASE WHEN \"v\".\(deepdiveVariableLabelColumn | asSqlIdent) THEN \"c\".\"id\" ELSE NULL END)"
+                end) }
+            , { alias: "count", expr: "COUNT(1)" }
+            , { alias: "id"   , expr: "CAST(NULL AS BIGINT)" }
+            ]
+        , FROM: [ { alias: "v", table: .variablesTable } ]
+        , JOIN:
+            ( if .variableType == "boolean" then null else
+                # categorical variables need a join with the categories table
+                [ { LEFT_OUTER: { alias: "c", table: .variablesCategoriesTable }
+                  , ON: { and: [ .variablesCategoryColumns[]
+                               | { eq: [ { table: "c", column: "_\(.)" }
+                                       , { table: "v", column: . } ]
+                                 } ] }
+                  } ]
+            end)
+        , GROUP_BY: [ .variablesKeyColumns[] | { column: . } ]
+        } | asSql | @sh)
+        "
+    }
+})
 
 ## variable_id_partition
 # Grounding begins by counting the variables to partition a range of
@@ -30,14 +116,14 @@ def factorWeightDescriptionSqlExpr:
 | .deepdive_.execution.processes += {
     "process/grounding/variable_id_partition": {
         dependencies_: [
-            # id partition depends on all variable tables
-            $deepdive.schema.variables_[] | "data/\(.variablesTable)"
+            # id partition depends on all distinct variables to be first identified
+            $deepdive.schema.variables_[] | "process/grounding/variable/\(.variableName)/distinct"
         ],
         style: "cmd_extractor", cmd: "
         : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
 
         RANGE_BEGIN=0 \\
-        partition_id_range \($deepdive.schema.variables_ | map(.variablesTable | @sh) | join(" ")) | {
+        partition_id_range \($deepdive.schema.variables_ | map(.variablesIdsTable | @sh) | join(" ")) | {
             # record the base
             variableCountTotal=0
             while read table begin excludeEnd; do
@@ -67,24 +153,12 @@ def factorWeightDescriptionSqlExpr:
         ],
         style: "cmd_extractor", cmd: "
         : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
-        table=\(.variablesTable | @sh)
 
-        cd \"$DEEPDIVE_GROUNDING_DIR\"/variable/${table}
+        cd \"$DEEPDIVE_GROUNDING_DIR\"/variable/\(.variableName | @sh)
         baseId=$(cat id_begin)
 
-        # assign id to all rows according to the paritition
-        deepdive db assign_sequential_id $table \(deepdiveVariableIdColumn | @sh) $baseId
-
-        \(
-        if .variableType == "categorical" then
-            "
-            # generate a table holding all categories for categorical variables
-            # that can be cross joined with weights tables for factors over
-            # those variables
-            deepdive db generate_series \(.variableCategoriesTable | @sh) category 0 \(.variableCardinality - 1 | tostring)
-            "
-        else "" end
-        )
+        # assign id to all distinct variables according to the paritition
+        deepdive db assign_sequential_id \(.variablesIdsTable | @sh) \(deepdiveVariableIdColumn | @sh) $baseId
         "
     }
 })
@@ -110,20 +184,18 @@ def factorWeightDescriptionSqlExpr:
             variable_id:BIGINT:'PRIMARY KEY' \\
             #
         \([ if $deepdive.calibration.holdout_query then
-                # run user holdout query if configured
-                $deepdive.calibration.holdout_query
+            # run user holdout query if configured
+            "\($deepdive.schema.variables_
+                | withRedefinitionsWithJoinsForIdColumns)
+            \($deepdive.calibration.holdout_query)"
           else
             # otherwise, randomly select from evidence variables of each variable table
             $deepdive.schema.variables_[] | "
                 INSERT INTO \(deepdiveGlobalHoldoutTable | asSqlIdent) \(
-                { SELECT:
-                    [ { column: deepdiveVariableIdColumn }
-                    ]
-                , FROM:
-                    [ { table: .variablesTable }
-                    ]
+                { SELECT: [ { column: deepdiveVariableIdColumn } ]
+                , FROM: [ { table: .variablesIdsTable } ]
                 , WHERE:
-                    [ { isntNull: { column: .variablesLabelColumn } }
+                    [ { isntNull: { column: "label" } }
                     , { lt: [ { expr: "RANDOM()" }
                             , { expr: $deepdive.calibration.holdout_fraction }
                             ]
@@ -134,7 +206,9 @@ def factorWeightDescriptionSqlExpr:
           end
         , if $deepdive.calibration.observation_query then
             # run user holdout query if configured
-            $deepdive.calibration.holdout_query
+            "\($deepdive.schema.variables_
+                | withRedefinitionsWithJoinsForIdColumns)
+            \($deepdive.calibration.holdout_query)"
           else empty
           end
         ] | map("deepdive sql \(@sh)") | join("\n"))
@@ -153,7 +227,6 @@ def factorWeightDescriptionSqlExpr:
         ],
         style: "cmd_extractor", cmd: "
         : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
-        table=\(.variablesTable | @sh)
 
         varPath=\"$DEEPDIVE_GROUNDING_DIR\"/variable/\(.variableName | @sh)
         mkdir -p \"$varPath\"
@@ -185,13 +258,13 @@ def factorWeightDescriptionSqlExpr:
                     { SELECT:
                         [ { alias: "id", column: deepdiveVariableIdColumn }
                         , { alias: "variable_role", expr:
-                              "CASE WHEN               observation.variable_id IS NOT NULL
-                                     AND variables.\(.variablesLabelColumn | asSqlIdent) IS NOT NULL THEN 2
-                                    WHEN               holdout.variable_id IS NOT NULL THEN 0
-                                    WHEN variables.\(.variablesLabelColumn | asSqlIdent) IS NOT NULL THEN 1
-                                                                                       ELSE 0
+                              "CASE WHEN observation.variable_id IS NOT NULL
+                                     AND         variables.label IS NOT NULL THEN 2
+                                    WHEN     holdout.variable_id IS NOT NULL THEN 0
+                                    WHEN         variables.label IS NOT NULL THEN 1
+                                                                             ELSE 0
                                 END" }
-                        , { alias: "label", table: "variables", column: .variablesLabelColumn }
+                        , { alias: "label", table: "variables", column: "label" }
                         , { alias: "variable_type", expr: (
                                 if   .variableType == "boolean"     then 0
                                 elif .variableType == "categorical" then 1
@@ -199,11 +272,14 @@ def factorWeightDescriptionSqlExpr:
                                 end
                             ) }
                         , { alias: "cardinality", expr: (
-                                .variableCardinality
+                                if   .variableType == "boolean"     then 2
+                                elif .variableType == "categorical" then "count" # TODO count the number of actual distinct values by .variablesCategoryColumns for this row
+                                else error("Internal error: Unknown variableType: \(.variableType)")
+                                end
                             ) }
                         ]
                     , FROM:
-                        [ { alias: "variables", table: .variablesTable }
+                        [ { alias: "variables", table: .variablesIdsTable }
                         ]
                     , JOIN:
                         [ { LEFT_OUTER:
@@ -240,21 +316,26 @@ def factorWeightDescriptionSqlExpr:
 
 })
 
+# TODO dump domains file for categorical variables
+
 
 ###############################################################################
 
 ## factor/*/materialize
 # Each inference rule's SQL query is run to materialize the factors and the
 # distinct weights used in them.
-| .deepdive_.execution.processes += merge($deepdive.inference.factors_[] | {
+| .deepdive_.execution.processes += merge($deepdive.inference.factors_[]
+    | [ .input_[]
+      | ltrimstr("data/")
+      | $deepdive.schema.variables_byName[.]
+      | select(type != "null")
+      ] as $schemaVariablesForThisFactor
+    | {
     # add a process for grounding factors
     "process/grounding/factor/\(.factorName)/materialize": {
         # materializing each factor requires the dependent variables to have their id assigned
         dependencies_: [
-            .input_[]
-            | ltrimstr("data/")
-            | $deepdive.schema.variables_byName[.]
-            | select(type != "null")
+            $schemaVariablesForThisFactor[]
             # the involved variables must have their ids all assigned
             | "process/grounding/variable/\(.variableName)/assign_id"?
         ],
@@ -266,7 +347,11 @@ def factorWeightDescriptionSqlExpr:
             : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
 
             # materialize factors using user input_query that pulls in assigned ids to involved variables
-            deepdive create table \(.factorsTable | @sh) as \(.input_query | @sh)
+            deepdive create table \(.factorsTable | @sh) as \(
+            # allow .input_query to refer to the assigned variable ids by redefining the variable table names with SQL CTE
+            "\($schemaVariablesForThisFactor |
+                withRedefinitionsWithJoinsForIdColumns)
+            \(.input_query)" | @sh)
 
             # find distinct weights for the factors into a separate table
             deepdive create table \(.weightsTable | @sh) as \(
@@ -306,13 +391,7 @@ def factorWeightDescriptionSqlExpr:
 
         # partition the id range for weights
         RANGE_BEGIN=0 RANGE_STEP=1 \\
-        partition_id_range \([ $deepdive.inference.factors_[] | "\(.weightsTable | @sh)\(
-                if .function_.name != "multinomial" then ""
-                else ":$(( \([ .function_.variables[]
-                             | .schema.variableCardinality
-                             | tostring ] | join("*")) ))"
-                    # TODO switch to bc to handle arbitrarily large numbers
-                end)" ] | join(" ")) | {
+        partition_id_range \([ $deepdive.inference.factors_[] | "\(.weightsTable | @sh)" ] | join(" ")) | {
             weightsCountTotal=0
             while read table begin excludeEnd; do
                 factor=${table#\(deepdivePrefixForWeightsTable | @sh)}
@@ -358,11 +437,12 @@ def factorWeightDescriptionSqlExpr:
                         # TODO maybe '1' is a better one for boolean variables?
                         { alias: "categories", expr: "NULL" }
                     else # multinomial factor weights table have a "categories" column
+                          # FIXME this no longer exists
                         { column: "categories" }
                     end
                     ]
                 , FROM:
-                    [ { table: .weightsTableForDumping }
+                    [ { table: .weightsTable }
                     ]
                 } | asSql | "(\(.))"
             ] | join("\nUNION ALL\n") | @sh)
@@ -383,55 +463,9 @@ def factorWeightDescriptionSqlExpr:
             cd \"$DEEPDIVE_GROUNDING_DIR\"/factor/\(.factorName | @sh)
             baseId=$(cat weights_id_begin)
             inc=1
-            \( if .function_.name != "multinomial" then ""
-            else
-                "# since this is a multinomial factor, each factor will have as many weights as the product of cardinalities of all involved variables
-                \( [ .function_.variables[] |
-                    # TODO switch to bc to handle arbitrarily large numbers
-                    "let inc*=\(.schema.variableCardinality | tostring)  # cardinality of variable \(.name)"
-                ] | join("\n") )"
-            end)
 
             # assign weight ids according to the partition
             deepdive db assign_sequential_id \(.weightsTable | @sh) id $baseId $inc
-
-            \( if .function_.name != "multinomial" then "" else "
-            # set up an exploded weights view that cross joins the base weights table with the categories of categorical variables
-            deepdive create view \(.weightsTableForDumping | @sh) as \(
-                { SELECT:
-                    [ ( .weight_.params[]
-                    | { column: .          , table: "weights" } )
-                    , { column: "isfixed"  , table: "weights" }
-                    , { column: "initvalue", table: "weights" }
-                    # fill in the ids of weights for every combination of categories
-                    , { alias: "id", expr: "\"weights\".\"id\" + (\(
-                            def offsetExpr(i): .[i].schema as $v |
-                                if i == 0 then "" # except the very first variable
-                                else # the offset for the previous ones are multiplied by this one's cardinality
-                                    "(\(offsetExpr(i-1)))*\($v.variableCardinality | tostring) + "
-                                end
-                                # and current variable's category number is added as the least significant digit
-                                + "\"c\(i)\".\"category\""
-                                ;
-                            .function_.variables | offsetExpr(length-1)
-                        ))" }
-                    # generate a category combination identifier
-                    , { alias: "categories", expr: (
-                        .function_.variables | if length > 1 then
-                            [ .[] | "\"c\(.ordinal)\".\"category\"" ] | join(" || ',' || ")
-                        else
-                            "\"c0\".\"category\" || ''"
-                        end)
-                      }
-                    ]
-                , FROM:
-                    [ { alias: "weights", table: .weightsTable }
-                    # cross join each weight with the categories of all involved categorical variables
-                    , ( .function_.variables[]
-                    | { alias: "c\(.ordinal)", table: .schema.variableCategoriesTable } )
-                    ]
-                } | asSql | @sh)"
-            end)
         "
     }
 })
@@ -524,7 +558,7 @@ def factorWeightDescriptionSqlExpr:
                         , { expr: "CASE WHEN w.isfixed THEN 1 ELSE 0 END" }
                         , { expr: "COALESCE(reuse.weight, w.initvalue, 0)" }
                         ]
-                    , FROM: [ { alias: "w", table: .weightsTableForDumping } ]
+                    , FROM: [ { alias: "w", table: .weightsTable } ]
                     , JOIN: { LEFT_OUTER: { alias: "reuse", table: deepdiveReuseWeightsTable }
                             , ON: { and: [ { eq: [ { table: "reuse", column: "description" }
                                                  , { expr: factorWeightDescriptionSqlExpr }
@@ -547,7 +581,7 @@ def factorWeightDescriptionSqlExpr:
                         , { expr: "CASE WHEN isfixed THEN 1 ELSE 0 END" }
                         , { expr: "COALESCE(initvalue, 0)" }
                         ]
-                    , FROM: [ { table: .weightsTableForDumping } ]
+                    , FROM: [ { table: .weightsTable } ]
                     } | asSql | @sh)
                 fi)\" \\
                 command=\("
@@ -557,7 +591,6 @@ def factorWeightDescriptionSqlExpr:
         "
     }
 })
-
 
 ###############################################################################
 
@@ -621,6 +654,15 @@ def factorWeightDescriptionSqlExpr:
             (IFS=,; echo \"${paths[*]}\")
         } >meta
         ")
+    }
+}
+
+## from_grounding
+# A nominal process to make it easy to redo the grounding
+# TODO remove this once deepdive-do supports process groups or pipelines
+| .deepdive_.execution.processes += {
+    "process/grounding/from_grounding": {
+        style: "cmd_extractor", cmd: ": no-op"
     }
 }
 
