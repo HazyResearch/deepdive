@@ -22,7 +22,7 @@ TSVHeader+=$'\t''n2'               TSV+=$'\t''null'
 TSVHeader+=$'\t''n3'               TSV+=$'\t''\\N'
 TSVHeader+=$'\t''n4'               TSV+=$'\t''N'
 TSVHeader+=$'\t''num_arr'          TSV+=$'\t''{1,2,3}'
-TSVHeader+=$'\t''float_arr'        TSV+=$'\t''{1.2,3.45,67.890}'
+TSVHeader+=$'\t''float_arr'        TSV+=$'\t''{1.2,3.45,67.89}'
 TSVHeader+=$'\t''text_arr'         TSV+=$'\t''{easy,123,abc,"two words"}'
 TSVHeader+=$'\t''nonprintable'     TSV+=$'\t''{\b,"\f","\n","\r","\t",'$'\x1c'','$'\x1d'',"'$'\x1e'' '$'\x1f''",'$'\x7f''}'
 TSVHeader+=$'\t''punctuations'     TSV+=$'\t''{.,",",.,"{","}",[,],(,),"\\"","\\\\"}'
@@ -40,5 +40,5 @@ NastyTSVHeader=$TSVHeader NastyTSV=$TSV
 
 
 @test "ddlib.util (@tsv_extractor and @returns) works against nasty input" {
-    diff -u <(echo "$NastyTSV")  <(python "$BATS_TEST_DIRNAME"/identity.py <<<"$NastyTSV")
+    diff -u <(echo "$NastyTSV" | tr '\t' '\n')  <(deepdive env python "$BATS_TEST_DIRNAME"/identity.py <<<"$NastyTSV" | tr '\t' '\n')
 }

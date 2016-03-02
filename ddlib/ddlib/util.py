@@ -133,10 +133,14 @@ def print_pgtsv_element(x, n, t, d=0):
     raise Exception("Output column '%(name)s' of type %(declared_type)s has incorrect value of %(value_type)s: '%(value)s'" % dict(
         name=n, declared_type=t, value_type=type(x), value=x,
     ))
+  x = str(x)
   if d > 0 and t == 'text':
-    return '"%s"' % str(x).replace('\\', '\\\\').replace('"', '\\\\"')
+    if re.search('[^a-zA-Z0-9_.\[\]()]', x) or x in ["NULL", "null"]:
+      return '"%s"' % x.replace('"', '\\"')
+    else:
+      return x
   else:
-    return str(x)
+    return x
 
 
 class PGTSVPrinter:

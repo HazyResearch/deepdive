@@ -46,5 +46,9 @@ v15 = "text[]",
 v16 = "text[]",
 v17 = "text[]",
  ):
+ import sys
+ for i, x in enumerate([v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17]):
+  print >>sys.stderr, "v%d =\t" % i,
+  print >>sys.stderr, x
  yield [v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17]
 
