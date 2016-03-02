@@ -22,7 +22,7 @@ export DEEPDIVE_LOAD_FORMAT=tsv
 
 deepdive compute execute \\
     input_sql=\(.input | @sh) \\
-    command=\(.udf | @sh) \\
+    command=\("cd \"$DEEPDIVE_APP\" && \(.udf)" | @sh) \\
     output_relation=\(.output_relation | @sh) \\
     #
 
