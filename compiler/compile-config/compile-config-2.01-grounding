@@ -319,7 +319,60 @@ def withRedefinitionsWithJoinsForIdColumns:
 
 })
 
-# TODO dump domains file for categorical variables
+
+## variable/*/dump_domains
+# Each categorical variable dumps an extra input for the inference engine that holds the domains.
+| .deepdive_.execution.processes += merge($deepdive.schema.variables_[]
+    | select(.variableType == "categorical") | {
+    "process/grounding/variable/\(.variableName)/dump_domains": {
+        dependencies_: [
+            "process/grounding/variable/\(.variableName)/assign_id"
+        ],
+        style: "cmd_extractor", cmd: "
+        : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
+        varPath=\"$DEEPDIVE_GROUNDING_DIR\"/variable/\(.variableName | @sh)
+        mkdir -p \"$varPath\"
+        cd \"$varPath\"
+        find . -name 'domains.part-*.bin.bz2' -exec rm -rf {} +
+        export DEEPDIVE_LOAD_FORMAT=tsv
+        export DEEPDIVE_UNLOAD_MATERIALIZED=false
+
+        # dump the categorical variable domains, joining the categories table for their ids
+        deepdive compute execute \\
+            input_sql=\(
+            { SELECT:
+                [ { alias: "vid",  table: "i", column: "id" }
+                , { alias: "cardinality", expr: "COUNT(c.id)" }
+                , { alias: "cids", expr: "ARRAY_AGG(c.id)" }
+                ]
+            , FROM: [ { alias: "v", table: .variablesTable } ]
+            , JOIN:
+                # variable ids
+                [ { LEFT_OUTER: { alias: "i", table: .variablesIdsTable }
+                  , ON: { and:  [ .variablesKeyColumns[]
+                                | { eq: [ { table: "i", column: "_\(.)" }
+                                        , { table: "v", column: . }
+                                        ] }
+                                ] } }
+                # category ids are necessary to find the inference result corresponding to the variable
+                , { LEFT_OUTER: { alias: "c", table: .variablesCategoriesTable }
+                  , ON: { and:  [ .variablesCategoryColumns[]
+                                | { eq: [ { table: "c", column: "_\(.)" }
+                                        , { table: "v", column: . }
+                                        ] }
+                                ] } }
+                ]
+            , GROUP_BY: [ { table: "i", column: "id" } ]
+            } | asSql | @sh) \\
+            command=\("
+                exec cat >domains.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.tsv  # TODO @feiranwang remove this line once format_converter is ready
+                format_converter domain /dev/stdin >(pbzip2 >domains.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
+            " | @sh) \\
+            output_relation=
+        "
+    }
+
+})
 
 
 ###############################################################################
@@ -605,6 +658,8 @@ def withRedefinitionsWithJoinsForIdColumns:
         dependencies_: [(
             $deepdive.schema.variables_[]
             | "process/grounding/variable/\(.variableName)/dump"
+            , (select(.variableType == "categorical")
+            | "process/grounding/variable/\(.variableName)/dump_domains")
         ), (
             $deepdive.inference.factors_[]
             | "process/grounding/factor/\(.factorName)/dump"
@@ -627,9 +682,11 @@ def withRedefinitionsWithJoinsForIdColumns:
 
         # create symlinks to the grounded binaries by enumerating variables and factors
         for v in \($variableNames); do
-            mkdir -p variables/\"$v\"
+            mkdir -p {variables,domains}/\"$v\"
             find \"$DEEPDIVE_GROUNDING_DIR\"/variable/\"$v\" \\
                 -name 'variables.part-*.bin.bz2' -exec ln -sfnv -t variables/\"$v\"/ {} + \\
+                -o \\
+                -name   'domains.part-*.bin.bz2' -exec ln -sfnv -t   domains/\"$v\"/ {} + \\
                 #
         done
         for f in \($factorNames); do
@@ -655,7 +712,7 @@ def withRedefinitionsWithJoinsForIdColumns:
             counts+=($(find \($factorNames) -name 'nedges.part-*'   -exec cat {} + | sumup))
             (IFS=,; echo \"${counts[*]}\")
             # second line with file paths
-            paths=(\"$DEEPDIVE_FACTORGRAPH_DIR\"/{weights,variables,factors,edges})
+            paths=(\"$DEEPDIVE_FACTORGRAPH_DIR\"/{weights,variables,factors,edges,domains})
             (IFS=,; echo \"${paths[*]}\")
         } >meta
         ")
