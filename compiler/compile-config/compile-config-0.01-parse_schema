@@ -25,7 +25,7 @@ include "util";
             then .  # all user columns are considered keys if none were annotated as @key
             else $keyColumns  # or use only the key columns to find distinct variables
             end
-            | map(.key)
+            | .[].key
             ]
         , variables : $columnName # FIXME remove this
         , variablesLabelColumn : $columnName
