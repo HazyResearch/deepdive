@@ -66,12 +66,8 @@ def parse_pgtsv_element(s, t, sep='|^|', sep2='|~|', d=0):
       s = re.sub(r'\\(.)', lambda(m): '""' if m.group(1) == '"' else m.group(1), s) # XXX quotes and backslashes in arrays are escaped another time
       values = []
       v = None
-      print >>sys.stderr, "============="
       while len(s) > 0:
         if s[0] == ',':  # found the end of a value
-          print >>sys.stderr, len(v), v is None, v
-          print >>sys.stderr, ">>",
-          print >>sys.stderr, s
           values.append(v)
           v = None
           s = s[1:]
