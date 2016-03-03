@@ -49,8 +49,8 @@ def identity_for_nasty_tsv(
             v20,
             ]
     for i, x in enumerate(args):
-        print >>sys.stderr, "v%d =\t" % i,
-    print >>sys.stderr, x
+        print >>sys.stderr, "v%d =\t" % (i + 1),
+        print >>sys.stderr, x
     yield args
 nasty_tsv_types = identity_for_nasty_tsv
 
