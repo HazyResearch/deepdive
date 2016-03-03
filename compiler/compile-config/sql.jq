@@ -91,12 +91,12 @@ def asSqlCondition:
 # which turns an object in a particular format into SQL, taking care of many escaping issues
 def asSql:
     [ (.SELECT  |mapJoinOrEmptyString("SELECT "   ; asSqlExprAlias                                      ; "\n     , "))
-    , (.FROM    |mapJoinOrEmptyString("FROM "     ; asSqlTableAlias(asSql)                              ; ", "))
-    , (.JOIN    |mapJoinOrEmptyString(""; "\(asSqlJoinTypeTableAlias(asSql)) ON \(.ON | asSqlCondition)"; " " ))
-    , (.WHERE   |mapJoinOrEmptyString("WHERE "    ; asSqlCondition                                      ; " AND " ))
-    , (.GROUP_BY|mapJoinOrEmptyString("GROUP BY " ; asSqlExpr                                           ; ", "    ))
-    , (.HAVING  |mapJoinOrEmptyString("HAVING "   ; asSqlCondition                                      ; " AND " ))
-    , (.ORDER_BY|mapJoinOrEmptyString("ORDER BY " ; "\(.expr | asSqlExpr) \(.order // "ASC")"           ; ", "    ))
+    , (.FROM    |mapJoinOrEmptyString("FROM "     ; asSqlTableAlias(asSql)                              ; "\n   , "))
+    , (.JOIN    |mapJoinOrEmptyString(""; "\(asSqlJoinTypeTableAlias(asSql))\n  ON \(.ON | asSqlCondition)"; "\n" ))
+    , (.WHERE   |mapJoinOrEmptyString("WHERE "    ; asSqlCondition                                      ; "\n  AND " ))
+    , (.GROUP_BY|mapJoinOrEmptyString("GROUP BY " ; asSqlExpr                                           ; "\n    , "))
+    , (.HAVING  |mapJoinOrEmptyString("HAVING "   ; asSqlCondition                                      ; "\n   AND " ))
+    , (.ORDER_BY|mapJoinOrEmptyString("ORDER BY " ; "\(.expr | asSqlExpr) \(.order // "ASC")"           ; "\n    , "))
     ] | join("\n") | trimWhitespace;
 
 ## finally, a test case
