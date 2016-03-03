@@ -51,6 +51,8 @@ declare -- "$@"
 export SSH_INFO="${ssh_user}@${ssh_host}"
 export LOCAL_USER="$(whoami)"
 
+export REMOTE_DEEPDIVE_HOME=$(ssh $SSH_INFO "deepdive whereis installed .")
+
 # App directory variables
 # APP_ID is used to isolate app folders that are uploaded to the same path
 # in the remote node. It is a hash of the local user name and the local absolute 
@@ -131,9 +133,12 @@ fi
 # 4) database-independent command which simply runs in parallel
 # XXX: Right now, submission script doesn't handle the case when there's no 
 # input_sql.
+echo "Performing setup for current task..."
 ssh_with_env \
   DEEPDIVE_APP=$remote_deepdive_app \
   NUM_PROCESSES=$num_processes \
+  COMMAND=$command \
+  REMOTE_DEEPDIVE_HOME \
   DEEPDIVE_CURRENT_PROCESS_NAME \
   REMOTE_IN_DIR \
   REMOTE_OUT_DIR \
@@ -152,6 +157,7 @@ if [[ $(uname) = "Darwin" ]]; then
   else 
     echo "Kerberos credentials found at $SSH_INFO:$KRB_DIR"
   fi
+  export KRB_DIR
 fi
 
 # Submit job. 
@@ -160,6 +166,7 @@ fi
 JOB_ID=$(ssh_with_env \
   DEEPDIVE_APP=$remote_deepdive_app \
   SSH_HOST=$ssh_host \
+  KRB_DIR \
   REMOTE_JOBID_DIR \
   REMOTE_SH_DIR \
   -- "deepdive compute remote-submit")
@@ -180,8 +187,8 @@ while [[ "$STATUS" == incomplete ]]; do
   # job in the submission node. 
   JOB_STATUSES=$(ssh_with_env \
     DEEPDIVE_APP=$remote_deepdive_app \
-    JOB_ID \
-    NUM_PROCESSES \
+    JOB_ID=$JOB_ID \
+    NUM_PROCESSES=$num_processes \
     REMOTE_OUT_DIR \
     -- "deepdive compute remote-status")
   
@@ -190,6 +197,11 @@ while [[ "$STATUS" == incomplete ]]; do
   NUM_COMPLETED=$(grep -o "C" <<< "$JOB_STATUSES" | grep -c "C" || :)
   NUM_INCOMPLETE=$(grep -o "I" <<< "$JOB_STATUSES" | grep -c "I" || :)
   NUM_FAILED=$(grep -o "F" <<< "$JOB_STATUSES" | grep -c "F" || :)
+
+  # Sanity check. 
+  if [[ ! $((NUM_FAILED + NUM_INCOMPLETE + NUM_COMPLETED)) == $num_processes ]]; then
+    error "Total number of jobs != total number of processes"
+  fi
 
   if [[ $NUM_INCOMPLETE -eq 0 ]]; then
     if [[ $NUM_FAILED -gt 0 ]]; then

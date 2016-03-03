@@ -4,7 +4,7 @@
 # This script is somewhat confusing, since it's meant to be run in the submission node.
 # Therefore, the environment variables need to be relative to the submission node. For
 # example, DEEPDIVE_APP needs to point to the path of the application in the submission
-# node. 
+# node. Also, the evaluation of some variables need to be delayed until it's run. 
 ##
 set -euo pipefail
 
@@ -18,6 +18,7 @@ set -euo pipefail
   echo "#PBS -o $REMOTE_OUT_DIR"
   echo "#PBS -e $REMOTE_ERR_DIR"
   echo
+  echo "export PATH=\"$REMOTE_DEEPDIVE_HOME:\""'$PATH'
   echo "export DEEPDIVE_APP=\"$DEEPDIVE_APP\""
   echo 'export PYTHONPATH=$(deepdive whereis installed)/lib/python:$PYTHONPATH'
   if [[ $NUM_PROCESSES -gt 1 ]]; then
