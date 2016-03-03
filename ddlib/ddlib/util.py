@@ -29,7 +29,7 @@ TYPE_PARSERS = {
   'text' : lambda x : str(x),
   'int' : lambda x : int(x.strip()),
   'float' : lambda x : float(x.strip()),
-  'boolean' : lambda x : BOOL_PARSER(x.lower().strip())
+  'boolean' : lambda x : BOOL_PARSER[x.lower().strip()]
 }
 
 
@@ -175,19 +175,24 @@ def print_pgtsv_element(x, n, t, d=0):
     raise Exception("Output column '%(name)s' of type %(declared_type)s has incorrect value of %(value_type)s: '%(value)s'" % dict(
         name=n, declared_type=t, value_type=type(x), value=x,
     ))
-  x = str(x)
-  if d > 0 and t == 'text':
-    def escapeWithTSVBackslashes(x):
-      return re.sub(r'[\b\f\n\r\t\\]', lambda(m): "\\" + specialToEscapeCode[m.group(0)], x)
-    if re.search(r'^[a-zA-Z0-9_.\x1c\x1d\x1e\x1f\x7f\[\]()]+$|^[\b]$', x) \
-        and x not in ["", "NULL", "null"]:
-      # we don't need to quote the value in some special cases
-      return escapeWithTSVBackslashes(x)
-    else: # otherwise, surround value with quotes
-      x = re.sub(r'[\\"]', lambda(m): '\\' +  m.group(0), x) # XXX quotes and backslashes in arrays are escaped another time
-      return '"%s"' % escapeWithTSVBackslashes(x) # then, the TSV escaping
+  if t == 'text':
+    x = str(x)
+    if d == 0:
+      return x
+    else:
+      def escapeWithTSVBackslashes(x):
+        return re.sub(r'[\b\f\n\r\t\\]', lambda(m): "\\" + specialToEscapeCode[m.group(0)], x)
+      if re.search(r'^[a-zA-Z0-9_.\x1c\x1d\x1e\x1f\x7f\[\]()]+$|^[\b]$', x) \
+          and x not in ["", "NULL", "null"]:
+        # we don't need to quote the value in some special cases
+        return escapeWithTSVBackslashes(x)
+      else: # otherwise, surround value with quotes
+        x = re.sub(r'[\\"]', lambda(m): '\\' +  m.group(0), x) # XXX quotes and backslashes in arrays are escaped another time
+        return '"%s"' % escapeWithTSVBackslashes(x) # then, the TSV escaping
+  elif t == 'boolean':
+    return 't' if x else 'f'
   else:
-    return x
+    return str(x)
 
 
 class PGTSVPrinter:

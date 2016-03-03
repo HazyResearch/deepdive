@@ -6,8 +6,8 @@ from deepdive import *
 def identity_for_nasty_tsv(
         v1 = "text",
         v2 = "float",
-        v3 = "text", # FIXME "boolean",
-        v4 = "text", # FIXME "boolean",
+        v3 = "boolean",
+        v4 = "boolean",
         v5 = "text",
         v6 = "text",
         v7 = "text",
