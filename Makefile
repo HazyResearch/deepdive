@@ -53,7 +53,7 @@ actual-expected:
 	        *)                actual=$${expected%.expected}.actual      ;; \
 	    esac; \
 	    [[ "$$actual" -nt "$$expected" ]] && \
-	    ! diff -q "$$actual" "$$expected" || continue; \
+	    ! diff -q --ignore-all-space "$$actual" "$$expected" || continue; \
 	    cp -vf "$$actual" "$$expected"; \
 	done
 
