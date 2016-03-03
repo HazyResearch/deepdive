@@ -120,29 +120,14 @@ stage ddlib/ddlib                                                 lib/python/
 stage ddlib/deepdive.py                                           lib/python/
 
 # DeepDive inference engine and supporting utilities
-case $(uname) in
-Linux)
-    # copy shared libraries required by the dimmwitted sampler
-    ldd .build/submodule/inference/dimmwitted/dw | grep '=>' |
-    awk '{print $3}' | sort -u | grep -v '^(' |
-    grep -v '^/lib/' |
-    xargs cp -vt "$STAGE_DIR"/lib/
-    stage .build/submodule/inference/dimmwitted/dw                util/sampler-dw.bin
-    stage inference/dimmwitted-wrapper.linux.sh                   util/sampler-dw
-    ;;
-Darwin)
-    # copy shared libraries required by the dimmwitted sampler
-    otool -L .build/submodule/inference/dimmwitted/dw |
-    grep 'dylib' | sed 's/(.*)//' | awk '{print $1}' | sort -u |
-    grep -v '^/usr/lib/' |
-    xargs cp -vt "$STAGE_DIR"/lib/
-    stage .build/submodule/inference/dimmwitted/dw                util/sampler-dw.bin
-    stage inference/dimmwitted-wrapper.mac.sh                     util/sampler-dw
-    ;;
-*)
-    echo >&2 "$(uname): Unsupported OS"; false
-    ;;
-esac
+#  copying shared libraries required by the dimmwitted sampler and generating a wrapper
+PATH="$PWD"/extern/buildkit:"$PATH"
+generate-wrapper-for-libdirs          "$STAGE_DIR"/util/sampler-dw \
+                                      "$STAGE_DIR"/util/sampler-dw.bin \
+                                      "$STAGE_DIR"/lib/dw
+install-shared-libraries-required-by  "$STAGE_DIR"/lib/dw \
+      .build/submodule/inference/dimmwitted/dw
+stage .build/submodule/inference/dimmwitted/dw                	  util/sampler-dw.bin
 stage inference/format_converter                                  util/format_converter
 stage inference/deepdive-model                                    util/
 

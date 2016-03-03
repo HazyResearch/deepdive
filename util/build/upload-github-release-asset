@@ -86,7 +86,7 @@ fi
 )
 [[ -n "$releaseId" ]] ||
     error "Cannot determine release id of $tag in $repo.
-You first need to create the release for $tag from https://github.com/$repo/releases."
+You first need to create the release for $tag from https://github.com/$repo/releases." || exit 123
 
 # figure out the current version
 version=$(git rev-parse HEAD)
