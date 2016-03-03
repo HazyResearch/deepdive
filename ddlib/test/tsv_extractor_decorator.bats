@@ -1,13 +1,6 @@
 #!/usr/bin/env bats
-# Tests for `deepdive sql` command
-
+# Tests for @tsv_extractor Python function/generator decorator
 . "$BATS_TEST_DIRNAME"/env.sh >&2
-PATH="$DEEPDIVE_SOURCE_ROOT/util/build/test:$PATH"
-
-setup() {
-    db-execute "SELECT 1" &>/dev/null || db-init
-}
-
 
 TSVHeader=                         TSV=
 TSVHeader+=$'\t''i'                TSV+=$'\t''123'
@@ -41,8 +34,13 @@ TSVHeader+=$'\t''torture_arr'      TSV+=$'\t''{"asdf  qwer\tzxcv\n1234"'
 TSVHeader=${TSVHeader#$'\t'}       TSV=${TSV#$'\t'}  # strip the first delimiter
 NastyTSVHeader=$TSVHeader NastyTSV=$TSV
 
-
-@test "ddlib.util (@tsv_extractor and @returns) works against nasty input" {
-    diff -u <(echo "$NastyTSV" | tr '\t' '\n')  <(deepdive env python "$BATS_TEST_DIRNAME"/identity.py <<<"$NastyTSV" | tr '\t' '\n')
+@test "Python @tsv_extractor decorator parser/formatter work correctly" {
+    cd "$BATS_TEST_DIRNAME"
+    # use an identity UDF to see if the nasty input gets parsed correctly and output correctly
+    diff -u \
+        <(echo "$NastyTSV"                                         | tr '\t' '\n') \
+        <(echo "$NastyTSV" | deepdive env python ./identity_udf.py | tr '\t' '\n') \
+        #
 }
 
+# TODO also cross validate in another format (like JSON) to catch errors made on both ends
