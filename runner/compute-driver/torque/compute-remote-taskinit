@@ -18,6 +18,13 @@ set -euo pipefail
   echo "#PBS -o $REMOTE_OUT_DIR"
   echo "#PBS -e $REMOTE_ERR_DIR"
   echo
+  if [[ $(uname) == "Linux" ]] && [[ -f "/etc/redhat-release" ]]; then
+    if which python2.7; then
+      echo 'alias python=$(which python2.7)'
+    else
+      error "Machine $(hostname) does not have python 2.7 installed!"
+    fi
+  fi
   echo "export PATH=\"$REMOTE_DEEPDIVE_HOME:\""'$PATH'
   echo "export DEEPDIVE_APP=\"$DEEPDIVE_APP\""
   echo 'export PYTHONPATH=$(deepdive whereis installed .)/lib/python:$PYTHONPATH'
@@ -31,6 +38,6 @@ set -euo pipefail
 
 # And split data if necessary
 if [[ -f $REMOTE_IN_DIR ]] && [[ $NUM_PROCESSES -gt 1 ]]; then
-  local total_lines=$(wc -l < $REMOTE_IN_DIR)
+  total_lines=$(wc -l < $REMOTE_IN_DIR)
   split -d -l $((total_lines / NUM_PROCESSES + 1)) -a 4 $REMOTE_IN_DIR $REMOTE_IN_DIR.
 fi
