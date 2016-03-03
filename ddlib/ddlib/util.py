@@ -33,7 +33,7 @@ TYPE_PARSERS = {
 }
 
 
-def parse_pgtsv_element(s, t, sep='|^|', sep2='|~|', d=0):
+def parse_pgtsv_element(s, t, array_nesting_depth=0):
   """
   Parse an element in psql-compatible tsv format, i.e. {-format arrays
   based on provided type and type-parser dictionary
@@ -41,7 +41,7 @@ def parse_pgtsv_element(s, t, sep='|^|', sep2='|~|', d=0):
   if s is None:
     return s
 
-  if d > 0:
+  if array_nesting_depth > 0:
     # Quoting only will occur within a psql array with strings
     quoted = (len(s) > 1 and s[0] == '"' and s[-1] == '"')
     if quoted:
@@ -50,7 +50,7 @@ def parse_pgtsv_element(s, t, sep='|^|', sep2='|~|', d=0):
       else:
         raise Exception("Type mismatch with quoted array element:\n%s" % s)
 
-  if s == '\\N' and d == 0:
+  if s == '\\N' and array_nesting_depth == 0:
     # Interpret nulls correctly according to postgres convention
     # Note for arrays: {,} --> NULLS, {"",""} --> empty strings
     return None
@@ -95,8 +95,11 @@ def parse_pgtsv_element(s, t, sep='|^|', sep2='|~|', d=0):
       values.append(v)
       split = values
     else:
-      split = s.split(sep)
-    return [parse_pgtsv_element(ss, t[:-2], sep=sep2, d=d+1) for ss in split]
+      raise Exception("Surrounding curly braces ({...}) expected for array type %(type)s but found: '%(value)s'" % dict(
+        type=t,
+        value=s,
+        ))
+    return [parse_pgtsv_element(ss, t[:-2], array_nesting_depth=array_nesting_depth+1) for ss in split]
 
   else: # parse correct value using the parser corresponding to the type
     try:
@@ -150,11 +153,11 @@ TYPE_CHECKERS = {
   'boolean' : lambda x : type(x) == bool
 }
 
-def print_pgtsv_element(x, n, t, d=0):
+def print_pgtsv_element(x, n, t, array_nesting_depth=0):
   """Checks element x against type string t, then prints in PG-TSV format if a match"""
   # Handle NULLs first
   if x is None:
-    if d == 0:
+    if array_nesting_depth == 0:
       return '\N'
     else:
       return ''
@@ -164,7 +167,7 @@ def print_pgtsv_element(x, n, t, d=0):
     if not hasattr(x, '__iter__'):
       raise ValueError("Mismatch between array type and non-iterable in output row:\n%s" % x)
     else:
-      return '{%s}' % ','.join(print_pgtsv_element(e, n, t[:-2], d=d+1) for e in x)
+      return '{%s}' % ','.join(print_pgtsv_element(e, n, t[:-2], array_nesting_depth=array_nesting_depth+1) for e in x)
 
   # Else check type & print, hanlding special case of string in array
   try:
@@ -177,7 +180,7 @@ def print_pgtsv_element(x, n, t, d=0):
     ))
   if t == 'text':
     x = str(x)
-    if d == 0:
+    if array_nesting_depth == 0:
       return x
     else:
       def escapeWithTSVBackslashes(x):
