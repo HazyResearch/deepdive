@@ -20,7 +20,7 @@ set -euo pipefail
   echo
   echo "export PATH=\"$REMOTE_DEEPDIVE_HOME:\""'$PATH'
   echo "export DEEPDIVE_APP=\"$DEEPDIVE_APP\""
-  echo 'export PYTHONPATH=$(deepdive whereis installed)/lib/python:$PYTHONPATH'
+  echo 'export PYTHONPATH=$(deepdive whereis installed .)/lib/python:$PYTHONPATH'
   if [[ $NUM_PROCESSES -gt 1 ]]; then
       echo 'INPUT_ID=$(printf "%04d" $PBS_ARRAYID)'
       echo '"$SHELL"'" -c \"$COMMAND\" < \"$REMOTE_IN_DIR."'$INPUT_ID'"\""
@@ -30,7 +30,7 @@ set -euo pipefail
 } > $REMOTE_SH_DIR
 
 # And split data if necessary
-if [[ -d $REMOTE_IN_DIR ]] && [[ $NUM_PROCESSES -gt 1 ]]; then
+if [[ -f $REMOTE_IN_DIR ]] && [[ $NUM_PROCESSES -gt 1 ]]; then
   local total_lines=$(wc -l < $REMOTE_IN_DIR)
   split -d -l $((total_lines / NUM_PROCESSES + 1)) -a 4 $REMOTE_IN_DIR $REMOTE_IN_DIR.
 fi
