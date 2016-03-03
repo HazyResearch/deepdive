@@ -411,7 +411,8 @@ class QueryCompiler(cq : ConjunctiveQuery) {
   }
 
   def compileExtractorBlock(extractorName: String, outputRelation: String, stmts: List[Statement], sql: String): CompiledBlocks = {
-    val shouldMaterialize = schemaDeclarationByRelationName contains outputRelation
+    // look for @materialize annotation on any rule defining the same head
+    val shouldMaterialize = stmts flatMap (_.annotations) exists (_ named "materialize")
 
     List(s"deepdive.extraction.extractors.${extractorName}" -> Map(
       "cmd" -> QuotedString(

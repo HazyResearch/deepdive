@@ -5,9 +5,7 @@ Q.label: Boolean
 
 deepdive.extraction.extractors.ext_S {
 cmd: """
-	# TODO use temporary table
-	deepdive create table "S"
-	deepdive sql 'INSERT INTO S SELECT R0.a AS "R.R0.a"
+deepdive create view S as 'SELECT R0.a AS "R.R0.a"
 FROM R R0, R R1
         WHERE R1.a = R0.b  AND R0.a > 100
 UNION ALL
@@ -30,8 +28,7 @@ UNION ALL
 SELECT R0.a AS "S_2.R0.a"
 FROM S_2 R0
         '
-	# TODO rename temporary table to replace output_relation
-	"""
+"""
 output_relation: S
 style: cmd_extractor
 input_relations: [
@@ -60,9 +57,7 @@ FROM R R0
 
 deepdive.extraction.extractors.ext_T {
 cmd: """
-	# TODO use temporary table
-	deepdive create table "T"
-	deepdive sql 'INSERT INTO T SELECT R0.a AS "T___0.R0.a"
+deepdive create view T as 'SELECT R0.a AS "T___0.R0.a"
 FROM T___0 R0
         
 UNION ALL
@@ -77,8 +72,7 @@ UNION ALL
 SELECT R0.a AS "T___3.R0.a"
 FROM T___3 R0
         '
-	# TODO rename temporary table to replace output_relation
-	"""
+"""
 output_relation: T
 style: cmd_extractor
 input_relations: [
@@ -240,10 +234,10 @@ input_relations: [
 
 deepdive.extraction.extractors.ext_T__3 {
 cmd: """
-	deepdive create view T__3 as 'SELECT R0.a AS column_0
+deepdive create view T__3 as 'SELECT R0.a AS column_0
 FROM T R0
         '
-	"""
+"""
 output_relation: T__3
 style: cmd_extractor
 input_relations: [

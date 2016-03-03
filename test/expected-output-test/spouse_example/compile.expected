@@ -52,14 +52,10 @@ FROM sentences R0, has_spouse_candidates R1, people_mentions R2, people_mentions
 
 deepdive.extraction.extractors.ext_has_spouse {
 cmd: """
-	# TODO use temporary table
-	deepdive create table "has_spouse"
-	deepdive sql 'INSERT INTO has_spouse SELECT DISTINCT R0.relation_id, R0.is_true AS label
-          FROM has_spouse_candidates R0
-        
-          '
-	# TODO rename temporary table to replace output_relation
-	"""
+deepdive create view has_spouse as 'SELECT DISTINCT R0.relation_id, R0.is_true AS label
+FROM has_spouse_candidates R0
+        '
+"""
 output_relation: has_spouse
 style: cmd_extractor
 input_relations: [

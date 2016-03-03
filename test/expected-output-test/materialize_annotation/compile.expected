@@ -1,0 +1,87 @@
+deepdive.schema.variables {
+VQ.label: Boolean
+TQ.label: Boolean
+
+}
+
+deepdive.extraction.extractors.ext_V {
+cmd: """
+deepdive create view V as 'SELECT R0.x AS "D.R0.x"
+FROM D R0
+        '
+"""
+output_relation: V
+style: cmd_extractor
+input_relations: [
+  D
+]
+
+}
+
+deepdive.extraction.extractors.ext_VQ {
+cmd: """
+deepdive create view VQ as 'SELECT DISTINCT R0.x, true AS label
+FROM D R0
+        '
+"""
+output_relation: VQ
+style: cmd_extractor
+input_relations: [
+  D
+]
+
+}
+
+deepdive.extraction.extractors.ext_T {
+cmd: """
+# TODO use temporary table
+deepdive create table "T"
+deepdive sql 'INSERT INTO T SELECT R0.x AS "D.R0.x"
+FROM D R0
+        '
+# TODO rename temporary table to replace output_relation
+"""
+output_relation: T
+style: cmd_extractor
+input_relations: [
+  D
+]
+
+}
+
+deepdive.extraction.extractors.ext_TQ {
+cmd: """
+# TODO use temporary table
+deepdive create table "TQ"
+deepdive sql 'INSERT INTO TQ SELECT DISTINCT R0.x, 
+CASE WHEN length(R0.x) > 5 THEN true
+     ELSE NULL
+END AS label
+FROM D R0
+        '
+# TODO rename temporary table to replace output_relation
+"""
+output_relation: TQ
+style: cmd_extractor
+input_relations: [
+  D
+]
+
+}
+
+deepdive.pipeline.run: ${PIPELINE}
+
+deepdive.pipeline.pipelines.extraction: [
+  ext_V
+  ext_VQ
+  ext_T
+  ext_TQ
+]
+
+deepdive.pipeline.pipelines.endtoend: [
+  ext_V
+  ext_VQ
+  ext_T
+  ext_TQ
+]
+

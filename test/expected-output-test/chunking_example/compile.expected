@@ -8,17 +8,13 @@ tag: Categorical
 
 deepdive.extraction.extractors.ext_chunk {
 cmd: """
-	# TODO use temporary table
-	deepdive create table "chunk"
-	deepdive sql 'INSERT INTO chunk SELECT DISTINCT R0.sent_id, R0.word_id, R1.tag, 
+deepdive create view chunk as 'SELECT DISTINCT R0.sent_id, R0.word_id, R1.tag, 
 CASE WHEN R1.tag = R0.tag THEN true
      ELSE NULL
 END AS label
-          FROM words R0, tags R1
-        
-          '
-	# TODO rename temporary table to replace output_relation
-	"""
+FROM words R0, tags R1
+        '
+"""
 output_relation: chunk
 style: cmd_extractor
 input_relations: [
@@ -30,9 +26,7 @@ input_relations: [
 
 deepdive.extraction.extractors.ext_words {
 cmd: """
-	# TODO use temporary table
-	deepdive create table "words"
-	deepdive sql 'INSERT INTO words SELECT R0.sent_id AS "words_raw.R0.sent_id", R0.word_id AS "words_raw.R0.word_id", R0.word AS "words_raw.R0.word", R0.pos AS "words_raw.R0.pos", R0.true_tag AS "words_raw.R0.true_tag", 
+deepdive create view words as 'SELECT R0.sent_id AS "words_raw.R0.sent_id", R0.word_id AS "words_raw.R0.word_id", R0.word AS "words_raw.R0.word", R0.pos AS "words_raw.R0.pos", R0.true_tag AS "words_raw.R0.true_tag", 
 CASE WHEN R0.true_tag = '\''B-UCP'\'' THEN NULL
      WHEN R0.true_tag = '\''I-UCP'\'' THEN NULL
      WHEN strpos(R0.true_tag, '\''-'\'') > 0 THEN split_part(R0.true_tag, '\''-'\'', 2)
@@ -41,8 +35,7 @@ CASE WHEN R0.true_tag = '\''B-UCP'\'' THEN NULL
 END AS column_5
 FROM words_raw R0
         '
-	# TODO rename temporary table to replace output_relation
-	"""
+"""
 output_relation: words
 style: cmd_extractor
 input_relations: [
