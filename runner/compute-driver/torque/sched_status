@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# torque/sched_status -- Returns the exit status of the specified job ID. 
+##
 set -euo pipefail
 
-tracejob -q $1 | grep -o Exit_status=[0-9]*$ | sed 's/Exit_status=//g'
+JOB_ID=$1
+
+tracejob -q $JOB_ID | grep -o Exit_status=[0-9]*$ | sed 's/Exit_status=//g'

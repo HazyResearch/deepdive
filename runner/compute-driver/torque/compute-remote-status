@@ -35,3 +35,4 @@ for i in `seq 0 $((NUM_PROCESSES - 1))`; do
     STATUSES="$STATUSES I"
   fi
 done
+echo $STATUSES

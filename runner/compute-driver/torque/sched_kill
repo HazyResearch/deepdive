@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# torque/sched_kill -- Kills a job specified by the user
+# This is the specific command used by the Torque scheduler
+##
+set -euo pipefail
+
+JOB_ID=$1
+
+qdel $JOB_ID

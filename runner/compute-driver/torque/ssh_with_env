@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # ssh_with_env -- Executes a command through SSH while passing specified environment variables
-# > ssh_with_env [KEY=VALUE... --] REST
+# > ssh_with_env KEY[=VALUE]... -- REST
+# 
+# If the VALUE associated with KEY is specified, then it will be passed as specified. 
+# Otherwise, KEY is expanded based on the value of that environment variable in the current
+# environment. 
 #
 # Assumes SSH_INFO exists in the environment. 
 #
@@ -11,7 +15,11 @@ set -euo pipefail
 
 join_expand() { 
   for k in "$@"; do
-    eval "echo -n \"$k=\$$k \""
+    if [[ "$k" == *=* ]]; then
+      echo -n "$k "
+    else
+      eval "echo -n \"$k=\$$k \""
+    fi
   done
 }
 
@@ -23,4 +31,4 @@ done
 shift
 COMMAND="$@"
 
-echo ssh $SSH_INFO "$(join_expand ${ENV_VARS[@]})" "$(escape4sh $COMMAND)"
+ssh $SSH_INFO "$(join_expand ${ENV_VARS[@]})" "$(escape4sh $COMMAND)"

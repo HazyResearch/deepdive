@@ -48,16 +48,16 @@ num_processes=${DEEPDIVE_NUM_PROCESSES:-${num_processes:-$(
 # declare all input arguments
 declare -- "$@"
 
-SSH_INFO="${ssh_user}@${ssh_host}"
-LOCAL_USER="$(whoami)"
+export SSH_INFO="${ssh_user}@${ssh_host}"
+export LOCAL_USER="$(whoami)"
 
 # App directory variables
 # APP_ID is used to isolate app folders that are uploaded to the same path
 # in the remote node. It is a hash of the local user name and the local absolute 
 # DeepDive application path. 
-APP_ID="$(hash "$LOCAL_USER + $DEEPDIVE_APP")"
+export APP_ID="$(hash "$LOCAL_USER + $DEEPDIVE_APP")"
 #SESSION_ID="$(date +%Y%m%d/%H%M%S.%N)"
-SESSION_ID="$DEEPDIVE_RUN_ID/$DEEPDIVE_CURRENT_PROCESS_NAME"
+export SESSION_ID="$DEEPDIVE_RUN_ID/$DEEPDIVE_CURRENT_PROCESS_NAME"
 
 # Either take the remote DeepDive app path specified by the user, or default to
 # remote dir. The app base directory is where DeepDive will create a new directory
@@ -69,11 +69,12 @@ remote_deepdive_app="$remote_deepdive_app_base/dd_app/$APP_ID"
 # TODO: Change "run" to include some session ID to allow multiple processes
 # running.
 remote_deepdive_cwd="$remote_deepdive_cwd_base/dd_run/$APP_ID/$SESSION_ID"
-REMOTE_SH_DIR="$remote_deepdive_cwd/remote.sh"
+export REMOTE_SH_DIR="$remote_deepdive_cwd/remote.sh"
 # TODO: Decoupling input to reduce data transfers. 
-REMOTE_IN_DIR="$remote_deepdive_cwd/remote.in"
-REMOTE_OUT_DIR="$remote_deepdive_cwd/remote.out"
-REMOTE_ERR_DIR="$remote_deepdive_cwd/remote.err"
+export REMOTE_IN_DIR="$remote_deepdive_cwd/remote.in"
+export REMOTE_OUT_DIR="$remote_deepdive_cwd/remote.out"
+export REMOTE_ERR_DIR="$remote_deepdive_cwd/remote.err"
+export REMOTE_JOBID_DIR="$remote_deepdive_cwd/job.id"
 
 # show configuration
 echo "Executing with the following configuration:"
@@ -113,6 +114,13 @@ echo "Copying deepdive app to remote node."
 echo "Excluding $RSYNC_EXCLUDES"
 rsync -aH $RSYNC_EXCLUDES --progress $DEEPDIVE_APP/ $SSH_INFO:$remote_deepdive_app
 
+# Prepare input data
+if [[ -n $input_sql ]]; then
+  # Upload SQL data to the submission node
+  deepdive-sql eval "$input_sql" format="$DEEPDIVE_LOAD_FORMAT" |
+  ssh $SSH_INFO "cat > $REMOTE_IN_DIR"
+fi
+
 # Prepare submission script
 # XXX there are conditional branches below depending on whether input_sql
 # and/or output_relation is given, to support four use cases. Depending on
@@ -121,84 +129,44 @@ rsync -aH $RSYNC_EXCLUDES --progress $DEEPDIVE_APP/ $SSH_INFO:$remote_deepdive_a
 # 2) input-only command which has no output to the database and streams from the database
 # 3) output-only command which has no input from the database and streams to the database
 # 4) database-independent command which simply runs in parallel
-
 # XXX: Right now, submission script doesn't handle the case when there's no 
 # input_sql.
-echo "Preparing submission script at remote node"
-{
-    echo "#PBS -N $DEEPDIVE_CURRENT_PROCESS_NAME"
-    if [[ $num_processes -gt 1 ]]; then
-        echo "#PBS -l ncpus=1,nodes=$num_processes"
-        echo "#PBS -t 0-$((num_processes - 1))"
-    fi
-    echo "#PBS -o $REMOTE_OUT_DIR"
-    echo "#PBS -e $REMOTE_ERR_DIR"
-    echo
-    echo "export DEEPDIVE_APP=\"$remote_deepdive_app\""
-    if [[ $num_processes -gt 1 ]]; then
-        echo 'INPUT_ID=$(printf "%04d" $PBS_ARRAYID)'
-        echo '"$SHELL"'" -c \"$command\" < \"$REMOTE_IN_DIR."'$INPUT_ID'"\""
-    else
-        echo '"$SHELL"'" -c \"$command\" < \"$REMOTE_IN_DIR\""
-    fi
-} | 
-ssh $SSH_INFO "cat > $REMOTE_SH_DIR"
+ssh_with_env \
+  DEEPDIVE_APP=$remote_deepdive_app \
+  NUM_PROCESSES=$num_processes \
+  DEEPDIVE_CURRENT_PROCESS_NAME \
+  REMOTE_IN_DIR \
+  REMOTE_OUT_DIR \
+  REMOTE_ERR_DIR \
+  REMOTE_SH_DIR \
+  -- "deepdive compute remote-taskinit"
 
-# Prepare input data
-if [[ -n $input_sql ]]; then
-    deepdive-sql eval "$input_sql" format="$DEEPDIVE_LOAD_FORMAT" |
-    ssh $SSH_INFO "cat > $REMOTE_IN_DIR"
-
-    # Only perform splitting if num_processes is more than 1
-    if [[ $num_processes -gt 1 ]]; then
-        { 
-            echo "REMOTE_IN_DIR=$REMOTE_IN_DIR"
-            echo "num_processes=$num_processes"
-            echo 'total_lines=$(wc -l <${REMOTE_IN_DIR})'
-            echo 'split -d -l $((total_lines / num_processes + 1)) -a 4 $REMOTE_IN_DIR $REMOTE_IN_DIR.'
-        } | ssh $SSH_INFO
-    fi
-fi
-
-
-# Submit job to remote node. 
-compute_submit() {
-  # XXX: Technically, this is all we need under the assumption that the user
-  # can do passwordless SSH. These are the correct commands, but need
-  # workaround for Macs due to Kerberos issue.
-  #ssh $SSH_INFO "qsub -V $REMOTE_SH_DIR"
-  
-  # XXX: Workaround for Mac OS X users which can't forward Kerberos tickets. 
-  ssh $SSH_INFO "env KRB5CCNAME=FILE:$KRB_DIR qsub -V $REMOTE_SH_DIR" 
-}
-
-# Ensure Kerberos authentication is succesful for user. 
-KRB_DIR="/tmp/krb5cc_${ssh_user}_deepdive"
-if ! ssh $SSH_INFO "klist -s -c $KRB_DIR > /dev/null"; then
-  echo "Kerberos credentials either expired or not found in remote node."
-  echo "Please reenter password."
-  ssh -t $SSH_INFO "kinit -r 30d -c $KRB_DIR"
-else 
-  echo "Kerberos credentials found at $SSH_INFO:$KRB_DIR"
+# Ensure Kerberos authentication is succesful for user. Apparently this is 
+# only needed for Mac OS X due to broken implementation of Kerberos. 
+if [[ $(uname) = "Darwin" ]]; then
+  KRB_DIR="/tmp/krb5cc_${ssh_user}_deepdive"
+  if ! ssh $SSH_INFO "klist -s -c $KRB_DIR > /dev/null"; then
+    echo "Kerberos credentials either expired or not found in remote node."
+    echo "Please reenter password for $SSH_INFO."
+    ssh -t $SSH_INFO "kinit -r 30d -c $KRB_DIR"
+  else 
+    echo "Kerberos credentials found at $SSH_INFO:$KRB_DIR"
+  fi
 fi
 
 # Submit job. 
 # This is a hack that supposedly prints out the output of ssh asking for the 
 # password. But the output seems to not be flushed to stdout. 
-JOB_ID="$(compute_submit | grep $ssh_host | grep -o ^[0-9]*)"
-if [[ ! "$JOB_ID" -gt 0 ]]; then
-  echo "Job submission failed with the following error:"
-  printf "$JOB_ID"
-  error
-fi
-echo "Job submitted with job id $JOB_ID."
+JOB_ID=$(ssh_with_env \
+  DEEPDIVE_APP=$remote_deepdive_app \
+  SSH_HOST=$ssh_host \
+  REMOTE_JOBID_DIR \
+  REMOTE_SH_DIR \
+  -- "deepdive compute remote-submit")
 
-ssh_with_env() {
-  ssh $SSH_INFO \
-    `env | sed 's/\([^=]*\)=\(.*\)/\1="\2"/' | tr '\n' ' '` \
-    "$1"
-}
-
+for sig in TERM INT; do
+  trap "sched_kill $JOB_ID" $sig
+done
 # Poll status
 echo "Waiting for job id $JOB_ID to complete"
 STATUS=incomplete
@@ -209,16 +177,19 @@ while [[ "$STATUS" == incomplete ]]; do
 
   set -x
   # Efficient way to compute the status as it lifts the burden of checking each
-  # job in the submissio node. 
-  export JOB_ID 
-  export NUM_PROCESSES=$num_processes
-  export REMOTE_OUT_DIR
-  JOB_STATUSES=$(ssh_with_env JOB_ID NUM_PROCESSES REMOTE_OUT_DIR -- "deepdive compute remote-status")
+  # job in the submission node. 
+  JOB_STATUSES=$(ssh_with_env \
+    DEEPDIVE_APP=$remote_deepdive_app \
+    JOB_ID \
+    NUM_PROCESSES \
+    REMOTE_OUT_DIR \
+    -- "deepdive compute remote-status")
   
+  echo $JOB_STATUSES
   # Funny way to count number of jobs. 
-  NUM_COMPLETED=$(grep -o "C" <<< "$JOB_STATUSES" | grep -c "C")
-  NUM_INCOMPLETE=$(grep -o "I" <<< "$JOB_STATUSES" | grep -c "I")
-  NUM_FAILED=$(grep -o "F" <<< "$JOB_STATUSES" | grep -c "F")
+  NUM_COMPLETED=$(grep -o "C" <<< "$JOB_STATUSES" | grep -c "C" || :)
+  NUM_INCOMPLETE=$(grep -o "I" <<< "$JOB_STATUSES" | grep -c "I" || :)
+  NUM_FAILED=$(grep -o "F" <<< "$JOB_STATUSES" | grep -c "F" || :)
 
   if [[ $NUM_INCOMPLETE -eq 0 ]]; then
     if [[ $NUM_FAILED -gt 0 ]]; then
