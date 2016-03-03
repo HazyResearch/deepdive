@@ -3,9 +3,10 @@ package org.deepdive.ddlog
 // DeepDiveLog syntax
 // See: https://docs.google.com/document/d/1SBIvvki3mnR28Mf0Pkin9w9mWNam5AA0SpIGj1ZN2c4
 
-import scala.util.parsing.combinator._
 import org.apache.commons.lang3.StringEscapeUtils
-import scala.util.Try
+
+import scala.language.postfixOps
+import scala.util.parsing.combinator._
 
 // ***************************************
 // * The union types for for the parser. *
@@ -16,11 +17,14 @@ sealed trait Expr
 case class VarExpr(name: String) extends Expr
 case class ArrayElementExpr(array: Expr, index: Expr) extends Expr
 sealed trait ConstExpr extends Expr
+{
+  def value: Any
+}
 case class StringConst(value: String) extends ConstExpr
 case class IntConst(value: Int) extends ConstExpr
 case class DoubleConst(value: Double) extends ConstExpr
 case class BooleanConst(value: Boolean) extends ConstExpr
-case class NullConst() extends ConstExpr
+case class NullConst() extends ConstExpr { def value = null }
 case class FuncExpr(function: String, args: List[Expr], isAggregation: Boolean) extends Expr
 case class BinaryOpExpr(lhs: Expr, op: String, rhs: Expr) extends Expr
 case class TypecastExpr(lhs: Expr, rhs: String) extends Expr
@@ -41,21 +45,34 @@ case class OuterModifier() extends BodyModifier
 case class AllModifier() extends BodyModifier
 
 case class Attribute(name : String, terms : List[String], types : List[String], annotations : List[List[Annotation]])
-case class ConjunctiveQuery(headTerms: List[Expr], bodies: List[List[Body]], isDistinct: Boolean = false, limit: Option[Int] = None,
+case class ConjunctiveQuery(headTerms: List[Expr],
+                            bodies: List[List[Body]],
+                            isDistinct: Boolean = false,
+                            limit: Option[Int] = None,
                             // optional annotations for head terms
                             headTermAnnotations: List[List[Annotation]] = List.empty,
+                            headTermAliases: Option[List[Option[String]]] = None,
                             // XXX This flag is not ideal, but minimizes the impact of query treatment when compared to creating another case class
                             isForQuery: Boolean = false
                            )
-case class Column(name : String // name of the column
-                 , t : String // type of the column
-                 , annotation: List[Annotation] = List.empty // optional annotation
-                 )
 
 case class Annotation( name : String // name of the annotation
                      , args : Option[Either[Map[String,Expr],List[Expr]]] = None // optional, named arguments map or unnamed list
                      )
-case class RuleAnnotation(name: String, args: List[String])
+{
+  def named(n: String): Boolean = name.toLowerCase == n.toLowerCase
+
+  def exprs: List[Expr] = args map (_ fold (_.values toList, es => es)) getOrElse List.empty
+  def values: List[Any] = exprs collect { case e: ConstExpr => e.value }
+
+  def expr: Option[Expr] = exprs headOption
+  def value: Option[Any] = values headOption
+
+  def exprAt(namedArg: String, positionalArg: Int): Option[Expr] =
+    args flatMap (_ fold (_ get namedArg, _ lift positionalArg))
+  def valueAt(namedArg: String, positionalArg: Int): Option[Any] =
+    exprAt(namedArg, positionalArg) collect { case e: ConstExpr => e.value }
+}
 
 // condition
 sealed trait Cond extends Body
@@ -87,18 +104,21 @@ case class HeadAtom(name : String, terms : List[Expr], isNegated: Boolean = fals
 case class InferenceRuleHead(function: FactorFunction.FactorFunction, terms: List[HeadAtom])
 
 
-trait FunctionInputOutputType
+sealed trait FunctionInputOutputType
 case class RelationTypeDeclaration(names: List[String], types: List[String]) extends FunctionInputOutputType
 case class RelationTypeAlias(likeRelationName: String) extends FunctionInputOutputType
 
-trait FunctionImplementationDeclaration
+sealed trait FunctionImplementationDeclaration
 case class RowWiseLineHandler(style: String, command: String) extends FunctionImplementationDeclaration
 
 // Statements that will be parsed and compiled
-trait Statement
-case class SchemaDeclaration( a : Attribute
-                            , isQuery : Boolean
-                            , annotation : List[Annotation] = List.empty // optional annotation
+sealed trait Statement
+{
+  val annotations: List[Annotation]
+}
+case class SchemaDeclaration(a: Attribute,
+                             isQuery: Boolean,
+                             annotations: List[Annotation] = List.empty
                             ) extends Statement // atom and whether this is a query relation.
 {
   // infer whether this is a categorical variable based on column annotations
@@ -111,13 +131,32 @@ case class SchemaDeclaration( a : Attribute
       else a.terms diff keyColumns toList  // otherwise, the rest of the columns define categories
     } else List.empty
 }
-case class FunctionDeclaration( functionName: String, inputType: FunctionInputOutputType,
-  outputType: FunctionInputOutputType, implementations: List[FunctionImplementationDeclaration]) extends Statement
-case class ExtractionRule(headName: String, q : ConjunctiveQuery, supervision: Option[Expr] = None) extends Statement // Extraction rule
-case class FunctionCallRule(output: String, function: String, q : ConjunctiveQuery, mode: Option[String], parallelism: Option[Int]) extends Statement // Extraction rule
-case class InferenceRule(head: InferenceRuleHead, q : ConjunctiveQuery, weights : FactorWeight, mode: Option[String] = None) extends Statement // Weighted rule
-
-
+case class FunctionDeclaration(functionName: String,
+                               inputType: FunctionInputOutputType,
+                               outputType: FunctionInputOutputType,
+                               implementations: List[FunctionImplementationDeclaration],
+                               annotations: List[Annotation] = List.empty
+                              ) extends Statement
+sealed trait RuleWithConjunctiveQuery extends Statement { val q: ConjunctiveQuery }
+case class ExtractionRule(headName: String,
+                          q: ConjunctiveQuery,
+                          annotations: List[Annotation] = List.empty
+                         ) extends RuleWithConjunctiveQuery
+case class FunctionCallRule(output: String,
+                            function: String,
+                            q: ConjunctiveQuery,
+                            annotations: List[Annotation] = List.empty
+                           ) extends RuleWithConjunctiveQuery
+case class SupervisionRule(headName: String,
+                           supervision: Expr,
+                           q: ConjunctiveQuery,
+                           annotations: List[Annotation] = List.empty
+                          ) extends RuleWithConjunctiveQuery
+case class InferenceRule(head: InferenceRuleHead,
+                         q: ConjunctiveQuery,
+                         weights: FactorWeight = null,
+                         annotations: List[Annotation] = List.empty
+                        ) extends RuleWithConjunctiveQuery
 
 
 
@@ -147,22 +186,22 @@ class DeepDiveLogParser extends JavaTokenParsers {
   protected override val whiteSpace = """(?:(?:^|\s+)#.*|//.*|\s)+""".r
 
   // We just use Java identifiers to parse various names
-  def relationName = ident
-  def columnName   = ident
+  def relationName = ident named "relation name"
+  def columnName   = ident named "column name"
   def columnType   = ident ~ ("[]"?) ^^ {
       case ty ~ isArrayType => ty + isArrayType.getOrElse("")
-    }
-  def variableName = ident
-  def functionName = ident
+    } named "column type"
+  def variableName = ident named "variable name"
+  def functionName = ident named "function name"
   def functionModeType = stringLiteralAsString
   def inferenceModeType = stringLiteralAsString
-  def annotationName = ident
-  def annotationArgumentName = ident
+  def annotationName = ident named "annotation name"
+  def annotationArgumentName = ident named "annotation argument name"
 
   def annotation: Parser[Annotation] =
     "@" ~ annotationName ~ opt(annotationArguments) ^^ {
       case (_ ~ name ~ optArgs) => Annotation(name, optArgs)
-    }
+    } named "annotation"
 
   def annotationArguments: Parser[Either[Map[String, Expr], List[Expr]]] =
     "(" ~> (
@@ -170,36 +209,63 @@ class DeepDiveLogParser extends JavaTokenParsers {
       rep1sep(annotationArgumentValue, ",") ^^ {
         case values => Right(values)
       }
-    |
+    |||
       repsep(annotationNamedArgument, ",") ^^ {
         case namedArgs => Left(namedArgs toMap)
       }
-    ) <~ ")"
+    ) <~ ")" named "annotation arguments"
   def annotationNamedArgument: Parser[(String, Expr)] =
     annotationArgumentName ~ "=" ~ annotationArgumentValue ^^ {
       case name ~ _ ~ value => name -> value
-    }
-  def annotationArgumentValue: Parser[Expr] = expr
+    } named "annotation named arguments"
+  def annotationArgumentValue: Parser[Expr] = expr named "annotation argument value"
 
-  def columnDeclaration: Parser[Column] =
+  def columnDeclaration: Parser[(String, String, List[Annotation])] =
     rep(annotation) ~
     columnName ~ columnType ^^ {
-      case(anno ~ name ~ ty) => Column(name, ty, anno)
-    }
+      case(anno ~ name ~ ty) => (name, ty, anno)
+    } named "column declaration"
 
   def schemaDeclaration: Parser[SchemaDeclaration] =
-    rep(annotation) ~
     relationName ~ opt("?") ~ ("(" ~> rep1sep(columnDeclaration, ",") <~ ")") ^^ {
-      case (anno ~ r ~ isQuery ~ attrs) => {
-        val vars = attrs map (_.name)
-        var types = attrs map (_.t)
-        val annos = attrs map (_.annotation)
-        SchemaDeclaration(Attribute(r, vars, types, annos), (isQuery != None), anno)
+      case (r ~ isQuery ~ attrs) =>
+        attrs unzip3 match { case (vars, types, annos) =>
+          SchemaDeclaration(Attribute(r, vars, types, annos), isQuery != None)
+        }
+    } named "schema declaration"
+
+  def functionInputOutputType: Parser[FunctionInputOutputType] =
+    ( "rows" ~> "like" ~> relationName ^^ RelationTypeAlias
+    | "(" ~> rep1sep(columnDeclaration, ",") <~ ")" ^^ { attrs =>
+        attrs unzip3 match { case (names, types, annos) =>
+          RelationTypeDeclaration(names, types)
+        }
       }
-    }
+    ) named "function input/output type declaration"
+
+  def functionImplementation : Parser[FunctionImplementationDeclaration] =
+    ( "implementation" ~ stringLiteralAsString ~ "handles" ~ ("tsv" | "json") ~ "lines" ^^ {
+        case (_ ~ command ~ _ ~ style ~ _) => RowWiseLineHandler(command=command, style=style)
+      }
+    | "implementation" ~ stringLiteralAsString ~ "runs" ~ "as" ~ "plpy" ^^ {
+        case (_ ~ command ~ _ ~ _ ~ style) => RowWiseLineHandler(command=command, style=style)
+      }
+    ) named "function implementation declaration"
+
+  def functionDeclaration : Parser[FunctionDeclaration] =
+    ( "function" ~ functionName ~ "over" ~ functionInputOutputType
+    ~ "returns" ~ functionInputOutputType
+    ~ (functionImplementation+)
+    ) ^^ {
+      case ("function" ~ a ~ "over" ~ inTy
+        ~ "returns" ~ outTy
+        ~ implementationDecls) =>
+        FunctionDeclaration(a, inTy, outTy, implementationDecls)
+    } named "function declaration"
+
 
   def operator =
-    ( "||" | "+" | "-" | "*" | "/" | "&" | "%" )
+    ( "||" | "+" | "-" | "*" | "/" | "&" | "%" ) named "operator"
   def typeOperator = "::"
   val aggregationFunctions = Set("MAX", "SUM", "MIN", "ARRAY_ACCUM", "ARRAY_AGG", "COUNT")
 
@@ -209,7 +275,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | lexpr ~ operator ~ expr ^^ { case (lhs ~ op ~ rhs) => BinaryOpExpr(lhs, op, rhs) }
     | lexpr ~ typeOperator ~ columnType ^^ { case (lhs ~ _ ~ rhs) => TypecastExpr(lhs, rhs) }
     | lexpr
-    )
+    ) named "expression"
 
   def cexpr =
     ( expr ~ compareOperator ~ expr ^^ { case (lhs ~ op ~ rhs) => BinaryOpExpr(lhs, op, rhs) }
@@ -221,15 +287,15 @@ class DeepDiveLogParser extends JavaTokenParsers {
         case (ifCond ~ thenExpr ~ elseIfs ~ optElseExpr) =>
           IfThenElseExpr((ifCond, thenExpr) :: elseIfs, optElseExpr)
       }
-    | stringLiteralAsString ^^ { StringConst(_) }
-    | double ^^ { DoubleConst(_) }
-    | integer ^^ { IntConst(_) }
+    | stringLiteralAsString ^^ StringConst
+    | double ^^ DoubleConst
+    | integer ^^ IntConst
     | ("TRUE" | "FALSE") ^^ { x => BooleanConst(x.toBoolean) }
     | "NULL" ^^ { _ => NullConst() }
     | functionName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ {
-        case (name ~ _ ~ args ~ _) => FuncExpr(name, args, (aggregationFunctions contains name))
+        case (name ~ _ ~ args ~ _) => FuncExpr(name, args, aggregationFunctions contains name)
       }
-    | variableName ^^ { VarExpr(_) }
+    | variableName ^^ VarExpr
     | "(" ~> expr <~ ")"
     )
 
@@ -239,21 +305,21 @@ class DeepDiveLogParser extends JavaTokenParsers {
     }
 
   // conditional expressions
-  def compareOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "=" | "IS" ~ "NOT" ^^ { _ => "IS NOT" } | "IS"
+  def compareOperator = ("LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "=" | "IS" ~ "NOT" ^^ { _ => "IS NOT" } | "IS") named "compare operator"
 
   def cond : Parser[Cond] =
-    ( acond ~ (";") ~ cond ^^ { case (lhs ~ op ~ rhs) =>
+    ( acond ~ ";" ~ cond ^^ { case (lhs ~ op ~ rhs) =>
         CompoundCond(lhs, LogicOperator.OR(), rhs)
       }
     | acond
-    )
+    ) named "conditional expression"
   def acond : Parser[Cond] =
-    ( lcond ~ (",") ~ acond ^^ { case (lhs ~ op ~ rhs) => CompoundCond(lhs, LogicOperator.AND(), rhs) }
+    ( lcond ~ "," ~ acond ^^ { case (lhs ~ op ~ rhs) => CompoundCond(lhs, LogicOperator.AND(), rhs) }
     | lcond
     )
   // ! has higher priority...
   def lcond : Parser[Cond] =
-    ( "!" ~> bcond ^^ { NegationCond(_) }
+    ( "!" ~> bcond ^^ NegationCond
     | bcond
     )
   def bcond : Parser[Cond] =
@@ -267,7 +333,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
         case VarExpr(x) => VarPattern(x)
         case x: Expr => ExprPattern(x)
       }
-    )
+    ) named "pattern"
 
   def atom = relationName ~ "(" ~ rep1sep(pattern, ",") ~ ")" ^^ {
     case (r ~ _ ~ patterns ~ _) => BodyAtom(r, patterns)
@@ -281,152 +347,141 @@ class DeepDiveLogParser extends JavaTokenParsers {
     QuantifiedBody(modifier, b)
   }
 
-  def functionInputOutputType: Parser[FunctionInputOutputType] =
-    ( "rows" ~> "like" ~> relationName ^^ { RelationTypeAlias(_) }
-    | "(" ~> rep1sep(columnDeclaration, ",") <~ ")" ^^ {
-        attrs => RelationTypeDeclaration(attrs map { _.name }, attrs map { _.t })
-      }
-    )
-
-  def ruleAnnotation = "@" ~> annotationName ~ ("(" ~> rep1sep(ident, ",") <~ ")") ^^ {
-    case (name ~ args) => RuleAnnotation(name, args)
-  }
-
-  def ruleAnnotations = rep(ruleAnnotation)
-
-  def getArg(annos: List[RuleAnnotation], name: String)  = {
-    annos.find(_.name == name) map (_.args) map (_(0))
-  }
-
-  def functionImplementation : Parser[FunctionImplementationDeclaration] =
-    ( "implementation" ~ stringLiteralAsString ~ "handles" ~ ("tsv" | "json") ~ "lines" ^^ {
-        case (_ ~ command ~ _ ~ style ~ _) => RowWiseLineHandler(command=command, style=style)
-      }
-    | "implementation" ~ stringLiteralAsString ~ "runs" ~ "as" ~ "plpy" ^^ {
-        case (_ ~ command ~ _ ~ _ ~ style) => RowWiseLineHandler(command=command, style=style)
-      }
-    )
-
-  def functionDeclaration : Parser[FunctionDeclaration] =
-    ( "function" ~ functionName ~ "over" ~ functionInputOutputType
-                             ~ "returns" ~ functionInputOutputType
-                 ~ (functionImplementation+)
-    ) ^^ {
-      case ("function" ~ a ~ "over" ~ inTy
-                           ~ "returns" ~ outTy
-                       ~ implementationDecls) =>
-             FunctionDeclaration(a, inTy, outTy, implementationDecls)
-    }
-
   def cqBody: Parser[Body] = quantifiedBody | atom | lcond
 
   def cqConjunctiveBody: Parser[List[Body]] = rep1sep(cqBody, ",")
 
-  def cqHeadTerms = "(" ~> rep1sep(expr, ",") <~ ")"
-
   def conjunctiveQueryBody(separator: Parser[_] = ":-") : Parser[ConjunctiveQuery] =
     opt("*") ~ opt("|" ~> decimalNumber) ~ separator ~ rep1sep(cqConjunctiveBody, ";") ^^ {
       case (isDistinct ~ limit ~ _ ~ disjunctiveBodies) =>
-        ConjunctiveQuery(List.empty, disjunctiveBodies, isDistinct != None, limit map (_.toInt))
+        ConjunctiveQuery(List.empty, disjunctiveBodies, isDistinct isDefined, limit map (_.toInt))
     }
+
+  def conjunctiveQueryHeadTerms = "(" ~> rep1sep(expr, ",") <~ ")"
 
   def conjunctiveQuery : Parser[ConjunctiveQuery] =
     // TODO fill headTermAnnotations as done in queryWithOptionalHeadTerms to support @order_by
-    cqHeadTerms ~ conjunctiveQueryBody() ^^ {
+    conjunctiveQueryHeadTerms ~ conjunctiveQueryBody() ^^ {
       case (head ~ cq) => cq.copy(headTerms = head)
     }
 
-  def functionMode = "@mode" ~> commit("(" ~> functionModeType <~ ")" ^? ({
-    case "inc" => "inc"
-  }, (s) => s"${s}: unrecognized mode"))
-
-  def parallelism = "@parallelism" ~> "(" ~> integer <~ ")"
-
-  def functionCallRule : Parser[FunctionCallRule] =
-    opt(functionMode) ~ opt(parallelism) ~ relationName ~ "+=" ~ functionName ~ conjunctiveQuery ^^ {
-      case (mode ~ parallelism ~ out ~ _ ~ func ~ cq) => FunctionCallRule(out, func, cq, mode, parallelism)
-    }
-
-  def supervisionAnnotation = "@label" ~> "(" ~> expr <~ ")"
-
-  def extractionRule =
-    ( opt(supervisionAnnotation) ~ relationName ~ conjunctiveQuery ^^ {
-        case (sup ~ head ~ cq) => ExtractionRule(head, cq, sup)
+  def ruleWithConjunctiveQuery: Parser[RuleWithConjunctiveQuery] =
+    ( // normal derivation rule (or could also be IsTrue factor rule when @weight annotation is present which is handled later)
+      relationName ~ conjunctiveQuery ^^ {
+        case head ~ cq =>
+          ExtractionRule(headName = head, q = cq)
       }
-    | relationName ~ cqHeadTerms ~ ("=" ~> expr) ~ conjunctiveQueryBody() ^^ {
-        case (head ~ headTerms ~ sup ~ cq) =>
-          ExtractionRule(head, cq.copy(headTerms = headTerms), Some(sup))
+    | // inference rule with special syntax in head for designated factors
+      inferenceRuleHead ~ conjunctiveQueryBody() ^^ {
+        case head ~ cq =>
+          InferenceRule(head = head, q = cq)
+      }
+    | // supervision rule with equal sign
+      relationName ~ conjunctiveQueryHeadTerms ~ ("=" ~> expr) ~ conjunctiveQueryBody() ^^ {
+        case h ~ ts ~ sup ~ cq =>
+          SupervisionRule(headName = h, supervision = sup, q = cq.copy(headTerms = ts))
+      }
+    | // function call with += sign between head and function call
+      relationName ~ ("+=" ~> functionName) ~ conjunctiveQuery ^^ {
+        case out ~ func ~ cq =>
+          FunctionCallRule(output = out, function = func, q = cq)
       }
     )
 
-  def factorWeight = "@weight" ~> "(" ~> rep1sep(expr, ",") <~ ")" ^^ { FactorWeight(_) }
-  def inferenceMode = "@mode" ~> commit("(" ~> inferenceModeType <~ ")" ^? ({
-    case "inc" => "inc"
-  }, (s) => s"${s}: unrecognized mode"))
-
   // factor functions
-  def headAtom = opt("!") ~ relationName ~ ("(" ~> rep1sep(expr, ",") <~ ")") ^^ {
-    case (isNegated ~ r ~ expressions) => HeadAtom(r, expressions, isNegated != None)
-  }
-
-  def implyHeadAtoms = rep1sep(headAtom, ",") ~ "=>" ~ headAtom ^^ {
-    case (a ~ _ ~ b) => a :+ b
-  }
-
   def inferenceRuleHead =
-  ( implyHeadAtoms ^^ {
-      InferenceRuleHead(FactorFunction.Imply(), _)
+    ( rep1sep(headAtom, ",") ~ ("=>" ~> headAtom) ^^ { case (a ~ b) => InferenceRuleHead(FactorFunction.Imply() ,  a :+ b) }
+    |         headAtom    ~ rep1("=" ~> headAtom) ^^ { case (a ~ b) => InferenceRuleHead(FactorFunction.Equal() ,  a +: b) }
+    |         headAtom    ~ rep1("^" ~> headAtom) ^^ { case (a ~ b) => InferenceRuleHead(FactorFunction.And()   ,  a +: b) }
+    |         headAtom    ~ rep1("v" ~> headAtom) ^^ { case (a ~ b) => InferenceRuleHead(FactorFunction.Or()    ,  a +: b) }
+    |         headAtom                            ^^ { case       a => InferenceRuleHead(FactorFunction.IsTrue(), List(a)) }
+    )
+  def headAtom =
+    opt("!") ~ relationName ~ conjunctiveQueryHeadTerms ^^ {
+      case (isNegated ~ varName ~ expressions) => HeadAtom(varName, expressions, isNegated isDefined)
     }
-  | "@semantics" ~> commit("(" ~> stringLiteralAsString <~ ")" ^? ({
-      case "linear" => FactorFunction.Linear()
-      case "ratio"  => FactorFunction.Ratio()
-    }, (s) => s"${s}: unrecognized semantics")) ~ implyHeadAtoms ^^ {
-      case (s ~ h) => InferenceRuleHead(s, h)
-    }
-  | headAtom ~ "=" ~ rep1sep(headAtom, "=") ^^ { case (a ~ _ ~ b) =>
-      InferenceRuleHead(FactorFunction.Equal(), a +: b)
-    }
-  | headAtom ~ "^" ~ rep1sep(headAtom, "^") ^^ { case (a ~ _ ~ b) =>
-      InferenceRuleHead(FactorFunction.And(), a +: b)
-    }
-  | headAtom ~ "v" ~ rep1sep(headAtom, "v") ^^ { case (a ~ _ ~ b) =>
-      InferenceRuleHead(FactorFunction.Or(), a +: b)
-    }
-  | headAtom ^^ {
-      x => InferenceRuleHead(FactorFunction.IsTrue(), List(x))
-    }
-  )
-
-  def inferenceConjunctiveQuery : Parser[ConjunctiveQuery] =
-    ":-" ~> rep1sep(cqConjunctiveBody, ";") ^^ {
-      ConjunctiveQuery(List(), _, false, None)
-  }
-
-  def inferenceRule =
-    opt(inferenceMode) ~ factorWeight ~ inferenceRuleHead ~ inferenceConjunctiveQuery ^^ {
-      case (mode ~ weight ~ head ~ cq) => InferenceRule(head, cq, weight, mode)
-  }
 
   // rules or schema elements in arbitrary order
-  def statement : Parser[Statement] = ( inferenceRule
-                                      | schemaDeclaration
-                                      | extractionRule
-                                      | functionDeclaration
-                                      | functionCallRule
-                                      )
+  def statement : Parser[Statement] = (
+    rep(annotation) ~
+      ( schemaDeclaration
+      | functionDeclaration
+      | ruleWithConjunctiveQuery
+      )
+    ) ^^ {
+    case annos ~ stmt if annos isEmpty => stmt
+    case annos ~ stmt => stmt match {
+      case s: SchemaDeclaration   => s.copy(annotations = annos)
+      case s: FunctionDeclaration => s.copy(annotations = annos)
+      case s: FunctionCallRule    => s.copy(annotations = annos)
+      case s: ExtractionRule      => s.copy(annotations = annos)
+      case s: SupervisionRule     => s.copy(annotations = annos)
+      case s: InferenceRule       => s.copy(annotations = annos)
+    }
+
+  } ^? {
+    // adjust parse result based on annotations
+    case decl: SchemaDeclaration => decl
+    case decl: FunctionDeclaration => decl
+    case fncall: FunctionCallRule => fncall
+    case supvis: SupervisionRule => supvis
+
+    // treat @weight annotations
+    case rule: RuleWithConjunctiveQuery if rule.annotations exists {
+      anno => (anno named "weight") && (anno.args isDefined)
+    } =>
+      val weights = FactorWeight(rule.annotations find (_ named "weight") map (_ exprs) get)
+      rule match {
+        case extrRule: ExtractionRule =>
+          // turn normal derivation rules to IsTrue factors
+          val headAtom = HeadAtom(name = extrRule.headName, terms = extrRule.q.headTerms, isNegated = false)
+          InferenceRule(
+            head = InferenceRuleHead(FactorFunction.IsTrue(), List(headAtom)),
+            q = extrRule.q.copy(headTerms = List.empty),
+            weights = weights,
+            annotations = extrRule.annotations
+          )
+        case infrRule: InferenceRule =>
+          infrRule.copy(weights = weights)
+        case _ => sys.error(s"Invalid usage of @weight:\n${DeepDiveLogPrettyPrinter.print(rule)}")
+      }
+
+    // treat @label annotation
+    case rule: ExtractionRule if rule.annotations exists {
+      anno => (anno named "label") && (anno.exprs.size == 1)
+    } =>
+      val labelExpr = (rule.annotations find (_ named "label") flatMap (_ expr) get)
+      SupervisionRule(headName = rule.headName, supervision = labelExpr, q = rule.q,
+        annotations = rule.annotations filterNot (_ named "label"))
+
+    case rule: ExtractionRule => rule
+    // otherwise (InferenceRule without @weight), it's an error
+
+  } ^? {
+    // treat @semantics annotation
+    case rule@InferenceRule(InferenceRuleHead(FactorFunction.Imply(), _), _, _, _) if rule.annotations exists {
+      anno => (anno named "semantics") && (anno.exprs.size == 1)
+    } =>
+      rule.annotations find (_ named "semantics") flatMap (_ value) collect {
+        case s: String => s.toLowerCase match {
+          case "linear" => FactorFunction.Linear()
+          case "ratio" => FactorFunction.Ratio()
+          case "logical" => FactorFunction.Imply()
+          case _ => sys.error(s"$s: unrecognized @semantics value")
+        }
+        case v => sys.error(s"${v}: unrecognized @semantics")
+      } map {
+        case factor => rule.copy(head = rule.head.copy(function = factor))
+      } get
+    case rule: Statement if !rule.isInstanceOf[InferenceRule] ||
+      !(rule.annotations exists (_ named "semantics")) => rule
+
+  }
+
   def program : Parser[DeepDiveLog.Program] = phrase(rep1(statement <~ "."))
 
-  def parseProgram(inputProgram: CharSequence, fileName: Option[String] = None): List[Statement] = {
-    val result = parse(program, inputProgram)
-    if (result successful) result.get
-    else sys.error(fileName.getOrElse("") + result.toString)
-  }
 
-  def parseProgramFile(fileName: String): List[Statement] = {
-    val source = scala.io.Source.fromFile(fileName)
-    try parseProgram(source.getLines mkString "\n", Some(fileName))
-    finally source.close()
-  }
+
 
   // query is a conjunctive query with optional projection and extraction rules
   def query : Parser[DeepDiveLog.Query] =
@@ -457,6 +512,22 @@ class DeepDiveLogParser extends JavaTokenParsers {
     }
 
   def annotatedHeadTerm = rep(annotation) ~ expr ^^ { case anno ~ e => (e, anno) }
+
+
+
+
+
+  def parseProgram(inputProgram: CharSequence, fileName: Option[String] = None): List[Statement] = {
+    val result = parse(program, inputProgram)
+    if (result successful) result.get
+    else sys.error(fileName.getOrElse("") + result.toString)
+  }
+
+  def parseProgramFile(fileName: String): List[Statement] = {
+    val source = scala.io.Source.fromFile(fileName)
+    try parseProgram(source.getLines mkString "\n", Some(fileName))
+    finally source.close()
+  }
 
   def parseQuery(inputQuery: String): DeepDiveLog.Query = {
     val result = parse(phrase(query), inputQuery)

@@ -28,7 +28,7 @@ object DeepDiveLogQueryCompiler extends DeepDiveLogHandler {
     }) ++ List({
       // compile the query
       s"""${new compiler.QueryCompiler(query).generateSQL(compiler.UseVariableAsAlias)}"""
-    }) mkString(";\n\n")
+    }) mkString ";\n\n"
     println(sql)
   }
 

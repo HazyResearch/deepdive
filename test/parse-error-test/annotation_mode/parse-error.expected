@@ -1,5 +1,0 @@
-[error] test/parse-error-test/annotation_mode/input.ddlog[1.17] error: unknown: unrecognized mode
-
-@mode("unknown")
-
-                ^

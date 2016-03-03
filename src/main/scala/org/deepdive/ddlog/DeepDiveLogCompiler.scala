@@ -37,8 +37,9 @@ class DeepDiveLogCompiler( program : DeepDiveLog.Program, config : DeepDiveLog.C
 
   val statementsByHeadName: Map[String, List[Statement]] =
     statements collect {
-      case s: ExtractionRule       => s.headName -> s
       case s: FunctionCallRule     => s.output -> s
+      case s: ExtractionRule       => s.headName -> s
+      case s: SupervisionRule      => s.headName -> s
     } groupBy(_._1) mapValues(_ map {_._2})
 
   val statementsByRepresentative: Map[Statement, List[Statement]] =
@@ -53,17 +54,19 @@ class DeepDiveLogCompiler( program : DeepDiveLog.Program, config : DeepDiveLog.C
   // Given a statement, resolve its name for the compiled extractor block.
   def resolveExtractorBlockName(s: Statement): String = s match {
     case d: SchemaDeclaration => s"init_${d.a.name}"
-    case e: ExtractionRule => s"ext_${e.headName}"
     case f: FunctionCallRule => s"ext${
       // Extra numbering is necessary because there can be many function calls to the same head relation
       // XXX This comes right after the prefix to prevent potential collision with user's name
       val functionCallsForSameOutputAndFunction =
         statementsByHeadName getOrElse(f.output, List.empty) filter {
           case s:FunctionCallRule => s.function == f.function
+          case _ => false
         }
       val idx = functionCallsForSameOutputAndFunction indexOf f
       optionalIndex(idx)
     }_${f.output}_by_${f.function}"
+    case e: ExtractionRule => s"ext_${e.headName}"
+    case s: SupervisionRule => s"ext_${s.headName}"
     case _ => sys.error(s"${s}: Cannot determine extractor block name for rule")
   }
 
@@ -97,20 +100,16 @@ class DeepDiveLogCompiler( program : DeepDiveLog.Program, config : DeepDiveLog.C
     }
   }
 
-  // has schema declared
-  def hasSchemaDeclared(relName: String) : Boolean = {
-    schemaDeclarationByRelationName contains relName
-  }
-
   def collectUsedRelations1(body: Body): List[String] = body match {
     case a: BodyAtom => List(a.name)
     case q: QuantifiedBody => collectUsedRelations(q.bodies)
     case _ => List.empty
   }
   def collectUsedRelations(bodies: List[Body]): List[String] = bodies flatMap collectUsedRelations1
-  val relationNamesUsedByStatement = statements collect {
+  val relationNamesUsedByStatement: Map[Statement, List[String]] = statements collect {
       case f : FunctionCallRule => f -> (f.q.bodies flatMap collectUsedRelations distinct)
       case e : ExtractionRule   => e -> (e.q.bodies flatMap collectUsedRelations distinct)
+      case e : SupervisionRule  => e -> (e.q.bodies flatMap collectUsedRelations distinct)
       case e : InferenceRule    => e -> (e.q.bodies flatMap collectUsedRelations distinct)
     } toMap
 
@@ -122,6 +121,7 @@ class DeepDiveLogCompiler( program : DeepDiveLog.Program, config : DeepDiveLog.C
   case object TableAlias extends AliasStyle
   case object NoAlias extends AliasStyle
   case object UseVariableAsAlias extends AliasStyle
+  case object SupervisionRuleAlias extends AliasStyle
 
 
   // This is responsible for compiling a single conjunctive query
@@ -173,7 +173,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
   }
 
   // compile alias
-  def compileAlias(e: Expr, aliasStyle: AliasStyle) = aliasStyle match {
+  def compileAlias(e: Expr, a: Option[String], aliasStyle: AliasStyle) = aliasStyle match {
     case NoAlias => ""
     case TableAlias => e match {
       case VarExpr(v) => {
@@ -187,6 +187,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
     }
     case ViewAlias => s" AS column_${cq.headTerms indexOf e}"
     case UseVariableAsAlias => s""" AS "${DeepDiveLogPrettyPrinter.print(e)}"""" //" fix sublime highlighting
+    case SupervisionRuleAlias => a map (" AS " + _) getOrElse ""
   }
 
   // resolve an expression
@@ -244,8 +245,9 @@ class QueryCompiler(cq : ConjunctiveQuery) {
 
   // generate SQL SELECT cluase
   def generateSQLHead(aliasStyle: AliasStyle) = {
-    val head = if (cq.headTerms isEmpty) "*" else cq.headTerms map { expr =>
-      compileExpr(expr) + compileAlias(expr, aliasStyle)
+    val head = if (cq.headTerms isEmpty) "*" else cq.headTerms.zip(
+      cq.headTermAliases getOrElse {cq.headTerms map {_ => None}}) map { case (expr, alias) =>
+      compileExpr(expr) + compileAlias(expr, alias, aliasStyle)
     } mkString(", ")
     val distinctStr = if (cq.isDistinct) "DISTINCT " else ""
     s"${distinctStr}${head}"
@@ -354,27 +356,15 @@ class QueryCompiler(cq : ConjunctiveQuery) {
     val orderbyStr =
       if (cq.headTermAnnotations.size != cq.headTerms.size) "" // invalid annotations
       else {
-        val ORDER_BY_ANNOTATION_NAMES = Set("order_by")
-        val orderByAnnos = cq.headTermAnnotations map {
-          case annos => annos collectFirst {
-            case anno if ORDER_BY_ANNOTATION_NAMES contains anno.name => anno
-          }
-        }
+        val orderByAnnos = cq.headTermAnnotations map (_ find (_ named "order_by"))
         val orderByExprs = cq.headTerms.zip(orderByAnnos).zipWithIndex collect {
           case ((e, Some(orderByAnno)), i) =>
-            // TODO factor out annotation argument handling
             val isAscending = // the "dir" or first argument of the annotation decides the sort order, defaulting to ASCending
-              orderByAnno.args collect {
-                case Left(argsMap) => (argsMap getOrElse("dir", "ASC")).toString == "ASC"
-                case Right(dir :: _) => dir.toString == "ASC"
-              } getOrElse(true)
+              (orderByAnno.valueAt("dir", 0) getOrElse "ASC") == "ASC"
             val priority = // the priority or second argument decides the key index
-              orderByAnno.args collect {
-                case Left(argsMap) => (argsMap getOrElse("priority", i+1)).toString.toInt
-                case Right(_ :: priority :: _) => priority.toString.toInt
-              } getOrElse(i+1)
+              orderByAnno.valueAt("priority", 1) map (_.toString.toInt) getOrElse (i+1)
             (e, isAscending, priority)
-        } sortBy { _._3 }
+        } sortBy (_._3)
         optionalClause("\nORDER BY", orderByExprs map {
             case (e, isAscending, _) => s"${compileExpr(e)} ${if (isAscending) "ASC" else "DESC"}"
           } mkString(", ")
@@ -405,53 +395,58 @@ class QueryCompiler(cq : ConjunctiveQuery) {
     List.empty
   }
 
+  def generateUnionAllSQL(cqs: List[ConjunctiveQuery], aliasStyle: AliasStyle): String = {
+    cqs map { q => new QueryCompiler(q).generateSQL(aliasStyle) } mkString("\nUNION ALL\n")
+  }
+
   // Generate extraction rule part for deepdive
   def compile(stmt: ExtractionRule): CompiledBlocks = {
     val stmts = statementsByRepresentative getOrElse(stmt, List.empty) collect { case s: ExtractionRule => s }
     if (stmts isEmpty) return List.empty
 
-    val inputQueries = stmts flatMap { case stmt =>
-      stmt.q.bodies map { case cqBody =>
-        val tmpCq = stmt.q.copy(bodies = List(cqBody))
-        // Generate the body of the query.
-        val qc              = new QueryCompiler(tmpCq)
+    val hasSchemaDeclared = schemaDeclarationByRelationName contains stmt.headName
+    val aliasStyle = if (hasSchemaDeclared) TableAlias else ViewAlias
+    compileExtractorBlock(resolveExtractorBlockName(stmt), stmt.headName, stmts,
+      generateUnionAllSQL(stmts map (_.q), aliasStyle))
+  }
 
-        if (stmt.supervision != None) {
-          if (stmt.q.bodies.length > 1) sys.error(s"Scoping rule does not allow disjunction.\n")
-          val headStr = qc.generateSQLHead(NoAlias)
-          val labelCol = qc.compileExpr(stmt.supervision.get)
-          s"""SELECT DISTINCT ${ headStr }, ${labelCol} AS label
-          ${ qc.generateSQLBody(cqBody) }
-          """
+  def compileExtractorBlock(extractorName: String, outputRelation: String, stmts: List[Statement], sql: String): CompiledBlocks = {
+    val shouldMaterialize = schemaDeclarationByRelationName contains outputRelation
+
+    List(s"deepdive.extraction.extractors.${extractorName}" -> Map(
+      "cmd" -> QuotedString(
+        if (shouldMaterialize) {
+          s"""
+          |# TODO use temporary table
+          |deepdive create table "${outputRelation}"
+          |deepdive sql ${escape4sh(s"INSERT INTO ${outputRelation} $sql")}
+          |# TODO rename temporary table to replace output_relation
+          |""".stripMargin
         } else {
-          // variable columns
-          // dd_new_ tale only need original column name to make sure the schema is the same with original table
-          // views uses view alias
-          val aliasStyle = if (!hasSchemaDeclared(stmt.headName)) ViewAlias
-              else TableAlias
-          qc.generateSQL(aliasStyle)
+          s"""
+          |deepdive create view ${outputRelation} as ${escape4sh(sql)}
+          |""".stripMargin
         }
-      }
-    }
-    val blockName = resolveExtractorBlockName(stmts(0))
-    val createTable = hasSchemaDeclared(stmts(0).headName)
-    List(s"deepdive.extraction.extractors.${blockName}" -> Map(
-      "cmd" -> QuotedString(if (createTable) {
-	s"""
-	# TODO use temporary table
-	deepdive create table "${stmts(0).headName}"
-	deepdive sql ${escape4sh(s"INSERT INTO ${stmts(0).headName} ${inputQueries.mkString("\nUNION ALL\n")}")}
-	# TODO rename temporary table to replace output_relation
-	"""
-} else {
-	s"""
-	deepdive create view ${stmts(0).headName} as ${escape4sh(inputQueries.mkString("\nUNION ALL\n"))}
-	"""
-}),
-      "output_relation" -> stmts(0).headName,
+      ),
+      "output_relation" -> outputRelation,
       "style" -> "cmd_extractor",
       "input_relations" -> (stmts flatMap relationNamesUsedByStatement distinct)
     ))
+  }
+
+  def compile(stmt: SupervisionRule): CompiledBlocks = {
+    val stmts = statementsByRepresentative getOrElse(stmt, List.empty) collect { case s: SupervisionRule => s }
+    if (stmts isEmpty) return List.empty
+
+    compileExtractorBlock(resolveExtractorBlockName(stmt), stmt.headName, stmts,
+      generateUnionAllSQL(stmts map { case stmt => stmt.q.copy(
+        headTerms = stmt.q.headTerms :+ stmt.supervision,
+        headTermAliases = {
+          stmt.q.headTermAliases orElse { Some(stmt.q.headTerms map (_ => None)) } map { _ :+ Some("label") }
+        },
+        isDistinct = true
+      ) }, SupervisionRuleAlias)
+    )
   }
 
   def compile(stmt: FunctionCallRule): CompiledBlocks = {
@@ -472,7 +467,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
           + (function.implementations mkString "\n  "))
 
       val blockName = resolveExtractorBlockName(stmt)
-      val parallelism = stmt.parallelism getOrElse("${PARALLELISM}")
+      val parallelism = stmt.annotations find (_ named "parallelism") flatMap (_.value) getOrElse("${PARALLELISM}")
       s"deepdive.extraction.extractors.${blockName}" -> (Map(
         "input" -> QuotedString(new QueryCompiler(stmt.q).generateSQL(TableAlias)),
         "output_relation" -> stmt.output,
@@ -485,6 +480,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
 
   // generate inference rule part for deepdive
   def compile(stmt: InferenceRule): CompiledBlocks = {
+    // FIXME change stmt.head.terms to be List[BodyAtom] in the parser
     val headAsBody = stmt.head.terms map { x =>
       BodyAtom(x.name, x.terms map {
         case x: VarExpr => VarPattern(x.name)
@@ -594,8 +590,9 @@ class QueryCompiler(cq : ConjunctiveQuery) {
   def compile(stmt: Statement): CompiledBlocks = stmt match {
     case s: SchemaDeclaration => compile(s)
     case s: FunctionDeclaration => compile(s)
-    case s: ExtractionRule => compile(s)
     case s: FunctionCallRule => compile(s)
+    case s: ExtractionRule => compile(s)
+    case s: SupervisionRule => compile(s)
     case s: InferenceRule => compile(s)
     case _ => sys.error(s"Compiler does not recognize statement: ${stmt}")
   }

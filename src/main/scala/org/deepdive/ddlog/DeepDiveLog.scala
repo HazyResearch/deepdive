@@ -33,7 +33,6 @@ object DeepDiveLog {
       )
     cmd("compile")                     required() action { (_, c) => c.copy(handler = DeepDiveLogCompiler)        } text("Compiles a deepdive.conf")
     cmd("print")                       required() action { (_, c) => c.copy(handler = DeepDiveLogPrettyPrinter)   } text("Prints given program after parsing")
-    cmd("print-incremental")           required() action { (_, c) => c.copy(handler = DeepDiveLogDeltaDeriver)    } text("Prints delta rules after parsing given program")
     cmd("check")                       required() action { (_, c) => c.copy(handler = DeepDiveLogSemanticChecker) } text("Checks if given program is valid")
     cmd("export-schema")               required() action { (_, c) => c.copy(handler = DeepDiveLogSchemaExporter)  } text("Exports given program in JSON")
     opt[Unit]("skip-desugar")          optional() action { (_, c) => c.copy(skipDesugar = true)                   } text("Whether to skip desugaring and assume no sugar")

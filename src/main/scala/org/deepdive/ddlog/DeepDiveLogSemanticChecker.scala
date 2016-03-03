@@ -1,7 +1,6 @@
 package org.deepdive.ddlog
 
-import scala.collection.immutable.HashMap
-import scala.collection.immutable.HashSet
+import scala.language.postfixOps
 
 // semantic checker for ddlog
 class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
@@ -9,7 +8,8 @@ class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
   val namesUsedInHead: Set[String] =
     program collect {
       case s: SchemaDeclaration => s.a.name
-      case s: ExtractionRule if s.supervision isEmpty => s.headName
+      case s: SupervisionRule => s.headName
+      case s: ExtractionRule => s.headName
       case s: FunctionCallRule => s.output
     } toSet
 
@@ -86,7 +86,7 @@ class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
 
   // check if the user use reserved column names
   def checkVariableRelationSchema(stmt: Statement) {
-    val reservedSet = Set("id", "label")
+    val reservedSet = Set("label")
     stmt match {
       case decl: SchemaDeclaration => {
         if (decl.isQuery) {
@@ -107,8 +107,8 @@ class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
   def checkMultinomialFactors(stmt: Statement) = stmt match {
     case s: InferenceRule =>
       val categoricalVars = s.head.terms filter { t =>
-        schemaDeclarationByName get(t.name) map(_.categoricalColumns nonEmpty) getOrElse(false) }
-      if (! (categoricalVars.size == 0 || s.head.terms.size == categoricalVars.size))
+        schemaDeclarationByName get t.name map(_.categoricalColumns nonEmpty) getOrElse(false) }
+      if (! (categoricalVars.isEmpty || s.head.terms.size == categoricalVars.size))
         error(s, "None or all variables must be categorical")
     case _ =>
   }
@@ -130,6 +130,10 @@ class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
         check(s.headName, s.q.headTerms.size)
         checkCq(s.q)
       }
+      case s: SupervisionRule => {
+        check(s.headName, s.q.headTerms.size)
+        checkCq(s.q)
+      }
       case s: InferenceRule => {
         s.head.terms foreach checkHeadAtom
         checkCq(s.q)
@@ -148,10 +152,10 @@ class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
               if ((b.bodies collect { case x: BodyAtom => 1 }).size != 1)
                 error(stmt, s"One and only one atom should be supplied in OPTIONAL modifier")
             case ExistModifier(_) =>
-              if ((b.bodies collect { case x: BodyAtom => 1 }).size == 0)
+              if ((b.bodies collect { case x: BodyAtom => 1 }) isEmpty)
                 error(stmt, s"At least one atom should be supplied in EXISTS modifier")
             case AllModifier() =>
-              if ((b.bodies collect { case x: BodyAtom => 1 }).size == 0)
+              if ((b.bodies collect { case x: BodyAtom => 1 }) isEmpty)
                 error(stmt, s"At least one atom should be supplied in ALL modifier")
           }
         }
@@ -160,6 +164,7 @@ class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
     }
     stmt match {
       case s: ExtractionRule => s.q.bodies foreach checkBody
+      case s: SupervisionRule => s.q.bodies foreach checkBody
       case s: InferenceRule => s.q.bodies foreach checkBody
       case _ =>
     }
@@ -186,11 +191,12 @@ class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
         (cq.headTerms flatMap DeepDiveLogSemanticChecker.collectUsedVars) ++
         (additionalUsedVars)
       val varUndefined = varUses -- varDefs
-      if (varUndefined nonEmpty) error(stmt, s"Variable ${varUndefined mkString (", ")} must have bindings")
+      if (varUndefined nonEmpty) error(stmt, s"Variable ${varUndefined mkString ", "} must have bindings")
     }
     stmt match {
-      case s: ExtractionRule => checkCq(s.q, (s.supervision.toSet flatMap { e: Expr => DeepDiveLogSemanticChecker.collectUsedVars(e) }))
-      case s: InferenceRule => checkCq(s.q, (s.weights.variables flatMap DeepDiveLogSemanticChecker.collectUsedVars toSet))
+      case s: ExtractionRule => checkCq(s.q)
+      case s: SupervisionRule => checkCq(s.q, List(s.supervision) flatMap DeepDiveLogSemanticChecker.collectUsedVars toSet)
+      case s: InferenceRule => checkCq(s.q, s.weights.variables flatMap DeepDiveLogSemanticChecker.collectUsedVars toSet)
       case _ =>
     }
   }
@@ -200,6 +206,7 @@ class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
     case decl: SchemaDeclaration => Some(decl.a.name)
     case rule: ExtractionRule => Some(rule.headName)
     case fncall: FunctionCallRule => Some(fncall.output)
+    case rule: SupervisionRule => Some(rule.headName)
     case _ => None
   }
 
@@ -213,7 +220,7 @@ class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
       sys.error(s"Following relations must not be redefined: ${
         relationsRedefinedByExtraRules map {
           "'" + _ + "'"
-        } mkString (", ")
+        } mkString ", "
       }")
   }
 

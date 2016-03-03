@@ -1,8 +1,6 @@
 package org.deepdive.ddlog
 
-import org.apache.commons.lang3.StringEscapeUtils
-import org.deepdive.ddlog.DeepDiveLog.Mode._
-
+import scala.language.postfixOps
 import scala.util.parsing.json.{JSONArray, JSONObject}
 
 // Schema exporter that dumps column names and types of every relation as well as their annotations
@@ -28,8 +26,8 @@ object DeepDiveLogSchemaExporter extends DeepDiveLogHandler {
           (name, JSONObject(columnSchema))
       } toMap)
     // relation annotations are omitted when not present
-    if (decl.annotation nonEmpty)
-      schema += "annotations" -> exportAnnotations(decl.annotation)
+    if (decl.annotations nonEmpty)
+      schema += "annotations" -> exportAnnotations(decl.annotations)
     // what type of random variable this relation is
     if (decl.isQuery)
       schema += "variable_type" -> (

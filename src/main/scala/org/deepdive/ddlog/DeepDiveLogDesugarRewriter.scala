@@ -1,5 +1,7 @@
 package org.deepdive.ddlog
 
+import scala.language.postfixOps
+
 object DeepDiveLogDesugarRewriter {
 
   // Rewrite function call rules whose output coincides with normal rules.
