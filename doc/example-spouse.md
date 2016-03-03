@@ -803,7 +803,7 @@ This will ground the model based on the data in the database, learn the weights,
 Let's take a look at the probabilities inferred by DeepDive for the `has_spouse` variables.
 
 ```bash
-deepdive sql "SELECT p1_id, p2_id, expectation FROM has_spouse_label_inference ORDER BY random() LIMIT 20"
+deepdive sql "SELECT p1_id, p2_id, expectation FROM has_spouse_inference ORDER BY random() LIMIT 20"
 ```
 
 <!-- TODO Update to ddlog query once `@expectation(e) has_spouse(...)` syntax is implemented -->
@@ -853,7 +853,7 @@ deepdive do calibration-plots
 ```
 
 It will produce a file `run/model/calibration-plots/has_spouse.png` that holds three plots as shown below:
-![Calibration plot for spouse example](images/spouse/has_spouse_label.png)
+![Calibration plot for spouse example](images/spouse/has_spouse.png)
 
 Refer to the [full documentation on calibration data](calibration.md) for more detail on how to interpret the plots and take actions.
 

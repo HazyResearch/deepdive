@@ -27,7 +27,6 @@ include "util";
             end
             | .[].key
             ]
-        , variables : $columnName # FIXME remove this
         , variablesLabelColumn : $columnName
         , variableType : ($variableType | trimWhitespace | ascii_downcase
             | if in({boolean: 1, categorical: 1}) then .

@@ -2,6 +2,8 @@
 # compile-config-2.02-learning_inference -- Adds processes for performing inference with the grounded factor graph
 ##
 
+include "sql";
+
 # skip adding learning/inference processes unless one for grounding is there
 if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph") | not then . else
 
@@ -104,12 +106,52 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
 
             # create a view for each app schema variable
             \([ $deepdive.schema.variables_[] | "
-            deepdive create view \("\(.variablesTable)_\(.variablesLabelColumn)_inference" | @sh) as \("
-                SELECT \(.variablesTable).*, mir.category, mir.expectation FROM
-                \(.variablesTable), dd_inference_result_variables mir
-                WHERE \(.variablesTable).id = mir.id
-                ORDER BY mir.expectation DESC
-                " | @sh)"
+                deepdive create view \("\(.variablesTable)_inference" | @sh) as \(
+                { SELECT:
+                    [ { expr: "v.*" }
+                    , { alias: "expectation", table: "r", column: "expectation" }
+                    , { alias: "dd_label",    table: "i", column: "label" }
+                    , { alias: "dd_id",       table: "i", column: "id" }
+                    ]
+                , FROM: [ { alias: "v", table: .variablesTable } ]
+                , JOIN:
+                    # variable ids
+                    [ { LEFT_OUTER: { alias: "i", table: .variablesIdsTable }
+                      , ON: { and:  [ .variablesKeyColumns[]
+                                    | { eq: [ { table: "i", column: "_\(.)" }
+                                            , { table: "v", column: . }
+                                            ] }
+                                    ] } }
+                    , if .variableType == "boolean" then
+                    # inference results
+                      { LEFT_OUTER: { alias: "r", table: "dd_inference_result_variables" }
+                      , ON: { eq:   [ { table: "r", column: "id" }
+                                    , { table: "i", column: "id" }
+                                    ] } }
+                    else
+                    # category ids are necessary to find the inference result corresponding to the variable
+                      { LEFT_OUTER: { alias: "c", table: .variablesCategoriesTable }
+                      , ON: { and:  [ .variablesCategoryColumns[]
+                                    | { eq: [ { table: "c", column: "_\(.)" }
+                                            , { table: "v", column: . }
+                                            ] }
+                                    ] } }
+                    # inference results
+                    , { LEFT_OUTER: { alias: "r", table: "dd_inference_result_variables" }
+                      , ON: { and:  [ { eq: [ { table: "r", column: "id" }
+                                            , { table: "i", column: "id" }
+                                            ] }
+                                    , { eq: [ { table: "r", column: "category" }
+                                            , { table: "c", column: "id" }
+                                            ] }
+                                    ] } }
+                    end
+                    ]
+                , ORDER_BY:
+                    { expr: { table: "r", column: "expectation" }
+                    , order: "DESC"
+                    }
+                } | asSql | @sh)"
             ] | join("\n"))
         "
     }

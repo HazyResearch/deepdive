@@ -80,20 +80,20 @@ The entire database should look like this:
  public | friends                                              | table | user | 8192 bytes |
  public | person                                               | table | user | 16 kB      |
  public | person_has_cancer                                    | table | user | 8192 bytes |
- public | person_has_cancer_label_calibration                  | view  | user | 0 bytes    |
- public | person_has_cancer_label_inference                    | view  | user | 0 bytes    |
+ public | person_has_cancer_calibration                        | view  | user | 0 bytes    |
+ public | person_has_cancer_inference                          | view  | user | 0 bytes    |
  public | person_smokes                                        | table | user | 8192 bytes |
- public | person_smokes_label_calibration                      | view  | user | 0 bytes    |
- public | person_smokes_label_inference                        | view  | user | 0 bytes    |
+ public | person_smokes_calibration                            | view  | user | 0 bytes    |
+ public | person_smokes_inference                              | view  | user | 0 bytes    |
 (16 rows)
 ```
 
 Tables `person`, `friends`, `person_has_cancer`, and `person_smokes` hold the input data we prepared under the `input/` directory.
-To see what DeepDive inferred from our data, you can look at `person_smokes_label_inference` and `person_has_cancer_label_inference`.
+To see what DeepDive inferred from our data, you can look at `person_smokes_inference` and `person_has_cancer_inference`.
 The two views should look like the following:
 
 ```bash
-deepdive sql "SELECT * FROM person_smokes_label_inference"
+deepdive sql "SELECT * FROM person_smokes_inference"
 ```
 
 ```
@@ -108,7 +108,7 @@ deepdive sql "SELECT * FROM person_smokes_label_inference"
 ```
 
 ```bash
-deepdive sql "SELECT * FROM person_has_cancer_label_inference"
+deepdive sql "SELECT * FROM person_has_cancer_inference"
 ```
 
 ```

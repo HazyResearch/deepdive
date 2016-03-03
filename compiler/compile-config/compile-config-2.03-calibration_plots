@@ -20,10 +20,10 @@ if .deepdive_.execution.processes | has("process/model/inference") | not then . 
             DEEPDIVE_CALIBRATION_NUM_BUCKETS=10
             \([ $deepdive.schema.variables_[] | "
             # create a view and draw a calibration plot for variable \(.name)
-            deepdive db create_calibration_view \(.variablesTable | @sh) \(.variablesLabelColumn | @sh)
-            draw_calibration_plot      \(.variablesTable | @sh) \(.variablesLabelColumn | @sh)
+            deepdive db create_calibration_view \(.variableName | @sh)
+            draw_calibration_plot      \(.variableName | @sh)
             # XXX keeping a duplicate copy under the current run directory for backward compatibility
-            cp -a \("\(.variablesTable)_\(.variablesLabelColumn)" | @sh).* \"$extraOutput\"/
+            cp -a \(.variableName | @sh).* \"$extraOutput\"/
             "] | join("\n"))
         "
     }

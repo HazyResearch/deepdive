@@ -115,7 +115,7 @@ run/model/calibration-plots/[variable_name].png
 
 A typical calibration plot looks as follows:
 
-![A calibration plot from the spouse example](images/spouse/has_spouse_label.png)
+![A calibration plot from the spouse example](images/spouse/has_spouse.png)
 
 
 ### Interpreting calibration plots

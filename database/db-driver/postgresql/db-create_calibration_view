@@ -2,25 +2,23 @@
 # db-create_calibration_view -- Creates a variable's *_calibration view in a PostgreSQL database
 # > eval "$(db-parse "$url")"
 # > export DEEPDIVE_CALIBRATION_NUM_BUCKETS=10
-# > db-create_calibration_view TABLE COLUMN
+# > db-create_calibration_view TABLE
 ##
 set -euo pipefail
 
 table=${1:?The TABLE holding the variable must be given, e.g., has_spouse}
-column=${2:?The COLUMN holding the variable must be given, e.g., is_true}
 
 : ${DEEPDIVE_CALIBRATION_NUM_BUCKETS:=10}
 num_buckets=$DEEPDIVE_CALIBRATION_NUM_BUCKETS
 
-# TODO drop ${column} from the table names
-db-create-view-as "${table}_${column}_calibration" "
+db-create-view-as "${table}_calibration" "
     WITH bucketed AS (
-        SELECT ${column} AS label
+        SELECT dd_label AS label
              , CASE
                  WHEN expectation = 1 THEN $(($num_buckets - 1))
                  ELSE FLOOR(expectation * ${num_buckets})
                END AS bucket
-        FROM ${table}_${column}_inference
+        FROM ${table}_inference
     )
     SELECT universe.bucket                             AS bucket
          , universe.count                              AS num_variables
