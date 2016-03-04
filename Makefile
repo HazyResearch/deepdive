@@ -82,9 +82,10 @@ build:
 	util/build/generate-build-info.sh >$(BUILD_INFO)
 
 # how to build external runtime dependencies to bundle
-.PHONY: extern/.build/bundled
-extern/.build/bundled: extern/bundle-runtime-dependencies.sh
+.PHONY: bundled-runtime-dependencies
+bundled-runtime-dependencies extern/.build/bundled: extern/bundle-runtime-dependencies.sh
 	PACKAGENAME=deepdive  $<
+$(PACKAGE): bundled-runtime-dependencies
 build: extern/.build/bundled
 
 
