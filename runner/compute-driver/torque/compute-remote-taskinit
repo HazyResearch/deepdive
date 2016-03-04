@@ -8,31 +8,49 @@
 ##
 set -euo pipefail
 
-# Prepare submission script
+# XXX: Hack for CentOS machines which have python 2.7 installed as 
+# python2.7 in the same directory as python. 
+if [[ $(uname) == "Linux" ]] && [[ -f "/etc/redhat-release" ]]; then
+  if which python2.7 &> /dev/null ; then
+    echo "Found python2.7 installation at $(which python2.7)"
+    HAS_PYTHON=true
+  else
+    warning "CentOS machine $(hostname) might not have python 2.7 installed!"
+    warning "This warning shows up if python2.7 cannot be resolved to a valid symbol."
+    warning "Continue at your own risk" 
+    HAS_PYTHON=false
+  fi
+fi
+
+# Prepare submission script using echo commands.
+# WARNING: This submission script cannot output anything other than the output
+# of $COMMAND, otherwise when deepdive-sql tries to consume the output, it will
+# break.
 {
   echo "#PBS -N $DEEPDIVE_CURRENT_PROCESS_NAME"
   if [[ $NUM_PROCESSES -gt 1 ]]; then
-      echo "#PBS -l ncpus=1,nodes=$NUM_PROCESSES"
-      echo "#PBS -t 0-$((NUM_PROCESSES - 1))"
+    echo "#PBS -l ncpus=1,nodes=$NUM_PROCESSES"
+    echo "#PBS -t 0-$((NUM_PROCESSES - 1))"
   fi
   echo "#PBS -o $REMOTE_OUT_DIR"
   echo "#PBS -e $REMOTE_ERR_DIR"
   echo
-  if [[ $(uname) == "Linux" ]] && [[ -f "/etc/redhat-release" ]]; then
-    if which python2.7; then
-      echo 'alias python=$(which python2.7)'
-    else
-      error "Machine $(hostname) does not have python 2.7 installed!"
-    fi
-  fi
-  echo "export PATH=\"$REMOTE_DEEPDIVE_HOME:\""'$PATH'
+  echo 'export PATH='$REMOTE_DEEPDIVE_HOME'/bin:$PATH'
+  echo 'export PYTHONPATH='$REMOTE_DEEPDIVE_HOME'/lib/python:$PYTHONPATH'
   echo "export DEEPDIVE_APP=\"$DEEPDIVE_APP\""
-  echo 'export PYTHONPATH=$(deepdive whereis installed .)/lib/python:$PYTHONPATH'
+  echo 'export DEEPDIVE_CURRENT_PROCESS_INDEX=$PBS_ARRAYID'
+  if [[ $HAS_PYTHON ]]; then
+    echo 
+    echo 'export PATH='$REMOTE_DEEPDIVE_CWD':$PATH'
+    echo 'ln -sfn $(which python2.7) '$REMOTE_DEEPDIVE_CWD'/python'
+    echo
+  fi
+  echo 'cd '$REMOTE_DEEPDIVE_CWD
   if [[ $NUM_PROCESSES -gt 1 ]]; then
       echo 'INPUT_ID=$(printf "%04d" $PBS_ARRAYID)'
-      echo '"$SHELL"'" -c \"$COMMAND\" < \"$REMOTE_IN_DIR."'$INPUT_ID'"\""
+      echo '"$SHELL" -c '"$COMMAND"' < '"$REMOTE_IN_DIR"'.$INPUT_ID'
   else
-      echo '"$SHELL"'" -c \"$COMMAND\" < \"$REMOTE_IN_DIR\""
+      echo '"$SHELL" -c '"$COMMAND"' < '"$REMOTE_IN_DIR"
   fi
 } > $REMOTE_SH_DIR
 

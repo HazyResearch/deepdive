@@ -14,13 +14,18 @@
 set -euo pipefail
 
 join_expand() { 
-  for k in "$@"; do
-    if [[ ! -z "$k" ]]; then
-      if [[ "$k" == *=* ]]; then
-        echo -n "$k "
+  for x in "$@"; do
+    if [[ ! -z "$x" ]]; then
+      # To handle variables that contain multiline
+      if [[ "$x" == *=* ]]; then
+        k="${x%=*}"
+        v="${x##*=}"
       else
-        eval "echo -n \"$k=\$$k \""
+        k="$x"
+        v="$(eval 'echo $'$x)"
       fi
+      v=$(escape4sh "$v")
+      echo -ne "$k=$v "
     fi
   done
 }
@@ -33,4 +38,7 @@ done
 shift
 COMMAND="$@"
 
-ssh $SSH_INFO "$(join_expand ${ENV_VARS[@]})" "$(escape4sh $COMMAND)"
+# Some escaping magic needs to happen here since newlines in $COMMAND need to 
+# be preserved. Ugh. 
+EXPAND_VARS=$(join_expand "${ENV_VARS[@]}")
+ssh $SSH_INFO "$EXPAND_VARS" "$COMMAND"

@@ -20,7 +20,7 @@ eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \
     ssh_user='.ssh_user' \
     ssh_host='.ssh_host' \
     remote_deepdive_app_base='.remote_deepdive_app_base' \
-    remote_deepdive_cwd_base='.remote_deepdive_cwd_base' \
+    remote_deepdive_transient_base='.remote_deepdive_transient_base' \
     poll_period_secs='.poll_period_secs' \
     excludes='.excludes | join("\t")' \
     #
@@ -57,26 +57,27 @@ export REMOTE_DEEPDIVE_HOME=$(ssh $SSH_INFO "deepdive whereis installed .")
 # APP_ID is used to isolate app folders that are uploaded to the same path
 # in the remote node. It is a hash of the local user name and the local absolute 
 # DeepDive application path. 
-export APP_ID="$(hash "$LOCAL_USER + $DEEPDIVE_APP")"
+export APP_ID="$(hash $LOCAL_USER/$DEEPDIVE_APP)"
 #SESSION_ID="$(date +%Y%m%d/%H%M%S.%N)"
+# DEEPDIVE_RUN_ID is of the form 20160303/170011.599195000
 export SESSION_ID="$DEEPDIVE_RUN_ID/$DEEPDIVE_CURRENT_PROCESS_NAME"
 
 # Either take the remote DeepDive app path specified by the user, or default to
-# remote dir. The app base directory is where DeepDive will create a new directory
-# called dd_app, and all apps will be copied to this directory.
-remote_deepdive_app_base=${remote_deepdive_app_base:-${remote_deepdive_cwd_base}}
-remote_deepdive_app="$remote_deepdive_app_base/dd_app/$APP_ID"
+# remote dir. The app base directory is the remote directory where DeepDive
+# will copy and synchronize the app directory in the workstation with. 
+export REMOTE_DEEPDIVE_APP="$remote_deepdive_app_base/$APP_ID"
+export REMOTE_DEEPDIVE_CWD="$REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME"
+export REMOTE_SH_DIR="$REMOTE_DEEPDIVE_CWD/remote.sh"
+export REMOTE_ERR_DIR="$REMOTE_DEEPDIVE_CWD/remote.err"
+export REMOTE_JOBID_DIR="$REMOTE_DEEPDIVE_CWD/job.id"
 
-# Current working directory variables.
-# TODO: Change "run" to include some session ID to allow multiple processes
-# running.
-remote_deepdive_cwd="$remote_deepdive_cwd_base/dd_run/$APP_ID/$SESSION_ID"
-export REMOTE_SH_DIR="$remote_deepdive_cwd/remote.sh"
+# A directory to store transient data, such as input and output, which we don't
+# really want to keep in the workstation. 
+remote_deepdive_transient_base=${remote_deepdive_transient_base:-${remote_deepdive_app_base}}
+export REMOTE_DEEPDIVE_TRANSIENT="$remote_deepdive_transient_base/$SESSION_ID"
 # TODO: Decoupling input to reduce data transfers. 
-export REMOTE_IN_DIR="$remote_deepdive_cwd/remote.in"
-export REMOTE_OUT_DIR="$remote_deepdive_cwd/remote.out"
-export REMOTE_ERR_DIR="$remote_deepdive_cwd/remote.err"
-export REMOTE_JOBID_DIR="$remote_deepdive_cwd/job.id"
+export REMOTE_IN_DIR="$REMOTE_DEEPDIVE_TRANSIENT/remote.in"
+export REMOTE_OUT_DIR="$REMOTE_DEEPDIVE_TRANSIENT/remote.out"
 
 # show configuration
 echo "Executing with the following configuration:"
@@ -84,27 +85,26 @@ echo " num_processes=$num_processes"
 echo " ssh_user=$ssh_user"
 echo " ssh_host=$ssh_host"
 echo " remote_deepdive_app_base=$remote_deepdive_app_base"
-echo " remote_deepdive_cwd_base=$remote_deepdive_cwd_base"
+echo " remote_deepdive_transient_base=$remote_deepdive_transient_base"
 echo " poll_period_secs=$poll_period_secs"
 echo " excludes=$excludes"
 echo ""
 echo "DEEPDIVE_APP = $DEEPDIVE_APP"
 echo "DEEPDIVE_CURRENT_PROCESS_NAME = $DEEPDIVE_CURRENT_PROCESS_NAME"
-echo "DEEPDIVE_COMPUTER_CONFIG = $DEEPDIVE_COMPUTER_CONFIG"
 echo "DEEPDIVE_COMPUTER_TYPE = $DEEPDIVE_COMPUTER_TYPE"
 echo ""
 echo "Session information"
-echo " application id : $LOCAL_USER + $DEEPDIVE_APP -> $APP_ID"
-echo " session id     : $DEEPDIVE_CURRENT_PROCESS_NAME -> $APP_ID/$SESSION_ID"
+echo " application id : $LOCAL_USER/$DEEPDIVE_APP -> $APP_ID"
+echo " session id     : $DEEPDIVE_CURRENT_PROCESS_NAME -> $SESSION_ID"
 
 # ensure all the directories needed exist in the remote node. 
 ssh $SSH_INFO bash -c "'
-  mkdir -p $(dirname $remote_deepdive_app)
-  mkdir -p $remote_deepdive_cwd
+  [[ -d $(dirname $REMOTE_DEEPDIVE_APP) ]] || mkdir -p $(dirname $REMOTE_DEEPDIVE_APP)
+  [[ -d $REMOTE_DEEPDIVE_CWD ]] || mkdir -p $REMOTE_DEEPDIVE_CWD
 '"
 
 # Slash at the end of DEEPDIVE_APP/ is important, so that rsync doesn't create
-# another folder inside $remote_deepdive_app
+# another folder inside $REMOTE_DEEPDIVE_APP
 RSYNC_EXCLUDES=""
 for exclude in $excludes; do
   # XXX: For some reason, if I enclose $exclude in double quotes and pass it
@@ -114,12 +114,13 @@ for exclude in $excludes; do
 done
 echo "Copying deepdive app to remote node."
 echo "Excluding $RSYNC_EXCLUDES"
-rsync -aH $RSYNC_EXCLUDES --progress $DEEPDIVE_APP/ $SSH_INFO:$remote_deepdive_app
+rsync -aH $RSYNC_EXCLUDES --progress $DEEPDIVE_APP/ $SSH_INFO:$REMOTE_DEEPDIVE_APP
 
 # Prepare input data
 if [[ -n $input_sql ]]; then
-  # Upload SQL data to the submission node
+  echo "Uploading SQL data to submission node.."
   deepdive-sql eval "$input_sql" format="$DEEPDIVE_LOAD_FORMAT" |
+  show_progress input_to "$DEEPDIVE_CURRENT_PROCESS_NAME upload_sql" -- \
   ssh $SSH_INFO "cat > $REMOTE_IN_DIR"
 fi
 
@@ -135,9 +136,10 @@ fi
 # input_sql.
 echo "Performing setup for current task..."
 ssh_with_env \
-  DEEPDIVE_APP=$remote_deepdive_app \
+  DEEPDIVE_APP=$REMOTE_DEEPDIVE_APP \
   NUM_PROCESSES=$num_processes \
-  COMMAND=$command \
+  COMMAND=\""$command"\" \
+  REMOTE_DEEPDIVE_CWD \
   REMOTE_DEEPDIVE_HOME \
   DEEPDIVE_CURRENT_PROCESS_NAME \
   REMOTE_IN_DIR \
@@ -164,7 +166,7 @@ fi
 # This is a hack that supposedly prints out the output of ssh asking for the 
 # password. But the output seems to not be flushed to stdout. 
 JOB_ID=$(ssh_with_env \
-  DEEPDIVE_APP=$remote_deepdive_app \
+  DEEPDIVE_APP=$REMOTE_DEEPDIVE_APP \
   SSH_HOST=$ssh_host \
   KRB_DIR \
   REMOTE_JOBID_DIR \
@@ -185,13 +187,14 @@ while [[ "$STATUS" == incomplete ]]; do
   # Efficient way to compute the status as it lifts the burden of checking each
   # job in the submission node. 
   JOB_STATUSES=$(ssh_with_env \
-    DEEPDIVE_APP=$remote_deepdive_app \
+    DEEPDIVE_APP=$REMOTE_DEEPDIVE_APP \
     JOB_ID=$JOB_ID \
     NUM_PROCESSES=$num_processes \
     REMOTE_OUT_DIR \
     -- "deepdive compute remote-status")
   
-  echo $JOB_STATUSES
+  echo "Job statuses [I:incomplete, C:complete, F:failed]: "
+  echo "  $JOB_STATUSES"
   # Funny way to count number of jobs. 
   NUM_COMPLETED=$(grep -o "C" <<< "$JOB_STATUSES" | grep -c "C" || :)
   NUM_INCOMPLETE=$(grep -o "I" <<< "$JOB_STATUSES" | grep -c "I" || :)
@@ -211,21 +214,25 @@ while [[ "$STATUS" == incomplete ]]; do
   fi
 done
 
+export ERROR_PATH="$DEEPDIVE_APP/run/$SESSION_ID/error.log"
+
 if [[ "$STATUS" == failed ]]; then
     echo "Job failed!"
-    echo "Please inspect $ssh_host:$REMOTE_ERR_DIR for more information"
-    echo "----------------------------------------------------------------"
-    ssh $SSH_INFO "tail +1 $REMOTE_ERR_DIR*" 
-    echo "----------------------------------------------------------------"
+    echo "Please inspect $ERROR_PATH for more information"
 
     if [[ $num_processes -gt 1 ]]; then
         echo "--- Multi-job report ---"
+        echo "Last job statuses: $JOB_STATUSES"
         echo "Completed jobs: $NUM_COMPLETED"
         echo "Failed jobs: $NUM_FAILED"
         echo "Incomplete jobs: $NUM_INCOMPLETE"
     fi
     error
 fi
+
+# Download error logs and other information from remote. 
+rsync -aH --exclude "$SESSION_ID" $SSH_INFO:$REMOTE_DEEPDIVE_APP/ $DEEPDIVE_APP
+ssh $SSH_INFO "tail +1 $REMOTE_ERR_DIR*" > $ERROR_PATH
 
 # prepare a temporary output table when output_relation is given
 if [[ -n $output_relation ]]; then
