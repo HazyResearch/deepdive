@@ -1,13 +1,13 @@
 deepdive.schema.variables {
-S.label: Boolean
-Q.label: Boolean
+S.dd_label: Boolean
+Q.dd_label: Boolean
 
 }
 
 deepdive.inference.factors.inf_imply_Q_Q {
 input_query: """
-SELECT R0.id AS "Q.R0.id"
-     , R1.id AS "Q.R1.id"
+SELECT R0.dd_id AS "Q.R0.dd_id"
+     , R1.dd_id AS "Q.R1.dd_id"
      , R1.x AS "dd_weight_column_0"
 FROM Q R0
    , Q R1
@@ -15,7 +15,7 @@ FROM Q R0
 WHERE R2.a = R0.x
   AND R2.b = R1.x
 """
-function: """Imply(Q.R0.label, Q.R1.label)"""
+function: """Imply(Q.R0.dd_label, Q.R1.dd_label)"""
 weight: """?(dd_weight_column_0)"""
 input_relations: [
   Q
@@ -26,8 +26,8 @@ input_relations: [
 
 deepdive.inference.factors.inf_equal_Q_Q {
 input_query: """
-SELECT R0.id AS "Q.R0.id"
-     , R1.id AS "Q.R1.id"
+SELECT R0.dd_id AS "Q.R0.dd_id"
+     , R1.dd_id AS "Q.R1.dd_id"
      , R1.x AS "dd_weight_column_0"
 FROM Q R0
    , Q R1
@@ -35,7 +35,7 @@ FROM Q R0
 WHERE R2.a = R0.x
   AND R2.b = R1.x
 """
-function: """Equal(Q.R0.label, !Q.R1.label)"""
+function: """Equal(Q.R0.dd_label, !Q.R1.dd_label)"""
 weight: """?(dd_weight_column_0)"""
 input_relations: [
   Q

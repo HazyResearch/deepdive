@@ -1,5 +1,5 @@
 deepdive.schema.variables {
-q.label: Boolean
+q.dd_label: Boolean
 
 }
 

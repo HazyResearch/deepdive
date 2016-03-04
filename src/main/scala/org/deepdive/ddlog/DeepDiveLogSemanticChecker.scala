@@ -86,7 +86,8 @@ class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
 
   // check if the user use reserved column names
   def checkVariableRelationSchema(stmt: Statement) {
-    val reservedSet = Set("label")
+    import DeepDiveLogCompiler._
+    val reservedSet = Set(deepdiveVariableIdColumn, deepdiveVariableLabelColumn)
     stmt match {
       case decl: SchemaDeclaration => {
         if (decl.isQuery) {

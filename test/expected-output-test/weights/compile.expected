@@ -1,21 +1,21 @@
 deepdive.schema.variables {
-c.label: Boolean
-d.label: Boolean
-a.label: Boolean
-e.label: Boolean
-f.label: Boolean
+f.dd_label: Boolean
+c.dd_label: Boolean
+d.dd_label: Boolean
+a.dd_label: Boolean
+e.dd_label: Boolean
 
 }
 
 deepdive.inference.factors.inf_istrue_a {
 input_query: """
-SELECT R0.id AS "a.R0.id"
+SELECT R0.dd_id AS "a.R0.dd_id"
      , R0.k + R1.p AS "dd_weight_column_0"
 FROM a R0
    , b R1
 WHERE R1.k = R0.k
 """
-function: """Imply(a.R0.label)"""
+function: """Imply(a.R0.dd_label)"""
 weight: """?(dd_weight_column_0)"""
 input_relations: [
   a
@@ -26,12 +26,12 @@ input_relations: [
 
 deepdive.inference.factors.inf_istrue_c {
 input_query: """
-SELECT R0.id AS "c.R0.id"
+SELECT R0.dd_id AS "c.R0.dd_id"
 FROM c R0
    , b R1
 WHERE R1.k = R0.k
 """
-function: """Imply(c.R0.label)"""
+function: """Imply(c.R0.dd_label)"""
 weight: """?"""
 input_relations: [
   c
@@ -42,14 +42,14 @@ input_relations: [
 
 deepdive.inference.factors.inf_istrue_d {
 input_query: """
-SELECT R0.id AS "d.R0.id"
+SELECT R0.dd_id AS "d.R0.dd_id"
      , R0.k AS "dd_weight_column_0"
      , R1.p AS "dd_weight_column_1"
 FROM d R0
    , b R1
 WHERE R1.k = R0.k
 """
-function: """Imply(d.R0.label)"""
+function: """Imply(d.R0.dd_label)"""
 weight: """?(dd_weight_column_0, dd_weight_column_1)"""
 input_relations: [
   d
@@ -60,12 +60,12 @@ input_relations: [
 
 deepdive.inference.factors.inf_istrue_e {
 input_query: """
-SELECT R0.id AS "e.R0.id"
+SELECT R0.dd_id AS "e.R0.dd_id"
 FROM e R0
    , b R1
 WHERE R1.k = R0.k
 """
-function: """Imply(e.R0.label)"""
+function: """Imply(e.R0.dd_label)"""
 weight: """-10"""
 input_relations: [
   e
@@ -76,12 +76,12 @@ input_relations: [
 
 deepdive.inference.factors.inf_istrue_f {
 input_query: """
-SELECT R0.id AS "f.R0.id"
+SELECT R0.dd_id AS "f.R0.dd_id"
 FROM f R0
    , b R1
 WHERE R1.k = R0.k
 """
-function: """Imply(f.R0.label)"""
+function: """Imply(f.R0.dd_label)"""
 weight: """-0.3"""
 input_relations: [
   f

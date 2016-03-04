@@ -8,9 +8,7 @@ import scala.language.postfixOps
 
 // Compiler that takes parsed program as input and turns into blocks of deepdive.conf
 class DeepDiveLogCompiler( program : DeepDiveLog.Program, config : DeepDiveLog.Config ) {
-  type CompiledBlocks = List[(String, Any)]  // TODO be more specific
-
-  case class QuotedString(value: String)
+  import DeepDiveLogCompiler._
 
   val statements = program
 
@@ -181,9 +179,9 @@ class QueryCompiler(cq : ConjunctiveQuery) {
         val relation = variable.relName
         s""" AS "${relation}.R${index}.${name}\""""
       }
-      case _ => s" AS column_${cq.headTerms indexOf e}"
+      case _ => s" AS ${deepdiveViewOrderedColumnPrefix}${cq.headTerms indexOf e}"
     }
-    case ViewAlias => s" AS column_${cq.headTerms indexOf e}"
+    case ViewAlias => s" AS ${deepdiveViewOrderedColumnPrefix}${cq.headTerms indexOf e}"
     case UseVariableAsAlias => s""" AS "${DeepDiveLogPrettyPrinter.print(e)}\""""
   }
 
@@ -426,7 +424,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
       stmts map { case stmt => stmt.q.copy(
         headTerms = stmt.q.headTerms :+ stmt.supervision,
         headTermAliases = {
-          stmt.q.headTermAliases orElse { Some(stmt.q.headTerms map (_ => None)) } map { _ :+ Some("label") }
+          stmt.q.headTermAliases orElse { Some(stmt.q.headTerms map (_ => None)) } map { _ :+ Some(deepdiveVariableLabelColumn) }
         },
         isDistinct = false // XXX no need to take DISTINCT here since DeepDive will have to do it anyway
       ) }
@@ -468,7 +466,8 @@ class QueryCompiler(cq : ConjunctiveQuery) {
     val variableIdColumns = headAsBody.zipWithIndex collect {
       case (x: Atom, i) if schemaDeclarationByRelationName get x.name exists (_.isQuery) =>
         // TODO maybe TableAlias can be useful here or we can completely get rid of it?
-        s"""R${headAsBody indexOf x}.id AS "${x.name}.R${headAsBody indexOf x}.id\""""
+        s"""R${headAsBody indexOf x}.${deepdiveVariableIdColumn
+          } AS "${x.name}.R${headAsBody indexOf x}.${deepdiveVariableIdColumn}\""""
     }
 
     val inputQueries =
@@ -483,7 +482,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
         // weight columns
         val weightColumns = stmt.weights.variables.zipWithIndex collect {
           case (s: Expr, i) if !s.isInstanceOf[ConstExpr] =>
-            qc.compileExpr(s) + s""" AS "dd_weight_column_${i}\""""
+            s"""${qc.compileExpr(s)} AS "${deepdiveWeightColumnPrefix}${i}\""""
         }
 
         // factor input query
@@ -494,7 +493,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
     // factor function
     val func = {
       val funcBody = headAsBody zip stmt.head.variables map { case (x, y) =>
-        s"""${if (y.isNegated) "!" else ""}${x.name}.R${headAsBody indexOf x}.label"""
+        s"""${if (y.isNegated) "!" else ""}${x.name}.R${headAsBody indexOf x}.${deepdiveVariableLabelColumn}"""
       }
 
       val categoricalVars = stmt.head.variables filter { t => isCategoricalRelation(t.atom.name) }
@@ -534,7 +533,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
         case StringConst(value) => "?"
         case _ => {
           val weightVars = stmt.weights.variables.zipWithIndex.flatMap {
-            case(s: Expr, i) => Some(s"dd_weight_column_${i}")
+            case(s: Expr, i) => Some(s"${deepdiveWeightColumnPrefix}${i}")
           } mkString(", ")
           s"?(${weightVars})"
         }
@@ -584,7 +583,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
         if (isCategoricalRelation(decl.a.name)) {
           decl.a.name -> (decl.categoricalColumns map (_ -> "Categorical") toMap)
         } else // Boolean variables
-          s"${decl.a.name}.label" -> "Boolean"
+          s"${decl.a.name}.${deepdiveVariableLabelColumn}" -> "Boolean"
       } toMap)
     )
   }
@@ -601,6 +600,15 @@ class QueryCompiler(cq : ConjunctiveQuery) {
 
 object DeepDiveLogCompiler extends DeepDiveLogHandler {
 
+  type CompiledBlocks = List[(String, Any)]  // TODO be more specific
+  case class QuotedString(value: String)
+
+  // some of the reserved names used in compilation
+  val deepdiveViewOrderedColumnPrefix = "column_"
+  val deepdiveWeightColumnPrefix = "dd_weight_column_"
+  val deepdiveVariableIdColumn = "dd_id"
+  val deepdiveVariableLabelColumn = "dd_label"
+
   // entry point for compilation
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {
     // don't compile if it doesn't pass all semantic checks
@@ -615,7 +623,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
 
     // codegen HOCON
     def codegenValue(value: Any): String = value match {
-      case compiler.QuotedString(s) => // multi-line string
+      case QuotedString(s) => // multi-line string
         s"""\"\"\"${s replaceAll("\"\"\"", "\\\"\\\"\\\"")}\"\"\""""
       case _ =>
         value.toString

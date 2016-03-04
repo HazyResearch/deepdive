@@ -1,6 +1,6 @@
 deepdive.schema.variables {
-P.label: Boolean
-Q.label: Boolean
+P.dd_label: Boolean
+Q.dd_label: Boolean
 
 }
 
@@ -36,14 +36,14 @@ materialize: false
 
 deepdive.inference.factors.inf_imply_P_Q {
 input_query: """
-SELECT R0.id AS "P.R0.id"
-     , R1.id AS "Q.R1.id"
+SELECT R0.dd_id AS "P.R0.dd_id"
+     , R1.dd_id AS "Q.R1.dd_id"
 FROM P R0
    , Q R1
 WHERE R1.x = R0.x
   AND true
 """
-function: """Imply(P.R0.label, Q.R1.label)"""
+function: """Imply(P.R0.dd_label, Q.R1.dd_label)"""
 weight: """1"""
 input_relations: [
   P

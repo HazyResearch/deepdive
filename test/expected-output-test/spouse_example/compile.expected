@@ -1,5 +1,5 @@
 deepdive.schema.variables {
-has_spouse.label: Boolean
+has_spouse.dd_label: Boolean
 
 }
 
@@ -91,7 +91,7 @@ materialize: false
 
 deepdive.inference.factors.inf_istrue_has_spouse {
 input_query: """
-SELECT R0.id AS "has_spouse.R0.id"
+SELECT R0.dd_id AS "has_spouse.R0.dd_id"
      , R2.feature AS "dd_weight_column_0"
 FROM has_spouse R0
    , has_spouse_candidates R1
@@ -99,7 +99,7 @@ FROM has_spouse R0
 WHERE R1.relation_id = R0.relation_id
   AND R2.relation_id = R0.relation_id
 """
-function: """Imply(has_spouse.R0.label)"""
+function: """Imply(has_spouse.R0.dd_label)"""
 weight: """?(dd_weight_column_0)"""
 input_relations: [
   has_spouse

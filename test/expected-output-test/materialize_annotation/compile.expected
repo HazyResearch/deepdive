@@ -1,6 +1,6 @@
 deepdive.schema.variables {
-VQ.label: Boolean
-TQ.label: Boolean
+VQ.dd_label: Boolean
+TQ.dd_label: Boolean
 
 }
 

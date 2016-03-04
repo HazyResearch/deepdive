@@ -1,6 +1,6 @@
 deepdive.schema.variables {
-q1.label: Boolean
-q2.label: Boolean
+q1.dd_label: Boolean
+q2.dd_label: Boolean
 
 }
 
@@ -36,13 +36,13 @@ materialize: false
 
 deepdive.inference.factors.inf_istrue_q1 {
 input_query: """
-SELECT R0.id AS "q1.R0.id"
+SELECT R0.dd_id AS "q1.R0.dd_id"
      , R1.feature_id AS "dd_weight_column_0"
 FROM q1 R0
    , features R1
 WHERE R1.word_id = R0.wid
 """
-function: """Imply(q1.R0.label)"""
+function: """Imply(q1.R0.dd_label)"""
 weight: """?(dd_weight_column_0)"""
 input_relations: [
   q1
@@ -53,13 +53,13 @@ input_relations: [
 
 deepdive.inference.factors.inf_istrue_q2 {
 input_query: """
-SELECT R0.id AS "q2.R0.id"
+SELECT R0.dd_id AS "q2.R0.dd_id"
      , R1.feature_id AS "dd_weight_column_0"
 FROM q2 R0
    , features R1
 WHERE R1.word_id = R0.wid
 """
-function: """Imply(q2.R0.label)"""
+function: """Imply(q2.R0.dd_label)"""
 weight: """?(dd_weight_column_0)"""
 input_relations: [
   q2
