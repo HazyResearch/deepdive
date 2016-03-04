@@ -426,7 +426,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
         headTermAliases = {
           stmt.q.headTermAliases orElse { Some(stmt.q.headTerms map (_ => None)) } map { _ :+ Some("label") }
         },
-        isDistinct = true
+        isDistinct = false // XXX no need to take DISTINCT here since DeepDive will have to do it anyway
       ) }
     )
   }
