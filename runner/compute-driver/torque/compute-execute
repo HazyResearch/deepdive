@@ -66,18 +66,19 @@ export SESSION_ID="$DEEPDIVE_RUN_ID/$DEEPDIVE_CURRENT_PROCESS_NAME"
 # remote dir. The app base directory is the remote directory where DeepDive
 # will copy and synchronize the app directory in the workstation with. 
 export REMOTE_DEEPDIVE_APP="$remote_deepdive_app_base/$APP_ID"
-export REMOTE_DEEPDIVE_CWD="$REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME"
-export REMOTE_SH_DIR="$REMOTE_DEEPDIVE_CWD/remote.sh"
-export REMOTE_ERR_DIR="$REMOTE_DEEPDIVE_CWD/remote.err"
-export REMOTE_JOBID_DIR="$REMOTE_DEEPDIVE_CWD/job.id"
+export REMOTE_SH_DIR="$REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME/remote.sh"
+export REMOTE_ERR_DIR="$REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME/remote.err"
+export REMOTE_JOBID_DIR="$REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME/job.id"
 
 # A directory to store transient data, such as input and output, which we don't
 # really want to keep in the workstation. 
-remote_deepdive_transient_base=${remote_deepdive_transient_base:-${remote_deepdive_app_base}}
+remote_deepdive_transient_base=${remote_deepdive_transient_base:-"${REMOTE_DEEPDIVE_APP}/run"}
 export REMOTE_DEEPDIVE_TRANSIENT="$remote_deepdive_transient_base/$SESSION_ID"
 # TODO: Decoupling input to reduce data transfers. 
 export REMOTE_IN_DIR="$REMOTE_DEEPDIVE_TRANSIENT/remote.in"
 export REMOTE_OUT_DIR="$REMOTE_DEEPDIVE_TRANSIENT/remote.out"
+
+export REMOTE_DEEPDIVE_CWD="$REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME"
 
 # show configuration
 echo "Executing with the following configuration:"
@@ -99,9 +100,13 @@ echo " session id     : $DEEPDIVE_CURRENT_PROCESS_NAME -> $SESSION_ID"
 
 # ensure all the directories needed exist in the remote node. 
 ssh $SSH_INFO bash -c "'
-  [[ -d $(dirname $REMOTE_DEEPDIVE_APP) ]] || mkdir -p $(dirname $REMOTE_DEEPDIVE_APP)
-  [[ -d $REMOTE_DEEPDIVE_CWD ]] || mkdir -p $REMOTE_DEEPDIVE_CWD
+  # Should already exist, but just to make sure. 
+  mkdir -p $REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME
+  [[ -d $REMOTE_DEEPDIVE_TRANSIENT ]] || mkdir -p $REMOTE_DEEPDIVE_TRANSIENT
 '"
+
+DEEPDIVE_CWD="$(pwd)"
+REMOTE_DEEPDIVE_CWD="$REMOTE_DEEPDIVE_APP""${DEEPDIVE_CWD##$DEEPDIVE_APP}"
 
 # Slash at the end of DEEPDIVE_APP/ is important, so that rsync doesn't create
 # another folder inside $REMOTE_DEEPDIVE_APP
@@ -215,6 +220,7 @@ while [[ "$STATUS" == incomplete ]]; do
 done
 
 export ERROR_PATH="$DEEPDIVE_APP/run/$SESSION_ID/error.log"
+[[ -d $(dirname $ERROR_PATH) ]] || mkdir -p $(dirname $ERROR_PATH)
 
 if [[ "$STATUS" == failed ]]; then
     echo "Job failed!"
@@ -232,7 +238,7 @@ fi
 
 # Download error logs and other information from remote. 
 rsync -aH --exclude "$SESSION_ID" $SSH_INFO:$REMOTE_DEEPDIVE_APP/ $DEEPDIVE_APP
-ssh $SSH_INFO "tail +1 $REMOTE_ERR_DIR*" > $ERROR_PATH
+ssh $SSH_INFO "tail -n +1 $REMOTE_ERR_DIR*" > $ERROR_PATH
 
 # prepare a temporary output table when output_relation is given
 if [[ -n $output_relation ]]; then

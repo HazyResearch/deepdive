@@ -41,8 +41,8 @@ fi
   echo 'export DEEPDIVE_CURRENT_PROCESS_INDEX=$PBS_ARRAYID'
   if [[ $HAS_PYTHON ]]; then
     echo 
-    echo 'export PATH='$REMOTE_DEEPDIVE_CWD':$PATH'
-    echo 'ln -sfn $(which python2.7) '$REMOTE_DEEPDIVE_CWD'/python'
+    echo 'export PATH='$(dirname $REMOTE_SH_DIR)':$PATH'
+    echo 'ln -sfn $(which python2.7) '$(dirname $REMOTE_SH_DIR)'/python'
     echo
   fi
   echo 'cd '$REMOTE_DEEPDIVE_CWD
