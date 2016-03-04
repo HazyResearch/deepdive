@@ -103,7 +103,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     }
   }
 
-  def print(a: BodyAtom) : String = {
+  def print(a: Atom) : String = {
     val vars = a.terms map print
     s"${a.name}(${vars.mkString(", ")})"
   }
@@ -139,7 +139,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   def print(b: Body) : String = b match {
-    case b: BodyAtom => print(b)
+    case b: Atom => print(b)
     case b: Cond => print(b)
     case b: QuantifiedBody => print(b)
   }
@@ -164,21 +164,20 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   def print(a: HeadAtom) : String = {
-    val vars = a.terms map print
-    s"${if (a.isNegated) "!" else ""}${a.name}(${vars.mkString(", ")})"
+    s"${if (a.isNegated) "!" else ""}${print(a.atom)}"
   }
 
   def print(head: InferenceRuleHead) : String = {
-    def printImplyHead = s"""${printHead(head.terms.dropRight(1), ", ")} => ${print(head.terms.last)}"""
+    def printImplyHead = s"""${printHead(head.variables.dropRight(1), ", ")} => ${print(head.variables.last)}"""
     def printHead(a: List[HeadAtom], delim: String) : String = a map print mkString(delim)
     head.function match {
       case FactorFunction.Imply()  => printImplyHead
       case FactorFunction.Linear() => printImplyHead
       case FactorFunction.Ratio()  => printImplyHead
-      case FactorFunction.And()    => printHead(head.terms, " ^ ")
-      case FactorFunction.Or()     => printHead(head.terms, " v ")
-      case FactorFunction.Equal()  => printHead(head.terms, " = ")
-      case FactorFunction.IsTrue() => printHead(head.terms, "")
+      case FactorFunction.And()    => printHead(head.variables, " ^ ")
+      case FactorFunction.Or()     => printHead(head.variables, " v ")
+      case FactorFunction.Equal()  => printHead(head.variables, " = ")
+      case FactorFunction.IsTrue() => printHead(head.variables, "")
     }
   }
 

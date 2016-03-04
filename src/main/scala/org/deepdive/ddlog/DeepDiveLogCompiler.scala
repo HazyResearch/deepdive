@@ -82,7 +82,7 @@ class DeepDiveLogCompiler( program : DeepDiveLog.Program, config : DeepDiveLog.C
         factorFuncName
       }_${
         // followed by variable names
-        s.head.terms map {_.name} mkString("_")
+        s.head.variables map (_.atom.name) mkString("_")
       }"
   }
 
@@ -101,7 +101,7 @@ class DeepDiveLogCompiler( program : DeepDiveLog.Program, config : DeepDiveLog.C
   }
 
   def collectUsedRelations1(body: Body): List[String] = body match {
-    case a: BodyAtom => List(a.name)
+    case a: Atom => List(a.name)
     case q: QuantifiedBody => collectUsedRelations(q.bodies)
     case _ => List.empty
   }
@@ -136,7 +136,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
   // index is the index of the subgoal/atom this variable is found in the body.
   // variable is the complete Variable type for the found variable.
   def generateCanonicalVar()  = {
-    def generateCanonicalVarFromAtom(a: BodyAtom, index: String) {
+    def generateCanonicalVarFromAtom(a: Atom, index: String) {
       a.terms.zipWithIndex.foreach { case (expr, i) =>
         expr match {
           case VarPattern(v) =>
@@ -149,7 +149,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
     // For quantified body, we need to recursively add variables from the atoms inside the quantified body
     def generateCanonicalVarFromBodies(bodies: List[Body], indexPrefix: String) {
       bodies.zipWithIndex.foreach {
-        case (a: BodyAtom, index) => generateCanonicalVarFromAtom(a, s"${indexPrefix}${index}")
+        case (a: Atom, index) => generateCanonicalVarFromAtom(a, s"${indexPrefix}${index}")
         // we need to recursively handle the atoms inside the modifier
         case (a: QuantifiedBody, index) => generateCanonicalVarFromBodies(a.bodies, s"${indexPrefix}${index}_")
         case _ =>
@@ -256,7 +256,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
     // generate where clause from unification and conditions
     def generateWhereClause(bodies: List[Body], indexPrefix: String) : String = {
       val conditions = bodies.zipWithIndex.flatMap {
-        case (BodyAtom(relName, terms), index) => {
+        case (Atom(relName, terms), index) => {
           val bodyIndex = s"${indexPrefix}${index}"
           terms.zipWithIndex flatMap { case (pattern, termIndex) =>
             pattern match {
@@ -296,7 +296,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
 
     def generateFromClause(bodies: List[Body], indexPrefix: String) : String = {
       val atoms = bodies.zipWithIndex flatMap {
-        case (x:BodyAtom,i) => Some(s"${x.name} R${indexPrefix}${i}")
+        case (x:Atom,i) => Some(s"${x.name} R${indexPrefix}${i}")
         case _ => None
       }
       val outers = bodies.zipWithIndex flatMap {
@@ -462,13 +462,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
 
   // generate inference rule part for deepdive
   def compile(stmt: InferenceRule): CompiledBlocks = {
-    // FIXME change stmt.head.terms to be List[BodyAtom] in the parser
-    val headAsBody = stmt.head.terms map { x =>
-      BodyAtom(x.name, x.terms map {
-        case x: VarExpr => VarPattern(x.name)
-        case x: Expr    => ExprPattern(x)
-      })
-    }
+    val headAsBody = stmt.head.variables map (_.atom)
 
     val inputQueries =
       stmt.q.bodies map { case cqBody =>
@@ -479,13 +473,13 @@ class QueryCompiler(cq : ConjunctiveQuery) {
 
         val fakeBody        = headAsBody ++ cqBody
         val fakeCQ          = stmt.q.copy(bodies = List(fakeBody))
-        val fakeBodyAtoms   = fakeBody.collect { case x: BodyAtom => x }
+        val fakeBodyAtoms   = fakeBody.collect { case x: Atom => x }
 
         val index = cqBody.length + 1
         val qc = new QueryCompiler(fakeCQ)
         // TODO self-join?
         val varInBody = (fakeBody.zipWithIndex flatMap {
-          case (x: BodyAtom, i) =>
+          case (x: Atom, i) =>
             if (schemaDeclarationByRelationName get(x.name) map(_.isQuery) getOrElse(false))
               // TODO maybe TableAlias can be useful here or we can completely get rid of it?
               Some(s"""R${fakeBody indexOf x}.id AS "${x.name}.R${fakeBody indexOf x}.id\"""")
@@ -508,13 +502,13 @@ class QueryCompiler(cq : ConjunctiveQuery) {
 
     // factor function
     val func = {
-      val funcBody = (headAsBody zip stmt.head.terms map { case(x, y) =>
+      val funcBody = (headAsBody zip stmt.head.variables map { case(x, y) =>
         s"""${if (y.isNegated) "!" else ""}${x.name}.R${headAsBody indexOf x}.label"""
       })
 
-      val categoricalVars = stmt.head.terms filter { t => isCategoricalRelation(t.name) }
+      val categoricalVars = stmt.head.variables filter { t => isCategoricalRelation(t.atom.name) }
       val isMultinomialFactor =
-        if (categoricalVars.size == 0 || stmt.head.terms.size == categoricalVars.size)
+        if (categoricalVars.size == 0 || stmt.head.variables.size == categoricalVars.size)
           categoricalVars.size > 0
         else
           sys.error("None or all variables must be categorical")
@@ -561,7 +555,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
         "function" -> QuotedString(func),
         "weight" -> QuotedString(weight),
         "input_relations" -> {
-          val relationsInHead = stmt.head.terms map (_.name)
+          val relationsInHead = stmt.head.variables map (_.atom.name)
           val relationsInBody = relationNamesUsedByStatement getOrElse(stmt, List.empty)
           (relationsInHead ++ relationsInBody) distinct
         }

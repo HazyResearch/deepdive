@@ -45,9 +45,9 @@ class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
   }
 
   // iterate over all atoms contained in the body list and apply the checker
-  def checkBodyAtoms(checker: BodyAtom => Unit): List[Body] => Unit = bodies => {
+  def checkBodyAtoms(checker: Atom => Unit): List[Body] => Unit = bodies => {
     bodies foreach {
-      case a: BodyAtom => checker(a)
+      case a: Atom => checker(a)
       case a: QuantifiedBody => checkBodyAtoms(checker)(a.bodies)
       case _ =>
     }
@@ -60,13 +60,13 @@ class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
       if (!(namesUsedInHead contains name))
         error(stmt, s"""relation "${name}" is not defined""")
     }
-    def checkAtom(a: BodyAtom) = checkRelation(a.name)
+    def checkAtom(a: Atom) = checkRelation(a.name)
     def check = checkBodyAtoms(checkAtom)
     stmt match {
       case s: ExtractionRule => s.q.bodies foreach check
       case s: InferenceRule => {
         s.q.bodies foreach check
-        s.head.terms map (_.name) foreach checkRelation
+        s.head.variables map (_.atom.name) foreach checkRelation
       }
       case s: FunctionCallRule => s.q.bodies foreach check
       case _ =>
@@ -106,9 +106,9 @@ class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
   // check if any factors are defined across categorical and Boolean variables
   def checkMultinomialFactors(stmt: Statement) = stmt match {
     case s: InferenceRule =>
-      val categoricalVars = s.head.terms filter { t =>
-        schemaDeclarationByName get t.name map(_.categoricalColumns nonEmpty) getOrElse(false) }
-      if (! (categoricalVars.isEmpty || s.head.terms.size == categoricalVars.size))
+      val categoricalVars = s.head.variables filter { t =>
+        schemaDeclarationByName get t.atom.name map(_.categoricalColumns nonEmpty) getOrElse(false) }
+      if (! (categoricalVars.isEmpty || s.head.variables.size == categoricalVars.size))
         error(s, "None or all variables must be categorical")
     case _ =>
   }
@@ -120,8 +120,8 @@ class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
         (size != schemaDeclarationByName(name).a.terms.size))
         error(stmt, s""""${name}": number of columns in the query does not match number of columns in the schema""")
     }
-    def checkBodyAtom(a: BodyAtom) = check(a.name, a.terms.size)
-    def checkHeadAtom(a: HeadAtom) = check(a.name, a.terms.size)
+    def checkBodyAtom(a: Atom) = check(a.name, a.terms.size)
+    def checkHeadAtom(a: HeadAtom) = checkBodyAtom(a.atom)
     def checkCq(cq: ConjunctiveQuery) {
       cq.bodies foreach checkBodyAtoms(checkBodyAtom)
     }
@@ -135,7 +135,7 @@ class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
         checkCq(s.q)
       }
       case s: InferenceRule => {
-        s.head.terms foreach checkHeadAtom
+        s.head.variables foreach checkHeadAtom
         checkCq(s.q)
       }
       case _ =>
@@ -149,13 +149,13 @@ class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
         case b: QuantifiedBody => {
           b.modifier match {
             case OuterModifier() =>
-              if ((b.bodies collect { case x: BodyAtom => 1 }).size != 1)
+              if ((b.bodies collect { case x: Atom => 1 }).size != 1)
                 error(stmt, s"One and only one atom should be supplied in OPTIONAL modifier")
             case ExistModifier(_) =>
-              if ((b.bodies collect { case x: BodyAtom => 1 }) isEmpty)
+              if ((b.bodies collect { case x: Atom => 1 }) isEmpty)
                 error(stmt, s"At least one atom should be supplied in EXISTS modifier")
             case AllModifier() =>
-              if ((b.bodies collect { case x: BodyAtom => 1 }) isEmpty)
+              if ((b.bodies collect { case x: Atom => 1 }) isEmpty)
                 error(stmt, s"At least one atom should be supplied in ALL modifier")
           }
         }
@@ -196,7 +196,9 @@ class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
     stmt match {
       case s: ExtractionRule => checkCq(s.q)
       case s: SupervisionRule => checkCq(s.q, List(s.supervision) flatMap DeepDiveLogSemanticChecker.collectUsedVars toSet)
-      case s: InferenceRule => checkCq(s.q, s.weights.variables flatMap DeepDiveLogSemanticChecker.collectUsedVars toSet)
+      case s: InferenceRule =>
+        val bodiesWithHeadAtoms = s.q.bodies map (_ ++ (s.head.variables map (_.atom)))
+        checkCq(s.q.copy(bodies = bodiesWithHeadAtoms), s.weights.variables flatMap DeepDiveLogSemanticChecker.collectUsedVars toSet)
       case _ =>
     }
   }
@@ -260,13 +262,13 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
   }
 
   def collectUsedVars(body: Body): Set[String] = body match {
-    case a: BodyAtom => a.terms flatMap collectUsedVars toSet
+    case a: Atom => a.terms flatMap collectUsedVars toSet
     case a: QuantifiedBody => a.bodies flatMap collectUsedVars toSet
     case a: Cond => collectUsedVars(a)
   }
 
   def collectDefinedVars(body: Body): Set[String] = body match {
-    case a: BodyAtom => a.terms flatMap collectDefinedVars toSet
+    case a: Atom => a.terms flatMap collectDefinedVars toSet
     case a: QuantifiedBody => a.bodies flatMap collectDefinedVars toSet
     case a: Cond => Set()
   }

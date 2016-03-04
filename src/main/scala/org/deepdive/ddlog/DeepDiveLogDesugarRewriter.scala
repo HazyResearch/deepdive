@@ -67,7 +67,7 @@ object DeepDiveLogDesugarRewriter {
               headName = relationName,
               q = ConjunctiveQuery(
                 headTerms = schema.a.terms map VarExpr,
-                bodies = List(List(BodyAtom(name = nameUnique, terms = schema.a.terms map VarPattern)))
+                bodies = List(List(Atom(name = nameUnique, terms = schema.a.terms map VarPattern)))
               )
             )
           )

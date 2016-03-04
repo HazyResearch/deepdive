@@ -36,7 +36,7 @@ case class ExprPattern(expr: Expr) extends Pattern
 case class PlaceholderPattern() extends Pattern
 
 sealed trait Body
-case class BodyAtom(name : String, terms : List[Pattern]) extends Body
+case class Atom(name : String, terms : List[Pattern]) extends Body
 case class QuantifiedBody(modifier: BodyModifier, bodies: List[Body]) extends Body
 
 sealed trait BodyModifier
@@ -100,8 +100,8 @@ object FactorFunction {
   case class Linear()      extends FactorFunction
   case class Ratio()       extends FactorFunction
 }
-case class HeadAtom(name : String, terms : List[Expr], isNegated: Boolean = false)
-case class InferenceRuleHead(function: FactorFunction.FactorFunction, terms: List[HeadAtom])
+case class HeadAtom(atom: Atom, isNegated: Boolean = false)
+case class InferenceRuleHead(function: FactorFunction.FactorFunction, variables: List[HeadAtom])
 
 
 sealed trait FunctionInputOutputType
@@ -335,9 +335,11 @@ class DeepDiveLogParser extends JavaTokenParsers {
       }
     ) named "pattern"
 
-  def atom = relationName ~ "(" ~ rep1sep(pattern, ",") ~ ")" ^^ {
-    case (r ~ _ ~ patterns ~ _) => BodyAtom(r, patterns)
-  }
+  def atom: Parser[Atom] =
+    relationName ~ ("(" ~> rep1sep(pattern, ",") <~ ")") ^^ {
+      case n ~ ps => Atom(n, ps)
+    }
+
   def quantifiedBody = (opt("!") ~ "EXISTS" | "OPTIONAL" | "ALL") ~ "[" ~ rep1sep(cqBody, ",") ~ "]" ^^ { case (m ~ _ ~ b ~ _) =>
     val modifier = m match {
       case (not ~ "EXISTS") => ExistModifier(not != None)
@@ -394,12 +396,11 @@ class DeepDiveLogParser extends JavaTokenParsers {
     |         headAtom    ~ rep1("=" ~> headAtom) ^^ { case (a ~ b) => InferenceRuleHead(FactorFunction.Equal() ,  a +: b) }
     |         headAtom    ~ rep1("^" ~> headAtom) ^^ { case (a ~ b) => InferenceRuleHead(FactorFunction.And()   ,  a +: b) }
     |         headAtom    ~ rep1("v" ~> headAtom) ^^ { case (a ~ b) => InferenceRuleHead(FactorFunction.Or()    ,  a +: b) }
-    |         headAtom                            ^^ { case       a => InferenceRuleHead(FactorFunction.IsTrue(), List(a)) }
+    |         headAtom                            ^^ { case  a      => InferenceRuleHead(FactorFunction.IsTrue(), List(a)) }
     )
-  def headAtom =
-    opt("!") ~ relationName ~ conjunctiveQueryHeadTerms ^^ {
-      case (isNegated ~ varName ~ expressions) => HeadAtom(varName, expressions, isNegated isDefined)
-    }
+  def headAtom = opt("!") ~ atom ^^ {
+    case isNegated ~ atom => HeadAtom(atom, isNegated isDefined)
+  }
 
   // rules or schema elements in arbitrary order
   def statement : Parser[Statement] = (
@@ -434,7 +435,10 @@ class DeepDiveLogParser extends JavaTokenParsers {
       rule match {
         case extrRule: ExtractionRule =>
           // turn normal derivation rules to IsTrue factors
-          val headAtom = HeadAtom(name = extrRule.headName, terms = extrRule.q.headTerms, isNegated = false)
+          val headAtom = HeadAtom(Atom(extrRule.headName, extrRule.q.headTerms map {
+            case VarExpr(x) => VarPattern(x)
+            case e => ExprPattern(e)
+          }), isNegated = false)
           InferenceRule(
             head = InferenceRuleHead(FactorFunction.IsTrue(), List(headAtom)),
             q = extrRule.q.copy(headTerms = List.empty),

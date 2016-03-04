@@ -1,0 +1,12 @@
+a(k int).
+b?(x int).
+
+# these are fine
+b(x) :- a(x).
+
+@weight(y)
+b(x) => b(y) :- x < y.
+
+# but not this
+@weight(z)
+b(x) => b(y) :- x < y.
