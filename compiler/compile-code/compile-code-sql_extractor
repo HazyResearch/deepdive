@@ -2,8 +2,8 @@
 # compile-code-sql_extractor -- Compiles sql_extractors in the normalized JSON into code executable by the runner
 ##
 
-include "sql";
 include "constants";
+include "sql";
 
 .deepdive_ as $deepdive
 
@@ -37,7 +37,7 @@ deepdive create table-if-not-exists \"$output_relation\"
 deepdive create table \"$output_relation_tmp\" like \"$output_relation\"
 
 # materialize the SQL query
-deepdive sql \"INSERT INTO ${output_relation_tmp} \"\(.sql | @sh)
+deepdive sql \"INSERT INTO ${output_relation_tmp} \"\(.sql | asPrettySqlArg)
 
 # replace with the new temporary table
 : \"Replacing $output_relation with ${output_relation_tmp}\"
@@ -69,11 +69,11 @@ deepdive db analyze \"${output_relation}\"
                 } | asSql
             else # otherwise use the names in the query without change (column_N)
                 .sql
-            end | @sh)"
+            end | asPrettySqlArg)"
     end
 else
     # just execute the SQL
-    "deepdive sql \(.sql | @sh)"
+    "deepdive sql \(.sql | asPrettySqlArg)"
 end)
 
 \(.after // "")

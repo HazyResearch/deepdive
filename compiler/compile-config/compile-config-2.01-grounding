@@ -77,7 +77,7 @@ def withRedefinitionsWithJoinsForIdColumns:
         , GROUP_BY:
             [ .variablesCategoryColumns[]
             | {                 table: "v", column: . } ]
-        } | asSql | @sh)
+        } | asSql | asPrettySqlArg)
         # assign unique id to every distinct category
         deepdive db assign_sequential_id \(.variablesCategoriesTable | @sh) cid 0
         " else "" end)
@@ -109,7 +109,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                   } ]
             end)
         , GROUP_BY: [ .variablesKeyColumns[] | { column: . } ]
-        } | asSql | @sh)
+        } | asSql | asPrettySqlArg)
         "
     }
 })
@@ -218,7 +218,7 @@ def withRedefinitionsWithJoinsForIdColumns:
             \($deepdive.calibration.holdout_query)"
           else empty
           end
-        ] | map("deepdive sql \(@sh)") | join("\n"))
+        ] | map("deepdive sql \(asPrettySqlArg)") | join("\n"))
         "
     }
 }
@@ -313,7 +313,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                     }
                   }
                 ]
-            } | asSql | @sh) \\
+            } | asSql | asPrettySqlArg) \\
             command=\("
                 format_converter variable /dev/stdin >(pbzip2 >variables.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
             " | @sh) \\
@@ -367,7 +367,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                                 ] } }
                 ]
             , GROUP_BY: [ { table: "i", column: deepdiveVariableIdColumn } ]
-            } | asSql | @sh) \\
+            } | asSql | asPrettySqlArg) \\
             command=\("
                 exec cat >domains.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.tsv  # TODO @feiranwang remove this line once format_converter is ready
                 format_converter domain /dev/stdin >(pbzip2 >domains.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
@@ -411,7 +411,7 @@ def withRedefinitionsWithJoinsForIdColumns:
             # allow .input_query to refer to the assigned variable ids by redefining the variable table names with SQL CTE
             "\($schemaVariablesForThisFactor |
                 withRedefinitionsWithJoinsForIdColumns)
-            \(.input_query)" | @sh)
+            \(.input_query)" | asPrettySqlArg)
 
             # find distinct weights for the factors into a separate table
             deepdive create table \(.weightsTable | @sh) as \(
@@ -427,7 +427,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                         [ { table: .factorsTable } ]
                     end)
                 , GROUP_BY: [ ( .weight_.params[] | { column: . } ) ]
-                } | asSql | @sh)
+                } | asSql | asPrettySqlArg)
         "
     }
 })
@@ -502,7 +502,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                     [ { table: .weightsTable }
                     ]
                 } | asSql | "(\(.))"
-            ] | join("\nUNION ALL\n") | @sh)
+            ] | join("\nUNION ALL\n") | asPrettySqlArg)
         "
     }
 }
@@ -568,7 +568,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                                   ]
                             }
                         ]
-                    } | asSql | @sh) \\
+                    } | asSql | asPrettySqlArg) \\
                 command=\("
                     # also record the factor count
                     tee >(wc -l >nfactors.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}) |
@@ -629,7 +629,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                                            else empty end
                                          ] }
                             }
-                    } | asSql | @sh)
+                    } | asSql | asPrettySqlArg)
                 else
                     echo \(
                     # dump weights from scratch
@@ -639,7 +639,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                         , { expr: "COALESCE(initvalue, 0)" }
                         ]
                     , FROM: [ { table: .weightsTable } ]
-                    } | asSql | @sh)
+                    } | asSql | asPrettySqlArg)
                 fi)\" \\
                 command=\("
                     format_converter weight /dev/stdin >(pbzip2 >weights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)

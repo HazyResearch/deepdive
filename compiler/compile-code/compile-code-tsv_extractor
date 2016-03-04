@@ -3,6 +3,7 @@
 ##
 
 include "constants";
+include "sql";
 
 .deepdive_ as $deepdive
 
@@ -35,7 +36,7 @@ deepdive create table \"$output_relation_tmp\" like \"$output_relation\"
 
 # use compute driver to execute the UDF
 deepdive compute execute \\
-    input_sql=\(.input | @sh) \\
+    input_sql=\(.input | asPrettySqlArg) \\
     command=\("cd \"$DEEPDIVE_APP\" && \(.udf)" | @sh) \\
     output_relation=\"$output_relation_tmp\" \\
     #

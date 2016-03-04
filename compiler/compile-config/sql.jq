@@ -108,6 +108,11 @@ def asSql:
     end
     ;
 
+# shorthand for generating readable SQL argument for deepdive-sql
+def asPrettySqlArg:
+    "\n\(.)\n" | @sh
+    ;
+
 ## finally, a test case
 #if
 #    { SELECT:
