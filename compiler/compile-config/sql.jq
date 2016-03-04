@@ -91,13 +91,18 @@ def asSqlCondition:
 # which turns an object in a particular format into SQL, taking care of many escaping issues
 def asSql:
     if type == "object" then
-    [ (.SELECT  |mapJoinOrEmptyString("SELECT "   ; asSqlExprAlias                                      ; "\n     , "))
-    , (.FROM    |mapJoinOrEmptyString("FROM "     ; asSqlTableAlias(asSql)                              ; "\n   , "))
-    , (.JOIN    |mapJoinOrEmptyString(""; "\(asSqlJoinTypeTableAlias(asSql))\n  ON \(.ON | asSqlCondition)"; "\n" ))
-    , (.WHERE   |mapJoinOrEmptyString("WHERE "    ; asSqlCondition                                      ; "\n  AND " ))
-    , (.GROUP_BY|mapJoinOrEmptyString("GROUP BY " ; asSqlExpr                                           ; "\n    , "))
-    , (.HAVING  |mapJoinOrEmptyString("HAVING "   ; asSqlCondition                                      ; "\n   AND " ))
-    , (.ORDER_BY|mapJoinOrEmptyString("ORDER BY " ; "\(.expr | asSqlExpr) \(.order // "ASC")"           ; "\n    , "))
+    . as $query |
+    def SELECT_head:
+        if $query.DISTINCT | not then "SELECT "
+        else "SELECT DISTINCT "  # TODO Support DISTINCT ON (...)
+        end;
+    [ (.SELECT      |mapJoinOrEmptyString(SELECT_head       ; asSqlExprAlias                                        ; "\n     , "   ))
+    , (.FROM        |mapJoinOrEmptyString("FROM "           ; asSqlTableAlias(asSql)                                ; "\n   , "     ))
+    , (.JOIN        |mapJoinOrEmptyString("";   "\(asSqlJoinTypeTableAlias(asSql))\n  ON \(.ON | asSqlCondition)"   ; "\n"          ))
+    , (.WHERE       |mapJoinOrEmptyString("WHERE "          ; asSqlCondition                                        ; "\n  AND "    ))
+    , (.GROUP_BY    |mapJoinOrEmptyString("GROUP BY "       ; asSqlExpr                                             ; "\n    , "    ))
+    , (.HAVING      |mapJoinOrEmptyString("HAVING "         ; asSqlCondition                                        ; "\n   AND "   ))
+    , (.ORDER_BY    |mapJoinOrEmptyString("ORDER BY "       ; "\(.expr | asSqlExpr) \(.order // "ASC")"             ; "\n    , "    ))
     ] | join("\n") | trimWhitespace
     else . # assume any unstructured value is already a valid SQL
     end
