@@ -90,6 +90,7 @@ def asSqlCondition:
 # a more structured way to generate a SQL (Structured! Query Language) SELECT query than assembling strings
 # which turns an object in a particular format into SQL, taking care of many escaping issues
 def asSql:
+    if type == "object" then
     [ (.SELECT  |mapJoinOrEmptyString("SELECT "   ; asSqlExprAlias                                      ; "\n     , "))
     , (.FROM    |mapJoinOrEmptyString("FROM "     ; asSqlTableAlias(asSql)                              ; "\n   , "))
     , (.JOIN    |mapJoinOrEmptyString(""; "\(asSqlJoinTypeTableAlias(asSql))\n  ON \(.ON | asSqlCondition)"; "\n" ))
@@ -97,7 +98,10 @@ def asSql:
     , (.GROUP_BY|mapJoinOrEmptyString("GROUP BY " ; asSqlExpr                                           ; "\n    , "))
     , (.HAVING  |mapJoinOrEmptyString("HAVING "   ; asSqlCondition                                      ; "\n   AND " ))
     , (.ORDER_BY|mapJoinOrEmptyString("ORDER BY " ; "\(.expr | asSqlExpr) \(.order // "ASC")"           ; "\n    , "))
-    ] | join("\n") | trimWhitespace;
+    ] | join("\n") | trimWhitespace
+    else . # assume any unstructured value is already a valid SQL
+    end
+    ;
 
 ## finally, a test case
 #if
