@@ -51,11 +51,11 @@ def withRedefinitionsWithJoinsForIdColumns:
 
 ###############################################################################
 
-## variable/*/distinct
+## variable/*/materialize
 # Each internal variable table holding distinct variables should be
 # materialized first for correct id assignment, etc.
 | .deepdive_.execution.processes += merge($deepdive.schema.variables_[] | {
-    "process/grounding/variable/\(.variableName)/distinct": {
+    "process/grounding/variable/\(.variableName)/materialize": {
         dependencies_: [
             "process/grounding/from_grounding",
             "data/\(.variablesTable)"
@@ -121,7 +121,7 @@ def withRedefinitionsWithJoinsForIdColumns:
     "process/grounding/variable_id_partition": {
         dependencies_: [
             # id partition depends on all distinct variables to be first identified
-            $deepdive.schema.variables_[] | "process/grounding/variable/\(.variableName)/distinct"
+            $deepdive.schema.variables_[] | "process/grounding/variable/\(.variableName)/materialize"
         ],
         style: "cmd_extractor", cmd: "
         : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
