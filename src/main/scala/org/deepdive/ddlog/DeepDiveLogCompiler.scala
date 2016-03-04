@@ -179,12 +179,12 @@ class QueryCompiler(cq : ConjunctiveQuery) {
         val variable = getVar(v)
         val name  = resolveName(variable)
         val relation = variable.relName
-        s""" AS "${relation}.R${index}.${name}"""" //"
+        s""" AS "${relation}.R${index}.${name}\""""
       }
       case _ => s" AS column_${cq.headTerms indexOf e}"
     }
     case ViewAlias => s" AS column_${cq.headTerms indexOf e}"
-    case UseVariableAsAlias => s""" AS "${DeepDiveLogPrettyPrinter.print(e)}"""" //" fix sublime highlighting
+    case UseVariableAsAlias => s""" AS "${DeepDiveLogPrettyPrinter.print(e)}\""""
   }
 
   // resolve an expression
@@ -266,7 +266,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
                 if (canonical_body_index != bodyIndex) {
                   val real_attr_name1 = resolveName( Variable(varName, relName, termIndex) )
                   val real_attr_name2 = resolveName( getVar(varName))
-                  Some(s"R${ bodyIndex }.${ real_attr_name1 } = R${ canonical_body_index }.${ real_attr_name2 } ")
+                  Some(s"R${ bodyIndex }.${ real_attr_name1 } = R${ canonical_body_index }.${ real_attr_name2 }")
                 } else { None }
               }
               case PlaceholderPattern() => None
@@ -488,24 +488,22 @@ class QueryCompiler(cq : ConjunctiveQuery) {
           case (x: BodyAtom, i) =>
             if (schemaDeclarationByRelationName get(x.name) map(_.isQuery) getOrElse(false))
               // TODO maybe TableAlias can be useful here or we can completely get rid of it?
-              Some(s"""R${fakeBody indexOf x}.id AS "${x.name}.R${fakeBody indexOf x}.id" """)
+              Some(s"""R${fakeBody indexOf x}.id AS "${x.name}.R${fakeBody indexOf x}.id\"""")
             else
               None
           case _ => None
-        }) mkString(", ")
+        }) mkString("\n     , ")
 
         // weight string
         val uwStr = stmt.weights.variables.zipWithIndex.flatMap {
           case(s: ConstExpr, i) => None
-          case(s: Expr, i) => Some(qc.compileExpr(s) + s""" AS "dd_weight_column_${i}" """)
-        } mkString(", ")
+          case(s: Expr, i) => Some(qc.compileExpr(s) + s""" AS "dd_weight_column_${i}\"""")
+        } mkString("\n     , ")
 
         val selectStr = List(varInBody, uwStr).filterNot(_.isEmpty).mkString(", ")
 
         // factor input query
-        s"""
-          SELECT ${selectStr}
-          ${ qc.generateSQLBody(fakeBody) }"""
+        s"""SELECT ${selectStr}\n${qc.generateSQLBody(fakeBody) }"""
       }
 
     // factor function

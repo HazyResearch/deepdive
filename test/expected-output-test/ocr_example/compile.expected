@@ -5,38 +5,36 @@ q2.label: Boolean
 }
 
 deepdive.extraction.extractors.ext_q1 {
-cmd: """
-deepdive create view q1 as 'SELECT DISTINCT R0.wid, R0.val AS label
-FROM label1 R0
-        '
-"""
-output_relation: q1
-style: cmd_extractor
+sql: """SELECT R0.wid AS column_0
+     , R0.val AS column_1
+FROM label1 R0"""
 input_relations: [
   label1
 ]
+style: sql_extractor
+output_relation: q1
+materialize: false
 
 }
 
 deepdive.extraction.extractors.ext_q2 {
-cmd: """
-deepdive create view q2 as 'SELECT DISTINCT R0.wid, R0.val AS label
-FROM label2 R0
-        '
-"""
-output_relation: q2
-style: cmd_extractor
+sql: """SELECT R0.wid AS column_0
+     , R0.val AS column_1
+FROM label2 R0"""
 input_relations: [
   label2
 ]
+style: sql_extractor
+output_relation: q2
+materialize: false
 
 }
 
 deepdive.inference.factors.inf_istrue_q1 {
-input_query: """
-          SELECT R0.id AS "q1.R0.id" , R1.feature_id AS "dd_weight_column_0" 
-          FROM q1 R0, features R1
-        WHERE R1.word_id = R0.wid """
+input_query: """SELECT R0.id AS "q1.R0.id", R1.feature_id AS "dd_weight_column_0"
+FROM q1 R0
+   , features R1
+WHERE R1.word_id = R0.wid"""
 function: """Imply(q1.R0.label)"""
 weight: """?(dd_weight_column_0)"""
 input_relations: [
@@ -47,10 +45,10 @@ input_relations: [
 }
 
 deepdive.inference.factors.inf_istrue_q2 {
-input_query: """
-          SELECT R0.id AS "q2.R0.id" , R1.feature_id AS "dd_weight_column_0" 
-          FROM q2 R0, features R1
-        WHERE R1.word_id = R0.wid """
+input_query: """SELECT R0.id AS "q2.R0.id", R1.feature_id AS "dd_weight_column_0"
+FROM q2 R0
+   , features R1
+WHERE R1.word_id = R0.wid"""
 function: """Imply(q2.R0.label)"""
 weight: """?(dd_weight_column_0)"""
 input_relations: [

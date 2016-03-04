@@ -12,9 +12,10 @@ style: tsv_extractor
 output_relation: people_mentions
 udf: """udf/ext_people.py"""
 input_batch_size: ${INPUT_BATCH_SIZE}
-input: """SELECT R0.sentence_id AS "sentences.R0.sentence_id", ARRAY_TO_STRING(R0.words, '~^~') AS column_1, ARRAY_TO_STRING(R0.ner_tags, '~^~') AS column_2
-FROM sentences R0
-        """
+input: """SELECT R0.sentence_id AS column_0
+     , ARRAY_TO_STRING(R0.words, '~^~') AS column_1
+     , ARRAY_TO_STRING(R0.ner_tags, '~^~') AS column_2
+FROM sentences R0"""
 
 }
 
@@ -27,9 +28,14 @@ style: tsv_extractor
 output_relation: has_spouse_candidates
 udf: """udf/ext_has_spouse.py"""
 input_batch_size: ${INPUT_BATCH_SIZE}
-input: """SELECT R0.sentence_id AS "people_mentions.R0.sentence_id", R0.mention_id AS "people_mentions.R0.mention_id", R0.text AS "people_mentions.R0.text", R1.mention_id AS "people_mentions.R1.mention_id", R1.text AS "people_mentions.R1.text"
-FROM people_mentions R0, people_mentions R1
-        WHERE R1.sentence_id = R0.sentence_id """
+input: """SELECT R0.sentence_id AS column_0
+     , R0.mention_id AS column_1
+     , R0.text AS column_2
+     , R1.mention_id AS column_3
+     , R1.text AS column_4
+FROM people_mentions R0
+   , people_mentions R1
+WHERE R1.sentence_id = R0.sentence_id"""
 
 }
 
@@ -44,31 +50,44 @@ style: tsv_extractor
 output_relation: has_spouse_features
 udf: """udf/ext_has_spouse_features.py"""
 input_batch_size: ${INPUT_BATCH_SIZE}
-input: """SELECT ARRAY_TO_STRING(R0.words, '~^~') AS column_0, R1.relation_id AS "has_spouse_candidates.R1.relation_id", R2.start_position AS "people_mentions.R2.start_position", R2.length AS "people_mentions.R2.length", R3.start_position AS "people_mentions.R3.start_position", R3.length AS "people_mentions.R3.length"
-FROM sentences R0, has_spouse_candidates R1, people_mentions R2, people_mentions R3
-        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id """
+input: """SELECT ARRAY_TO_STRING(R0.words, '~^~') AS column_0
+     , R1.relation_id AS column_1
+     , R2.start_position AS column_2
+     , R2.length AS column_3
+     , R3.start_position AS column_4
+     , R3.length AS column_5
+FROM sentences R0
+   , has_spouse_candidates R1
+   , people_mentions R2
+   , people_mentions R3
+WHERE R1.sentence_id = R0.sentence_id
+  AND R2.sentence_id = R0.sentence_id
+  AND R2.mention_id = R1.person1_id
+  AND R3.sentence_id = R0.sentence_id
+  AND R3.mention_id = R1.person2_id"""
 
 }
 
 deepdive.extraction.extractors.ext_has_spouse {
-cmd: """
-deepdive create view has_spouse as 'SELECT DISTINCT R0.relation_id, R0.is_true AS label
-FROM has_spouse_candidates R0
-        '
-"""
-output_relation: has_spouse
-style: cmd_extractor
+sql: """SELECT R0.relation_id AS column_0
+     , R0.is_true AS column_1
+FROM has_spouse_candidates R0"""
 input_relations: [
   has_spouse_candidates
 ]
+style: sql_extractor
+output_relation: has_spouse
+materialize: false
 
 }
 
 deepdive.inference.factors.inf_istrue_has_spouse {
-input_query: """
-          SELECT R0.id AS "has_spouse.R0.id" , R2.feature AS "dd_weight_column_0" 
-          FROM has_spouse R0, has_spouse_candidates R1, has_spouse_features R2
-        WHERE R1.relation_id = R0.relation_id  AND R2.relation_id = R0.relation_id """
+input_query: """SELECT R0.id AS "has_spouse.R0.id", R2.feature AS "dd_weight_column_0"
+FROM has_spouse R0
+   , has_spouse_candidates R1
+   , has_spouse_features R2
+WHERE R1.relation_id = R0.relation_id
+  AND R2.relation_id = R0.relation_id"""
 function: """Imply(has_spouse.R0.label)"""
 weight: """?(dd_weight_column_0)"""
 input_relations: [

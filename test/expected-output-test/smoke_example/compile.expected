@@ -5,38 +5,39 @@ cancer.label: Boolean
 }
 
 deepdive.extraction.extractors.ext_smoke {
-cmd: """
-deepdive create view smoke as 'SELECT DISTINCT R0.person_id, R0.smokes AS label
-FROM person_smokes R0
-        '
-"""
-output_relation: smoke
-style: cmd_extractor
+sql: """SELECT R0.person_id AS column_0
+     , R0.smokes AS column_1
+FROM person_smokes R0"""
 input_relations: [
   person_smokes
 ]
+style: sql_extractor
+output_relation: smoke
+materialize: false
 
 }
 
 deepdive.extraction.extractors.ext_cancer {
-cmd: """
-deepdive create view cancer as 'SELECT DISTINCT R0.person_id, R0.has_cancer AS label
-FROM person_has_cancer R0
-        '
-"""
-output_relation: cancer
-style: cmd_extractor
+sql: """SELECT R0.person_id AS column_0
+     , R0.has_cancer AS column_1
+FROM person_has_cancer R0"""
 input_relations: [
   person_has_cancer
 ]
+style: sql_extractor
+output_relation: cancer
+materialize: false
 
 }
 
 deepdive.inference.factors.inf_imply_smoke_cancer {
-input_query: """
-          SELECT R0.id AS "smoke.R0.id" , R1.id AS "cancer.R1.id" 
-          FROM smoke R0, cancer R1, person_smokes R2
-        WHERE R1.person_id = R0.person_id  AND R2.person_id = R0.person_id """
+input_query: """SELECT R0.id AS "smoke.R0.id"
+     , R1.id AS "cancer.R1.id"
+FROM smoke R0
+   , cancer R1
+   , person_smokes R2
+WHERE R1.person_id = R0.person_id
+  AND R2.person_id = R0.person_id"""
 function: """Imply(smoke.R0.label, cancer.R1.label)"""
 weight: """0.5"""
 input_relations: [
@@ -48,10 +49,13 @@ input_relations: [
 }
 
 deepdive.inference.factors.inf_imply_smoke_smoke {
-input_query: """
-          SELECT R0.id AS "smoke.R0.id" , R1.id AS "smoke.R1.id" 
-          FROM smoke R0, smoke R1, friends R2
-        WHERE R2.person_id = R0.person_id  AND R2.friend_id = R1.person_id """
+input_query: """SELECT R0.id AS "smoke.R0.id"
+     , R1.id AS "smoke.R1.id"
+FROM smoke R0
+   , smoke R1
+   , friends R2
+WHERE R2.person_id = R0.person_id
+  AND R2.friend_id = R1.person_id"""
 function: """Imply(smoke.R0.label, smoke.R1.label)"""
 weight: """0.4"""
 input_relations: [
