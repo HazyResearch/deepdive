@@ -15,16 +15,37 @@
 set -xeuo pipefail
 cd \"$(dirname \"$0\")\"
 
+: ${DEEPDIVE_PREFIX_TABLE_TEMPORARY:=dd_tmp_} ${DEEPDIVE_PREFIX_TABLE_OLD:=dd_old_}
+
 \(.before // "")
 
 export DEEPDIVE_CURRENT_PROCESS_NAME=\(.name | @sh)
 export DEEPDIVE_LOAD_FORMAT=tsv
 
+output_relation=\(.output_relation | @sh)
+output_relation_tmp=\"${DEEPDIVE_PREFIX_TABLE_TEMPORARY}${output_relation}\"
+output_relation_old=\"${DEEPDIVE_PREFIX_TABLE_OLD}${output_relation}\"
+
+# use an empty temporary table as a sink instead of TRUNCATE'ing the output_relation
+deepdive create table-if-not-exists \"$output_relation\"
+deepdive create table \"$output_relation_tmp\" like \"$output_relation\"
+
+# use compute driver to execute the UDF
 deepdive compute execute \\
     input_sql=\(.input | @sh) \\
     command=\("cd \"$DEEPDIVE_APP\" && \(.udf)" | @sh) \\
-    output_relation=\(.output_relation | @sh) \\
+    output_relation=\"$output_relation_tmp\" \\
     #
+
+# replace with the new temporary table
+: \"Replacing $output_relation with ${output_relation_tmp}\"
+deepdive sql \"DROP TABLE IF EXISTS ${output_relation_old} CASCADE;\" 2>/dev/null || true
+deepdive sql \"ALTER TABLE ${output_relation}     RENAME TO ${output_relation_old};\"
+deepdive sql \"ALTER TABLE ${output_relation_tmp} RENAME TO ${output_relation};\"
+deepdive sql \"DROP TABLE IF EXISTS ${output_relation_old} CASCADE;\" 2>/dev/null || true
+
+# and analyze the table to speed up future queries
+deepdive db analyze \"${output_relation}\"
 
 \(.after // "")
 "
