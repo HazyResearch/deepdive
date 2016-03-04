@@ -1,6 +1,9 @@
 #!/usr/bin/env jq
 # compile-code-tsv_extractor -- Compiles tsv_extractors in the normalized JSON into code executable by the runner
 ##
+
+include "constants";
+
 .deepdive_ as $deepdive
 
 | $deepdive.execution.processes | to_entries[]
@@ -15,7 +18,7 @@
 set -xeuo pipefail
 cd \"$(dirname \"$0\")\"
 
-: ${DEEPDIVE_PREFIX_TABLE_TEMPORARY:=dd_tmp_} ${DEEPDIVE_PREFIX_TABLE_OLD:=dd_old_}
+: ${DEEPDIVE_PREFIX_TABLE_TEMPORARY:=\(deepdivePrefixForTemporaryTables | @sh)} ${DEEPDIVE_PREFIX_TABLE_OLD:=\(deepdivePrefixForTemporaryOldTables | @sh)}
 
 \(.before // "")
 

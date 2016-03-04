@@ -1,6 +1,10 @@
 #!/usr/bin/env jq
 # compile-code-sql_extractor -- Compiles sql_extractors in the normalized JSON into code executable by the runner
 ##
+
+include "sql";
+include "constants";
+
 .deepdive_ as $deepdive
 
 | $deepdive.execution.processes | to_entries[]
@@ -15,10 +19,62 @@
 set -xeuo pipefail
 cd \"$(dirname \"$0\")\"
 
+: ${DEEPDIVE_PREFIX_TABLE_TEMPORARY:=\(deepdivePrefixForTemporaryTables | @sh)} ${DEEPDIVE_PREFIX_TABLE_OLD:=\(deepdivePrefixForTemporaryOldTables | @sh)}
+
 \(.before // "")
 
 export DEEPDIVE_CURRENT_PROCESS_NAME=\(.name | @sh)
-deepdive sql \(.sql | @sh)
+
+\(if .output_relation then
+    # this must be a SELECT query to populate the output_relation
+    if .materialize then "
+output_relation=\(.output_relation | @sh)
+output_relation_tmp=\"${DEEPDIVE_PREFIX_TABLE_TEMPORARY}${output_relation}\"
+output_relation_old=\"${DEEPDIVE_PREFIX_TABLE_OLD}${output_relation}\"
+
+# use an empty temporary table as a sink instead of DROP'ing the output_relation immediately
+deepdive create table-if-not-exists \"$output_relation\"
+deepdive create table \"$output_relation_tmp\" like \"$output_relation\"
+
+# materialize the SQL query
+deepdive sql \"INSERT INTO ${output_relation_tmp} \"\(.sql | @sh)
+
+# replace with the new temporary table
+: \"Replacing $output_relation with ${output_relation_tmp}\"
+deepdive sql \"DROP TABLE IF EXISTS ${output_relation_old} CASCADE;\" 2>/dev/null || true
+deepdive sql \"ALTER TABLE ${output_relation}     RENAME TO ${output_relation_old};\"
+deepdive sql \"ALTER TABLE ${output_relation_tmp} RENAME TO ${output_relation};\"
+deepdive sql \"DROP TABLE IF EXISTS ${output_relation_old} CASCADE;\" 2>/dev/null || true
+
+# and analyze the table to speed up future queries
+deepdive db analyze \"${output_relation}\"
+"
+    else
+        "deepdive create view \(.output_relation | @sh) as \(
+            $deepdive.schema.relations[.output_relation] as $outputRelationSchema
+            | if $outputRelationSchema then
+                # output_relation has schema declared, make sure the created view has the right column names
+                { SELECT:
+                    [ $outputRelationSchema
+                    | if .variable_type | not then . else
+                        # for variable relations, there are internal columns that
+                        # are not declared in the schema, but are expected to be
+                        # produced by the sql query the label column
+                        .columns["label"] = { index: (.columns | length), type: "BOOLEAN" }
+                    end
+                    | .columns | to_entries | sort_by(.value.index)[]
+                    | { alias: .key, table: "R", column: "column_\(.value.index)" }
+                    ]
+                , FROM: [ { alias: "R", sql: .sql } ]
+                } | asSql
+            else # otherwise use the names in the query without change (column_N)
+                .sql
+            end | @sh)"
+    end
+else
+    # just execute the SQL
+    "deepdive sql \(.sql | @sh)"
+end)
 
 \(.after // "")
 "
