@@ -5,9 +5,11 @@ Q.label: Boolean
 }
 
 deepdive.extraction.extractors.ext_P {
-sql: """SELECT R0.x AS column_0
+sql: """
+SELECT R0.x AS column_0
 FROM data R0
-WHERE R0.y = 1"""
+WHERE R0.y = 1
+"""
 input_relations: [
   data
 ]
@@ -18,9 +20,11 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_Q {
-sql: """SELECT R0.x AS column_0
+sql: """
+SELECT R0.x AS column_0
 FROM data R0
-WHERE R0.y = 2"""
+WHERE R0.y = 2
+"""
 input_relations: [
   data
 ]
@@ -31,12 +35,14 @@ materialize: false
 }
 
 deepdive.inference.factors.inf_imply_P_Q {
-input_query: """SELECT R0.id AS "P.R0.id"
+input_query: """
+SELECT R0.id AS "P.R0.id"
      , R1.id AS "Q.R1.id"
 FROM P R0
    , Q R1
 WHERE R1.x = R0.x
-  AND true"""
+  AND true
+"""
 function: """Imply(P.R0.label, Q.R1.label)"""
 weight: """1"""
 input_relations: [

@@ -3,12 +3,14 @@ deepdive.schema.variables {
 }
 
 deepdive.extraction.extractors.ext_T {
-sql: """SELECT R0.x[3] AS column_0
+sql: """
+SELECT R0.x[3] AS column_0
      , R1.x AS column_1
 FROM R R0
    , S R1
 WHERE R0.x[1] = R1.y[1]
-  AND R0.x[2] = R1.y[2]"""
+  AND R0.x[2] = R1.y[2]
+"""
 input_relations: [
   R
   S
@@ -20,10 +22,12 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_U {
-sql: """SELECT R1.x AS column_0
+sql: """
+SELECT R1.x AS column_0
 FROM R R0
    , S R1
-WHERE (R1.x + f(R1.x + 1)[(R1.x + R0.x[1])]) = R1.y[R1.x]"""
+WHERE (R1.x + f(R1.x + 1)[(R1.x + R0.x[1])]) = R1.y[R1.x]
+"""
 input_relations: [
   R
   S

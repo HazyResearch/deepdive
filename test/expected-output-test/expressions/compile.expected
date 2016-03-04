@@ -3,7 +3,8 @@ deepdive.schema.variables {
 }
 
 deepdive.extraction.extractors.ext_Q {
-sql: """SELECT DISTINCT ('test' :: TEXT) AS column_0
+sql: """
+SELECT DISTINCT ('test' :: TEXT) AS column_0
      , 123 AS column_1
      , R0.k AS column_2
      , unnest(R1.q) AS column_3
@@ -14,7 +15,8 @@ WHERE R1.k = R0.k
   AND R2.s = R1.p || R1.q
   AND R2.n = 10
   AND R2.t = 'foo'
-  AND (R1.r > 100 OR (NOT R1.r < 20 AND R1.r < 50))"""
+  AND (R1.r > 100 OR (NOT R1.r < 20 AND R1.r < 50))
+"""
 input_relations: [
   a
   b
@@ -27,14 +29,16 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_P {
-sql: """SELECT R1.p AS column_0
+sql: """
+SELECT R1.p AS column_0
      , R1.q AS column_1
      , MAX(R1.r) AS column_2
 FROM a R0
    , b R1
 WHERE R1.k = R0.k
 GROUP BY R1.p
-    , R1.q"""
+    , R1.q
+"""
 input_relations: [
   a
   b
@@ -46,8 +50,10 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_A {
-sql: """SELECT R0.k + (R0.r * (R0.k + R0.r)) AS column_0
-FROM b R0"""
+sql: """
+SELECT R0.k + (R0.r * (R0.k + R0.r)) AS column_0
+FROM b R0
+"""
 input_relations: [
   b
 ]
@@ -58,8 +64,10 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_B {
-sql: """SELECT func(R0.k + (R0.r + R0.k)) AS column_0
-FROM b R0"""
+sql: """
+SELECT func(R0.k + (R0.r + R0.k)) AS column_0
+FROM b R0
+"""
 input_relations: [
   b
 ]
@@ -70,8 +78,10 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_C {
-sql: """SELECT func(func(func(R0.k))) AS column_0
-FROM b R0"""
+sql: """
+SELECT func(func(func(R0.k))) AS column_0
+FROM b R0
+"""
 input_relations: [
   b
 ]
@@ -82,8 +92,10 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_D {
-sql: """SELECT func(R0.k * func2(R0.r + R0.k)) + R0.k AS column_0
-FROM b R0"""
+sql: """
+SELECT func(R0.k * func2(R0.r + R0.k)) + R0.k AS column_0
+FROM b R0
+"""
 input_relations: [
   b
 ]
@@ -94,8 +106,10 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_E {
-sql: """SELECT (R0.k :: INT) AS column_0
-FROM b R0"""
+sql: """
+SELECT (R0.k :: INT) AS column_0
+FROM b R0
+"""
 input_relations: [
   b
 ]
@@ -106,8 +120,10 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_F {
-sql: """SELECT (R0.k :: INT) + (R0.r :: INT) AS column_0
-FROM b R0"""
+sql: """
+SELECT (R0.k :: INT) + (R0.r :: INT) AS column_0
+FROM b R0
+"""
 input_relations: [
   b
 ]
@@ -118,9 +134,11 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_G {
-sql: """SELECT R0.k AS column_0
+sql: """
+SELECT R0.k AS column_0
 FROM b R0
-WHERE (R0.k + R0.r) = 100"""
+WHERE (R0.k + R0.r) = 100
+"""
 input_relations: [
   b
 ]
@@ -131,10 +149,12 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_H {
-sql: """SELECT R0.k AS column_0
+sql: """
+SELECT R0.k AS column_0
 FROM b R0
 WHERE (R0.k + R0.r) = 100
-  AND R0.k > 50"""
+  AND R0.k > 50
+"""
 input_relations: [
   b
 ]
@@ -145,9 +165,11 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_I {
-sql: """SELECT R0.k AS column_0
+sql: """
+SELECT R0.k AS column_0
 FROM b R0
-WHERE ((R0.k + R0.r) = 100 OR (R0.k > 50 AND R0.r < 10))"""
+WHERE ((R0.k + R0.r) = 100 OR (R0.k > 50 AND R0.r < 10))
+"""
 input_relations: [
   b
 ]
@@ -158,9 +180,11 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_J {
-sql: """SELECT R0.k AS column_0
+sql: """
+SELECT R0.k AS column_0
 FROM b R0
-WHERE ((R0.k + R0.r) = 100 OR NOT R0.k > 50)"""
+WHERE ((R0.k + R0.r) = 100 OR NOT R0.k > 50)
+"""
 input_relations: [
   b
 ]
@@ -171,9 +195,11 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_K {
-sql: """SELECT R0.k AS column_0
+sql: """
+SELECT R0.k AS column_0
 FROM b R0
-WHERE ((R0.k + R0.r) = 100 AND (NOT R0.k > 50 OR R0.k = 40))"""
+WHERE ((R0.k + R0.r) = 100 AND (NOT R0.k > 50 OR R0.k = 40))
+"""
 input_relations: [
   b
 ]
@@ -184,9 +210,11 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_L {
-sql: """SELECT DISTINCT R0.k AS column_0
+sql: """
+SELECT DISTINCT R0.k AS column_0
 FROM b R0
-LIMIT 100"""
+LIMIT 100
+"""
 input_relations: [
   b
 ]
@@ -197,9 +225,11 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_M {
-sql: """SELECT R0.k AS column_0
+sql: """
+SELECT R0.k AS column_0
 FROM b R0
-WHERE EXISTS (SELECT 1 FROM c R1_0 WHERE R1_0.n = R0.k)"""
+WHERE EXISTS (SELECT 1 FROM c R1_0 WHERE R1_0.n = R0.k)
+"""
 input_relations: [
   b
   c
@@ -211,10 +241,12 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_N {
-sql: """SELECT R0.k AS column_0
+sql: """
+SELECT R0.k AS column_0
 FROM b R0
 WHERE EXISTS (SELECT 1 FROM c R1_0 WHERE R1_0.n = R0.k
-  AND R1_0.s > 'a')"""
+  AND R1_0.s > 'a')
+"""
 input_relations: [
   b
   c
@@ -226,11 +258,13 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_O {
-sql: """SELECT R0.k AS column_0
+sql: """
+SELECT R0.k AS column_0
 FROM b R0
 WHERE EXISTS (SELECT 1 FROM c R1_0
    , a R1_1 WHERE R1_0.n = R0.k
-  AND R1_1.k = R0.k)"""
+  AND R1_1.k = R0.k)
+"""
 input_relations: [
   b
   c
@@ -243,10 +277,12 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_S {
-sql: """SELECT R0.k AS column_0
+sql: """
+SELECT R0.k AS column_0
 FROM b R0
 LEFT OUTER JOIN c R1_0
-  ON R1_0.n = R0.k"""
+  ON R1_0.n = R0.k
+"""
 input_relations: [
   b
   c
@@ -258,12 +294,14 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_T {
-sql: """SELECT R0.k AS column_0
+sql: """
+SELECT R0.k AS column_0
 FROM b R0
 LEFT OUTER JOIN c R1_0
   ON R1_0.n = R0.k
   AND R1_0.s > R0.p
-WHERE R1_0.s > R0.p"""
+WHERE R1_0.s > R0.p
+"""
 input_relations: [
   b
   c
@@ -275,11 +313,13 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_U {
-sql: """SELECT R0_0.k AS column_0
+sql: """
+SELECT R0_0.k AS column_0
 FROM b R0_0
   ON 
 FULL OUTER JOIN c R1_0
-  ON R1_0.n = R0_0.k"""
+  ON R1_0.n = R0_0.k
+"""
 input_relations: [
   b
   c
@@ -291,9 +331,11 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_W {
-sql: """SELECT R0.k AS column_0
+sql: """
+SELECT R0.k AS column_0
 FROM a R0
-WHERE NOT EXISTS (SELECT 1 FROM c R1_0 WHERE NOT (R1_0.n < R0.k))"""
+WHERE NOT EXISTS (SELECT 1 FROM c R1_0 WHERE NOT (R1_0.n < R0.k))
+"""
 input_relations: [
   a
   c
@@ -305,10 +347,12 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_V {
-sql: """SELECT R0.n AS column_0
+sql: """
+SELECT R0.n AS column_0
 FROM c R0
    , a R1
-WHERE R1.k = R0.n"""
+WHERE R1.k = R0.n
+"""
 input_relations: [
   c
   a
@@ -320,10 +364,12 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_X {
-sql: """SELECT R0.k AS column_0
+sql: """
+SELECT R0.k AS column_0
 FROM b R0
    , c R1
-WHERE R1.n = R0.k"""
+WHERE R1.n = R0.k
+"""
 input_relations: [
   b
   c

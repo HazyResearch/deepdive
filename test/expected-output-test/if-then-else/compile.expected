@@ -4,13 +4,15 @@ q.label: Boolean
 }
 
 deepdive.extraction.extractors.ext_q {
-sql: """SELECT R0.x AS column_0
+sql: """
+SELECT R0.x AS column_0
      , 
 CASE WHEN R0.l > 0 THEN true
      WHEN R0.l < 0 THEN false
      ELSE NULL
 END AS column_1
-FROM labels_resolved R0"""
+FROM labels_resolved R0
+"""
 input_relations: [
   labels_resolved
 ]
@@ -21,7 +23,8 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_p {
-sql: """SELECT R0.x AS column_0
+sql: """
+SELECT R0.x AS column_0
      , 
 CASE WHEN abs(R0.l) > 10 THEN true
      ELSE false
@@ -33,7 +36,8 @@ SELECT R0.x AS column_0
 CASE WHEN (R0.x % 10) = 0 THEN false
      ELSE 
 END AS column_1
-FROM labels R0"""
+FROM labels R0
+"""
 input_relations: [
   labels
 ]
@@ -44,14 +48,16 @@ materialize: false
 }
 
 deepdive.extraction.extractors.ext_labels_resolved {
-sql: """SELECT R0.x AS column_0
+sql: """
+SELECT R0.x AS column_0
      , SUM(
 CASE WHEN R0.l IS NULL THEN 0
      WHEN R0.l = true THEN 1
      ELSE -1
 END) AS column_1
 FROM labels R0
-GROUP BY R0.x"""
+GROUP BY R0.x
+"""
 input_relations: [
   labels
 ]

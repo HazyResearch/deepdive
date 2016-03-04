@@ -412,7 +412,9 @@ class QueryCompiler(cq : ConjunctiveQuery) {
       "input_relations" -> (stmts flatMap relationNamesUsedByStatement distinct),
       "output_relation" -> outputRelation,
       "materialize" -> shouldMaterialize,
-      "sql" -> QuotedString(cqs map { q => new QueryCompiler(q).generateSQL() } mkString("\nUNION ALL\n"))
+      "sql" -> QuotedString("\n"+ (
+          cqs map { q => new QueryCompiler(q).generateSQL() } mkString "\nUNION ALL\n"
+        ) +"\n")
     ))
   }
 
@@ -451,7 +453,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
       val blockName = resolveExtractorBlockName(stmt)
       val parallelism = stmt.annotations find (_ named "parallelism") flatMap (_.value) getOrElse("${PARALLELISM}")
       s"deepdive.extraction.extractors.${blockName}" -> (Map(
-        "input" -> QuotedString(new QueryCompiler(stmt.q).generateSQL()),
+        "input" -> QuotedString("\n"+ new QueryCompiler(stmt.q).generateSQL() +"\n"),
         "output_relation" -> stmt.output,
         "input_relations" -> (List(stmt) flatMap relationNamesUsedByStatement distinct),
         "input_batch_size" -> "${INPUT_BATCH_SIZE}",
@@ -463,48 +465,37 @@ class QueryCompiler(cq : ConjunctiveQuery) {
   // generate inference rule part for deepdive
   def compile(stmt: InferenceRule): CompiledBlocks = {
     val headAsBody = stmt.head.variables map (_.atom)
+    val variableIdColumns = headAsBody.zipWithIndex collect {
+      case (x: Atom, i) if schemaDeclarationByRelationName get x.name exists (_.isQuery) =>
+        // TODO maybe TableAlias can be useful here or we can completely get rid of it?
+        s"""R${headAsBody indexOf x}.id AS "${x.name}.R${headAsBody indexOf x}.id\""""
+    }
 
     val inputQueries =
       stmt.q.bodies map { case cqBody =>
-        // edge query
         // Here we need to select from the bodies atoms as well as the head atoms,
         // which are the variable relations.
         // This is achieved by puting head atoms into the body.
-
         val fakeBody        = headAsBody ++ cqBody
         val fakeCQ          = stmt.q.copy(bodies = List(fakeBody))
-        val fakeBodyAtoms   = fakeBody.collect { case x: Atom => x }
-
-        val index = cqBody.length + 1
         val qc = new QueryCompiler(fakeCQ)
-        // TODO self-join?
-        val varInBody = (fakeBody.zipWithIndex flatMap {
-          case (x: Atom, i) =>
-            if (schemaDeclarationByRelationName get(x.name) map(_.isQuery) getOrElse(false))
-              // TODO maybe TableAlias can be useful here or we can completely get rid of it?
-              Some(s"""R${fakeBody indexOf x}.id AS "${x.name}.R${fakeBody indexOf x}.id\"""")
-            else
-              None
-          case _ => None
-        }) mkString("\n     , ")
 
-        // weight string
-        val uwStr = stmt.weights.variables.zipWithIndex.flatMap {
-          case(s: ConstExpr, i) => None
-          case(s: Expr, i) => Some(qc.compileExpr(s) + s""" AS "dd_weight_column_${i}\"""")
-        } mkString("\n     , ")
-
-        val selectStr = List(varInBody, uwStr).filterNot(_.isEmpty).mkString(", ")
+        // weight columns
+        val weightColumns = stmt.weights.variables.zipWithIndex collect {
+          case (s: Expr, i) if !s.isInstanceOf[ConstExpr] =>
+            qc.compileExpr(s) + s""" AS "dd_weight_column_${i}\""""
+        }
 
         // factor input query
-        s"""SELECT ${selectStr}\n${qc.generateSQLBody(fakeBody) }"""
+        s"""SELECT ${(variableIdColumns ++ weightColumns) mkString ("\n     , ")
+        }\n${qc.generateSQLBody(fakeBody) }"""
       }
 
     // factor function
     val func = {
-      val funcBody = (headAsBody zip stmt.head.variables map { case(x, y) =>
+      val funcBody = headAsBody zip stmt.head.variables map { case (x, y) =>
         s"""${if (y.isNegated) "!" else ""}${x.name}.R${headAsBody indexOf x}.label"""
-      })
+      }
 
       val categoricalVars = stmt.head.variables filter { t => isCategoricalRelation(t.atom.name) }
       val isMultinomialFactor =
@@ -551,7 +542,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
     }
 
     List(s"deepdive.inference.factors.${resolveInferenceBlockName(stmt)}" -> Map(
-        "input_query" -> QuotedString(inputQueries.mkString(" UNION ALL ")),
+        "input_query" -> QuotedString("\n"+inputQueries.mkString(" UNION ALL ")+"\n"),
         "function" -> QuotedString(func),
         "weight" -> QuotedString(weight),
         "input_relations" -> {
