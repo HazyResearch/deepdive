@@ -2,8 +2,9 @@
 # constants -- Names to some constant values used across compilation steps
 ##
 
-def deepdiveVariableIdColumn                :  "id"                             ; # FIXME to dd_id for consistency and safety
-def deepdiveVariableLabelColumn             :  "label"                          ; # FIXME to dd_label
+def deepdiveVariableIdColumn                :  "dd_id"                          ;
+def deepdiveVariableLabelColumn             :  "dd_label"                       ;
+def deepdiveVariableFrequencyColumn         :  "dd_count"                       ;
 def deepdiveGlobalHoldoutTable              :  "dd_graph_variables_holdout"     ;
 def deepdiveGlobalObservationTable          :  "dd_graph_variables_observation" ;
 def deepdiveGlobalWeightsTable              :  "dd_graph_weights"               ;

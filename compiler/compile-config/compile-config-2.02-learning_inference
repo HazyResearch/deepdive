@@ -2,6 +2,7 @@
 # compile-config-2.02-learning_inference -- Adds processes for performing inference with the grounded factor graph
 ##
 
+include "constants";
 include "sql";
 
 # skip adding learning/inference processes unless one for grounding is there
@@ -109,16 +110,16 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                 deepdive create view \("\(.variablesTable)_inference" | @sh) as \(
                 { SELECT:
                     [ { expr: "v.*" }
-                    , { alias: "expectation", table: "r", column: "expectation" }
-                    , { alias: "dd_label",    table: "i", column: "label" }
-                    , { alias: "dd_id",       table: "i", column: "id" }
+                    , { alias: "expectation",               table: "r", column: "expectation" }
+                    , { alias: deepdiveVariableLabelColumn, table: "i", column: deepdiveVariableLabelColumn }
+                    , { alias: deepdiveVariableIdColumn,    table: "i", column: deepdiveVariableIdColumn }
                     ]
                 , FROM: [ { alias: "v", table: .variablesTable } ]
                 , JOIN:
                     # variable ids
                     [ { LEFT_OUTER: { alias: "i", table: .variablesIdsTable }
                       , ON: { and:  [ .variablesKeyColumns[]
-                                    | { eq: [ { table: "i", column: "_\(.)" }
+                                    | { eq: [ { table: "i", column: . }
                                             , { table: "v", column: . }
                                             ] }
                                     ] } }
@@ -126,7 +127,7 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                     # inference results
                       { LEFT_OUTER: { alias: "r", table: "dd_inference_result_variables" }
                       , ON: { eq:   [ { table: "r", column: "id" }
-                                    , { table: "i", column: "id" }
+                                    , { table: "i", column: deepdiveVariableIdColumn }
                                     ] } }
                     else
                     # category ids are necessary to find the inference result corresponding to the variable
@@ -139,10 +140,10 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                     # inference results
                     , { LEFT_OUTER: { alias: "r", table: "dd_inference_result_variables" }
                       , ON: { and:  [ { eq: [ { table: "r", column: "id" }
-                                            , { table: "i", column: "id" }
+                                            , { table: "i", column: deepdiveVariableIdColumn }
                                             ] }
                                     , { eq: [ { table: "r", column: "category" }
-                                            , { table: "c", column: "id" }
+                                            , { table: "c", column: "cid" }
                                             ] }
                                     ] } }
                     end

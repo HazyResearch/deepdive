@@ -26,22 +26,24 @@ def factorWeightDescriptionSqlExpr:
 def withRedefinitionsWithJoinsForIdColumns:
     if length > 0 then "WITH \(
         [ .[]
-        | "\(.variablesTable | asSqlIdent) AS (\(
+        | "\(.variablesTable | asSqlIdent) AS (\n\(
             { SELECT:
-                [ { alias: deepdiveVariableIdColumn, table: "i", column: "id" }
-                , ( .variablesKeyColumns[], .variablesCategoryColumns[]
-                | { alias: ., table: "v", column: . } )
+                [ ( .variablesKeyColumns[], deepdiveVariableIdColumn
+                | { alias: ., table: "i", column: . } )
+                # XXX add these back on demand for the cases where inference rule uses them
+                #, ( .variablesCategoryColumns[]
+                #| { alias: ., table: "v", column: . } )
                 ]
-            , FROM: { alias: "v", table: .variablesTable }
-            , JOIN:
-                [ { LEFT_OUTER: { alias: "i", table: .variablesIdsTable }
-                  , ON: { and: [ .variablesKeyColumns[]
-                               | { eq: [ { table: "i", column: "_\(.)" }
-                                       , { table: "v", column: . } ]
-                                 } ] }
-                  } ]
-            } | asSql))"
-        ] | join("\n   , "))"
+            , FROM: { alias: "i", table: .variablesIdsTable }
+            #, JOIN:
+            #    [ { LEFT_OUTER: { alias: "v", table: .variablesTable  }
+            #      , ON: { and: [ .variablesKeyColumns[]
+            #                   | { eq: [ { table: "v", column: . }
+            #                           , { table: "i", column: . } ]
+            #                     } ] }
+            #      } ]
+            } | asSql)\n)"
+        ] | join("\n   , "))" | "\n\(.)\n----\n"
     else "" end
     ;
 
@@ -69,13 +71,15 @@ def withRedefinitionsWithJoinsForIdColumns:
             [ (.variablesCategoryColumns[]
             | { alias: "_\(.)", table: "v", column: . })
             , { alias: "count", expr: "COUNT(1)"             }
-            , { alias: "id"   , expr: "CAST(NULL AS BIGINT)" }
+            , { alias: "cid"  , expr: "CAST(NULL AS BIGINT)" }
             ]
         , FROM: [ { alias: "v", table: .variablesTable } ]
-        , GROUP_BY: [ .variablesCategoryColumns[] | { column: "_\(.)" } ]
+        , GROUP_BY:
+            [ .variablesCategoryColumns[]
+            | {                 table: "v", column: . } ]
         } | asSql | @sh)
         # assign unique id to every distinct category
-        deepdive db assign_sequential_id \(.variablesCategoriesTable | @sh) id 0
+        deepdive db assign_sequential_id \(.variablesCategoriesTable | @sh) cid 0
         " else "" end)
 
         # generate a table holding all distinct variables identified by @key columns
@@ -83,15 +87,15 @@ def withRedefinitionsWithJoinsForIdColumns:
         deepdive create table \(.variablesIdsTable | @sh) as \(
         { SELECT:
             [ (.variablesKeyColumns[]
-            | { alias: "_\(.)", table: "v", column: . })
-            , { alias: "label", expr:
+            | { alias: ., table: "v", column: . }) # XXX we don't prefix user's columns (with _ like others) since they directly use this table and it can cause confusion
+            , { alias: deepdiveVariableLabelColumn, expr:
                 # boolean variables just take one label, so aggregate with AND
-                ( if .variableType == "boolean" then "EVERY(label)"
+                ( if .variableType == "boolean" then "EVERY(\"v\".\(deepdiveVariableLabelColumn | asSqlIdent))"
                 # categorical variables should point to the category id that has a true label column
-                else "MIN(CASE WHEN \"v\".\(deepdiveVariableLabelColumn | asSqlIdent) THEN \"c\".\"id\" ELSE NULL END)"
+                else "MIN(CASE WHEN \"v\".\(deepdiveVariableLabelColumn | asSqlIdent) THEN \"c\".\"cid\" ELSE NULL END)"
                 end) }
-            , { alias: "count", expr: "COUNT(1)" }
-            , { alias: "id"   , expr: "CAST(NULL AS BIGINT)" }
+            , { alias: deepdiveVariableFrequencyColumn, expr: "COUNT(1)" }
+            , { alias: deepdiveVariableIdColumn, expr: "CAST(NULL AS BIGINT)" }
             ]
         , FROM: [ { alias: "v", table: .variablesTable } ]
         , JOIN:
@@ -198,7 +202,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                 { SELECT: [ { column: deepdiveVariableIdColumn } ]
                 , FROM: [ { table: .variablesIdsTable } ]
                 , WHERE:
-                    [ { isntNull: { column: "label" } }
+                    [ { isntNull: { column: deepdiveVariableLabelColumn } }
                     , { lt: [ { expr: "RANDOM()" }
                             , { expr: $deepdive.calibration.holdout_fraction }
                             ]
@@ -242,7 +246,7 @@ def withRedefinitionsWithJoinsForIdColumns:
         deepdive compute execute \\
             input_sql=\(
             { SELECT:
-                [ { column: "id" }
+                [ { column: "vid" }
                 , { column: "variable_role" }
                 , { alias: "init_value", expr:
                     "CASE WHEN variable_role = 0 THEN 0
@@ -259,15 +263,15 @@ def withRedefinitionsWithJoinsForIdColumns:
             , FROM:
                 [ { alias: "variables", sql:
                     { SELECT:
-                        [ { alias: "id", column: deepdiveVariableIdColumn }
+                        [ { alias: "vid", column: deepdiveVariableIdColumn }
                         , { alias: "variable_role", expr:
                               "CASE WHEN observation.variable_id IS NOT NULL
-                                     AND         variables.label IS NOT NULL THEN 2
-                                    WHEN     holdout.variable_id IS NOT NULL THEN 0
-                                    WHEN         variables.label IS NOT NULL THEN 1
+                                     AND \"i\".\(deepdiveVariableLabelColumn | asSqlIdent) IS NOT NULL THEN 2
+                                    WHEN holdout.variable_id IS NOT NULL THEN 0
+                                    WHEN \"i\".\(deepdiveVariableLabelColumn | asSqlIdent) IS NOT NULL THEN 1
                                                                              ELSE 0
                                 END" }
-                        , { alias: "label", table: "variables", column: "label" }
+                        , { alias: "label", table: "i", column: deepdiveVariableLabelColumn }
                         , { alias: "variable_type", expr: (
                                 if   .variableType == "boolean"     then 0
                                 elif .variableType == "categorical" then 1
@@ -282,7 +286,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                             ) }
                         ]
                     , FROM:
-                        [ { alias: "variables", table: .variablesIdsTable }
+                        [ { alias: "i", table: .variablesIdsTable }
                         ]
                     , JOIN:
                         [ { LEFT_OUTER:
@@ -290,7 +294,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                             , table: deepdiveGlobalHoldoutTable
                             }
                           , ON: { eq:
-                                    [ { table: "variables", column: deepdiveVariableIdColumn }
+                                    [ { table: "i", column: deepdiveVariableIdColumn }
                                     , { table: "holdout"  , column: "variable_id" }
                                     ]
                                 }
@@ -300,7 +304,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                             , table: deepdiveGlobalObservationTable
                             }
                           , ON: { eq:
-                                    [ { table: "variables"  , column: deepdiveVariableIdColumn }
+                                    [ { table: "i"  , column: deepdiveVariableIdColumn }
                                     , { table: "observation", column: "variable_id" }
                                     ]
                                 }
@@ -341,16 +345,16 @@ def withRedefinitionsWithJoinsForIdColumns:
         deepdive compute execute \\
             input_sql=\(
             { SELECT:
-                [ { alias: "vid",  table: "i", column: "id" }
-                , { alias: "cardinality", expr: "COUNT(c.id)" }
-                , { alias: "cids", expr: "ARRAY_AGG(c.id)" }
+                [ { alias: "vid",  table: "i", column: deepdiveVariableIdColumn }
+                , { alias: "cardinality", expr: "COUNT(c.cid)" }
+                , { alias: "cids", expr: "ARRAY_AGG(c.cid)" }
                 ]
             , FROM: [ { alias: "v", table: .variablesTable } ]
             , JOIN:
                 # variable ids
                 [ { LEFT_OUTER: { alias: "i", table: .variablesIdsTable }
                   , ON: { and:  [ .variablesKeyColumns[]
-                                | { eq: [ { table: "i", column: "_\(.)" }
+                                | { eq: [ { table: "i", column: . }
                                         , { table: "v", column: . }
                                         ] }
                                 ] } }
@@ -362,7 +366,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                                         ] }
                                 ] } }
                 ]
-            , GROUP_BY: [ { table: "i", column: "id" } ]
+            , GROUP_BY: [ { table: "i", column: deepdiveVariableIdColumn } ]
             } | asSql | @sh) \\
             command=\("
                 exec cat >domains.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.tsv  # TODO @feiranwang remove this line once format_converter is ready
@@ -413,21 +417,16 @@ def withRedefinitionsWithJoinsForIdColumns:
             deepdive create table \(.weightsTable | @sh) as \(
                 { SELECT:
                     [ ( .weight_.params[] | { column: . } )
-                    , { alias: "isfixed"  , expr: .weight_.is_fixed   }
-                    , { alias: "initvalue", expr: .weight_.init_value }
-                    , { alias: "id"       , expr: -1                  }  # TODO cast to BIGINT?
+                    , { alias: "isfixed"  , expr: .weight_.is_fixed      }
+                    , { alias: "initvalue", expr: .weight_.init_value    }
+                    , { alias: "wid"      , expr: "CAST(NULL AS BIGINT)" }
                     ]
                 # when weight is parameterized, find all distinct ones
                 , FROM:
                     (if .weight_.params | length == 0 then [] else
-                        [ { table: .factorsTable }
-                        ]
+                        [ { table: .factorsTable } ]
                     end)
-                , GROUP_BY:
-                    (if .weight_.params | length == 0 then [] else
-                        [ ( .weight_.params[] | { column: . } )
-                        ]
-                    end)
+                , GROUP_BY: [ ( .weight_.params[] | { column: . } ) ]
                 } | asSql | @sh)
         "
     }
@@ -486,7 +485,7 @@ def withRedefinitionsWithJoinsForIdColumns:
         deepdive create view \(deepdiveGlobalWeightsTable | @sh) as \(
             [ $deepdive.inference.factors_[] |
                 { SELECT:
-                    [ { column: "id" }
+                    [ { column: "wid" }
                     , { column: "isfixed" }
                     , { column: "initvalue" }
                     , { alias: "description", expr: factorWeightDescriptionSqlExpr
@@ -523,7 +522,7 @@ def withRedefinitionsWithJoinsForIdColumns:
             inc=1
 
             # assign weight ids according to the partition
-            deepdive db assign_sequential_id \(.weightsTable | @sh) id $baseId $inc
+            deepdive db assign_sequential_id \(.weightsTable | @sh) wid $baseId $inc
         "
     }
 })
@@ -553,14 +552,14 @@ def withRedefinitionsWithJoinsForIdColumns:
             deepdive compute execute \\
                 input_sql=\(
                     { SELECT:
-                        [ { table: "weights", column: "id", alias: "weight_id" }
+                        [ { alias: "weight_id", table: "weights", column: "wid" }
                         , ( .function_.variables[] |
                             { table: "factors", column: .columnId }
                           )
                         ]
                     , FROM:
-                        [ { table: .factorsTable, alias: "factors" }
-                        , { table: .weightsTable, alias: "weights" }
+                        [ { alias: "factors", table: .factorsTable }
+                        , { alias: "weights", table: .weightsTable }
                         ]
                     , WHERE:
                         [ .weight_.params[] |
@@ -612,7 +611,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                     echo \(
                     # dump weights with initvalue from previously learned ones
                     { SELECT:
-                        [ { table: "w", column: "id" }
+                        [ { table: "w", column: "wid" }
                         , { expr: "CASE WHEN w.isfixed THEN 1 ELSE 0 END" }
                         , { expr: "COALESCE(reuse.weight, w.initvalue, 0)" }
                         ]
@@ -635,7 +634,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                     echo \(
                     # dump weights from scratch
                     { SELECT:
-                        [ { column: "id" }
+                        [ { column: "wid" }
                         , { expr: "CASE WHEN isfixed THEN 1 ELSE 0 END" }
                         , { expr: "COALESCE(initvalue, 0)" }
                         ]

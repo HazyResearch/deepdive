@@ -9,7 +9,7 @@ def generate_create_table_sql(schema, table):
   # variable relation
   if "variable_type" in schema["relations"][table]:
     columns = range(len(columns_json) + 1)
-    columns[-1] = "label BOOLEAN"  # FIXME to dd_label or so to avoid name collision
+    columns[-1] = "dd_label BOOLEAN"
   else:
     columns = range(len(columns_json))
   for k, v in columns_json.iteritems():
