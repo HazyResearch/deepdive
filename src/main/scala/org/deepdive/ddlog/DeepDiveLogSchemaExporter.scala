@@ -31,7 +31,7 @@ object DeepDiveLogSchemaExporter extends DeepDiveLogHandler {
     // what type of random variable this relation is
     if (decl.isQuery)
       schema += "variable_type" -> (
-        if (decl.categoricalColumns.size > 0) "multinomial"
+        if (decl.categoricalColumns.size > 0) "categorical"
         else "boolean"
       )
 
