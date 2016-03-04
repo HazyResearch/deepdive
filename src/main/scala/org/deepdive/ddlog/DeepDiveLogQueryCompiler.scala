@@ -24,7 +24,7 @@ object DeepDiveLogQueryCompiler extends DeepDiveLogHandler {
       case rule: ExtractionRule =>
         val qc = new compiler.QueryCompiler(rule.q)
         s"""CREATE TEMPORARY TABLE ${rule.headName} AS\n${
-          qc.generateSQL(compiler.ViewAlias)}"""
+          qc.generateSQL()}"""
     }) ++ List({
       // compile the query
       s"""${new compiler.QueryCompiler(query).generateSQL(compiler.UseVariableAsAlias)}"""

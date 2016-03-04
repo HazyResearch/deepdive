@@ -119,9 +119,8 @@ class DeepDiveLogCompiler( program : DeepDiveLog.Program, config : DeepDiveLog.C
   case object ViewAlias extends AliasStyle
   // TableStyle: tableName.R{tableIndex}.columnName
   case object TableAlias extends AliasStyle
-  case object NoAlias extends AliasStyle
+  // UseVariableAsAlias: to use the expression
   case object UseVariableAsAlias extends AliasStyle
-  case object SupervisionRuleAlias extends AliasStyle
 
 
   // This is responsible for compiling a single conjunctive query
@@ -174,7 +173,6 @@ class QueryCompiler(cq : ConjunctiveQuery) {
 
   // compile alias
   def compileAlias(e: Expr, a: Option[String], aliasStyle: AliasStyle) = aliasStyle match {
-    case NoAlias => ""
     case TableAlias => e match {
       case VarExpr(v) => {
         val index = getBodyIndex(v)
@@ -187,7 +185,6 @@ class QueryCompiler(cq : ConjunctiveQuery) {
     }
     case ViewAlias => s" AS column_${cq.headTerms indexOf e}"
     case UseVariableAsAlias => s""" AS "${DeepDiveLogPrettyPrinter.print(e)}"""" //" fix sublime highlighting
-    case SupervisionRuleAlias => a map (" AS " + _) getOrElse ""
   }
 
   // resolve an expression
@@ -248,7 +245,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
     val head = if (cq.headTerms isEmpty) "*" else cq.headTerms.zip(
       cq.headTermAliases getOrElse {cq.headTerms map {_ => None}}) map { case (expr, alias) =>
       compileExpr(expr) + compileAlias(expr, alias, aliasStyle)
-    } mkString(", ")
+    } mkString("\n     , ")
     val distinctStr = if (cq.isDistinct) "DISTINCT " else ""
     s"${distinctStr}${head}"
   }
@@ -294,7 +291,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
           }
         }
       }
-      conditions.mkString(" AND ")
+      conditions.mkString("\n  AND ")
     }
 
     def generateFromClause(bodies: List[Body], indexPrefix: String) : String = {
@@ -309,7 +306,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
             case OuterModifier() => {
               val from = generateFromClause(x.bodies, newIndexPrefix)
               val joinCond = generateWhereClause(x.bodies, newIndexPrefix)
-              Some(s"${from} ON ${joinCond}")
+              Some(s"${from}\n  ON ${joinCond}")
             }
             case _ => None
           }
@@ -318,9 +315,9 @@ class QueryCompiler(cq : ConjunctiveQuery) {
       }
       // full outer join
       if (atoms isEmpty) {
-        outers.mkString(" FULL OUTER JOIN ")
+        outers.mkString("\nFULL OUTER JOIN ")
       } else {
-        (atoms.mkString(", ") +: outers).mkString(" LEFT OUTER JOIN ")
+        (atoms.mkString("\n   , ") +: outers).mkString("\nLEFT OUTER JOIN ")
       }
     }
 
@@ -346,7 +343,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
     val groupbyStr = if (groupbyTerms.size == cq.headTerms.size || groupbyTerms.isEmpty) {
       ""
     } else {
-      s"\n        GROUP BY ${groupbyTerms.mkString(", ")}"
+      s"\nGROUP BY ${groupbyTerms.mkString("\n    , ")}"
     }
 
     // limit clause
@@ -367,12 +364,16 @@ class QueryCompiler(cq : ConjunctiveQuery) {
         } sortBy (_._3)
         optionalClause("\nORDER BY", orderByExprs map {
             case (e, isAscending, _) => s"${compileExpr(e)} ${if (isAscending) "ASC" else "DESC"}"
-          } mkString(", ")
+          } mkString("\n    , ")
         )
       }
 
-    s"""FROM ${ generateFromClause(body, "") }
-        ${ optionalClause("WHERE", generateWhereClause(body, "")) }${groupbyStr}${orderbyStr}${limitStr}"""
+    s"""FROM ${ generateFromClause(body, "")
+    }${optionalClause("\nWHERE", generateWhereClause(body, ""))
+    }${groupbyStr
+    }${orderbyStr
+    }${limitStr
+    }"""
   }
 
   def generateSQL(aliasStyle: AliasStyle = ViewAlias) = {
@@ -395,43 +396,23 @@ class QueryCompiler(cq : ConjunctiveQuery) {
     List.empty
   }
 
-  def generateUnionAllSQL(cqs: List[ConjunctiveQuery], aliasStyle: AliasStyle): String = {
-    cqs map { q => new QueryCompiler(q).generateSQL(aliasStyle) } mkString("\nUNION ALL\n")
-  }
-
   // Generate extraction rule part for deepdive
   def compile(stmt: ExtractionRule): CompiledBlocks = {
     val stmts = statementsByRepresentative getOrElse(stmt, List.empty) collect { case s: ExtractionRule => s }
     if (stmts isEmpty) return List.empty
 
-    val hasSchemaDeclared = schemaDeclarationByRelationName contains stmt.headName
-    val aliasStyle = if (hasSchemaDeclared) TableAlias else ViewAlias
-    compileExtractorBlock(resolveExtractorBlockName(stmt), stmt.headName, stmts,
-      generateUnionAllSQL(stmts map (_.q), aliasStyle))
+    compileExtractorBlock(stmt, stmts, stmt.headName, stmts map (_.q))
   }
 
-  def compileExtractorBlock(extractorName: String, outputRelation: String, stmts: List[Statement], sql: String): CompiledBlocks = {
+  def compileExtractorBlock(stmt: Statement, stmts: List[Statement], outputRelation: String, cqs: List[ConjunctiveQuery]): CompiledBlocks = {
     // look for @materialize annotation on any rule defining the same head
     val shouldMaterialize = stmts flatMap (_.annotations) exists (_ named "materialize")
-
-    List(s"deepdive.extraction.extractors.${extractorName}" -> Map(
-      "cmd" -> QuotedString(
-        if (shouldMaterialize) {
-          s"""
-          |# TODO use temporary table
-          |deepdive create table "${outputRelation}"
-          |deepdive sql ${escape4sh(s"INSERT INTO ${outputRelation} $sql")}
-          |# TODO rename temporary table to replace output_relation
-          |""".stripMargin
-        } else {
-          s"""
-          |deepdive create view ${outputRelation} as ${escape4sh(sql)}
-          |""".stripMargin
-        }
-      ),
+    List(s"deepdive.extraction.extractors.${resolveExtractorBlockName(stmt)}" -> Map(
+      "style" -> "sql_extractor",
+      "input_relations" -> (stmts flatMap relationNamesUsedByStatement distinct),
       "output_relation" -> outputRelation,
-      "style" -> "cmd_extractor",
-      "input_relations" -> (stmts flatMap relationNamesUsedByStatement distinct)
+      "materialize" -> shouldMaterialize,
+      "sql" -> QuotedString(cqs map { q => new QueryCompiler(q).generateSQL() } mkString("\nUNION ALL\n"))
     ))
   }
 
@@ -439,14 +420,14 @@ class QueryCompiler(cq : ConjunctiveQuery) {
     val stmts = statementsByRepresentative getOrElse(stmt, List.empty) collect { case s: SupervisionRule => s }
     if (stmts isEmpty) return List.empty
 
-    compileExtractorBlock(resolveExtractorBlockName(stmt), stmt.headName, stmts,
-      generateUnionAllSQL(stmts map { case stmt => stmt.q.copy(
+    compileExtractorBlock(stmt, stmts, stmt.headName,
+      stmts map { case stmt => stmt.q.copy(
         headTerms = stmt.q.headTerms :+ stmt.supervision,
         headTermAliases = {
           stmt.q.headTermAliases orElse { Some(stmt.q.headTerms map (_ => None)) } map { _ :+ Some("label") }
         },
         isDistinct = true
-      ) }, SupervisionRuleAlias)
+      ) }
     )
   }
 
@@ -470,7 +451,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
       val blockName = resolveExtractorBlockName(stmt)
       val parallelism = stmt.annotations find (_ named "parallelism") flatMap (_.value) getOrElse("${PARALLELISM}")
       s"deepdive.extraction.extractors.${blockName}" -> (Map(
-        "input" -> QuotedString(new QueryCompiler(stmt.q).generateSQL(TableAlias)),
+        "input" -> QuotedString(new QueryCompiler(stmt.q).generateSQL()),
         "output_relation" -> stmt.output,
         "input_relations" -> (List(stmt) flatMap relationNamesUsedByStatement distinct),
         "input_batch_size" -> "${INPUT_BATCH_SIZE}",
@@ -506,6 +487,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
         val varInBody = (fakeBody.zipWithIndex flatMap {
           case (x: BodyAtom, i) =>
             if (schemaDeclarationByRelationName get(x.name) map(_.isQuery) getOrElse(false))
+              // TODO maybe TableAlias can be useful here or we can completely get rid of it?
               Some(s"""R${fakeBody indexOf x}.id AS "${x.name}.R${fakeBody indexOf x}.id" """)
             else
               None
