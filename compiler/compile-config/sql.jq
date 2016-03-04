@@ -43,8 +43,9 @@ def mapJoinOrEmptyString(prefix)                      : mapJoinOrEmptyString(pre
 
 # compile SQL expression: table.column or generic expression
 def asSqlExpr:
-    if has("expr")                       then .expr | tostring  # TODO support more structured expressions, e.g., binary operators and asSqlCondition
-    elif has("table") and has("column") then "\(.table | asSqlIdent).\(.column | asSqlIdent)"
+    if type != "object" then . # assume it's a valid SQL expression
+    elif has("expr")                     then .expr | tostring  # TODO support more structured expressions, e.g., binary operators and asSqlCondition
+    elif has("table") and has("column")  then "\(.table | asSqlIdent).\(.column | asSqlIdent)"
     elif has("column")                   then .column | asSqlIdent
     else error("Neither keys .expr or .column found for SQL expression in \(tostring)")
     end;
@@ -63,12 +64,13 @@ def asSqlTableAlias(asSql):
     end;
 def asSqlJoinTypeTableAlias(asSql):
     # five types of joins in ANSI SQL standard: https://en.wikipedia.org/wiki/Join_(SQL)
-    (.LEFT_OUTER  | mapJoinOrEmptyString("LEFT OUTER JOIN "  ; asSqlTableAlias(asSql))) //
-    (.RIGHT_OUTER | mapJoinOrEmptyString("RIGHT OUTER JOIN " ; asSqlTableAlias(asSql))) //
-    (.FULL_OUTER  | mapJoinOrEmptyString("FULL OUTER JOIN "  ; asSqlTableAlias(asSql))) //
-    (.INNER       | mapJoinOrEmptyString("INNER JOIN "       ; asSqlTableAlias(asSql))) //
-    (.CROSS       | mapJoinOrEmptyString("CROSS JOIN "       ; asSqlTableAlias(asSql))) //
-    error("Join table must be specified under one of these keys: LEFT_OUTER, RIGHT_OUTER, FULL_OUTER, INNER, CROSS, but found: \(tostring)");
+    (.LEFT_OUTER  | nullOr(mapJoinOrEmptyString("LEFT OUTER JOIN "  ; asSqlTableAlias(asSql)))) //
+    (.RIGHT_OUTER | nullOr(mapJoinOrEmptyString("RIGHT OUTER JOIN " ; asSqlTableAlias(asSql)))) //
+    (.FULL_OUTER  | nullOr(mapJoinOrEmptyString("FULL OUTER JOIN "  ; asSqlTableAlias(asSql)))) //
+    (.INNER       | nullOr(mapJoinOrEmptyString("INNER JOIN "       ; asSqlTableAlias(asSql)))) //
+    (.CROSS       | nullOr(mapJoinOrEmptyString("CROSS JOIN "       ; asSqlTableAlias(asSql)))) //
+    error("Join table must be specified under one of these keys: LEFT_OUTER, RIGHT_OUTER, FULL_OUTER, INNER, CROSS, but found: \(tostring)")
+    ;
 # compile SQL conditional expressions for WHILE, HAVING, and JOIN ON clauses
 # TODO maybe these comparisons should be folded into asSqlExpr
 def asSqlCondition:

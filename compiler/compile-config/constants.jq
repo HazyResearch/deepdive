@@ -8,6 +8,9 @@ def deepdiveVariableFrequencyColumn         :  "dd_count"                       
 def deepdiveGlobalHoldoutTable              :  "dd_graph_variables_holdout"     ;
 def deepdiveGlobalObservationTable          :  "dd_graph_variables_observation" ;
 def deepdiveGlobalWeightsTable              :  "dd_graph_weights"               ;
+def deepdiveInferenceResultWeightsTable     :  "dd_inference_result_weights"    ;
+def deepdiveInferenceResultWeightsMappingView: "dd_inference_result_weights_mapping";
+def deepdiveInferenceResultVariablesTable   :  "dd_inference_result_variables"  ;
 def deepdiveReuseWeightsTable               :  "dd_graph_weights_reuse"         ;
 def deepdivePrefixForFactorsTable           :  "dd_factors_"                    ;
 def deepdivePrefixForWeightsTable           :  "dd_weights_"                    ;

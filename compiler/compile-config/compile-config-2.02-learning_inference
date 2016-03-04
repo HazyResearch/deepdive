@@ -69,25 +69,27 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         style: "cmd_extractor",
         cmd: "mkdir -p ../../../model && cd ../../../model
             # load weights to database
-            deepdive create table dd_inference_result_weights \\
+            deepdive create table \(deepdiveInferenceResultWeightsTable | @sh) \\
                 id:BIGINT:'PRIMARY KEY' \\
                 weight:'DOUBLE PRECISION' \\
                 #
             cat weights/inference_result.out.weights.text |
             tr \(" "|@sh) \("\\t"|@sh) | DEEPDIVE_LOAD_FORMAT=tsv \\
-            deepdive load dd_inference_result_weights /dev/stdin
+            deepdive load \(deepdiveInferenceResultWeightsTable | @sh) /dev/stdin
 
             # create views
-            deepdive create view dd_inference_result_weights_mapping as \("
-                SELECT dd_graph_weights.*, dd_inference_result_weights.weight FROM
-                dd_graph_weights JOIN dd_inference_result_weights ON dd_graph_weights.id = dd_inference_result_weights.id
-                ORDER BY abs(weight) DESC
-            " | @sh)
-
-            deepdive create view dd_inference_result_variables_mapped_weights as \("
-                SELECT * FROM dd_inference_result_weights_mapping
-                ORDER BY abs(weight) DESC
-            " | @sh)
+            deepdive create view \(deepdiveInferenceResultWeightsMappingView | @sh) as \(
+                { SELECT:
+                    [ { expr: "\"w\".*" }
+                    , { table: "r", column: "weight" }
+                    ]
+                , FROM: { alias: "w", table: deepdiveGlobalWeightsTable } 
+                , JOIN: { INNER: { alias: "r", table: deepdiveInferenceResultWeightsTable }
+                        , ON: { eq: [ { table: "r", column: "id" }
+                                    , { table: "w", column: "wid" }
+                                    ] } }
+                , ORDER_BY: { expr: "ABS(\"r\".\"weight\")", order: "DESC" } 
+                } | asSql | asPrettySqlArg)
         "
     },
     "process/model/load_probabilities": {
@@ -96,14 +98,14 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         style: "cmd_extractor",
         cmd: "mkdir -p ../../../model && cd ../../../model
             # load weights to database
-            deepdive create table dd_inference_result_variables \\
+            deepdive create table \(deepdiveInferenceResultVariablesTable | @sh) \\
                 id:BIGINT \\
                 category:BIGINT \\
                 expectation:'DOUBLE PRECISION' \\
                 #
             cat probabilities/inference_result.out.text |
             tr \(" "|@sh) \("\\t"|@sh) | DEEPDIVE_LOAD_FORMAT=tsv \\
-            deepdive load dd_inference_result_variables /dev/stdin
+            deepdive load \(deepdiveInferenceResultVariablesTable | @sh) /dev/stdin
 
             # create a view for each app schema variable
             \([ $deepdive.schema.variables_[] | "
@@ -125,7 +127,7 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                                     ] } }
                     , if .variableType == "boolean" then
                     # inference results
-                      { LEFT_OUTER: { alias: "r", table: "dd_inference_result_variables" }
+                      { LEFT_OUTER: { alias: "r", table: deepdiveInferenceResultVariablesTable }
                       , ON: { eq:   [ { table: "r", column: "id" }
                                     , { table: "i", column: deepdiveVariableIdColumn }
                                     ] } }
@@ -138,7 +140,7 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                                             ] }
                                     ] } }
                     # inference results
-                    , { LEFT_OUTER: { alias: "r", table: "dd_inference_result_variables" }
+                    , { LEFT_OUTER: { alias: "r", table: deepdiveInferenceResultVariablesTable }
                       , ON: { and:  [ { eq: [ { table: "r", column: "id" }
                                             , { table: "i", column: deepdiveVariableIdColumn }
                                             ] }
