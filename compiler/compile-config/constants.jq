@@ -4,7 +4,9 @@
 
 def deepdiveVariableIdColumn                :  "dd_id"                          ;
 def deepdiveVariableLabelColumn             :  "dd_label"                       ;
-def deepdiveVariableFrequencyColumn         :  "dd_count"                       ;
+def deepdiveVariableExpectationColumn       :  "expectation"                    ;
+def deepdiveVariableInternalLabelColumn     :  "dd__label"                      ;
+def deepdiveVariableInternalFrequencyColumn :  "dd__count"                      ;
 def deepdiveGlobalHoldoutTable              :  "dd_graph_variables_holdout"     ;
 def deepdiveGlobalObservationTable          :  "dd_graph_variables_observation" ;
 def deepdiveGlobalWeightsTable              :  "dd_graph_weights"               ;

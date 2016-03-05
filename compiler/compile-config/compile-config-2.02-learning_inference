@@ -99,9 +99,9 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         cmd: "mkdir -p ../../../model && cd ../../../model
             # load weights to database
             deepdive create table \(deepdiveInferenceResultVariablesTable | @sh) \\
-                id:BIGINT \\
-                category:BIGINT \\
-                expectation:'DOUBLE PRECISION' \\
+                vid:BIGINT \\
+                cid:BIGINT \\
+                prb:'DOUBLE PRECISION' \\
                 #
             cat probabilities/inference_result.out.text |
             tr \(" "|@sh) \("\\t"|@sh) | DEEPDIVE_LOAD_FORMAT=tsv \\
@@ -111,10 +111,10 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
             \([ $deepdive.schema.variables_[] | "
                 deepdive create view \("\(.variablesTable)_inference" | @sh) as \(
                 { SELECT:
-                    [ { expr: "v.*" }
-                    , { alias: "expectation",               table: "r", column: "expectation" }
-                    , { alias: deepdiveVariableLabelColumn, table: "i", column: deepdiveVariableLabelColumn }
-                    , { alias: deepdiveVariableIdColumn,    table: "i", column: deepdiveVariableIdColumn }
+                    [ { expr: "\"v\".*" }
+                    , { alias: deepdiveVariableExpectationColumn,   table: "r", column: "prb" }
+                    , { alias: deepdiveVariableInternalLabelColumn, table: "i", column: deepdiveVariableInternalLabelColumn }
+                    , { alias: deepdiveVariableIdColumn,            table: "i", column: deepdiveVariableIdColumn }
                     ]
                 , FROM: [ { alias: "v", table: .variablesTable } ]
                 , JOIN:
@@ -128,7 +128,7 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                     , if .variableType == "boolean" then
                     # inference results
                       { LEFT_OUTER: { alias: "r", table: deepdiveInferenceResultVariablesTable }
-                      , ON: { eq:   [ { table: "r", column: "id" }
+                      , ON: { eq:   [ { table: "r", column: "vid" }
                                     , { table: "i", column: deepdiveVariableIdColumn }
                                     ] } }
                     else
@@ -141,17 +141,17 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                                     ] } }
                     # inference results
                     , { LEFT_OUTER: { alias: "r", table: deepdiveInferenceResultVariablesTable }
-                      , ON: { and:  [ { eq: [ { table: "r", column: "id" }
+                      , ON: { and:  [ { eq: [ { table: "r", column: "vid" }
                                             , { table: "i", column: deepdiveVariableIdColumn }
                                             ] }
-                                    , { eq: [ { table: "r", column: "category" }
+                                    , { eq: [ { table: "r", column: "cid" }
                                             , { table: "c", column: "cid" }
                                             ] }
                                     ] } }
                     end
                     ]
                 , ORDER_BY:
-                    { expr: { table: "r", column: "expectation" }
+                    { expr: { table: "r", column: "prb" }
                     , order: "DESC"
                     }
                 } | asSql | @sh)"

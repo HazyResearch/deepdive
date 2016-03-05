@@ -88,13 +88,13 @@ def withRedefinitionsWithJoinsForIdColumns:
         { SELECT:
             [ (.variablesKeyColumns[]
             | { alias: ., table: "v", column: . }) # XXX we don't prefix user's columns (with _ like others) since they directly use this table and it can cause confusion
-            , { alias: deepdiveVariableLabelColumn, expr:
+            , { alias: deepdiveVariableInternalLabelColumn, expr:
                 # boolean variables just take one label, so aggregate with AND
                 ( if .variableType == "boolean" then "EVERY(\"v\".\(deepdiveVariableLabelColumn | asSqlIdent))"
                 # categorical variables should point to the category id that has a true label column
                 else "MIN(CASE WHEN \"v\".\(deepdiveVariableLabelColumn | asSqlIdent) THEN \"c\".\"cid\" ELSE NULL END)"
                 end) }
-            , { alias: deepdiveVariableFrequencyColumn, expr: "COUNT(1)" }
+            , { alias: deepdiveVariableInternalFrequencyColumn, expr: "COUNT(1)" }
             , { alias: deepdiveVariableIdColumn, expr: "CAST(NULL AS BIGINT)" }
             ]
         , FROM: [ { alias: "v", table: .variablesTable } ]
@@ -202,7 +202,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                 { SELECT: [ { column: deepdiveVariableIdColumn } ]
                 , FROM: [ { table: .variablesIdsTable } ]
                 , WHERE:
-                    [ { isntNull: { column: deepdiveVariableLabelColumn } }
+                    [ { isntNull: { column: deepdiveVariableInternalLabelColumn } }
                     , { lt: [ { expr: "RANDOM()" }
                             , { expr: $deepdive.calibration.holdout_fraction }
                             ]
@@ -266,12 +266,12 @@ def withRedefinitionsWithJoinsForIdColumns:
                         [ { alias: "vid", column: deepdiveVariableIdColumn }
                         , { alias: "variable_role", expr:
                               "CASE WHEN observation.variable_id IS NOT NULL
-                                     AND \"i\".\(deepdiveVariableLabelColumn | asSqlIdent) IS NOT NULL THEN 2
+                                     AND \"i\".\(deepdiveVariableInternalLabelColumn | asSqlIdent) IS NOT NULL THEN 2
                                     WHEN holdout.variable_id IS NOT NULL THEN 0
-                                    WHEN \"i\".\(deepdiveVariableLabelColumn | asSqlIdent) IS NOT NULL THEN 1
-                                                                             ELSE 0
+                                    WHEN \"i\".\(deepdiveVariableInternalLabelColumn | asSqlIdent) IS NOT NULL THEN 1
+                                    ELSE 0
                                 END" }
-                        , { alias: "label", table: "i", column: deepdiveVariableLabelColumn }
+                        , { alias: "label", table: "i", column: deepdiveVariableInternalLabelColumn }
                         , { alias: "variable_type", expr: (
                                 if   .variableType == "boolean"     then 0
                                 elif .variableType == "categorical" then 1
