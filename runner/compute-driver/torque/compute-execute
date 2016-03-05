@@ -164,19 +164,23 @@ if [[ $(uname) = "Darwin" ]]; then
   else 
     echo "Kerberos credentials found at $SSH_INFO:$KRB_DIR"
   fi
-  export KRB_DIR
+else
+  KRB_DIR="__ignore__"
 fi
+export KRB_DIR
 
 # Submit job. 
 # This is a hack that supposedly prints out the output of ssh asking for the 
 # password. But the output seems to not be flushed to stdout. 
+# XXX: Is this a good idea??
+exec 5>&1
 JOB_ID=$(ssh_with_env \
   DEEPDIVE_APP=$REMOTE_DEEPDIVE_APP \
   SSH_HOST=$ssh_host \
   KRB_DIR \
   REMOTE_JOBID_DIR \
   REMOTE_SH_DIR \
-  -- "deepdive compute remote-submit")
+  -- "deepdive compute remote-submit" | tee /dev/fd/5)
 
 for sig in TERM INT; do
   trap "sched_kill $JOB_ID" $sig
@@ -191,12 +195,13 @@ while [[ "$STATUS" == incomplete ]]; do
 
   # Efficient way to compute the status as it lifts the burden of checking each
   # job in the submission node. 
+  exec 5>&1
   JOB_STATUSES=$(ssh_with_env \
     DEEPDIVE_APP=$REMOTE_DEEPDIVE_APP \
     JOB_ID=$JOB_ID \
     NUM_PROCESSES=$num_processes \
     REMOTE_OUT_DIR \
-    -- "deepdive compute remote-status")
+    -- "deepdive compute remote-status" | tee /dev/fd/5)
   
   echo "Job statuses [I:incomplete, C:complete, F:failed]: "
   echo "  $JOB_STATUSES"

@@ -58,4 +58,6 @@ fi
 if [[ -f $REMOTE_IN_DIR ]] && [[ $NUM_PROCESSES -gt 1 ]]; then
   total_lines=$(wc -l < $REMOTE_IN_DIR)
   split -d -l $((total_lines / NUM_PROCESSES + 1)) -a 4 $REMOTE_IN_DIR $REMOTE_IN_DIR.
+  # Cleanup original remote.in file since we don't need duplicates
+  rm -fv $REMOTE_IN_DIR
 fi

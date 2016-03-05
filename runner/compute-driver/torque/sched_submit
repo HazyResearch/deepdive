@@ -9,9 +9,9 @@ set -euo pipefail
 # Since output of qsub is something like 120213.ilhead1.stanford.edu, and
 # we need to grab only the numeric part. 
 {
-  if [[ ! -z $KRB_DIR ]]; then
-    env KRB5CCNAME=FILE:$KRB_DIR qsub -V $REMOTE_SH_DIR
+  if [[ "$KRB_DIR" == "__ignore__" ]]; then
+    qsub -V $REMOTE_SH_DIR
   else
-    qsub -V $SCRIPT_PATH
+    env KRB5CCNAME=FILE:$KRB_DIR qsub -V $REMOTE_SH_DIR
   fi
 } | grep $SSH_HOST | grep -o ^[0-9]*
