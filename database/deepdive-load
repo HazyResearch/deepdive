@@ -6,7 +6,7 @@
 # from files found on path input/RELATION.* under the DeepDive application.
 #
 # When RELATION is a random variable and no COLUMN is specified, the SOURCE are
-# expected to contain the `label` column at the end, in addition to all
+# expected to contain the `dd_label` column at the end, in addition to all
 # user-defined ones.
 #
 # This command must be run under an environment whose DEEPDIVE_DB_URL variable
@@ -83,7 +83,7 @@ fi
 
 # find the columns to load (when no $Columns were explicitly specified and
 # $Relation is a random variable, load the user-defined columns with the
-# internal label column but nothing else)
+# internal dd_label column but nothing else)
 if [[ -z "$Columns" && -e "$DEEPDIVE_APP" ]] && app-has-been-compiled; then
     Columns=$(
         cd "$DEEPDIVE_APP"
@@ -93,7 +93,7 @@ if [[ -z "$Columns" && -e "$DEEPDIVE_APP" ]] && app-has-been-compiled; then
             if .variable_type then
                 .columns | to_entries |
                 sort_by(.value.index) |
-                map(.key)+["label"] | join(",")
+                map(.key)+["dd_label"] | join(",")
             else
                 empty
             end
