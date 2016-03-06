@@ -90,9 +90,9 @@ def withRedefinitionsWithJoinsForIdColumns:
             | { alias: ., table: "v", column: . }) # XXX we don't prefix user's columns (with _ like others) since they directly use this table and it can cause confusion
             , { alias: deepdiveVariableInternalLabelColumn, expr:
                 # boolean variables just take one label, so aggregate with AND
-                ( if .variableType == "boolean" then "EVERY(\"v\".\(deepdiveVariableLabelColumn | asSqlIdent))"
+                ( if .variableType == "boolean" then "EVERY(\"v\".\(.variablesLabelColumn | asSqlIdent))"
                 # categorical variables should point to the category id that has a true label column
-                else "MIN(CASE WHEN \"v\".\(deepdiveVariableLabelColumn | asSqlIdent) THEN \"c\".\"cid\" ELSE NULL END)"
+                else "MIN(CASE WHEN \"v\".\(.variablesLabelColumn | asSqlIdent) THEN \"c\".\"cid\" ELSE NULL END)"
                 end) }
             , { alias: deepdiveVariableInternalFrequencyColumn, expr: "COUNT(1)" }
             , { alias: deepdiveVariableIdColumn, expr: "CAST(NULL AS BIGINT)" }

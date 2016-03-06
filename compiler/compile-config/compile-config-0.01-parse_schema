@@ -27,14 +27,14 @@ include "util";
             end
             | .[].key
             ]
-        , variablesLabelColumn : $columnName
         , variableType : ($variableType | trimWhitespace | ascii_downcase
             | if in({boolean: 1, categorical: 1}) then .
             else error("deepdive.schema.variables.\($relationName).\($columnName) has an unrecognized type: \($variableType | @json)")
             end)
         }
-        | .variablesCategoryColumns = if .variableType == "boolean" then [] else $columnNames end
-        | .variablesCategoriesTable = if .variableType == "boolean" then null else "\(deepdivePrefixForVariablesCategoriesTable)\($relationName)" end
+        | .variablesCategoryColumns = if .variableType == "boolean" then []          else $columnNames                                                      end
+        | .variablesCategoriesTable = if .variableType == "boolean" then null        else "\(deepdivePrefixForVariablesCategoriesTable)\($relationName)"    end
+        | .variablesLabelColumn     = if .variableType == "boolean" then $columnName else deepdiveVariableLabelColumn                                       end
 ]
 
 # create a map to make it easy to access a variable by its name
