@@ -193,8 +193,8 @@ def withRedefinitionsWithJoinsForIdColumns:
         \([ if $deepdive.calibration.holdout_query then
             # run user holdout query if configured
             "\($deepdive.schema.variables_
-                | withRedefinitionsWithJoinsForIdColumns)
-            \($deepdive.calibration.holdout_query)"
+                | withRedefinitionsWithJoinsForIdColumns
+            )\($deepdive.calibration.holdout_query)"
           else
             # otherwise, randomly select from evidence variables of each variable table
             $deepdive.schema.variables_[] | "
@@ -214,8 +214,8 @@ def withRedefinitionsWithJoinsForIdColumns:
         , if $deepdive.calibration.observation_query then
             # run user holdout query if configured
             "\($deepdive.schema.variables_
-                | withRedefinitionsWithJoinsForIdColumns)
-            \($deepdive.calibration.holdout_query)"
+                | withRedefinitionsWithJoinsForIdColumns
+            )\($deepdive.calibration.holdout_query)"
           else empty
           end
         ] | map("deepdive sql \(asPrettySqlArg)") | join("\n"))
@@ -260,59 +260,43 @@ def withRedefinitionsWithJoinsForIdColumns:
                 , { column: "variable_type" }
                 , { column: "cardinality" }
                 ]
-            , FROM:
-                [ { alias: "variables", sql:
-                    { SELECT:
-                        [ { alias: "vid", column: deepdiveVariableIdColumn }
-                        , { alias: "variable_role", expr:
-                              "CASE WHEN observation.variable_id IS NOT NULL
-                                     AND \"i\".\(deepdiveVariableInternalLabelColumn | asSqlIdent) IS NOT NULL THEN 2
-                                    WHEN holdout.variable_id IS NOT NULL THEN 0
-                                    WHEN \"i\".\(deepdiveVariableInternalLabelColumn | asSqlIdent) IS NOT NULL THEN 1
-                                    ELSE 0
-                                END" }
-                        , { alias: "label", table: "i", column: deepdiveVariableInternalLabelColumn }
-                        , { alias: "variable_type", expr: (
-                                if   .variableType == "boolean"     then 0
-                                elif .variableType == "categorical" then 1
-                                else error("Internal error: Unknown variableType: \(.variableType)")
-                                end
-                            ) }
-                        , { alias: "cardinality", expr: (
-                                if   .variableType == "boolean"     then 2
-                                elif .variableType == "categorical" then "count" # TODO count the number of actual distinct values by .variablesCategoryColumns for this row
-                                else error("Internal error: Unknown variableType: \(.variableType)")
-                                end
-                            ) }
-                        ]
-                    , FROM:
-                        [ { alias: "i", table: .variablesIdsTable }
-                        ]
-                    , JOIN:
-                        [ { LEFT_OUTER:
-                            { alias: "holdout"
-                            , table: deepdiveGlobalHoldoutTable
-                            }
-                          , ON: { eq:
-                                    [ { table: "i", column: deepdiveVariableIdColumn }
-                                    , { table: "holdout"  , column: "variable_id" }
-                                    ]
-                                }
-                          }
-                        , { LEFT_OUTER:
-                            { alias: "observation"
-                            , table: deepdiveGlobalObservationTable
-                            }
-                          , ON: { eq:
-                                    [ { table: "i"  , column: deepdiveVariableIdColumn }
-                                    , { table: "observation", column: "variable_id" }
-                                    ]
-                                }
-                          }
-                        ]
-                    }
-                  }
-                ]
+            , FROM: { alias: "variables", sql:
+                { SELECT:
+                    [ { alias: "vid", column: deepdiveVariableIdColumn }
+                    , { alias: "variable_role", expr:
+                          "CASE WHEN observation.variable_id IS NOT NULL
+                                 AND \"i\".\(deepdiveVariableInternalLabelColumn | asSqlIdent) IS NOT NULL THEN 2
+                                WHEN holdout.variable_id IS NOT NULL THEN 0
+                                WHEN \"i\".\(deepdiveVariableInternalLabelColumn | asSqlIdent) IS NOT NULL THEN 1
+                                ELSE 0
+                            END" }
+                    , { alias: "label", table: "i", column: deepdiveVariableInternalLabelColumn }
+                    , { alias: "variable_type", expr:
+                            ( if .variableType == "boolean"     then 0
+                            elif .variableType == "categorical" then 1
+                            else error("Internal error: Unknown variableType: \(.variableType)")
+                            end) }
+                    , { alias: "cardinality", expr:
+                            ( if .variableType == "boolean"     then 2
+                            elif .variableType == "categorical" then "c.count" # TODO count the number of actual distinct values by .variablesCategoryColumns for this row
+                            else error("Internal error: Unknown variableType: \(.variableType)")
+                            end) }
+                    ]
+                , FROM: { alias: "i", table: .variablesIdsTable }
+                , JOIN:
+                    [ { LEFT_OUTER: { alias: "holdout", table: deepdiveGlobalHoldoutTable }
+                      , ON: { eq: [ { table: "i", column: deepdiveVariableIdColumn }
+                                  , { table: "holdout"  , column: "variable_id" } ] } }
+                    , { LEFT_OUTER: { alias: "observation", table: deepdiveGlobalObservationTable }
+                      , ON: { eq: [ { table: "i"  , column: deepdiveVariableIdColumn }
+                                  , { table: "observation", column: "variable_id" } ] } }
+                    , ( if .variableType != "categorical" then empty else
+                      { LEFT_OUTER: { alias: "categories" , table: .variablesCategoriesTable }
+                      , ON: { eq: [ { table: "i"  , column: deepdiveVariableIdColumn }
+                                  , { table: "observation", column: "variable_id" } ] } }
+                      end)
+                    ]
+                } }
             } | asSql | asPrettySqlArg) \\
             command=\("
                 format_converter variable /dev/stdin >(pbzip2 >variables.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
@@ -408,25 +392,59 @@ def withRedefinitionsWithJoinsForIdColumns:
 
             # materialize factors using user input_query that pulls in assigned ids to involved variables
             deepdive create table \(.factorsTable | @sh) as \(
-            # allow .input_query to refer to the assigned variable ids by redefining the variable table names with SQL CTE
-            "\($schemaVariablesForThisFactor |
-                withRedefinitionsWithJoinsForIdColumns)
-            \(.input_query)" | asPrettySqlArg)
+                # allow .input_query to refer to the assigned variable ids by redefining the variable table names with SQL CTE
+                { SELECT:
+                    [ ( .function_.variables[] | { table: "F", column: .columnId } )
+                    , ( .weight_.params[]      | { table: "F", column: . } )
+                    ]
+                , DISTINCT: true  # XXX maybe we should assume user is going to be make this true
+                , FROM: [ { alias: "F", sql:
+                    "\($schemaVariablesForThisFactor
+                        | withRedefinitionsWithJoinsForIdColumns
+                    )\(.input_query)" } ]
+                } | asSql | asPrettySqlArg)
 
             # find distinct weights for the factors into a separate table
             deepdive create table \(.weightsTable | @sh) as \(
                 { SELECT:
-                    [ ( .weight_.params[] | { column: . } )
+                    # category columns for every categorical variable
+                    [ ( .function_.variables[]
+                    | .columnId as $columnIdForThisFactor
+                    | .schema.variablesCategoryColumns[]
+                    | { alias: "\($columnIdForThisFactor)_\(.)", table: "v.\($columnIdForThisFactor)", column: . } )
+                    , ( .weight_.params[] | { column: . } )
                     , { alias: "isfixed"  , expr: .weight_.is_fixed      }
                     , { alias: "initvalue", expr: .weight_.init_value    }
                     , { alias: "wid"      , expr: "CAST(NULL AS BIGINT)" }
                     ]
-                # when weight is parameterized, find all distinct ones
+                , DISTINCT: true  # XXX this is inevitable
                 , FROM:
-                    (if .weight_.params | length == 0 then [] else
-                        [ { table: .factorsTable } ]
+                    (if .function_.name != "multinomial" then
+                        # factors over no categorical variables
+                        if .weight_.params | length == 0 then []
+                        # when weight is parameterized, find all distinct ones
+                        else [ { alias: "f", table: .factorsTable } ] end
+                    else # multinomial weights are exploded with their variables' category values
+                        [ { alias: "f", table: .factorsTable }
+                        # FIXME joins below can go away if DDlog could project them as well in the .input_query
+                        # or we could inject those pushed-down projections if it at least compiled into a sql.jq object
+                        , ( .function_.variables[]
+                        | { alias: "i.\(.columnId)", table: .schema.variablesIdsTable }
+                        , { alias: "v.\(.columnId)", table: .schema.variablesTable }
+                        ) ]
                     end)
-                , GROUP_BY: [ ( .weight_.params[] | { column: . } ) ]
+                , WHERE:
+                    (if .function_.name != "multinomial" then []
+                    else # multinomial weights need category values, XXX hence a lot of join conditions
+                        [ ( .function_.variables[]
+                        | .columnId as $columnIdForThisFactor
+                        | { eq: [ { table: "f", column: $columnIdForThisFactor }
+                                , { table: "i.\($columnIdForThisFactor)", column: deepdiveVariableIdColumn } ] }
+                        , ( .schema.variablesKeyColumns[]
+                        | { eq: [ { table: "v.\($columnIdForThisFactor)", column: . }
+                                , { table: "i.\($columnIdForThisFactor)", column: . } ] } )
+                        ) ]
+                    end)
                 } | asSql | asPrettySqlArg)
         "
     }
@@ -445,6 +463,7 @@ def withRedefinitionsWithJoinsForIdColumns:
         : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
 
         # partition the id range for weights
+        # TODO extend partition_id_range to accept column holding step size
         RANGE_BEGIN=0 RANGE_STEP=1 \\
         partition_id_range \([ $deepdive.inference.factors_[] | "\(.weightsTable | @sh)" ] | join(" ")) | {
             # factor names
@@ -522,6 +541,7 @@ def withRedefinitionsWithJoinsForIdColumns:
             inc=1
 
             # assign weight ids according to the partition
+            # TODO extend assign_sequential_id to accept column holding step size, i.e., inc=cardinality or so
             deepdive db assign_sequential_id \(.weightsTable | @sh) wid $baseId $inc
         "
     }
@@ -551,23 +571,43 @@ def withRedefinitionsWithJoinsForIdColumns:
             # dump the factors joining the assigned weight ids, converting into binary format for the inference engine
             deepdive compute execute \\
                 input_sql=\(
+                # TODO if multinomial
+                # TODO sparse
                     { SELECT:
-                        [ { alias: "weight_id", table: "weights", column: "wid" }
-                        , ( .function_.variables[] |
-                            { table: "factors", column: .columnId }
-                          )
+                        [ { alias: "weight_id", expr: "ARRAY_AGG(w.wid)" }
+                        , ( .function_.variables[] | { table: "f", column: .columnId } )
                         ]
                     , FROM:
-                        [ { alias: "factors", table: .factorsTable }
-                        , { alias: "weights", table: .weightsTable }
+                        [ { alias: "f", table: .factorsTable }
+                        , { alias: "w", table: .weightsTable }
+                        , (if .function_.name != "multinomial" then empty else
+                            # a multinomial factor should find weights corresponding to its variables' category values
+                            # FIXME joins below can go away if .factorsTable just duplicate them all from the "/materialize" process
+                            ( .function_.variables[]
+                            | { alias: "i.\(.columnId)", table: .schema.variablesIdsTable }
+                            , { alias: "v.\(.columnId)", table: .schema.variablesTable }
+                            ) end)
                         ]
                     , WHERE:
-                        [ .weight_.params[] |
-                            { eq: [ { table: "factors", column: . }
-                                  , { table: "weights", column: . }
-                                  ]
-                            }
+                        [ ( .weight_.params[]
+                        | { eq: [ { table: "f", column: . }
+                                , { table: "w", column: . } ] } )
+                        , (if .function_.name != "multinomial" then empty else
+                            # multinomial factors need category values, XXX hence a lot of join conditions
+                            ( .function_.variables[]
+                            | .columnId as $columnIdForThisFactor
+                            | { eq: [ { table: "f", column: $columnIdForThisFactor }
+                                    , { table: "i.\($columnIdForThisFactor)", column: deepdiveVariableIdColumn } ] }
+                            , ( .schema.variablesKeyColumns[]
+                            | { eq: [ { table: "v.\($columnIdForThisFactor)", column: . }
+                                    , { table: "i.\($columnIdForThisFactor)", column: . } ] } )
+                            , ( .schema.variablesCategoryColumns[]
+                            | { eq: [ { table: "v.\($columnIdForThisFactor)", column: . }
+                                    , { table: "w", column: "\($columnIdForThisFactor)_\(.)" } ] } )
+                            ) end)
                         ]
+                    , GROUP_BY:
+                        [ ( .function_.variables[] | { table: "f", column: .columnId } ) ]
                     } | asSql | asPrettySqlArg) \\
                 command=\("
                     # also record the factor count
