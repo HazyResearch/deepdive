@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # torque/compute-remote-submit -- Initializes the submission script needed for the job.
-# 
+#
 # This script is somewhat confusing, since it's meant to be run in the submission node.
 # Therefore, the environment variables need to be relative to the submission node. For
 # example, DEEPDIVE_APP needs to point to the path of the application in the submission
-# node. 
+# node.
 ##
 set -euo pipefail
 

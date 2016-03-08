@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # torque/sched_submit -- Submits the specified script to the scheduler
-# 
+#
 # This script assumes that the Kerberos credentials have been forwarded from
-# the workstation to the server. Otherwise, KRB_DIR needs to be specified. 
+# the workstation to the server. Otherwise, KRB_DIR needs to be specified.
 ##
 set -euo pipefail
 
 # Since output of qsub is something like 120213.ilhead1.stanford.edu, and
-# we need to grab only the numeric part. 
+# we need to grab only the numeric part.
 {
   if [[ "$KRB_DIR" == "__ignore__" ]]; then
     qsub -V $REMOTE_SH_DIR

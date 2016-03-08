@@ -13,6 +13,6 @@ hash() {
     echo "Could not find SHA1 commands"
     exit 1
   fi
-   
+
   echo "$input_str" | eval "$h" | cut -d' ' -f1
 }

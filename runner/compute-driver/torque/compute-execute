@@ -55,8 +55,8 @@ export REMOTE_DEEPDIVE_HOME=$(ssh $SSH_INFO "deepdive whereis installed .")
 
 # App directory variables
 # APP_ID is used to isolate app folders that are uploaded to the same path
-# in the remote node. It is a hash of the local user name and the local absolute 
-# DeepDive application path. 
+# in the remote node. It is a hash of the local user name and the local absolute
+# DeepDive application path.
 export APP_ID="$(hash $LOCAL_USER/$DEEPDIVE_APP)"
 #SESSION_ID="$(date +%Y%m%d/%H%M%S.%N)"
 # DEEPDIVE_RUN_ID is of the form 20160303/170011.599195000
@@ -64,17 +64,17 @@ export SESSION_ID="$DEEPDIVE_RUN_ID/$DEEPDIVE_CURRENT_PROCESS_NAME"
 
 # Either take the remote DeepDive app path specified by the user, or default to
 # remote dir. The app base directory is the remote directory where DeepDive
-# will copy and synchronize the app directory in the workstation with. 
+# will copy and synchronize the app directory in the workstation with.
 export REMOTE_DEEPDIVE_APP="$remote_deepdive_app_base/$APP_ID"
 export REMOTE_SH_DIR="$REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME/remote.sh"
 export REMOTE_ERR_DIR="$REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME/remote.err"
 export REMOTE_JOBID_DIR="$REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME/job.id"
 
 # A directory to store transient data, such as input and output, which we don't
-# really want to keep in the workstation. 
+# really want to keep in the workstation.
 remote_deepdive_transient_base=${remote_deepdive_transient_base:-"${REMOTE_DEEPDIVE_APP}/run"}
 export REMOTE_DEEPDIVE_TRANSIENT="$remote_deepdive_transient_base/$SESSION_ID"
-# TODO: Decoupling input to reduce data transfers. 
+# TODO: Decoupling input to reduce data transfers.
 export REMOTE_IN_DIR="$REMOTE_DEEPDIVE_TRANSIENT/remote.in"
 export REMOTE_OUT_DIR="$REMOTE_DEEPDIVE_TRANSIENT/remote.out"
 
@@ -98,9 +98,9 @@ echo "Session information"
 echo " application id : $LOCAL_USER/$DEEPDIVE_APP -> $APP_ID"
 echo " session id     : $DEEPDIVE_CURRENT_PROCESS_NAME -> $SESSION_ID"
 
-# ensure all the directories needed exist in the remote node. 
+# ensure all the directories needed exist in the remote node.
 ssh $SSH_INFO bash -c "'
-  # Should already exist, but just to make sure. 
+  # Should already exist, but just to make sure.
   mkdir -p $REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME
   [[ -d $REMOTE_DEEPDIVE_TRANSIENT ]] || mkdir -p $REMOTE_DEEPDIVE_TRANSIENT
 '"
@@ -113,7 +113,7 @@ REMOTE_DEEPDIVE_CWD="$REMOTE_DEEPDIVE_APP""${DEEPDIVE_CWD##$DEEPDIVE_APP}"
 RSYNC_EXCLUDES=""
 for exclude in $excludes; do
   # XXX: For some reason, if I enclose $exclude in double quotes and pass it
-  # to rsync, rsync will interpret it as '"$exclude"', and fail to find 
+  # to rsync, rsync will interpret it as '"$exclude"', and fail to find
   # $exclude.
   RSYNC_EXCLUDES+="--exclude $exclude "
 done
@@ -132,12 +132,12 @@ fi
 # Prepare submission script
 # XXX there are conditional branches below depending on whether input_sql
 # and/or output_relation is given, to support four use cases. Depending on
-# the cases, need to generate various submission scripts. 
+# the cases, need to generate various submission scripts.
 # 1) executing command while streaming data from/to the database
 # 2) input-only command which has no output to the database and streams from the database
 # 3) output-only command which has no input from the database and streams to the database
 # 4) database-independent command which simply runs in parallel
-# XXX: Right now, submission script doesn't handle the case when there's no 
+# XXX: Right now, submission script doesn't handle the case when there's no
 # input_sql.
 echo "Performing setup for current task..."
 ssh_with_env \
@@ -153,15 +153,15 @@ ssh_with_env \
   REMOTE_SH_DIR \
   -- "deepdive compute remote-taskinit"
 
-# Ensure Kerberos authentication is succesful for user. Apparently this is 
-# only needed for Mac OS X due to broken implementation of Kerberos. 
+# Ensure Kerberos authentication is succesful for user. Apparently this is
+# only needed for Mac OS X due to broken implementation of Kerberos.
 if [[ $(uname) = "Darwin" ]]; then
   KRB_DIR="/tmp/krb5cc_${ssh_user}_deepdive"
   if ! ssh $SSH_INFO "klist -s -c $KRB_DIR > /dev/null"; then
     echo "Kerberos credentials either expired or not found in remote node."
     echo "Please reenter password for $SSH_INFO."
     ssh -t $SSH_INFO "kinit -r 30d -c $KRB_DIR"
-  else 
+  else
     echo "Kerberos credentials found at $SSH_INFO:$KRB_DIR"
   fi
 else
@@ -169,9 +169,9 @@ else
 fi
 export KRB_DIR
 
-# Submit job. 
-# This is a hack that supposedly prints out the output of ssh asking for the 
-# password. But the output seems to not be flushed to stdout. 
+# Submit job.
+# This is a hack that supposedly prints out the output of ssh asking for the
+# password. But the output seems to not be flushed to stdout.
 # XXX: Is this a good idea??
 exec 5>&1
 JOB_ID=$(ssh_with_env \
@@ -194,7 +194,7 @@ while [[ "$STATUS" == incomplete ]]; do
   sleep $poll_period_secs
 
   # Efficient way to compute the status as it lifts the burden of checking each
-  # job in the submission node. 
+  # job in the submission node.
   exec 5>&1
   JOB_STATUSES=$(ssh_with_env \
     DEEPDIVE_APP=$REMOTE_DEEPDIVE_APP \
@@ -202,15 +202,15 @@ while [[ "$STATUS" == incomplete ]]; do
     NUM_PROCESSES=$num_processes \
     REMOTE_OUT_DIR \
     -- "deepdive compute remote-status" | tee /dev/fd/5)
-  
+
   echo "Job statuses [I:incomplete, C:complete, F:failed]: "
   echo "  $JOB_STATUSES"
-  # Funny way to count number of jobs. 
+  # Funny way to count number of jobs.
   NUM_COMPLETED=$(grep -o "C" <<< "$JOB_STATUSES" | grep -c "C" || :)
   NUM_INCOMPLETE=$(grep -o "I" <<< "$JOB_STATUSES" | grep -c "I" || :)
   NUM_FAILED=$(grep -o "F" <<< "$JOB_STATUSES" | grep -c "F" || :)
 
-  # Sanity check. 
+  # Sanity check.
   if [[ ! $((NUM_FAILED + NUM_INCOMPLETE + NUM_COMPLETED)) == $num_processes ]]; then
     error "Total number of jobs != total number of processes"
   fi
@@ -240,7 +240,7 @@ if [[ "$STATUS" == failed ]]; then
     error
 fi
 
-# Download error logs and other information from remote. 
+# Download error logs and other information from remote.
 rsync -aH --exclude "$SESSION_ID" $SSH_INFO:$REMOTE_DEEPDIVE_APP/ $DEEPDIVE_APP
 ssh $SSH_INFO "tail -n +1 $REMOTE_ERR_DIR*" > $ERROR_PATH
 
@@ -257,7 +257,7 @@ if [[ -n $output_relation ]]; then
     deepdive-create table-if-not-exists "$output_relation"
     db-create-table-like "$output_relation_tmp" "$output_relation"
 
-    # Stream output from remote submission node directly to stdin, and to 
+    # Stream output from remote submission node directly to stdin, and to
     # deepdive load
     if [[ $num_processes -gt 1 ]]; then
         extract="ssh $SSH_INFO \"cat $REMOTE_OUT_DIR-*\""
@@ -267,7 +267,7 @@ if [[ -n $output_relation ]]; then
     fi
     echo $extract
     eval "$extract" > /dev/stdout |
-    
+
     # use mkmimo again to merge outputs of multiple processes into a single stream
     #mkmimo process-*.output \> /dev/stdout |
 

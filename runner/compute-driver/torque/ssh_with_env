@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 # ssh_with_env -- Executes a command through SSH while passing specified environment variables
 # > ssh_with_env KEY[=VALUE]... -- REST
-# 
-# If the VALUE associated with KEY is specified, then it will be passed as specified. 
-# Otherwise, KEY is expanded based on the value of that environment variable in the current
-# environment. 
 #
-# Assumes SSH_INFO exists in the environment. 
+# If the VALUE associated with KEY is specified, then it will be passed as specified.
+# Otherwise, KEY is expanded based on the value of that environment variable in the current
+# environment.
+#
+# Assumes SSH_INFO exists in the environment.
 #
 # Example command:
 #   ssh_with_env NUM_PROCESSES=10 -- "deepdive compute remote-status"
 ##
 set -euo pipefail
 
-join_expand() { 
+join_expand() {
   for x in "$@"; do
     if [[ ! -z "$x" ]]; then
       # To handle variables that contain multiline
@@ -38,7 +38,7 @@ done
 shift
 COMMAND="$@"
 
-# Some escaping magic needs to happen here since newlines in $COMMAND need to 
-# be preserved. Ugh. 
+# Some escaping magic needs to happen here since newlines in $COMMAND need to
+# be preserved. Ugh.
 EXPAND_VARS=$(join_expand "${ENV_VARS[@]}")
 ssh $SSH_INFO "$EXPAND_VARS" "$COMMAND"
