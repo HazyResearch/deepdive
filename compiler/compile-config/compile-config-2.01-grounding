@@ -87,12 +87,8 @@ def withRedefinitionsWithJoinsForIdColumns:
             , { alias: "cid"  , expr: "CAST(NULL AS BIGINT)" }
             ]
         , FROM: [ { alias: "v", table: .variablesTable } ]
-        , GROUP_BY:
-            [ .variablesCategoryColumns[]
-            | {                 table: "v", column: . } ]
-        , ORDER_BY:
-            [ .variablesCategoryColumns[]
-            | { expr: { table: "v", column: . } } ]
+        , GROUP_BY: [ .variablesCategoryColumns[] |         { table: "v", column: . }   ]
+        , ORDER_BY: [ .variablesCategoryColumns[] | { expr: { table: "v", column: . } } ]
         } | asSql | asPrettySqlArg)
         # assign unique id to every distinct category
         deepdive db assign_sequential_id \(.variablesCategoriesTable | @sh) cid 0
@@ -361,7 +357,7 @@ def withRedefinitionsWithJoinsForIdColumns:
             { SELECT:
                 [ { alias: "vid",  table: "i", column: deepdiveVariableIdColumn }
                 , { alias: "cardinality", expr: "COUNT(c.cid)" }
-                , { alias: "cids", expr: "ARRAY_AGG(c.cid ORDER BY c.cid)" }
+                , { alias: "cids", expr: "ARRAY_AGG(c.cid ORDER BY c.cid)" }  # TODO move this ORDER BY into FROM? since it sounds like ARRAY_AGG(... ORDER BY ...) is PG 9+
                 ]
             , FROM: [ { alias: "v", table: .variablesTable } ]
             , JOIN:
@@ -504,6 +500,14 @@ def withRedefinitionsWithJoinsForIdColumns:
                                 | { eq: [ { table: "v.\($columnIdForThisVar)", column: . }
                                         , { table: "i.\($columnIdForThisVar)", column: . } ] } ) ] }
                         ) ]
+                    # TODO Do we need/want ORDER_BY here? There's no reason to have a consecutive id assigned for the weights unless we want to easily sort them by id later
+                    #, ORDER_BY:
+                    #    # order by category columns for every categorical variable
+                    #    [ ( .function_.variables[]
+                    #    | .columnId as $columnIdForThisVar
+                    #    | .schema.variablesCategoryColumns[]
+                    #    | { expr: { column: "\($columnIdForThisVar)_\(.)" } } )
+                    #    ]
                     } | asSql | asPrettySqlArg)
             fi
             " else # factors over boolean variables
@@ -646,6 +650,14 @@ def withRedefinitionsWithJoinsForIdColumns:
                     | .columnId as $columnIdForThisVar
                     | { alias: "c.\($columnIdForThisVar)", table: .schema.variablesCategoriesTable } )
                     ]
+                # NOTE ordering is unncessary because the wid is robust from ordering, relying on their cids only
+                #, ORDER_BY:
+                #    # order by category columns for every categorical variable
+                #    [ ( .function_.variables[]
+                #    | .columnId as $columnIdForThisVar
+                #    | .schema.variablesCategoryColumns[]
+                #    | { expr: { column: "\($columnIdForThisVar)_\(.)" } } )
+                #    ]
                 } | asSql | @sh)
             else
                 # assign weight ids according to the partition as usual
@@ -786,6 +798,16 @@ def withRedefinitionsWithJoinsForIdColumns:
                         | { eq: [ { table: "v.\($columnIdForThisVar)", column: . }
                                 , { table: "w", column: "\($columnIdForThisVar)_\(.)" } ] } ) )
                         ]
+                    # TODO this orderby seems ludicruous to put here (as a subquery) since this is basically exploding the data and sorting
+                    # actually keeping the weight ids ordered and relying on ARRAY_AGG(w.wid ORDER BY w.wid) may be a better
+                    #, ORDER_BY:
+                    #    [ ( .function_.variables[]
+                    #    | { table: "f", column: .columnId } )
+                    #    [ ( .function_.variables[]
+                    #    | .columnId as $columnIdForThisVar
+                    #    | ( .schema.variablesCategoryColumns[]
+                    #    | { expr: { column: "\($columnIdForThisVar)_\(.)" } } ) )
+                    #    ]
                     , GROUP_BY:
                         [ ( .function_.variables[]
                         | { table: "f", column: .columnId } )
