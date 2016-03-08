@@ -183,7 +183,7 @@ JOB_ID=$(ssh_with_env \
   -- "deepdive compute remote-submit" | tee /dev/fd/5)
 
 for sig in TERM INT; do
-  trap "sched_kill $JOB_ID" $sig
+  trap "sched_kill $JOB_ID $num_processes" $sig
 done
 # Poll status
 echo "Waiting for job id $JOB_ID to complete"
@@ -215,12 +215,11 @@ while [[ "$STATUS" == incomplete ]]; do
     error "Total number of jobs != total number of processes"
   fi
 
+  if [[ $NUM_FAILED -gt 0 ]]; then
+    STATUS=failed
+  fi
   if [[ $NUM_INCOMPLETE -eq 0 ]]; then
-    if [[ $NUM_FAILED -gt 0 ]]; then
-      STATUS=failed
-    else
-      STATUS=complete
-    fi
+    STATUS=complete
   fi
 done
 

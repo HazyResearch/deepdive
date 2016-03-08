@@ -5,5 +5,10 @@
 set -euo pipefail
 
 JOB_ID=$1
+NUM_PROCESSES=$2
 
-qdel $JOB_ID
+if [[ $NUM_PROCESSES -gt 1 ]]; then
+  qdel ${JOB_ID}[]
+else
+  qdel $JOB_ID
+fi
