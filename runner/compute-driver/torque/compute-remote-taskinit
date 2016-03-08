@@ -36,6 +36,17 @@ fi
   echo "#PBS -e $REMOTE_ERR_DIR"
   echo
   echo 'export PATH='$REMOTE_DEEPDIVE_HOME'/bin:$PATH'
+  if [[ ! -z "$REMOTE_ADDITIONAL_PATHS" ]]; then
+    for ap in $REMOTE_ADDITIONAL_PATHS; do
+      if [[ "$ap" == prepend_* ]]; then
+        echo 'export PATH='"${ap##prepend_}"':$PATH'
+      elif [[ "$ap" == append_* ]]; then
+        echo 'export PATH=$PATH:'"${ap##append_}"
+      else
+        echo 'export PATH='"$ap"':$PATH'
+      fi
+    done
+  fi
   echo 'export PYTHONPATH='$REMOTE_DEEPDIVE_HOME'/lib/python:$PYTHONPATH'
   echo "export DEEPDIVE_APP=\"$DEEPDIVE_APP\""
   echo 'export DEEPDIVE_CURRENT_PROCESS_INDEX=$PBS_ARRAYID'
@@ -61,3 +72,4 @@ if [[ -f $REMOTE_IN_DIR ]] && [[ $NUM_PROCESSES -gt 1 ]]; then
   # Cleanup original remote.in file since we don't need duplicates
   rm -fv $REMOTE_IN_DIR
 fi
+

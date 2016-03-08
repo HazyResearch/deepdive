@@ -23,6 +23,7 @@ eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \
     remote_deepdive_transient_base='.remote_deepdive_transient_base' \
     poll_period_secs='.poll_period_secs' \
     excludes='.excludes | join("\t")' \
+    additional_paths='.additional_paths | join("\t")' \
     #
 )"
 # respect the DEEPDIVE_NUM_PROCESSES environment
@@ -89,6 +90,7 @@ echo " remote_deepdive_app_base=$remote_deepdive_app_base"
 echo " remote_deepdive_transient_base=$remote_deepdive_transient_base"
 echo " poll_period_secs=$poll_period_secs"
 echo " excludes=$excludes"
+echo " additional_paths=$additional_paths"
 echo ""
 echo "DEEPDIVE_APP = $DEEPDIVE_APP"
 echo "DEEPDIVE_CURRENT_PROCESS_NAME = $DEEPDIVE_CURRENT_PROCESS_NAME"
@@ -143,6 +145,7 @@ echo "Performing setup for current task..."
 ssh_with_env \
   DEEPDIVE_APP=$REMOTE_DEEPDIVE_APP \
   NUM_PROCESSES=$num_processes \
+  REMOTE_ADDITIONAL_PATHS="$additional_paths" \
   COMMAND=\""$command"\" \
   REMOTE_DEEPDIVE_CWD \
   REMOTE_DEEPDIVE_HOME \
