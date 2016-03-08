@@ -30,8 +30,6 @@ chunk(s, word, tag) = (
   end
 ) :-
   words(s, word, _, pos, _, tag_supervised),
-  ! [ pos LIKE "NN%",   tag LIKE "VP" ;
-      pos LIKE "V%" , ! tag LIKE "VP" ],
   tags(tag).
 
 # TODO the following if-then-else can go directly to the supervision rule once DDlog supports true unification (tag_supervised = if ... end in the body)

@@ -70,7 +70,7 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         cmd: "mkdir -p ../../../model && cd ../../../model
             # load weights to database
             deepdive create table \(deepdiveInferenceResultWeightsTable | @sh) \\
-                id:BIGINT:'PRIMARY KEY' \\
+                wid:BIGINT:'PRIMARY KEY' \\
                 weight:'DOUBLE PRECISION' \\
                 #
             cat weights/inference_result.out.weights.text |
@@ -85,7 +85,7 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                     ]
                 , FROM: { alias: "w", table: deepdiveGlobalWeightsTable } 
                 , JOIN: { INNER: { alias: "r", table: deepdiveInferenceResultWeightsTable }
-                        , ON: { eq: [ { table: "r", column: "id" }
+                        , ON: { eq: [ { table: "r", column: "wid" }
                                     , { table: "w", column: "wid" }
                                     ] } }
                 , ORDER_BY: { expr: "ABS(\"r\".\"weight\")", order: "DESC" } 

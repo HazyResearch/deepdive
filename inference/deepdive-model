@@ -93,7 +93,7 @@ case $Command in
                         # dump non-zero weights for boolean factors
                         if [[ -n $(deepdive-sql eval "
                                 SELECT 1 WHERE EXISTS (
-                                    SELECT id FROM dd_graph_weights
+                                    SELECT wid FROM dd_graph_weights
                                      WHERE categories IS NULL)") ]]; then
                             # TODO parallel unload
                             show_progress output_from "$dest" -- \
@@ -102,7 +102,7 @@ case $Command in
                                      , weight
                                   FROM dd_inference_result_weights wo
                                      , dd_graph_weights            wi
-                                 WHERE wo.id = wi.id
+                                 WHERE wo.wid = wi.wid
                                    AND weight <> 0
                                    AND categories IS NULL -- to rule out multinomial
                             " format=tsv | pbzip2 >"$dest"/dd_weights.tsv.bz2
@@ -110,7 +110,7 @@ case $Command in
                         # dump non-zero weights for multinomial factors
                         if [[ -n $(deepdive-sql eval "
                                 SELECT 1 WHERE EXISTS (
-                                    SELECT id FROM dd_graph_weights
+                                    SELECT wid FROM dd_graph_weights
                                      WHERE categories IS NOT NULL)") ]]; then
                             # TODO parallel unload
                             # XXX ARRAY_AGG is postgres specific
@@ -121,7 +121,7 @@ case $Command in
                                      , ARRAY_AGG(weight)
                                   FROM dd_inference_result_weights wo
                                      , dd_graph_weights            wi
-                                 WHERE wo.id = wi.id
+                                 WHERE wo.wid = wi.wid
                                    AND weight <> 0
                                    AND categories IS NOT NULL -- to include multinomial only
                                  GROUP BY description

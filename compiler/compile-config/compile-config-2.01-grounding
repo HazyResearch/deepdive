@@ -12,6 +12,7 @@ or (.deepdive_.inference.factors_ | length) == 0
 then . else
 
 def factorWeightDescriptionSqlExpr:
+    # to serialize weight parameters describing each weight
     [ ("\(.factorName)-" | asSqlLiteral)
     , (.weight_.params[] |
         "CASE WHEN \(asSqlIdent) IS NULL THEN ''
@@ -19,6 +20,14 @@ def factorWeightDescriptionSqlExpr:
           END"
       )
     ] | join(" ||\("-" | asSqlLiteral)|| ")
+    ;
+def multinomialFactorWeightCategoriesDescriptionSqlExpr:
+    # to serialize category values describing an individual multinomial weight
+    [ ( .function_.variables[]
+    | .columnId as $columnIdForThisVar
+    | ( .schema.variablesCategoryColumns[]
+    | "\($columnIdForThisVar)_\(.)" | asSqlIdent )
+    ) ] | join(" ||'\t'|| ")
     ;
 
 # generate a SQL CTE for redefining user's variable table names to have id columns with joins
@@ -670,19 +679,11 @@ def withRedefinitionsWithJoinsForIdColumns:
                     [ { column: "wid" }
                     , { column: "isfixed" }
                     , { column: "initvalue" }
-                    , { alias: "description", expr: factorWeightDescriptionSqlExpr
-                      }
+                    , { alias: "description", expr: factorWeightDescriptionSqlExpr }
                     , if .function_.isMultinomial then
-                        # serialize category values describing an individual multinomial factor weight
-                        { alias: "categories", expr:
-                            [ ( .function_.variables[]
-                            | .columnId as $columnIdForThisVar
-                            | ( .schema.variablesCategoryColumns[]
-                            | "\($columnIdForThisVar)_\(.)" | asSqlIdent )
-                            ) ] | join(" ||'\t'|| ")
-                        }
+                        { alias: "categories", expr: multinomialFactorWeightCategoriesDescriptionSqlExpr }
                     else
-                        { alias: "categories", expr: "NULL" }
+                        { alias: "categories", expr: "NULL || ''" }
                     end
                     ]
                 , FROM:
@@ -813,7 +814,9 @@ def withRedefinitionsWithJoinsForIdColumns:
                 command=\("
                     # also record the factor count
                     tee >(wc -l >nfactors.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}) |
-                    format_converter factor /dev/stdin >(pbzip2 >factors.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2) \(.function_.id
+                    format_converter factor /dev/stdin >(pbzip2 >factors.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2) \(
+                        # TODO use different factor id for dense/sparse multinomial
+                        .function_.id
                         ) \(.function_.variables | length
                         ) original \(.function_.variables | map(if .isNegated then "0" else "1" end) | join(" ")
                         ) |
@@ -864,7 +867,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                                          , if .function_.isMultinomial then
                                            { or: [ { isNull: { table: "reuse", column: "categories" } }
                                                    , { eq: [ { table: "reuse", column: "categories" }
-                                                           , { table: "w",     column: "categories" }
+                                                           , { expr: multinomialFactorWeightCategoriesDescriptionSqlExpr }
                                                            ] }
                                                  ] }
                                            else empty end

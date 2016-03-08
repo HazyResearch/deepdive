@@ -10,9 +10,9 @@ get_f1score() {
         result/eval.sh | tee /dev/stderr | sed -n '/^accuracy:/ s/.* FB1: *//p')
 }
 
-@test "$DBVARIANT chunking example" {
+run_chunking_example() {
     cd "$BATS_TEST_DIRNAME"/chunking_example || skip
-    DEEPDIVE_CONFIG_EXTRA='deepdive.calibration.holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT id FROM tag WHERE word_id > '${SUBSAMPLE_NUM_WORDS_TRAIN}'"' \
+    DEEPDIVE_CONFIG_EXTRA='deepdive.calibration.holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT dd_id FROM chunk WHERE word_id > '${SUBSAMPLE_NUM_WORDS_TRAIN}'"' \
     deepdive compile
     deepdive model weights init
     deepdive redo process/init/app data/model/probabilities
@@ -21,7 +21,7 @@ get_f1score() {
     [[ $f1score -ge 75 ]]
 }
 
-@test "$DBVARIANT chunking example reuse weights" {
+run_chunking_example_reusing_weights() {
     cd "$BATS_TEST_DIRNAME"/chunking_example || skip
     # keep the learned weights from a small corpus
     deepdive model weights keep
@@ -40,4 +40,24 @@ get_f1score() {
     f1score=$(get_f1score)
     echo "f1score = $f1score"
     [[ $f1score -ge 70 ]]
+}
+
+@test "$DBVARIANT chunking example (dense; DEEPDIVE_GROUNDING_DENSE_MULTINOMIAL=true)" {
+    export DEEPDIVE_GROUNDING_DENSE_MULTINOMIAL=true
+    run_chunking_example
+}
+
+@test "$DBVARIANT chunking example reuse weights (dense; DEEPDIVE_GROUNDING_DENSE_MULTINOMIAL=true)" {
+    export DEEPDIVE_GROUNDING_DENSE_MULTINOMIAL=true
+    run_chunking_example_reusing_weights
+}
+
+@test "$DBVARIANT chunking example (sparse; DEEPDIVE_GROUNDING_DENSE_MULTINOMIAL=false)" {
+    export DEEPDIVE_GROUNDING_DENSE_MULTINOMIAL=false
+    run_chunking_example
+}
+
+@test "$DBVARIANT chunking example reuse weights (sparse; DEEPDIVE_GROUNDING_DENSE_MULTINOMIAL=false)" {
+    export DEEPDIVE_GROUNDING_DENSE_MULTINOMIAL=false
+    run_chunking_example_reusing_weights
 }
