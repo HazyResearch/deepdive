@@ -90,6 +90,9 @@ def withRedefinitionsWithJoinsForIdColumns:
         , GROUP_BY:
             [ .variablesCategoryColumns[]
             | {                 table: "v", column: . } ]
+        , ORDER_BY:
+            [ .variablesCategoryColumns[]
+            | { expr: { table: "v", column: . } } ]
         } | asSql | asPrettySqlArg)
         # assign unique id to every distinct category
         deepdive db assign_sequential_id \(.variablesCategoriesTable | @sh) cid 0
@@ -358,7 +361,7 @@ def withRedefinitionsWithJoinsForIdColumns:
             { SELECT:
                 [ { alias: "vid",  table: "i", column: deepdiveVariableIdColumn }
                 , { alias: "cardinality", expr: "COUNT(c.cid)" }
-                , { alias: "cids", expr: "ARRAY_AGG(c.cid)" }
+                , { alias: "cids", expr: "ARRAY_AGG(c.cid ORDER BY c.cid)" }
                 ]
             , FROM: [ { alias: "v", table: .variablesTable } ]
             , JOIN:
