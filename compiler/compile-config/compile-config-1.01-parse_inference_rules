@@ -89,6 +89,11 @@ include "util";
                 error("deepdive.inference.factors.\($factorName
                     ) uses an unrecognized function: \(.name | @json)")
 
+        # finds out whether it is multinomial, i.e., defined over categorical variables
+        | .isMultinomial = (.name | in(
+            { multinomial: 1
+            }))
+
         # check required/permitted number of parameters
         | if .name == "istrue" and (.variables | length) != 1
         then error("deepdive.inference.factors.\($factorName).function: '\(

@@ -100,7 +100,7 @@ def asSql:
         end;
     [ (.SELECT      |mapJoinOrEmptyString(SELECT_head       ; asSqlExprAlias                                        ; "\n     , "   ))
     , (.FROM        |mapJoinOrEmptyString("FROM "           ; asSqlTableAlias(asSql)                                ; "\n   , "     ))
-    , (.JOIN        |mapJoinOrEmptyString("";   "\(asSqlJoinTypeTableAlias(asSql))\n  ON \(.ON | asSqlCondition)"   ; "\n"          ))
+    , (.JOIN        |mapJoinOrEmptyString(""; "\(asSqlJoinTypeTableAlias(asSql))\n\(.ON | mapJoinOrEmptyString("  ON "; asSqlCondition; "\n AND "))"; "\n"))
     , (.WHERE       |mapJoinOrEmptyString("WHERE "          ; asSqlCondition                                        ; "\n  AND "    ))
     , (.GROUP_BY    |mapJoinOrEmptyString("GROUP BY "       ; asSqlExpr                                             ; "\n    , "    ))
     , (.HAVING      |mapJoinOrEmptyString("HAVING "         ; asSqlCondition                                        ; "\n   AND "   ))
