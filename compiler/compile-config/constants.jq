@@ -16,6 +16,7 @@ def deepdiveInferenceResultVariablesTable   :  "dd_inference_result_variables"  
 def deepdiveReuseWeightsTable               :  "dd_graph_weights_reuse"         ;
 def deepdivePrefixForFactorsTable           :  "dd_factors_"                    ;
 def deepdivePrefixForWeightsTable           :  "dd_weights_"                    ;
+def deepdivePrefixForWeightGroupsTable      :  "dd_weightgroups_"               ;
 def deepdivePrefixForVariablesCategoriesTable: "dd_categories_"                 ;
 def deepdivePrefixForVariablesIdsTable       : "dd_variables_"                  ;
 def deepdivePrefixForTemporaryTables         : "dd_tmp_"                        ;

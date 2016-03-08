@@ -107,6 +107,12 @@ include "util";
         # TODO check if all .variables type are categorical for multinomial function
         )
 
+    # some more handy names for multinomial
+    | ( if .function_.isMultinomial then
+        .weightGroupsTable = "\(deepdivePrefixForWeightGroupsTable)\($factorName)"
+    else .
+    end)
+
 ]
 
 # create a map to make it easy to access a factor by its name
