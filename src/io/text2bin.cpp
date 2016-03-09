@@ -10,21 +10,9 @@
 #include <stdint.h>
 #include <assert.h>
 #include <vector>
+#include "io/binary_parser.h"
 
 using namespace std;
-
-// 64-bit endian conversion, note input must be unsigned long
-// for double, cast its underlying bytes to unsigned long, see examples in
-// load_var
-#define bswap_64(x)                                                            \
-  ((((x)&0xff00000000000000ull) >> 56) | (((x)&0x00ff000000000000ull) >> 40) | \
-   (((x)&0x0000ff0000000000ull) >> 24) | (((x)&0x000000ff00000000ull) >> 8) |  \
-   (((x)&0x00000000ff000000ull) << 8) | (((x)&0x0000000000ff0000ull) << 24) |  \
-   (((x)&0x000000000000ff00ull) << 40) | (((x)&0x00000000000000ffull) << 56))
-
-// 16-bit endian conversion
-#define bswap_16(x) \
-  ((unsigned short int)((((x) >> 8) & 0xff) | (((x)&0xff) << 8)))
 
 // read variables and convert to binary format
 void load_var(std::string input_filename, std::string output_filename) {
@@ -39,14 +27,14 @@ void load_var(std::string input_filename, std::string output_filename) {
   long edge_count = -1;
   long cardinality;
 
-  edge_count = bswap_64(edge_count);
+  edge_count = htobe64(edge_count);
 
   while (fin >> vid >> is_evidence >> initial_value >> type >> cardinality) {
     // endianess
-    vid = bswap_64(vid);
-    uint64_t initval = bswap_64(*(uint64_t *)&initial_value);
-    type = bswap_16(type);
-    cardinality = bswap_64(cardinality);
+    vid = htobe64(vid);
+    uint64_t initval = htobe64(*(uint64_t *)&initial_value);
+    type = htobe16(type);
+    cardinality = htobe64(cardinality);
 
     fout.write((char *)&vid, 8);
     fout.write((char *)&is_evidence, 1);
@@ -74,8 +62,8 @@ void load_weight(std::string input_filename, std::string output_filename) {
   double initial_value;
 
   while (fin >> wid >> isfixed >> initial_value) {
-    wid = bswap_64(wid);
-    uint64_t initval = bswap_64(*(uint64_t *)&initial_value);
+    wid = htobe64(wid);
+    uint64_t initval = htobe64(*(uint64_t *)&initial_value);
 
     fout.write((char *)&wid, 8);
     fout.write((char *)&isfixed, 1);
@@ -105,17 +93,17 @@ void load_factor_with_fid(std::string input_filename,
   long weightid = 0;
   long variableid = 0;
   long nedge = 0;
-  long nvars_big = bswap_64(nvar);
+  long nvars_big = htobe64(nvar);
   long predicate = funcid == 5 ? -1 : 1;
   vector<int> positives_vec;
 
-  funcid = bswap_16(funcid);
+  funcid = htobe16(funcid);
 
   for (int i = 0; i < nvar; i++) {
     positives_vec.push_back(atoi(positives[i]));
   }
 
-  predicate = bswap_64(predicate);
+  predicate = htobe64(predicate);
 
   const char field_delim = '\t';  // tsv file delimiter
   const char array_delim = ',';   // array delimiter
@@ -127,12 +115,12 @@ void load_factor_with_fid(std::string input_filename,
     // factor id
     getline(ss, field, field_delim);
     factorid = atol(field.c_str());
-    factorid = bswap_64(factorid);
+    factorid = htobe64(factorid);
 
     // weightid
     getline(ss, field, field_delim);
     weightid = atol(field.c_str());
-    weightid = bswap_64(weightid);
+    weightid = htobe64(weightid);
 
     fout.write((char *)&factorid, 8);
     fout.write((char *)&weightid, 8);
@@ -158,8 +146,8 @@ void load_factor_with_fid(std::string input_filename,
             subfield = subfield.substr(0, subfield.length() - 1);
           }
           variableid = atol(subfield.c_str());
-          variableid = bswap_64(variableid);
-          position_big = bswap_64(position);
+          variableid = htobe64(variableid);
+          position_big = htobe64(position);
 
           fedgeout.write((char *)&variableid, 8);
           fedgeout.write((char *)&factorid, 8);
@@ -174,8 +162,8 @@ void load_factor_with_fid(std::string input_filename,
         }
       } else {
         variableid = atol(field.c_str());
-        variableid = bswap_64(variableid);
-        position_big = bswap_64(position);
+        variableid = htobe64(variableid);
+        position_big = htobe64(position);
 
         fedgeout.write((char *)&variableid, 8);
         fedgeout.write((char *)&factorid, 8);
@@ -188,7 +176,7 @@ void load_factor_with_fid(std::string input_filename,
         n_vars++;
       }
     }
-    n_vars = bswap_64(n_vars);
+    n_vars = htobe64(n_vars);
     fout.write((char *)&n_vars, 8);
   }
   std::cout << nedge << std::endl;
@@ -212,13 +200,13 @@ void load_factor(std::string input_filename, std::string output_filename,
   vector<int> positives_vec;
   vector<long> variables;
 
-  funcid = bswap_16(funcid);
+  funcid = htobe16(funcid);
 
   for (int i = 0; i < nvar; i++) {
     positives_vec.push_back(atoi(positives[i]));
   }
 
-  predicate = bswap_64(predicate);
+  predicate = htobe64(predicate);
 
   const char field_delim = '\t';  // tsv file delimiter
   const char array_delim = ',';   // array delimiter
@@ -231,7 +219,7 @@ void load_factor(std::string input_filename, std::string output_filename,
     // weightid
     getline(ss, field, field_delim);
     weightid = atol(field.c_str());
-    weightid = bswap_64(weightid);
+    weightid = htobe64(weightid);
 
     fout.write((char *)&weightid, 8);
     fout.write((char *)&funcid, 2);
@@ -255,7 +243,7 @@ void load_factor(std::string input_filename, std::string output_filename,
             subfield = subfield.substr(0, subfield.length() - 1);
           }
           variableid = atol(subfield.c_str());
-          variableid = bswap_64(variableid);
+          variableid = htobe64(variableid);
           variables.push_back(variableid);
 
           nedge++;
@@ -264,14 +252,14 @@ void load_factor(std::string input_filename, std::string output_filename,
         }
       } else {
         variableid = atol(field.c_str());
-        variableid = bswap_64(variableid);
+        variableid = htobe64(variableid);
         variables.push_back(variableid);
 
         nedge++;
         n_vars++;
       }
     }
-    n_vars = bswap_64(n_vars);
+    n_vars = htobe64(n_vars);
     fout.write((char *)&predicate, 8);
     fout.write((char *)&n_vars, 8);
     for (long i = 0; i < variables.size(); i++) {
@@ -292,7 +280,7 @@ void load_active(std::string input_filename, std::string output_filename) {
 
   long id;
   while (fin >> id) {
-    id = bswap_64(id);
+    id = htobe64(id);
     fout.write((char *)&id, 8);
     ++count;
   }
@@ -312,8 +300,8 @@ void load_domain(std::string input_filename, std::string output_filename) {
 
   while (fin >> vid >> cardinality >> domain) {
     // endianess
-    vid = bswap_64(vid);
-    cardinality_big = bswap_64(cardinality);
+    vid = htobe64(vid);
+    cardinality_big = htobe64(cardinality);
 
     fout.write((char *)&vid, 8);
     fout.write((char *)&cardinality_big, 8);
@@ -330,7 +318,7 @@ void load_domain(std::string input_filename, std::string output_filename) {
         subfield = subfield.substr(0, subfield.length() - 1);
       }
       value = atol(subfield.c_str());
-      value = bswap_64(value);
+      value = htobe64(value);
       fout.write((char *)&value, 8);
 
       count++;
