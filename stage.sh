@@ -122,13 +122,14 @@ stage ddlib/deepdive.py                                           lib/python/
 # DeepDive inference engine and supporting utilities
 #  copying shared libraries required by the dimmwitted sampler and generating a wrapper
 PATH="$PWD"/extern/buildkit:"$PATH"
-generate-wrapper-for-libdirs          "$STAGE_DIR"/util/sampler-dw \
-                                      "$STAGE_DIR"/util/sampler-dw.bin \
-                                      "$STAGE_DIR"/lib/dw
+for cmd in dw text2bin; do
+stage .build/submodule/inference/dimmwitted/$cmd              	  util/sampler-$cmd.bin
 install-shared-libraries-required-by  "$STAGE_DIR"/lib/dw \
-      .build/submodule/inference/dimmwitted/dw
-stage .build/submodule/inference/dimmwitted/dw                	  util/sampler-dw.bin
-stage inference/format_converter                                  util/format_converter
+      .build/submodule/inference/dimmwitted/$cmd
+generate-wrapper-for-libdirs          "$STAGE_DIR"/util/sampler-$cmd \
+                                      "$STAGE_DIR"/util/sampler-$cmd.bin \
+                                      "$STAGE_DIR"/lib/dw
+done
 stage inference/deepdive-model                                    util/
 
 # DeepDive utilities

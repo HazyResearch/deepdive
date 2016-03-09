@@ -320,7 +320,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                 } }
             } | asSql | asPrettySqlArg) \\
             command=\("
-                format_converter variable /dev/stdin >(pbzip2 >variables.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
+                sampler-text2bin variable /dev/stdin >(pbzip2 >variables.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
             " | @sh) \\
             output_relation=
         "
@@ -380,7 +380,7 @@ def withRedefinitionsWithJoinsForIdColumns:
             } | asSql | asPrettySqlArg) \\
             command=\("
                 exec cat >domains.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.tsv  # TODO @feiranwang remove this line once format_converter is ready
-                format_converter domain /dev/stdin >(pbzip2 >domains.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
+                sampler-text2bin domain /dev/stdin >(pbzip2 >domains.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
             " | @sh) \\
             output_relation=
         fi
@@ -842,7 +842,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                 command=\("
                     # also record the factor count
                     tee >(wc -l >nfactors.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}) |
-                    format_converter factor /dev/stdin >(pbzip2 >factors.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2) \(
+                    sampler-text2bin factor /dev/stdin >(pbzip2 >factors.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2) \(
                         # TODO use different factor id for dense/sparse multinomial
                         .function_.id
                         ) \(.function_.variables | length
@@ -914,7 +914,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                     } | asSql | asPrettySqlArg)
                 fi)\" \\
                 command=\("
-                    format_converter weight /dev/stdin >(pbzip2 >weights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
+                    sampler-text2bin weight /dev/stdin >(pbzip2 >weights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
                 " | @sh) \\
                 output_relation=
         "

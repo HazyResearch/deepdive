@@ -68,11 +68,6 @@ release-%:
 
 ### build recipes #############################################################
 
-# binary format converter for sampler
-inference/format_converter: inference/format_converter.cc
-	$(CXX) -Os -o $@ $^
-build: inference/format_converter
-
 # common build steps
 BUILD_INFO=$(STAGE_DIR)/.build-info.sh
 build:
@@ -114,7 +109,7 @@ checkstyle:
 build-sampler: build-dimmwitted
 .PHONY: build-dimmwitted
 build-dimmwitted:
-	@util/build/build-submodule-if-needed inference/dimmwitted dw
+	@util/build/build-submodule-if-needed inference/dimmwitted dw text2bin
 build: build-dimmwitted
 
 .PHONY: build-hocon2json

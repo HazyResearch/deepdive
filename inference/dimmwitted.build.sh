@@ -38,4 +38,4 @@ case $(uname) in
 esac
 
 [ -e ./lib/gtest -a -e ./lib/tclap ] || make dep
-make dw
+make dw text2bin
