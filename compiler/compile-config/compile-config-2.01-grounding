@@ -500,14 +500,16 @@ def withRedefinitionsWithJoinsForIdColumns:
                                 | { eq: [ { table: "v.\($columnIdForThisVar)", column: . }
                                         , { table: "i.\($columnIdForThisVar)", column: . } ] } ) ] }
                         ) ]
-                    # TODO Do we need/want ORDER_BY here? There's no reason to have a consecutive id assigned for the weights unless we want to easily sort them by id later
-                    #, ORDER_BY:
-                    #    # order by category columns for every categorical variable
-                    #    [ ( .function_.variables[]
-                    #    | .columnId as $columnIdForThisVar
-                    #    | .schema.variablesCategoryColumns[]
-                    #    | { expr: { column: "\($columnIdForThisVar)_\(.)" } } )
-                    #    ]
+                    # NOTE We need/want ORDER_BY here because we want the weight ids to be ordered exactly by their category
+                    # values, so we can avoid global ordering of the entire join of factor and weight later when dumping the
+                    # factors to produce a well ordered list of weight ids.
+                    , ORDER_BY:
+                        # order by category columns for every categorical variable
+                        [ ( .function_.variables[]
+                        | .columnId as $columnIdForThisVar
+                        | .schema.variablesCategoryColumns[]
+                        | { expr: { column: "\($columnIdForThisVar)_\(.)" } } )
+                        ]
                     } | asSql | asPrettySqlArg)
             fi
             " else # factors over boolean variables
@@ -650,7 +652,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                     | .columnId as $columnIdForThisVar
                     | { alias: "c.\($columnIdForThisVar)", table: .schema.variablesCategoriesTable } )
                     ]
-                # NOTE ordering is unncessary because the wid is robust from ordering, relying on their cids only
+                # NOTE This ordering is unncessary because the wid is robust from ordering, relying on their cids only.
                 #, ORDER_BY:
                 #    # order by category columns for every categorical variable
                 #    [ ( .function_.variables[]
@@ -768,7 +770,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                         [ ( .function_.variables[]
                         | { table: "f", column: .columnId } )
                         , { alias: "num_weights", expr: "COUNT(w.wid)" }
-                        , { alias: "weight_ids" , expr: "ARRAY_AGG(w.wid)" }
+                        , { alias: "weight_ids" , expr: "ARRAY_AGG(w.wid ORDER BY w.wid)" }
                         ]
                     , FROM:
                         [ { alias: "w", table: .weightsTable }
@@ -798,8 +800,9 @@ def withRedefinitionsWithJoinsForIdColumns:
                         | { eq: [ { table: "v.\($columnIdForThisVar)", column: . }
                                 , { table: "w", column: "\($columnIdForThisVar)_\(.)" } ] } ) )
                         ]
-                    # TODO this orderby seems ludicruous to put here (as a subquery) since this is basically exploding the data and sorting
-                    # actually keeping the weight ids ordered and relying on ARRAY_AGG(w.wid ORDER BY w.wid) may be a better
+                    # XXX Putting this ORDER_BY here (as a subquery for the GROUP_BY) is ludicruous since this is basically
+                    # exploding the data and then sorting it just to make the weight id ARRAYs be ordered in a particular way.
+                    # Keeping the weight ids ordered and relying on ARRAY_AGG(w.wid ORDER BY w.wid) is better.
                     #, ORDER_BY:
                     #    [ ( .function_.variables[]
                     #    | { table: "f", column: .columnId } )
