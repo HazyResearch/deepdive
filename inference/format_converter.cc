@@ -8,6 +8,7 @@
 #include <sstream>
 #include <stdlib.h>
 #include <stdint.h>
+#include <assert.h>
 #include <vector>
 
 using namespace std;
@@ -300,6 +301,48 @@ void load_active(std::string input_filename, std::string output_filename) {
   fout.close();
 }
 
+// read multinomial variable domains and convert to binary format
+void load_domain(std::string input_filename, std::string output_filename) {
+  std::ifstream fin(input_filename.c_str());
+  std::ofstream fout(output_filename.c_str(), std::ios::binary | std::ios::out);
+
+  long vid, cardinality, cardinality_big, value;
+  std::string domain;
+
+  while (fin >> vid >> cardinality >> domain) {
+    // endianess
+    vid = bswap_64(vid);
+    cardinality_big = bswap_64(cardinality);
+
+    fout.write((char*)&vid, 8);
+    fout.write((char*)&cardinality_big, 8);
+
+    // an array of domain values
+    std::string subfield;
+    std::istringstream ss1(domain);
+    ss1.get(); // get '{'
+    bool ended = false;
+    long count = 0;
+    while (getline(ss1, subfield, ',')) {
+      if (subfield.at(subfield.length() - 1) == '}') {
+        ended = true;
+        subfield = subfield.substr(0, subfield.length() - 1);
+      }
+      value = atol(subfield.c_str());
+      value = bswap_64(value);
+      fout.write((char*)&value, 8);
+
+      count++;
+      if (ended) break;
+    }
+    assert(count == cardinality);
+
+  }
+
+  fin.close();
+  fout.close();
+}
+
 int main(int argc, char** argv){
   std::string app(argv[1]);
   if(app.compare("variable")==0){
@@ -314,6 +357,8 @@ int main(int argc, char** argv){
       load_factor(argv[2], argv[3], atoi(argv[4]), atoi(argv[5]), &argv[7]);
   } else if (app.compare("active") == 0) {
     load_active(argv[2], argv[3]);
+  } else if (app.compare("domain") == 0) {
+    load_domain(argv[2], argv[3]);
   } else {
     std::cerr << "Unsupported type" << std::endl;
     exit(1);
