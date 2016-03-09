@@ -45,7 +45,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                 ]
             , FROM: { alias: "i", table: .variablesIdsTable }
             #, JOIN:
-            #    [ { LEFT_OUTER: { alias: "v", table: .variablesTable  }
+            #    [ { INNER: { alias: "v", table: .variablesTable  }
             #      , ON: { and: [ .variablesKeyColumns[]
             #                   | { eq: [ { table: "v", column: . }
             #                           , { table: "i", column: . } ]
@@ -122,7 +122,7 @@ def withRedefinitionsWithJoinsForIdColumns:
             ( if .variableType == "boolean" then null else
                 # categorical variables need a join with the categories table
                 # to find the correct internal label, etc.
-                [ { LEFT_OUTER: { alias: "c", table: .variablesCategoriesTable }
+                [ { INNER: { alias: "c", table: .variablesCategoriesTable }
                   , ON: { and: [ .variablesCategoryColumns[]
                                | { eq: [ { table: "c", column: "_\(.)" }
                                        , { table: "v", column: . } ]
@@ -362,14 +362,14 @@ def withRedefinitionsWithJoinsForIdColumns:
             , FROM: [ { alias: "v", table: .variablesTable } ]
             , JOIN:
                 # variable ids
-                [ { LEFT_OUTER: { alias: "i", table: .variablesIdsTable }
+                [ { INNER: { alias: "i", table: .variablesIdsTable }
                   , ON: { and:  [ .variablesKeyColumns[]
                                 | { eq: [ { table: "i", column: . }
                                         , { table: "v", column: . }
                                         ] }
                                 ] } }
                 # category ids are necessary to find the inference result corresponding to the variable
-                , { LEFT_OUTER: { alias: "c", table: .variablesCategoriesTable }
+                , { INNER: { alias: "c", table: .variablesCategoriesTable }
                   , ON: { and:  [ .variablesCategoryColumns[]
                                 | { eq: [ { table: "c", column: "_\(.)" }
                                         , { table: "v", column: . }
@@ -490,11 +490,11 @@ def withRedefinitionsWithJoinsForIdColumns:
                     , JOIN:
                         [ ( .function_.variables[]
                         | .columnId as $columnIdForThisVar
-                        | { LEFT_OUTER: { alias: "i.\($columnIdForThisVar)", table: .schema.variablesIdsTable }
+                        | { INNER: { alias: "i.\($columnIdForThisVar)", table: .schema.variablesIdsTable }
                           , ON: { eq: [ { table: "f"                          , column: $columnIdForThisVar }
                                       , { table: "i.\($columnIdForThisVar)", column: deepdiveVariableIdColumn } ] }
                           }
-                        , { LEFT_OUTER: { alias: "v.\($columnIdForThisVar)", table: .schema.variablesTable }
+                        , { INNER: { alias: "v.\($columnIdForThisVar)", table: .schema.variablesTable }
                           , ON: [ ( .schema.variablesKeyColumns[]
                                 | { eq: [ { table: "v.\($columnIdForThisVar)", column: . }
                                         , { table: "i.\($columnIdForThisVar)", column: . } ] } ) ] }
@@ -783,11 +783,11 @@ def withRedefinitionsWithJoinsForIdColumns:
                         # FIXME joins below can go away if .factorsTable just duplicate these columns all from the "/materialize" process
                         [ ( .function_.variables[]
                         | .columnId as $columnIdForThisVar
-                        | { LEFT_OUTER: { alias: "i.\($columnIdForThisVar)", table: .schema.variablesIdsTable }
+                        | { INNER: { alias: "i.\($columnIdForThisVar)", table: .schema.variablesIdsTable }
                           , ON: [ { eq: [ { table: "f"                          , column: $columnIdForThisVar }
                                         , { table: "i.\($columnIdForThisVar)", column: deepdiveVariableIdColumn } ] }
                                 ] }
-                        , { LEFT_OUTER: { alias: "v.\($columnIdForThisVar)", table: .schema.variablesTable }
+                        , { INNER: { alias: "v.\($columnIdForThisVar)", table: .schema.variablesTable }
                           , ON: [ ( .schema.variablesKeyColumns[]
                                 | { eq: [ { table: "v.\($columnIdForThisVar)", column: . }
                                         , { table: "i.\($columnIdForThisVar)", column: . } ] } )
