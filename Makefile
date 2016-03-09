@@ -140,3 +140,12 @@ endif
 format:
 	$(CLANG_FORMAT) -i $(SOURCES) $(TEST_SOURCES) $(TEXT2BIN_SOURCES) $(HEADERS)
 .PHONY: format
+
+# how to quickly turn actual test output into expected ones
+actual-expected:
+	for actual in test/*/*.bin; do \
+	    expected="$$actual".txt; \
+	    [[ -e "$$expected" ]] || continue; \
+	    xxd "$$actual" >"$$expected"; \
+	done
+.PHONY: actual-expected

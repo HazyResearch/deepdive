@@ -186,6 +186,41 @@ void load_factor_with_fid(std::string input_filename,
   fedgeout.close();
 }
 
+static inline long parse_pgarray(
+    std::istream &input, std::function<void(const string &)> parse_element,
+    long expected_count = -1) {
+  if (input.peek() == '{') {
+    std::string element;
+    bool ended = false;
+    long count = 0;
+    while (getline(input, element, ',')) {
+      if (element.at(element.length() - 1) == '}') {
+        ended = true;
+        element = element.substr(0, element.length() - 1);
+      }
+      parse_element(element);
+      count++;
+      if (ended) break;
+    }
+    assert(expected_count < 0 || count == expected_count);
+    return count;
+  } else {
+    return -1;
+  }
+}
+static inline long parse_pgarray_or_die(
+    std::istream &input, std::function<void(const string &)> parse_element,
+    long expected_count = -1) {
+  long count = parse_pgarray(input, parse_element, expected_count);
+  if (count >= 0) {
+    return count;
+  } else {
+    std::cerr << "Expected an array '{' but found: " << input.get()
+              << std::endl;
+    abort();
+  }
+}
+
 // load factors
 // wid, vids
 void load_factor(std::string input_filename, std::string output_filename,
@@ -216,47 +251,28 @@ void load_factor(std::string input_filename, std::string output_filename,
     istringstream ss(line);
     variables.clear();
 
-    // weightid
-    getline(ss, field, field_delim);
-    weightid = atol(field.c_str());
-    weightid = htobe64(weightid);
-
-    fout.write((char *)&weightid, 8);
+    // factor type
     fout.write((char *)&funcid, 2);
 
+    // variable ids
     uint64_t position = 0;
     uint64_t position_big;
     long n_vars = 0;
-
+    auto parse_variableid = [&variables, &n_vars,
+                             &nedge](const string &element) {
+      long variableid = atol(element.c_str());
+      variableid = htobe64(variableid);
+      variables.push_back(variableid);
+      nedge++;
+      n_vars++;
+    };
     for (long i = 0; i < nvar; i++) {
       getline(ss, field, field_delim);
-
-      // array type
-      if (field.at(0) == '{') {
-        string subfield;
-        istringstream ss1(field);
-        ss1.get();  // get '{'
-        bool ended = false;
-        while (getline(ss1, subfield, array_delim)) {
-          if (subfield.at(subfield.length() - 1) == '}') {
-            ended = true;
-            subfield = subfield.substr(0, subfield.length() - 1);
-          }
-          variableid = atol(subfield.c_str());
-          variableid = htobe64(variableid);
-          variables.push_back(variableid);
-
-          nedge++;
-          n_vars++;
-          if (ended) break;
-        }
-      } else {
-        variableid = atol(field.c_str());
-        variableid = htobe64(variableid);
-        variables.push_back(variableid);
-
-        nedge++;
-        n_vars++;
+      // try parsing as an array first
+      istringstream fieldinput(field);
+      if (parse_pgarray(fieldinput, parse_variableid) < 0) {
+        // otherwise, parse it as a single variable
+        parse_variableid(field);
       }
     }
     n_vars = htobe64(n_vars);
@@ -266,7 +282,34 @@ void load_factor(std::string input_filename, std::string output_filename,
       fout.write((char *)&variables[i], 8);
       fout.write((char *)&positives_vec[i], 1);
     }
+
+    // weight ids
+    switch (funcid) {
+      case dd::FUNC_SPARSE_MULTINOMIAL: {
+        // a list of weight ids
+        // first, the run-length
+        getline(ss, field, field_delim);
+        long num_weightids = atol(field.c_str());
+        num_weightids = htobe64(num_weightids);
+        fout.write((char *)&num_weightids, 8);
+        // and that many weight ids
+        parse_pgarray_or_die(ss, [&fout](const string &element) {
+          long weightid = atol(element.c_str());
+          weightid = htobe64(weightid);
+          fout.write((char *)&weightid, 8);
+        }, num_weightids);
+        break;
+      }
+
+      default:
+        // a single weight id
+        getline(ss, field, field_delim);
+        weightid = atol(field.c_str());
+        weightid = htobe64(weightid);
+        fout.write((char *)&weightid, 8);
+    }
   }
+
   std::cout << nedge << std::endl;
 
   fin.close();
@@ -295,10 +338,10 @@ void load_domain(std::string input_filename, std::string output_filename) {
   std::ifstream fin(input_filename.c_str());
   std::ofstream fout(output_filename.c_str(), std::ios::binary | std::ios::out);
 
-  long vid, cardinality, cardinality_big, value;
+  long vid, cardinality, cardinality_big;
   std::string domain;
 
-  while (fin >> vid >> cardinality >> domain) {
+  while (fin >> vid >> cardinality) {
     // endianess
     vid = htobe64(vid);
     cardinality_big = htobe64(cardinality);
@@ -307,24 +350,11 @@ void load_domain(std::string input_filename, std::string output_filename) {
     fout.write((char *)&cardinality_big, 8);
 
     // an array of domain values
-    std::string subfield;
-    std::istringstream ss1(domain);
-    ss1.get();  // get '{'
-    bool ended = false;
-    long count = 0;
-    while (getline(ss1, subfield, ',')) {
-      if (subfield.at(subfield.length() - 1) == '}') {
-        ended = true;
-        subfield = subfield.substr(0, subfield.length() - 1);
-      }
-      value = atol(subfield.c_str());
+    parse_pgarray_or_die(fin, [&fout](const string &subfield) {
+      long value = atol(subfield.c_str());
       value = htobe64(value);
       fout.write((char *)&value, 8);
-
-      count++;
-      if (ended) break;
-    }
-    assert(count == cardinality);
+    }, cardinality);
   }
 
   fin.close();

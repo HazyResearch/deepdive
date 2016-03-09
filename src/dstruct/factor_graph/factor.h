@@ -27,7 +27,8 @@ namespace dd{
     FUNC_RATIO      = 8,
     FUNC_LOGICAL    = 9,
     FUNC_SQLSELECT  = 10,
-    FUNC_ContLR     = 20
+    FUNC_ContLR     = 20,
+    FUNC_SPARSE_MULTINOMIAL=12,
   };
 
   /**
