@@ -86,8 +86,8 @@ TEST(BinaryParserTest, read_domains) {
   for (int i = 0; i < domain_size; i++) {
     EXPECT_EQ(fg.variables[1].domain[i], i);
   }
-  for (auto it = fg.variables[1].domain_map.begin(); it != fg.variables[1].domain_map.end(); it++) {
+  for (auto it = fg.variables[1].domain_map.begin();
+       it != fg.variables[1].domain_map.end(); it++) {
     EXPECT_EQ(fg.variables[1].domain[it->second], it->first);
   }
 }
-
