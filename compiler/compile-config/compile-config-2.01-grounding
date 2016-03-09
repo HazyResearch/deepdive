@@ -379,7 +379,6 @@ def withRedefinitionsWithJoinsForIdColumns:
             , GROUP_BY: [ { table: "i", column: deepdiveVariableIdColumn } ]
             } | asSql | asPrettySqlArg) \\
             command=\("
-                exec cat >domains.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.tsv  # TODO @feiranwang remove this line once format_converter is ready
                 sampler-text2bin domain /dev/stdin >(pbzip2 >domains.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
             " | @sh) \\
             output_relation=
@@ -743,15 +742,10 @@ def withRedefinitionsWithJoinsForIdColumns:
                     # each factor can use the variables' domain values to index into the exact one
                     echo \(
                     { SELECT:
-                        # FIXME @feiranwang reorder after fixing formater converter
-                        [ { alias: "weight_id", table: "w", column: "wid" }
-                        , ( .function_.variables[]
+                        [ ( .function_.variables[]
                         | { table: "f", column: .columnId } )
+                        , { alias: "weight_id", table: "w", column: "wid" }
                         ]
-                        # [ ( .function_.variables[]
-                        # | { table: "f", column: .columnId } )
-                        # , { alias: "weight_id", table: "w", column: "wid" }
-                        # ]
                     , FROM:
                         [ { alias: "f", table: .factorsTable }
                         , { alias: "w", table: .weightGroupsTable }  # NOTE that we only dump one weight id per group
@@ -819,15 +813,10 @@ def withRedefinitionsWithJoinsForIdColumns:
                 fi
                 )\"" else # factors over boolean variables
                     { SELECT:
-                        # FIXME @feiranwang reorder after fixing formater converter
-                        [ { alias: "weight_id", table: "w", column: "wid" }
-                        , ( .function_.variables[]
+                        [ ( .function_.variables[]
                         | { table: "f", column: .columnId } )
+                        , { alias: "weight_id", table: "w", column: "wid" }
                         ]
-                        # [ ( .function_.variables[]
-                        # | { table: "f", column: .columnId } )
-                        # , { alias: "weight_id", table: "w", column: "wid" }
-                        # ]
                     , FROM:
                         [ { alias: "f", table: .factorsTable }
                         , { alias: "w", table: .weightsTable }
