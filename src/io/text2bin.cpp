@@ -14,6 +14,9 @@
 
 using namespace std;
 
+constexpr char field_delim = '\t';  // tsv file delimiter
+constexpr char array_delim = ',';   // array delimiter
+
 // read variables and convert to binary format
 void load_var(std::string input_filename, std::string output_filename) {
   std::ifstream fin(input_filename.c_str());
@@ -105,8 +108,6 @@ void load_factor_with_fid(std::string input_filename,
 
   predicate = htobe64(predicate);
 
-  const char field_delim = '\t';  // tsv file delimiter
-  const char array_delim = ',';   // array delimiter
   string line;
   while (getline(fin, line)) {
     string field;
@@ -190,6 +191,7 @@ static inline long parse_pgarray(
     std::istream &input, std::function<void(const string &)> parse_element,
     long expected_count = -1) {
   if (input.peek() == '{') {
+    input.get();
     std::string element;
     bool ended = false;
     long count = 0;
@@ -243,8 +245,6 @@ void load_factor(std::string input_filename, std::string output_filename,
 
   predicate = htobe64(predicate);
 
-  const char field_delim = '\t';  // tsv file delimiter
-  const char array_delim = ',';   // array delimiter
   string line;
   while (getline(fin, line)) {
     string field;
@@ -338,10 +338,13 @@ void load_domain(std::string input_filename, std::string output_filename) {
   std::ifstream fin(input_filename.c_str());
   std::ofstream fout(output_filename.c_str(), std::ios::binary | std::ios::out);
 
-  long vid, cardinality, cardinality_big;
-  std::string domain;
+  string line;
+  while (getline(fin, line)) {
+    istringstream line_input(line);
+    long vid, cardinality, cardinality_big;
+    std::string domain;
+    assert(line_input >> vid >> cardinality >> domain);
 
-  while (fin >> vid >> cardinality) {
     // endianess
     vid = htobe64(vid);
     cardinality_big = htobe64(cardinality);
@@ -350,7 +353,8 @@ void load_domain(std::string input_filename, std::string output_filename) {
     fout.write((char *)&cardinality_big, 8);
 
     // an array of domain values
-    parse_pgarray_or_die(fin, [&fout](const string &subfield) {
+    istringstream domain_input(domain);
+    parse_pgarray_or_die(domain_input, [&fout](const string &subfield) {
       long value = atol(subfield.c_str());
       value = htobe64(value);
       fout.write((char *)&value, 8);
