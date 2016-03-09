@@ -125,7 +125,7 @@ test: unit-test end2end-test
 unit-test: $(TEST_PROGRAM)
 	./$(TEST_PROGRAM)
 PATH := $(shell pwd)/test/bats/bin:$(PATH)
-end2end-test: $(PROGRAM)
+end2end-test: $(PROGRAM) $(TEXT2BIN_PROGRAM)
 	bats test/*.bats
 .PHONY: test unit-test end2end-test
 
