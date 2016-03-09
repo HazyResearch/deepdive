@@ -21,5 +21,8 @@ lib/
 # others
 tags
 .DS_Store
-inference_result.out*
 *.json
+
+# test artifacts
+inference_result.out*
+test/*/*.bin
