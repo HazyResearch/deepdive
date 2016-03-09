@@ -83,12 +83,12 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                     [ { expr: "\"w\".*" }
                     , { table: "r", column: "weight" }
                     ]
-                , FROM: { alias: "w", table: deepdiveGlobalWeightsTable } 
+                , FROM: { alias: "w", table: deepdiveGlobalWeightsTable }
                 , JOIN: { INNER: { alias: "r", table: deepdiveInferenceResultWeightsTable }
                         , ON: { eq: [ { table: "r", column: "wid" }
                                     , { table: "w", column: "wid" }
                                     ] } }
-                , ORDER_BY: { expr: "ABS(\"r\".\"weight\")", order: "DESC" } 
+                , ORDER_BY: { expr: "ABS(\"r\".\"weight\")", order: "DESC" }
                 } | asSql | asPrettySqlArg)
         "
     },
