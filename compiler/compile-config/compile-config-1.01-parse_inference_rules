@@ -93,6 +93,13 @@ include "util";
         | .isMultinomial = (.name | in(
             { multinomial: 1
             }))
+        # find the sparse variant
+        | .nameForSparseVariant =
+            { multinomial: "sparse_multinomial"
+            }[.name]
+        | .idForSparseVariant =
+            { sparse_multinomial: 12
+            }[.nameForSparseVariant // ""]
 
         # check required/permitted number of parameters
         | if .name == "istrue" and (.variables | length) != 1

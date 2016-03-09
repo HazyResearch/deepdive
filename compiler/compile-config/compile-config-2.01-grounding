@@ -731,6 +731,15 @@ def withRedefinitionsWithJoinsForIdColumns:
             export DEEPDIVE_LOAD_FORMAT=tsv
             export DEEPDIVE_UNLOAD_MATERIALIZED=false
 
+            # named codes used by sampler
+            export \(.function_.name)Factor=\(.function_.id)  # factor function id
+            \( if .function_.isMultinomial then "
+            [[ -e isDenseMultinomial ]] || \(.function_.name)Factor=\(.function_.idForSparseVariant)  # use sparse variant"
+            else ""
+            end )
+            export numVariablesForFactor=\(.function_.variables | length)
+            export areVariablesPositive=\(.function_.variables | map(if .isNegated then "0" else "1" end) | join(" ") | @sh)
+
             # dump the factors joining the assigned weight ids, converting into binary format for the inference engine
             deepdive compute execute \\
                 input_sql=\(
@@ -831,12 +840,11 @@ def withRedefinitionsWithJoinsForIdColumns:
                 command=\("
                     # also record the factor count
                     tee >(wc -l >nfactors.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}) |
-                    sampler-text2bin factor /dev/stdin >(pbzip2 >factors.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2) \(
-                        # TODO use different factor id for dense/sparse multinomial
-                        .function_.id
-                        ) \(.function_.variables | length
-                        ) original \(.function_.variables | map(if .isNegated then "0" else "1" end) | join(" ")
-                        ) |
+                    sampler-text2bin factor /dev/stdin >(pbzip2 >factors.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2) \\
+                        $\(.function_.name)Factor \\
+                        $numVariablesForFactor \\
+                        original \\
+                        $areVariablesPositive |
                     # and the edge count
                     tee nedges.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}
                 " | @sh) \\
