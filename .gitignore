@@ -4,6 +4,7 @@
 *.o
 dw
 dw_test
+text2bin
 
 # Compiled Dynamic libraries
 *.so

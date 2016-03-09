@@ -1,6 +1,6 @@
 # Makefile for sampler
 
-.DEFAULT_GOAL := $(PROGRAM)
+.DEFAULT_GOAL := all
 
 # common compiler flags
 CXXFLAGS = -std=c++0x -Wall -fno-strict-aliasing
@@ -69,6 +69,14 @@ $(TEST_OBJECTS): CXXFLAGS += -I./lib/gtest-1.7.0/include/
 $(TEST_PROGRAM): LDFLAGS += -L./lib/gtest/
 $(TEST_PROGRAM): LDLIBS += -lgtest
 
+# source files for other utilities
+TEXT2BIN_SOURCES += src/io/text2bin.cpp
+TEXT2BIN_OBJECTS = $(TEXT2BIN_SOURCES:.cpp=.o)
+TEXT2BIN_PROGRAM = text2bin
+
+all: $(PROGRAM) $(TEXT2BIN_PROGRAM)
+.PHONY: all
+
 # how to link our sampler
 $(PROGRAM): $(OBJECTS)
 	$(CXX) -o $@ $(LDFLAGS) $^ $(LDLIBS)
@@ -76,6 +84,10 @@ $(PROGRAM): $(OBJECTS)
 # how to link our sampler unit tests
 $(TEST_PROGRAM): $(TEST_OBJECTS) $(filter-out src/main.o,$(OBJECTS))
 	$(CXX) -o $@ $(LDFLAGS) $^ $(LDLIBS)
+
+# how to link the format converters
+$(TEXT2BIN_PROGRAM): $(TEXT2BIN_OBJECTS)
+	$(CXX) -o $@ $(LDFLAGS) $^
 
 # how to compile each source
 %.o: %.cpp
@@ -105,7 +117,7 @@ dep:
 
 # how to clean
 clean:
-	rm -f $(PROGRAM) $(OBJECTS) $(TEST_PROGRAM) $(TEST_OBJECTS)
+	rm -f $(PROGRAM) $(OBJECTS) $(TEST_PROGRAM) $(TEST_OBJECTS) $(TEXT2BIN_PROGRAM) $(TEXT2BIN_OBJECTS)
 .PHONY: clean
 
 # how to test
@@ -126,5 +138,5 @@ else
 endif
 endif
 format:
-	$(CLANG_FORMAT) -i $(SOURCES) $(TEST_SOURCES) $(HEADERS)
+	$(CLANG_FORMAT) -i $(SOURCES) $(TEST_SOURCES) $(TEXT2BIN_SOURCES) $(HEADERS)
 .PHONY: format
