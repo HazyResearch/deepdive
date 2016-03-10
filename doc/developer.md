@@ -98,7 +98,7 @@ DeepDive source tree includes several git submodules and ports:
     ```
 
     Basically, DeepDive requires C/C++ compiler, JDK, Python, and several libraries with headers to build from source.
-    `install__deepdive_build_deps` in `util/install/install.Ubuntu.sh` script enumerates most of the build dependencies as APT packages.
+    [`install__deepdive_build_deps` in `util/install/install.Ubuntu.sh`](../util/install/install.Ubuntu.sh) script enumerates most of the build dependencies as APT packages.
     You may easily find corresponding packages for your platform and install them.
     On the other hand, most of the runtime dependencies will be built and bundled (see: `depends/bundled/`), so eventually users will just grab a DeepDive binary and run it without having to waste time on installing the correct software packages.
 

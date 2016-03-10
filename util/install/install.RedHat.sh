@@ -15,23 +15,29 @@ install__deepdive_build_deps() {
     set -x
     sudo yum groupinstall -y 'Development Tools'
     build_deps=(
+        bash
+        coreutils
         git
+        make
         rsync
         bzip2
         bzip2-devel
-        #xz-utils
+        xz
         flex
-        java
+        sed
+        mawk
+        grep
+        bc
         perl
         python
-        bc
+        java
         # mindbender
         ed
         # sampler
         #gcc-4.8
-        numactl-devel
         cmake
         unzip
+        numactl-devel
     )
     sudo yum install -y "${build_deps[@]}"
 }
@@ -40,13 +46,19 @@ install__deepdive_runtime_deps() {
     set -x
     # install all runtime dependencies for DeepDive
     runtime_deps=(
-        perl
-        java
-        python
-        gnuplot
+        bash
+        coreutils
+        make
+        rsync
+        sed
+        mawk
+        grep
         bc
-        # for graphviz
-        libtool-ltdl
+        perl
+        python
+        java
+        gnuplot
+        libtool-ltdl # for graphviz
     )
     sudo yum install -y "${runtime_deps[@]}"
 }

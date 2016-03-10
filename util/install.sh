@@ -261,13 +261,13 @@ source_script() {
         source "$INSTALLER_HOME_DIR/$script"
     else
         # may be this script is run as a one-liner, get script from GitHub
-        #source <(set -x; curl -fsSL "$INSTALLER_HOME_URL/$script") "$@"
+        #source <(curl -fsSL "$INSTALLER_HOME_URL/$script") "$@"
         # XXX using a workaround since source with process substitution has problem in bash 3 (OS X default)
         # See: https://bugzilla.altlinux.org/show_bug.cgi?id=7475
         init_INSTALLER_TEMP_DIR
         local script_path="$INSTALLER_TEMP_DIR/$script"
         mkdir -p "$(dirname "$script_path")"
-        (set -x; curl -fsSL "$INSTALLER_HOME_URL/$script" >"$script_path")
+        curl -fsSL "$INSTALLER_HOME_URL/$script" >"$script_path"
         source "$script_path" "$@"
     fi
 }

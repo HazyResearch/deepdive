@@ -10,6 +10,7 @@ install__deepdive_build_deps() {
     set -x
     javac -version
     xcode-select --install || true
+    has make    || make --version
     has git     || brew install git
     # coreutils, etc., GNU
     has xz      || brew install xz
@@ -22,6 +23,7 @@ install__deepdive_runtime_deps() {
     needs_brew
     set -x
     java -version
+    make --version
     has gnuplot || brew install gnuplot
 }
 
