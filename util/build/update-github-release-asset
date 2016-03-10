@@ -33,9 +33,11 @@
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2016-02-25
 set -euo pipefail
+shopt -s extglob
 
 : ${GITHUB_REPO:=HazyResearch/deepdive}
 : ${GITHUB_RELEASE_ASSETS_GIST_ID:=https://gist.github.com/1726a55e358e3ae3f2ec}
+: ${ASSET_HISTORY_ROOT:=.github-release-assets/}
 
 : ${TRAVIS_TAG:=} ${TRAVIS_BRANCH:=}
 
@@ -92,8 +94,14 @@ if $shouldReleaseToGitHub && [[ -n $releaseName ]]; then
     # archive previous .github-release-assets/ metadata
     set -x
     type gist || gem install gist
-    cd .github-release-assets/"$GITHUB_REPO"/"$releaseName"
-    gist ${GITHUB_RELEASE_ASSETS_GIST_ID:+-u "$GITHUB_RELEASE_ASSETS_GIST_ID"} *
+    cd "$ASSET_HISTORY_ROOT$GITHUB_REPO/$releaseName"
+    set -- !(releaseId)
+    # post any replaced release info to the Gist
+    gist ${GITHUB_RELEASE_ASSETS_GIST_ID:+-u "$GITHUB_RELEASE_ASSETS_GIST_ID"} "$@" ||
+        # or try creating a new Gist
+        gist "$@" ||
+        # or try creating a new Gist anonymously
+        gist -a "$@"
     set +x &>/dev/null
 else
     true  # nothing to do
