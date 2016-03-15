@@ -56,12 +56,10 @@ HEADERS += $(wildcard src/*.h src/*/*.h src/**/*.h src/*/*/*.hxx)
 # test files
 TEST_SOURCES += test/test.cpp
 TEST_SOURCES += test/FactorTest.cpp
-TEST_SOURCES += test/LogisticRegressionTest.cpp
 TEST_SOURCES += test/binary_parser_test.cpp
 TEST_SOURCES += test/loading_test.cpp
 TEST_SOURCES += test/factor_graph_test.cpp
 TEST_SOURCES += test/sampler_test.cpp
-TEST_SOURCES += test/multinomial.cpp
 TEST_OBJECTS = $(TEST_SOURCES:.cpp=.o)
 TEST_PROGRAM = $(PROGRAM)_test
 # test files need gtest

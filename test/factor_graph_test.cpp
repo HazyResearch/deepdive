@@ -23,6 +23,13 @@ class FactorGraphTest : public testing::Test {
   FactorGraphTest() : fg(dd::FactorGraph(18, 18, 1, 18)) {}
 
   virtual void SetUp() {
+    system(
+        "./text2bin variable test/coin/variables.tsv "
+        "test/coin/graph.variables");
+    system(
+        "./text2bin factor test/coin/factors.tsv test/coin/graph.factors 4 1 0 "
+        "1");
+    system("./text2bin weight test/coin/weights.tsv test/coin/graph.weights");
     const char *argv[21] = {"dw",      "gibbs",
                             "-w",      "./test/coin/graph.weights",
                             "-v",      "./test/coin/graph.variables",

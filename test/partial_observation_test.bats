@@ -8,6 +8,11 @@
     # probabilities to be > 0.9.
     fg="$BATS_TEST_DIRNAME"/partial
 
+    # generate factor graph from tsv
+    ./text2bin variable "$fg"/variables.tsv "$fg"/graph.variables
+    ./text2bin weight   "$fg"/weights.tsv   "$fg"/graph.weights
+    ./text2bin factor   "$fg"/factors.tsv   "$fg"/graph.factors 3 2 0 1 1
+
     # run sampler
     ./dw gibbs \
         -w "$fg"/graph.weights \

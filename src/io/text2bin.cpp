@@ -96,7 +96,6 @@ void load_factor_with_fid(std::string input_filename,
   long weightid = 0;
   long variableid = 0;
   long nedge = 0;
-  long nvars_big = htobe64(nvar);
   long predicate = funcid == 5 ? -1 : 1;
   vector<int> positives_vec;
 
@@ -231,7 +230,6 @@ void load_factor(std::string input_filename, std::string output_filename,
   std::ofstream fout(output_filename.c_str(), std::ios::binary | std::ios::out);
 
   long weightid = 0;
-  long variableid = 0;
   long nedge = 0;
   long predicate = funcid == 5 ? -1 : 1;
   vector<int> positives_vec;
@@ -255,8 +253,6 @@ void load_factor(std::string input_filename, std::string output_filename,
     fout.write((char *)&funcid, 2);
 
     // variable ids
-    uint64_t position = 0;
-    uint64_t position_big;
     long n_vars = 0;
     auto parse_variableid = [&variables, &n_vars,
                              &nedge](const string &element) {
@@ -284,7 +280,7 @@ void load_factor(std::string input_filename, std::string output_filename,
     }
 
     // weight ids
-    switch (funcid) {
+    switch (be16toh(funcid)) {
       case dd::FUNC_SPARSE_MULTINOMIAL: {
         // a list of weight ids
         // first, the run-length
@@ -297,7 +293,7 @@ void load_factor(std::string input_filename, std::string output_filename,
           long weightid = atol(element.c_str());
           weightid = htobe64(weightid);
           fout.write((char *)&weightid, 8);
-        }, num_weightids);
+        }, be64toh(num_weightids));
         break;
       }
 

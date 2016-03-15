@@ -27,8 +27,8 @@ namespace dd{
     FUNC_RATIO      = 8,
     FUNC_LOGICAL    = 9,
     FUNC_SQLSELECT  = 10,
-    FUNC_ContLR     = 20,
-    FUNC_SPARSE_MULTINOMIAL=12,
+    FUNC_SPARSE_MULTINOMIAL = 12,
+    FUNC_ContLR     = 20
   };
 
   /**
@@ -152,17 +152,19 @@ namespace dd{
         case FUNC_IMPLY_neg1_1: return _potential_imply(vifs, var_values, vid, proposal);
         case FUNC_ISTRUE      : return _potential_and(vifs, var_values, vid, proposal);
         case FUNC_OR          : return _potential_or(vifs, var_values, vid, proposal);
-        case FUNC_AND         : return _potential_and(vifs, var_values, vid, proposal);   
-        case FUNC_EQUAL       : return _potential_equal(vifs, var_values, vid, proposal);  
+        case FUNC_AND         : return _potential_and(vifs, var_values, vid, proposal);
+        case FUNC_EQUAL       : return _potential_equal(vifs, var_values, vid, proposal);
+        case FUNC_SPARSE_MULTINOMIAL:
         case FUNC_MULTINOMIAL : return _potential_multinomial(vifs, var_values, vid, proposal);
         case FUNC_LINEAR      :return _potential_linear(vifs, var_values, vid, proposal);
         case FUNC_RATIO       :return _potential_ratio(vifs, var_values, vid, proposal);
         case FUNC_LOGICAL     :return _potential_logical(vifs, var_values, vid, proposal);
         case FUNC_ONEISTRUE   : return _potential_oneistrue(vifs, var_values, vid, proposal);
-        case FUNC_SQLSELECT   : std::cout << "SQLSELECT Not supported yet!" << std::endl; assert(false); return 0;  
-        case FUNC_ContLR   : std::cout << "ContinuousLR Not supported yet!" << std::endl; assert(false); return 0;  
-        std::cout << "Unsupported Factor Function ID= " << func_id << std::endl;
-        assert(false);
+        case FUNC_SQLSELECT   : std::cout << "SQLSELECT Not supported yet!" << std::endl; assert(false); return 0;
+        case FUNC_ContLR   : std::cout << "ContinuousLR Not supported yet!" << std::endl; assert(false); return 0;
+        default:
+          std::cout << "Unsupported Factor Function ID= " << func_id << std::endl;
+          abort();
       }
 
       return 0.0;
@@ -188,6 +190,10 @@ namespace dd{
     long n_start_i_vif;     // start variable id
 
     std::vector<VariableInFactor> tmp_variables; // variables in the factor
+
+    // a list of weight for sparse multinomial factor
+    // the weights are ordered by their corresponding variable assignments
+    std::vector<long> weight_ids;
 
     Factor();
 

@@ -82,9 +82,10 @@ long dd::FactorGraph::get_multinomial_weight_id(
   /**
    * The weight ids are aligned in a continuous region according
    * to the numerical order of variable values.
-   * Say for two variables v1, v2, v3, with cardinality d1, d2, and d3.
-   * The numerical value is
-   * v1 * d2 * d3 + v2 * d3 + index of v3 in domain vector.
+   * For example, for three variables v1, v2, v3, with cardinality d1, d2, and
+   * d3.
+   * The weight index is
+   * v1 * d2 * d3 + v2 * d3 + (index of v3 in domain vector).
    */
   long weight_offset = 0;
   // for each variable in the factor
@@ -99,9 +100,18 @@ long dd::FactorGraph::get_multinomial_weight_id(
                       variable.domain_map[(int)assignments[vif.vid]];
     }
   }
-  long base_offset = &fs - compact_factors;  // note c++ will auto scale by
-                                             // sizeof(CompactFactor)
-  return *(compact_factors_weightids + base_offset) + weight_offset;
+
+  long weight_id = 0;
+  switch (fs.func_id) {
+    case FUNC_SPARSE_MULTINOMIAL:
+      weight_id = factors[fs.id].weight_ids[weight_offset];
+      break;
+    case FUNC_MULTINOMIAL:
+      weight_id = *(compact_factors_weightids + (&fs - compact_factors)) +
+                  weight_offset;
+      break;
+  }
+  return weight_id;
 }
 
 void dd::FactorGraph::update_weight(const Variable &variable) {

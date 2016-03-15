@@ -20,6 +20,8 @@ using namespace dd;
 
 // test read_variables
 TEST(BinaryParserTest, read_variables) {
+  system(
+      "./text2bin variable test/coin/variables.tsv test/coin/graph.variables");
   dd::FactorGraph fg(18, 1, 1, 1);
   long nvars = read_variables("./test/coin/graph.variables", fg);
   EXPECT_EQ(nvars, 18);
@@ -37,6 +39,9 @@ TEST(BinaryParserTest, read_variables) {
 
 // test read_factors
 TEST(BinaryParserTest, read_factors) {
+  system(
+      "./text2bin factor test/coin/factors.tsv test/coin/graph.factors 4 1 0 "
+      "1");
   dd::FactorGraph fg(18, 18, 1, 18);
   int nfactors = read_factors("./test/coin/graph.factors", fg);
   EXPECT_EQ(nfactors, 18);
@@ -52,6 +57,7 @@ TEST(BinaryParserTest, read_factors) {
 
 // test read_weights
 TEST(BinaryParserTest, read_weights) {
+  system("./text2bin weight test/coin/weights.tsv test/coin/graph.weights");
   dd::FactorGraph fg(1, 1, 1, 1);
   int nweights = read_weights("./test/coin/graph.weights", fg);
   EXPECT_EQ(nweights, 1);
@@ -61,33 +67,29 @@ TEST(BinaryParserTest, read_weights) {
   EXPECT_EQ(fg.weights[0].weight, 0.0);
 }
 
-// test read_edges
-TEST(BinaryParserTest, read_edges) {
-  dd::FactorGraph fg(18, 18, 1, 18);
-  int nedges = read_edges_inc("./test/coin/graph.edges", fg);
-  EXPECT_EQ(nedges, 18);
-  EXPECT_EQ(fg.factors[1].tmp_variables[0].vid, 1);
-  EXPECT_EQ(fg.factors[1].tmp_variables[0].n_position, 0);
-  EXPECT_EQ(fg.factors[1].tmp_variables[0].is_positive, true);
-}
-
 // test read domains
 TEST(BinaryParserTest, read_domains) {
-  int num_variables = 5, domain_size = 12;
+  system(
+      "./text2bin domain test/domains/domains.tsv test/domains/graph.domains");
+  int num_variables = 3;
+  int domain_sizes[] = {1, 2, 3};
   dd::FactorGraph fg(num_variables, 1, 1, 1);
   // add variables
   for (int i = 0; i < num_variables; i++) {
-    fg.variables[i] = dd::Variable(i, 0, 0, 0, domain_size, 0, 0, 0, 0);
+    fg.variables[i] = dd::Variable(i, 0, 0, 0, domain_sizes[i] - 1, 0, 0, 0, 0);
   }
   read_domains("./test/domains/graph.domains", fg);
 
-  EXPECT_EQ(fg.variables[1].domain.size(), domain_size);
-  EXPECT_EQ(fg.variables[1].domain_map.size(), domain_size);
-  for (int i = 0; i < domain_size; i++) {
-    EXPECT_EQ(fg.variables[1].domain[i], i);
+  for (int i = 0; i < num_variables; i++) {
+    EXPECT_EQ(fg.variables[i].domain.size(), domain_sizes[i]);
+    EXPECT_EQ(fg.variables[i].domain_map.size(), domain_sizes[i]);
   }
-  for (auto it = fg.variables[1].domain_map.begin();
-       it != fg.variables[1].domain_map.end(); it++) {
-    EXPECT_EQ(fg.variables[1].domain[it->second], it->first);
-  }
+
+  EXPECT_EQ(fg.variables[2].domain[0], 1);
+  EXPECT_EQ(fg.variables[2].domain[1], 3);
+  EXPECT_EQ(fg.variables[2].domain[2], 5);
+
+  EXPECT_EQ(fg.variables[2].domain_map[1], 0);
+  EXPECT_EQ(fg.variables[2].domain_map[3], 1);
+  EXPECT_EQ(fg.variables[2].domain_map[5], 2);
 }

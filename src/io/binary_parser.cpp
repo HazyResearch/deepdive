@@ -2,6 +2,7 @@
 #include <fstream>
 #include <stdint.h>
 #include "binary_parser.h"
+#include "dstruct/factor_graph/factor.h"
 
 // Read meta data file, return Meta struct
 Meta read_meta(string meta_file) {
@@ -140,28 +141,24 @@ long long read_factors(string filename, dd::FactorGraph &fg) {
   short type;
   long long edge_count;
   long long equal_predicate;
-  char padding;
   bool ispositive;
   while (file.good()) {
-    file.read((char *)&weightid, 8);
     file.read((char *)&type, 2);
     file.read((char *)&equal_predicate, 8);
     if (!file.read((char *)&edge_count, 8)) break;
 
-    weightid = be64toh(weightid);
     type = be16toh(type);
     edge_count = be64toh(edge_count);
     equal_predicate = be64toh(equal_predicate);
 
     count++;
-    fg.factors[fg.c_nfactor] =
-        dd::Factor(fg.c_nfactor, weightid, type, edge_count);
+
+    fg.factors[fg.c_nfactor] = dd::Factor(fg.c_nfactor, -1, type, edge_count);
 
     for (long long position = 0; position < edge_count; position++) {
       file.read((char *)&variable_id, 8);
-      file.read((char *)&padding, 1);
+      file.read((char *)&ispositive, 1);
       variable_id = be64toh(variable_id);
-      ispositive = padding;
 
       // wrong id
       if (variable_id >= fg.n_var || variable_id < 0) {
@@ -179,6 +176,26 @@ long long read_factors(string filename, dd::FactorGraph &fg) {
       }
       fg.variables[variable_id].tmp_factor_ids.push_back(fg.c_nfactor);
     }
+
+    switch (type) {
+      case (dd::FUNC_SPARSE_MULTINOMIAL): {
+        long n_weights = 0;
+        file.read((char *)&n_weights, 8);
+        n_weights = be64toh(n_weights);
+        for (long j = 0; j < n_weights; j++) {
+          file.read((char *)&weightid, 8);
+          weightid = be64toh(weightid);
+          fg.factors[fg.c_nfactor].weight_ids.push_back(weightid);
+        }
+        break;
+      }
+
+      default:
+        file.read((char *)&weightid, 8);
+        weightid = be64toh(weightid);
+        fg.factors[fg.c_nfactor].weight_id = weightid;
+    }
+
     fg.c_nfactor++;
   }
   file.close();
@@ -285,7 +302,7 @@ void read_domains(std::string filename, dd::FactorGraph &fg) {
 
     id = be64toh(id);
     dd::Variable &variable = fg.variables[id];
-    cardinality = variable.upper_bound - variable.lower_bound;
+    cardinality = variable.upper_bound - variable.lower_bound + 1;
     long domain_size;
     file.read((char *)&domain_size, 8);
     domain_size = be64toh(domain_size);
