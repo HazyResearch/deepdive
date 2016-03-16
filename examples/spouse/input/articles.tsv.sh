@@ -20,6 +20,4 @@ corpus=signalmedia/signalmedia-1m.jsonl
 cat "$corpus" |
 #grep -E 'wife|husband|married' |
 #head -100 |
-jq -r '[.id, .content] | @tsv' |
-# take care of carriage returns
-sed 's/\\r//g'
+jq -r '[.id, .content] | @tsv'
