@@ -37,7 +37,9 @@ materialize: false
 deepdive.inference.factors.inf_imply_P_Q {
 input_query: """
 SELECT R0.dd_id AS "P.R0.dd_id"
+     , R0.x AS "P.R0.x"
      , R1.dd_id AS "Q.R1.dd_id"
+     , R1.x AS "Q.R1.x"
 FROM P R0
    , Q R1
 WHERE R1.x = R0.x

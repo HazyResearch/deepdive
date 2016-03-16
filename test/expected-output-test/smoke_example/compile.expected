@@ -37,7 +37,9 @@ materialize: false
 deepdive.inference.factors.inf_imply_smoke_cancer {
 input_query: """
 SELECT R0.dd_id AS "smoke.R0.dd_id"
+     , R0.person_id AS "smoke.R0.person_id"
      , R1.dd_id AS "cancer.R1.dd_id"
+     , R1.person_id AS "cancer.R1.person_id"
 FROM smoke R0
    , cancer R1
    , person_smokes R2
@@ -57,7 +59,9 @@ input_relations: [
 deepdive.inference.factors.inf_imply_smoke_smoke {
 input_query: """
 SELECT R0.dd_id AS "smoke.R0.dd_id"
+     , R0.person_id AS "smoke.R0.person_id"
      , R1.dd_id AS "smoke.R1.dd_id"
+     , R1.person_id AS "smoke.R1.person_id"
 FROM smoke R0
    , smoke R1
    , friends R2

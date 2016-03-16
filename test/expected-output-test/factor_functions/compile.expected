@@ -7,7 +7,9 @@ Q.dd_label: Boolean
 deepdive.inference.factors.inf_imply_Q_Q {
 input_query: """
 SELECT R0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
      , R1.dd_id AS "Q.R1.dd_id"
+     , R1.x AS "Q.R1.x"
      , R1.x AS "dd_weight_column_0"
 FROM Q R0
    , Q R1
@@ -27,7 +29,9 @@ input_relations: [
 deepdive.inference.factors.inf_equal_Q_Q {
 input_query: """
 SELECT R0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
      , R1.dd_id AS "Q.R1.dd_id"
+     , R1.x AS "Q.R1.x"
      , R1.x AS "dd_weight_column_0"
 FROM Q R0
    , Q R1

@@ -463,11 +463,20 @@ class QueryCompiler(cq : ConjunctiveQuery) {
   // generate inference rule part for deepdive
   def compile(stmt: InferenceRule): CompiledBlocks = {
     val headAsBody = stmt.head.variables map (_.atom)
-    val variableIdColumns = headAsBody.zipWithIndex collect {
+    val variableIdAndKeyColumns = headAsBody.zipWithIndex flatMap {
       case (x: Atom, i) if schemaDeclarationByRelationName get x.name exists (_.isQuery) =>
         // TODO maybe TableAlias can be useful here or we can completely get rid of it?
-        s"""R${headAsBody indexOf x}.${deepdiveVariableIdColumn
-          } AS "${x.name}.R${headAsBody indexOf x}.${deepdiveVariableIdColumn}\""""
+        // variable id column
+        s"""R${headAsBody indexOf x}.${
+          deepdiveVariableIdColumn
+        } AS "${x.name}.R${headAsBody indexOf x}.${deepdiveVariableIdColumn}\"""" :: (
+          // project variable key columns as well (to reduce unnecssary joins)
+          schemaDeclarationByRelationName get x.name map (_.keyColumns map {
+            case term => s"""R${headAsBody indexOf x}.${term
+            } AS "${x.name}.R${headAsBody indexOf x}.${term}\""""
+          }) get
+        )
+      case _ => List.empty
     }
 
     val inputQueries =
@@ -486,7 +495,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
         }
 
         // factor input query
-        s"""SELECT ${(variableIdColumns ++ weightColumns) mkString ("\n     , ")
+        s"""SELECT ${(variableIdAndKeyColumns ++ weightColumns) mkString ("\n     , ")
         }\n${qc.generateSQLBody(fakeBody) }"""
       }
 

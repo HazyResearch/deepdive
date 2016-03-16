@@ -10,6 +10,7 @@ e.dd_label: Boolean
 deepdive.inference.factors.inf_istrue_a {
 input_query: """
 SELECT R0.dd_id AS "a.R0.dd_id"
+     , R0.k AS "a.R0.k"
      , R0.k + R1.p AS "dd_weight_column_0"
 FROM a R0
    , b R1
@@ -27,6 +28,7 @@ input_relations: [
 deepdive.inference.factors.inf_istrue_c {
 input_query: """
 SELECT R0.dd_id AS "c.R0.dd_id"
+     , R0.k AS "c.R0.k"
 FROM c R0
    , b R1
 WHERE R1.k = R0.k
@@ -43,6 +45,7 @@ input_relations: [
 deepdive.inference.factors.inf_istrue_d {
 input_query: """
 SELECT R0.dd_id AS "d.R0.dd_id"
+     , R0.k AS "d.R0.k"
      , R0.k AS "dd_weight_column_0"
      , R1.p AS "dd_weight_column_1"
 FROM d R0
@@ -61,6 +64,7 @@ input_relations: [
 deepdive.inference.factors.inf_istrue_e {
 input_query: """
 SELECT R0.dd_id AS "e.R0.dd_id"
+     , R0.k AS "e.R0.k"
 FROM e R0
    , b R1
 WHERE R1.k = R0.k
@@ -77,6 +81,7 @@ input_relations: [
 deepdive.inference.factors.inf_istrue_f {
 input_query: """
 SELECT R0.dd_id AS "f.R0.dd_id"
+     , R0.k AS "f.R0.k"
 FROM f R0
    , b R1
 WHERE R1.k = R0.k

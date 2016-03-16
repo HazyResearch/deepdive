@@ -121,15 +121,22 @@ case class SchemaDeclaration(a: Attribute,
                              annotations: List[Annotation] = List.empty
                             ) extends Statement // atom and whether this is a query relation.
 {
-  // infer whether this is a categorical variable based on column annotations
+  // find all columns with @key annotation
+  val keyColumns = {
+    val columnsAnnotatedWithKey = a.terms.zip(a.annotations) collect {
+      case (term, annos) if annos exists (_ named "key") => term
+    }
+    // treat all columns as key if none were annotated
+    if (isQuery && (columnsAnnotatedWithKey isEmpty)) a.terms
+    // otherwise, keys should be explicitly annotated
+    else columnsAnnotatedWithKey
+  }
+  // this is a categorical variable if a strict subset of columns are annotated with @key
   val categoricalColumns =
-    if (isQuery) {
-      val keyColumns = a.terms.zip(a.annotations) collect {
-        case (term, annos) if annos exists (_.name == "key") => term
-      }
-      if (keyColumns isEmpty) List.empty  // treat all columns as key if none were annotated
-      else a.terms diff keyColumns toList  // otherwise, the rest of the columns define categories
-    } else List.empty
+    if (isQuery)
+      a.terms diff keyColumns toList
+    else
+      List.empty
 }
 case class FunctionDeclaration(functionName: String,
                                inputType: FunctionInputOutputType,
