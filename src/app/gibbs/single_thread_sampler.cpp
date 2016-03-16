@@ -50,109 +50,17 @@ void SingleThreadSampler::sample_sgd_single_variable(long vid) {
 
   if (!learn_non_evidence && !variable.is_evid) return;
 
-  if (variable.domain_type == DTYPE_BOOLEAN) {  // boolean
+  int proposal = 0;
 
-    // sample the variable with evidence unchanged
-    if (variable.is_evid == false) {
-      // calculate the potential if the variable is positive or negative
-      potential_pos = p_fg->template potential<false>(variable, 1);
-      potential_neg = p_fg->template potential<false>(variable, 0);
-      *this->p_rand_obj_buf = erand48(this->p_rand_seed);
+  // sample the variable with evidence unchanged
+  proposal = draw_sample(variable, false);
+  p_fg->update_evid(variable, (double)proposal);
 
-      // sample the variable
-      // flip a coin with probability
-      // (exp(potential_pos) + exp(potential_neg)) / exp(potential_neg)
-      // = exp(potential_pos - potential_neg) + 1
+  // sample the variable regardless of whether it's evidence
+  proposal = draw_sample(variable, true);
+  p_fg->template update<true>(variable, (double)proposal);
 
-      if ((*this->p_rand_obj_buf) * (1.0 + exp(potential_neg - potential_pos)) <
-          1.0) {
-        p_fg->update_evid(variable, 1.0);
-      } else {
-        p_fg->update_evid(variable, 0.0);
-      }
-    }
-
-    // sample the variable regardless of whether it's evidence
-    potential_pos_freeevid = p_fg->template potential<true>(variable, 1);
-    potential_neg_freeevid = p_fg->template potential<true>(variable, 0);
-
-    *this->p_rand_obj_buf = erand48(this->p_rand_seed);
-    if ((*this->p_rand_obj_buf) *
-            (1.0 + exp(potential_neg_freeevid - potential_pos_freeevid)) <
-        1.0) {
-      p_fg->template update<true>(variable, 1.0);
-    } else {
-      p_fg->template update<true>(variable, 0.0);
-    }
-
-    this->p_fg->update_weight(variable);
-
-  } else if (variable.domain_type == DTYPE_MULTINOMIAL) {  // multinomial
-
-    // varlen_potential_buffer contains potential for each proposals
-    while (variable.upper_bound >= varlen_potential_buffer.size()) {
-      varlen_potential_buffer.push_back(0.0);
-    }
-
-    if (variable.is_evid == false) {
-      sum = -100000.0;
-      acc = 0.0;
-      multi_proposal = -1;
-
-      // calculate potential for each proposal
-      for (int propose = variable.lower_bound; propose <= variable.upper_bound;
-           propose++) {
-        varlen_potential_buffer[propose] =
-            p_fg->template potential<false>(variable, propose);
-        sum = logadd(sum, varlen_potential_buffer[propose]);
-      }
-
-      // flip a coin
-      *this->p_rand_obj_buf = erand48(this->p_rand_seed);
-      for (int propose = variable.lower_bound; propose <= variable.upper_bound;
-           propose++) {
-        acc += exp(varlen_potential_buffer[propose] - sum);
-        if (*this->p_rand_obj_buf <= acc) {
-          multi_proposal = propose;
-          break;
-        }
-      }
-      assert(multi_proposal != -1);
-      p_fg->update_evid(variable, multi_proposal);
-    }
-
-    sum = -100000.0;
-    acc = 0.0;
-    multi_proposal = -1;
-    for (int propose = variable.lower_bound; propose <= variable.upper_bound;
-         propose++) {
-      varlen_potential_buffer[propose] =
-          p_fg->template potential<true>(variable, propose);
-      sum = logadd(sum, varlen_potential_buffer[propose]);
-    }
-
-    *this->p_rand_obj_buf = erand48(this->p_rand_seed);
-    for (int propose = variable.lower_bound; propose <= variable.upper_bound;
-         propose++) {
-      acc += exp(varlen_potential_buffer[propose] - sum);
-      if (*this->p_rand_obj_buf <= acc) {
-        multi_proposal = propose;
-        break;
-      }
-    }
-    assert(multi_proposal != -1);
-    p_fg->template update<true>(variable, multi_proposal);
-
-    this->p_fg->update_weight(variable);
-
-  } else {
-    // std::cout << "~~~~~~~~~" << std::endl;
-    std::cerr
-        << "[ERROR] Only Boolean and Multinomial variables are supported now!"
-        << std::endl;
-    assert(false);
-    return;
-  }  // end if for variable types
+  this->p_fg->update_weight(variable);
 }
 
 void SingleThreadSampler::sample_single_variable(long vid, bool is_inc) {
@@ -201,57 +109,84 @@ void SingleThreadSampler::sample_single_variable(long vid, bool is_inc) {
       std::cout << "INC DOES NOT SUPPORT BOOLEAN" << std::endl;
     }
   } else {
-    if (variable.domain_type == DTYPE_BOOLEAN) {
-      if (variable.is_evid == false || sample_evidence) {
+    if (variable.is_evid == false || sample_evidence) {
+      int proposal = draw_sample(variable, sample_evidence);
+      p_fg->template update<false>(variable, (double)proposal);
+    }
+  }
+}
+}
+
+inline int dd::SingleThreadSampler::draw_sample(Variable &variable,
+                                                bool is_free_sample) {
+  if (variable.is_evid && !is_free_sample) return variable.assignment_evid;
+
+  int proposal = 0;
+
+  switch (variable.domain_type) {
+    case DTYPE_BOOLEAN:
+      if (is_free_sample) {
+        potential_pos = p_fg->template potential<true>(variable, 1);
+        potential_neg = p_fg->template potential<true>(variable, 0);
+      } else {
         potential_pos = p_fg->template potential<false>(variable, 1);
         potential_neg = p_fg->template potential<false>(variable, 0);
-
-        *this->p_rand_obj_buf = erand48(this->p_rand_seed);
-        if ((*this->p_rand_obj_buf) *
-                (1.0 + exp(potential_neg - potential_pos)) <
-            1.0) {
-          p_fg->template update<false>(variable, 1.0);
-        } else {
-          p_fg->template update<false>(variable, 0.0);
-        }
       }
 
-    } else if (variable.domain_type == DTYPE_MULTINOMIAL) {
+      *this->p_rand_obj_buf = erand48(this->p_rand_seed);
+      // sample the variable
+      // flip a coin with probability
+      // (exp(potential_pos) + exp(potential_neg)) / exp(potential_neg)
+      // = exp(potential_pos - potential_neg) + 1
+      if ((*this->p_rand_obj_buf) * (1.0 + exp(potential_neg - potential_pos)) <
+          1.0) {
+        proposal = 1;
+      } else {
+        proposal = 0;
+      }
+      break;
+
+    case DTYPE_MULTINOMIAL:
+      // varlen_potential_buffer contains potential for each proposals
       while (variable.upper_bound >= varlen_potential_buffer.size()) {
         varlen_potential_buffer.push_back(0.0);
       }
 
-      if (variable.is_evid == false || sample_evidence) {
-        sum = -100000.0;
-        acc = 0.0;
-        multi_proposal = -1;
-        for (int propose = variable.lower_bound;
-             propose <= variable.upper_bound; propose++) {
+      sum = -100000.0;
+      acc = 0.0;
+      proposal = -1;
+
+      // calculate potential for each proposal
+      for (int propose = variable.lower_bound; propose <= variable.upper_bound;
+           propose++) {
+        if (is_free_sample) {
+          varlen_potential_buffer[propose] =
+              p_fg->template potential<true>(variable, propose);
+        } else {
           varlen_potential_buffer[propose] =
               p_fg->template potential<false>(variable, propose);
-          sum = logadd(sum, varlen_potential_buffer[propose]);
         }
-
-        *this->p_rand_obj_buf = erand48(this->p_rand_seed);
-        for (int propose = variable.lower_bound;
-             propose <= variable.upper_bound; propose++) {
-          acc += exp(varlen_potential_buffer[propose] - sum);
-          if (*this->p_rand_obj_buf <= acc) {
-            multi_proposal = propose;
-            break;
-          }
-        }
-        assert(multi_proposal != -1);
-        p_fg->template update<false>(variable, multi_proposal);
+        sum = logadd(sum, varlen_potential_buffer[propose]);
       }
 
-    } else {
-      std::cerr
-          << "[ERROR] Only Boolean and Multinomial variables are supported now!"
-          << std::endl;
-      assert(false);
-      return;
-    }
+      // flip a coin
+      *this->p_rand_obj_buf = erand48(this->p_rand_seed);
+      for (int propose = variable.lower_bound; propose <= variable.upper_bound;
+           propose++) {
+        acc += exp(varlen_potential_buffer[propose] - sum);
+        if (*this->p_rand_obj_buf <= acc) {
+          proposal = propose;
+          break;
+        }
+      }
+
+      assert(proposal != -1);
+      break;
+
+    default:
+      // unsupported variable types
+      abort();
   }
-}
+
+  return proposal;
 }
