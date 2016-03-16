@@ -13,6 +13,7 @@ install__deepdive_build_deps() {
     has make    || make --version
     has git     || brew install git
     # coreutils, etc., GNU
+    has git     || brew install coreutils
     has xz      || brew install xz
     # sampler build dependencies
     has unzip   || brew install unzip
