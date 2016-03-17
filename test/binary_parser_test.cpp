@@ -31,8 +31,7 @@ TEST(BinaryParserTest, read_variables) {
   EXPECT_EQ(fg.variables[1].id, 1);
   EXPECT_EQ(fg.variables[1].domain_type, DTYPE_BOOLEAN);
   EXPECT_EQ(fg.variables[1].is_evid, true);
-  EXPECT_EQ(fg.variables[1].lower_bound, 0);
-  EXPECT_EQ(fg.variables[1].upper_bound, 1);
+  EXPECT_EQ(fg.variables[1].cardinality, 2);
   EXPECT_EQ(fg.variables[1].assignment_evid, 1);
   EXPECT_EQ(fg.variables[1].assignment_free, 1);
 }
@@ -76,7 +75,7 @@ TEST(BinaryParserTest, read_domains) {
   dd::FactorGraph fg(num_variables, 1, 1, 1);
   // add variables
   for (int i = 0; i < num_variables; i++) {
-    fg.variables[i] = dd::Variable(i, 0, 0, 0, domain_sizes[i] - 1, 0, 0, 0, 0);
+    fg.variables[i] = dd::Variable(i, 0, 0, domain_sizes[i], 0, 0, 0, 0);
   }
   read_domains("./test/domains/graph.domains", fg);
 

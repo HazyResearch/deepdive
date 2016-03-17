@@ -89,25 +89,22 @@ long long read_variables(string filename, dd::FactorGraph &fg) {
 
     count++;
 
-    int type_const, upper_bound;
-    if (type == 0) {
-      type_const = DTYPE_BOOLEAN;
-      upper_bound = 1;
-    } else if (type == 1) {
-      type_const = DTYPE_MULTINOMIAL;
-      upper_bound = cardinality - 1;
-    } else {
-      cerr
+    int type_const;
+    switch (type) {
+      case 0: type_const = DTYPE_BOOLEAN; break;
+      case 1: type_const = DTYPE_MULTINOMIAL; break;
+      default:
+        cerr
           << "[ERROR] Only Boolean and Multinomial variables are supported now!"
           << endl;
-      exit(1);
+        abort();
     }
     bool is_evidence = isevidence >= 1;
     bool is_observation = isevidence == 2;
     double init_value = is_evidence ? initial_value : 0;
 
     fg.variables[id] =
-        dd::Variable(id, type_const, is_evidence, 0, upper_bound, init_value,
+        dd::Variable(id, type_const, is_evidence, cardinality, init_value,
                      init_value, edge_count, is_observation);
 
     // set up the default domains for multinomial
@@ -166,14 +163,8 @@ long long read_factors(string filename, dd::FactorGraph &fg) {
       }
 
       // add variables to factors
-      if (fg.variables[variable_id].domain_type == DTYPE_BOOLEAN) {
-        fg.factors[fg.c_nfactor].tmp_variables.push_back(dd::VariableInFactor(
-            variable_id, fg.variables[variable_id].upper_bound, variable_id,
-            position, ispositive));
-      } else {
-        fg.factors[fg.c_nfactor].tmp_variables.push_back(dd::VariableInFactor(
-            variable_id, position, ispositive, equal_predicate));
-      }
+      fg.factors[fg.c_nfactor].tmp_variables.push_back(dd::VariableInFactor(
+          variable_id, position, ispositive, equal_predicate));
       fg.variables[variable_id].tmp_factor_ids.push_back(fg.c_nfactor);
     }
 
@@ -182,6 +173,7 @@ long long read_factors(string filename, dd::FactorGraph &fg) {
         long n_weights = 0;
         file.read((char *)&n_weights, 8);
         n_weights = be64toh(n_weights);
+        fg.factors[fg.c_nfactor].weight_ids.reserve(n_weights);
         for (long j = 0; j < n_weights; j++) {
           file.read((char *)&weightid, 8);
           weightid = be64toh(weightid);
@@ -276,14 +268,8 @@ long long read_edges_inc(string filename, dd::FactorGraph &fg) {
     }
 
     // add variables to factors
-    if (fg.variables[variable_id].domain_type == DTYPE_BOOLEAN) {
-      fg.factors[factor_id].tmp_variables.push_back(dd::VariableInFactor(
-          variable_id, fg.variables[variable_id].upper_bound, variable_id,
-          position, ispositive));
-    } else {
-      fg.factors[factor_id].tmp_variables.push_back(dd::VariableInFactor(
-          variable_id, position, ispositive, equal_predicate));
-    }
+    fg.factors[factor_id].tmp_variables.push_back(dd::VariableInFactor(
+        variable_id, position, ispositive, equal_predicate));
     fg.variables[variable_id].tmp_factor_ids.push_back(factor_id);
   }
   file.close();
@@ -295,29 +281,29 @@ void read_domains(std::string filename, dd::FactorGraph &fg) {
   ifstream file;
   file.open(filename.c_str(), ios::in | ios::binary);
   long id, value;
-  long cardinality;
   while (true) {
     file.read((char *)&id, 8);
     if (!file.good()) break;
 
     id = be64toh(id);
     dd::Variable &variable = fg.variables[id];
-    cardinality = variable.upper_bound - variable.lower_bound + 1;
+
     long domain_size;
     file.read((char *)&domain_size, 8);
     domain_size = be64toh(domain_size);
-    assert(cardinality == domain_size);
+    assert(variable.cardinality == domain_size);
+
     variable.domain.clear();
     variable.domain_map.clear();
 
-    for (int i = 0; i < cardinality; i++) {
+    for (int i = 0; i < domain_size; i++) {
       file.read((char *)&value, 8);
       value = be64toh(value);
       variable.domain.push_back(value);
     }
 
     std::sort(variable.domain.begin(), variable.domain.end());
-    for (int i = 0; i < cardinality; i++) {
+    for (int i = 0; i < domain_size; i++) {
       variable.domain_map[variable.domain[i]] = i;
     }
   }

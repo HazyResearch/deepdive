@@ -1,6 +1,6 @@
 
 #include <vector>
-#include <map>
+#include <unordered_map>
 
 #ifndef _VARIABLE_H_
 #define _VARIABLE_H_
@@ -25,9 +25,8 @@ namespace dd{
                                     // DTYPE_MULTINOMIAL
     bool is_evid;                   // whether the variable is evidence
     bool is_observation;            // observed variable (fixed)
-    VariableValue lower_bound;      // lower bound
-    VariableValue upper_bound;      // upper bound
-    
+    int cardinality;                // cardinality
+
     VariableValue assignment_evid;  // assignment, while keeping evidence variables unchanged
     VariableValue assignment_free;  // assignment, free to change any variable
 
@@ -41,7 +40,7 @@ namespace dd{
     long n_start_i_tally;
 
     std::vector<VariableValue> domain; // domain of multinomial variable
-    std::map<VariableValue, int> domain_map; // map from value to index in the domain vector
+    std::unordered_map<VariableValue, int> domain_map; // map from value to index in the domain vector
 
     std::vector<long> tmp_factor_ids; // factor ids the variable connects to
 
@@ -58,8 +57,8 @@ namespace dd{
      * upper bound, initial value, current value, number of factors 
      */
     Variable(const long & _id, const int & _domain_type, 
-             const bool & _is_evid, const VariableValue & _lower_bound,
-             const VariableValue & _upper_bound, const VariableValue & _init_value, 
+             const bool & _is_evid, const int & cardinality,
+             const VariableValue & _init_value, 
              const VariableValue & _current_value, const int & _n_factors,
              bool is_observation);
   };
@@ -73,9 +72,7 @@ namespace dd{
     int n_position;         // position of the variable inside factor
     bool is_positive;       // whether the variable is positive or negated
     // the variable's predicate value. A variable is "satisfied" if its value equals equal_to
-    VariableValue equal_to; 
-
-    int dimension;
+    VariableValue equal_to;
 
     /**
      * Returns whether the variable's predicate is satisfied using the given value
@@ -83,15 +80,6 @@ namespace dd{
     bool satisfiedUsing(int value) const;
 
     VariableInFactor();
-
-    VariableInFactor(int dummy,
-                      const int & _dimension, 
-                      const long & _vid, const int & _n_position, 
-                     const bool & _is_positive);
-
-
-    VariableInFactor(const long & _vid, const int & _n_position, 
-                     const bool & _is_positive);
 
     VariableInFactor(const long & _vid, const int & _n_position, 
                      const bool & _is_positive, const VariableValue & _equal_to);

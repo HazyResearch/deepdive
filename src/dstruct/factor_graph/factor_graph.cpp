@@ -31,14 +31,14 @@ dd::FactorGraph::FactorGraph(long _n_var, long _n_factor, long _n_weight,
       variables(new Variable[_n_var]),
       factors(new Factor[_n_factor]),
       weights(new Weight[_n_weight]),
+      old_weight_values(NULL),
       compact_factors(new CompactFactor[_n_edge]),
       compact_factors_weightids(new int[_n_edge]),
       factor_ids(new long[_n_edge]),
       vifs(new VariableInFactor[_n_edge]),
       infrs(new InferenceResult(_n_var, _n_weight)),
       sorted(false),
-      safety_check_passed(false),
-      old_weight_values(NULL) {}
+      safety_check_passed(false) {}
 
 void dd::FactorGraph::copy_from(const FactorGraph *const p_other_fg) {
   // copy each member from the given graph
@@ -82,10 +82,9 @@ long dd::FactorGraph::get_multinomial_weight_id(
   /**
    * The weight ids are aligned in a continuous region according
    * to the numerical order of variable values.
-   * For example, for three variables v1, v2, v3, with cardinality d1, d2, and
-   * d3.
+   * For example, for variable assignment indexes i1, ..., ik with cardinality d1, ..., dk
    * The weight index is
-   * v1 * d2 * d3 + v2 * d3 + (index of v3 in domain vector).
+   * (...(((i1 * d2) + i2) * d3 + i3) * d4 + ...) * dk + ik
    */
   long weight_offset = 0;
   // for each variable in the factor
@@ -93,10 +92,10 @@ long dd::FactorGraph::get_multinomial_weight_id(
     const VariableInFactor &vif = vifs[i];
     Variable &variable = variables[vif.vid];
     if (vif.vid == vid) {
-      weight_offset = weight_offset * variable.domain.size() +
+      weight_offset = weight_offset * variable.cardinality +
                       variable.domain_map[proposal];
     } else {
-      weight_offset = weight_offset * variable.domain.size() +
+      weight_offset = weight_offset * variable.cardinality +
                       variable.domain_map[(int)assignments[vif.vid]];
     }
   }
@@ -375,7 +374,7 @@ void dd::FactorGraph::organize_graph_by_edge() {
     variable.n_start_i_factors = c_edge;
     if (variable.domain_type == DTYPE_MULTINOMIAL) {
       variable.n_start_i_tally = ntallies;
-      ntallies += variable.domain.size();
+      ntallies += variable.cardinality;
     }
     for (const long &fid : variable.tmp_factor_ids) {
       factor_ids[c_edge] = fid;
