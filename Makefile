@@ -11,6 +11,18 @@ PACKAGE = $(dir $(STAGE_DIR))deepdive.tar.gz
 
 .DEFAULT_GOAL := build
 
+# On Mac OS X, require GNU coreutils instead of continuing on BSD utilities with uncertainty
+ifeq ($(shell uname),Darwin)
+ifeq ($(shell brew ls coreutils &>/dev/null || echo notfound),)
+    PATH := $(shell brew --prefix coreutils)/libexec/gnubin:$(PATH)
+else
+    $(error Missing GNU coreutils from Homebrew [http://brew.sh]. \
+        It must be installed to ensure correct build. \
+        Please run: `brew install coreutils` \
+    )
+endif
+endif
+
 ### dependency recipes ########################################################
 
 .PHONY: depends
