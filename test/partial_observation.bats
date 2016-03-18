@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+load helpers
 
 @test "${BATS_TEST_FILENAME##*/}: Integration test for learning hidden models" {
     # The factor graph contains a chain A-B-C, where A, C are evidence, and B
@@ -6,21 +7,9 @@
     # respectively.  There are 4 training examples with A = C = true, and only
     # one B is observed to be true. We expect the weight to be positive, and
     # probabilities to be > 0.9.
-    fg="$BATS_TEST_DIRNAME"/partial
+    fg=${BATS_TEST_FILENAME%.bats}
 
-    # generate factor graph from tsv
-    ./text2bin variable "$fg"/variables.tsv "$fg"/graph.variables
-    ./text2bin weight   "$fg"/weights.tsv   "$fg"/graph.weights
-    ./text2bin factor   "$fg"/factors.tsv   "$fg"/graph.factors 3 2 0 1 1
-
-    # run sampler
-    ./dw gibbs \
-        -w "$fg"/graph.weights \
-        -v "$fg"/graph.variables \
-        -f "$fg"/graph.factors \
-        -m "$fg"/graph.meta \
-        -o "$fg" \
-        -l 300 -i 500 -s 1 --alpha 0.1 --learn_non_evidence
+    run_end_to_end $fg "3 2 0 1 1" "-l 500 -i 500 -s 1 --alpha 0.1 --learn_non_evidence --reg_param 0"
 
     # check results
     cd "$fg"

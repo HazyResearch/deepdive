@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+load helpers
 
 @test "${BATS_TEST_FILENAME##*/}: Integration test for sparse domain multinomial" {
     # the factor graph used for test is from biased multinomial, which contains 20
@@ -6,23 +7,9 @@
     # Variable has cardinality of 4. Evidence variables: 0: 1, 1: 2, 2: 3, 3: 4
     # where the first one is value, the second is count
     # all variables and factors are in sparse domain format
-    fg="$BATS_TEST_DIRNAME"/sparse_domain
+    fg=${BATS_TEST_FILENAME%.bats}
 
-    # generate factor graph from tsv
-    ./text2bin variable "$fg"/variables.tsv "$fg"/graph.variables
-    ./text2bin weight   "$fg"/weights.tsv   "$fg"/graph.weights
-    ./text2bin factor   "$fg"/factors.tsv   "$fg"/graph.factors 12 1 0 1
-    ./text2bin domain   "$fg"/domains.tsv   "$fg"/graph.domains
-
-    # run sampler
-    ./dw gibbs \
-        -w "$fg"/graph.weights \
-        -v "$fg"/graph.variables \
-        -f "$fg"/graph.factors \
-        -m "$fg"/graph.meta \
-        -o "$fg" \
-        --domains "$fg"/graph.domains \
-        -l 4000 -i 2000 -s 1 --alpha 0.01 --diminish 0.999 --reg_param 0
+    run_end_to_end $fg "12 1 0 1" "-l 4000 -i 2000 -s 1 --alpha 0.01 --diminish 0.999 --reg_param 0"
 
     # check results
     cd "$fg"
@@ -34,11 +21,10 @@
     }
     awk <inference_result.out.weights.text '{
         id=$1; weight=$2;
-        # exp_weight=exp(weight);
         expected=log(id+1);
         eps=0.2
         if ((weight > expected+eps) || (weight < expected-eps)) {
-            print "exp of weight " id " not near " expected
+            print "weight " id " not near " expected
             exit(1)
         }
     }'
