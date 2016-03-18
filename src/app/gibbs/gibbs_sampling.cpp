@@ -356,7 +356,7 @@ void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet,
           if (variable.domain_type == DTYPE_MULTINOMIAL) {
             for (size_t j = 0; j < variable.cardinality; j++) {
               std::cout
-                  << "        @ " << variable.domain[j] << " -> "
+                  << "        @ " << variable.get_domain(j) << " -> "
                   << 1.0 * multinomial_tallies[variable.n_start_i_tally + j] /
                          agg_nsamples[variable.id]
                   << std::endl;
@@ -399,7 +399,7 @@ void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet,
     if (variable.domain_type != DTYPE_BOOLEAN) {
       if (variable.domain_type == DTYPE_MULTINOMIAL) {
         for (size_t j = 0; j < variable.cardinality; j++) {
-          fout_text << variable.id << " " << variable.domain[j] << " "
+          fout_text << variable.id << " " << variable.get_domain(j) << " "
                     << (1.0 *
                         multinomial_tallies[variable.n_start_i_tally + j] /
                         agg_nsamples[variable.id])

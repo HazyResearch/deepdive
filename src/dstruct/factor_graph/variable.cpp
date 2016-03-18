@@ -5,7 +5,7 @@ namespace dd {
 Variable::Variable() {}
 
 Variable::Variable(const long &_id, const int &_domain_type,
-                   const bool &_is_evid, const int & cardinality,
+                   const bool &_is_evid, const int &cardinality,
                    const VariableValue &_init_value,
                    const VariableValue &_current_value, const int &_n_factors,
                    bool is_observation) {
@@ -17,6 +17,8 @@ Variable::Variable(const long &_id, const int &_domain_type,
   this->assignment_evid = _init_value;
   this->assignment_free = _current_value;
   this->n_factors = _n_factors;
+  this->domain = NULL;
+  this->domain_map = NULL;
   this->isactive = false;
   this->component_id = -1;
 }
@@ -26,7 +28,6 @@ bool VariableInFactor::satisfiedUsing(int value) const {
 }
 
 VariableInFactor::VariableInFactor() {}
-
 
 VariableInFactor::VariableInFactor(const long &_vid, const int &_n_position,
                                    const bool &_is_positive,

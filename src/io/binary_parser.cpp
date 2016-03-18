@@ -91,12 +91,16 @@ long long read_variables(string filename, dd::FactorGraph &fg) {
 
     int type_const;
     switch (type) {
-      case 0: type_const = DTYPE_BOOLEAN; break;
-      case 1: type_const = DTYPE_MULTINOMIAL; break;
+      case 0:
+        type_const = DTYPE_BOOLEAN;
+        break;
+      case 1:
+        type_const = DTYPE_MULTINOMIAL;
+        break;
       default:
-        cerr
-          << "[ERROR] Only Boolean and Multinomial variables are supported now!"
-          << endl;
+        cerr << "[ERROR] Only Boolean and Multinomial variables are supported "
+                "now!"
+             << endl;
         abort();
     }
     bool is_evidence = isevidence >= 1;
@@ -106,12 +110,6 @@ long long read_variables(string filename, dd::FactorGraph &fg) {
     fg.variables[id] =
         dd::Variable(id, type_const, is_evidence, cardinality, init_value,
                      init_value, edge_count, is_observation);
-
-    // set up the default domains for multinomial
-    for (int i = 0; i < cardinality; i++) {
-      fg.variables[id].domain.push_back(i);
-      fg.variables[id].domain_map[i] = i;
-    }
 
     fg.c_nvar++;
     if (is_evidence) {
@@ -293,18 +291,18 @@ void read_domains(std::string filename, dd::FactorGraph &fg) {
     domain_size = be64toh(domain_size);
     assert(variable.cardinality == domain_size);
 
-    variable.domain.clear();
-    variable.domain_map.clear();
+    variable.domain = new std::vector<int>(domain_size);
+    variable.domain_map = new std::unordered_map<int, int>();
 
     for (int i = 0; i < domain_size; i++) {
       file.read((char *)&value, 8);
       value = be64toh(value);
-      variable.domain.push_back(value);
+      (*variable.domain)[i] = value;
     }
 
-    std::sort(variable.domain.begin(), variable.domain.end());
+    std::sort(variable.domain->begin(), variable.domain->end());
     for (int i = 0; i < domain_size; i++) {
-      variable.domain_map[variable.domain[i]] = i;
+      (*variable.domain_map)[(*variable.domain)[i]] = i;
     }
   }
 }

@@ -158,7 +158,7 @@ inline int dd::SingleThreadSampler::draw_sample(Variable &variable,
 
       // calculate potential for each proposal
       for (size_t i = 0; i < variable.cardinality; i++) {
-        int propose = variable.domain[i];
+        int propose = variable.get_domain(i);
         if (is_free_sample) {
           varlen_potential_buffer[i] =
               p_fg->template potential<true>(variable, propose);
@@ -174,7 +174,7 @@ inline int dd::SingleThreadSampler::draw_sample(Variable &variable,
       for (size_t i = 0; i < variable.cardinality; i++) {
         acc += exp(varlen_potential_buffer[i] - sum);
         if (*this->p_rand_obj_buf <= acc) {
-          proposal = variable.domain[i];
+          proposal = variable.get_domain(i);
           break;
         }
       }

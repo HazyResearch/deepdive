@@ -80,15 +80,16 @@ TEST(BinaryParserTest, read_domains) {
   read_domains("./test/domains/graph.domains", fg);
 
   for (int i = 0; i < num_variables; i++) {
-    EXPECT_EQ(fg.variables[i].domain.size(), domain_sizes[i]);
-    EXPECT_EQ(fg.variables[i].domain_map.size(), domain_sizes[i]);
+    EXPECT_EQ(fg.variables[i].domain->size(), domain_sizes[i]);
+    EXPECT_EQ(fg.variables[i].domain_map->size(), domain_sizes[i]);
+
   }
 
-  EXPECT_EQ(fg.variables[2].domain[0], 1);
-  EXPECT_EQ(fg.variables[2].domain[1], 3);
-  EXPECT_EQ(fg.variables[2].domain[2], 5);
+  EXPECT_EQ(fg.variables[2].get_domain(0), 1);
+  EXPECT_EQ(fg.variables[2].get_domain(1), 3);
+  EXPECT_EQ(fg.variables[2].get_domain(2), 5);
 
-  EXPECT_EQ(fg.variables[2].domain_map[1], 0);
-  EXPECT_EQ(fg.variables[2].domain_map[3], 1);
-  EXPECT_EQ(fg.variables[2].domain_map[5], 2);
+  EXPECT_EQ(fg.variables[2].get_domain_index(1), 0);
+  EXPECT_EQ(fg.variables[2].get_domain_index(3), 1);
+  EXPECT_EQ(fg.variables[2].get_domain_index(5), 2);
 }

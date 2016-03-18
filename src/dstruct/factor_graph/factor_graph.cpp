@@ -82,7 +82,8 @@ long dd::FactorGraph::get_multinomial_weight_id(
   /**
    * The weight ids are aligned in a continuous region according
    * to the numerical order of variable values.
-   * For example, for variable assignment indexes i1, ..., ik with cardinality d1, ..., dk
+   * For example, for variable assignment indexes i1, ..., ik with cardinality
+   * d1, ..., dk
    * The weight index is
    * (...(((i1 * d2) + i2) * d3 + i3) * d4 + ...) * dk + ik
    */
@@ -93,10 +94,10 @@ long dd::FactorGraph::get_multinomial_weight_id(
     Variable &variable = variables[vif.vid];
     if (vif.vid == vid) {
       weight_offset = weight_offset * variable.cardinality +
-                      variable.domain_map[proposal];
+                      variable.get_domain_index(proposal);
     } else {
       weight_offset = weight_offset * variable.cardinality +
-                      variable.domain_map[(int)assignments[vif.vid]];
+                      variable.get_domain_index((int)assignments[vif.vid]);
     }
   }
 

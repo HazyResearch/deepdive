@@ -222,7 +222,7 @@ namespace dd{
     infrs->agg_means[variable.id] += new_value;
     infrs->agg_nsamples[variable.id]  ++ ;
     if (variable.domain_type == DTYPE_MULTINOMIAL) {
-      infrs->multinomial_tallies[variable.n_start_i_tally + variable.domain_map[(int)new_value]] ++;
+      infrs->multinomial_tallies[variable.n_start_i_tally + variable.get_domain_index((int)new_value)] ++;
     }
   }
 
