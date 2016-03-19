@@ -66,18 +66,22 @@ class DeepDiveLogCompiler( program : DeepDiveLog.Program, config : DeepDiveLog.C
 
   // Given an inference rule, resolve its name for the compiled inference block.
   def resolveInferenceBlockName(s: InferenceRule): String = {
-    val factorFuncName: String = s.head.function.getClass.getSimpleName.toLowerCase
-    val idxInInferenceRulesSharingHead = inferenceRules filter(_.head equals s.head) indexOf(s)
-    s"inf${
-        // XXX This comes right after the prefix to prevent potential collision with user's name
-        optionalIndex(idxInInferenceRulesSharingHead)
-      }_${
+    // how to map a rule to its basename
+    // TODO support @rule("name") annotation to override these generated names
+    def ruleBaseNameFor(s: InferenceRule) = s"${
         // function name
-        factorFuncName
+        s.head.function.getClass.getSimpleName.toLowerCase
       }_${
         // followed by variable names
-        s.head.terms map {_.name} mkString("_")
+        s.head.terms map { case t => s"${if (t.isNegated) "not_" else ""}${t.name}" } mkString("_")
       }"
+    // find this rule's base name and all rules that share it
+    val ruleBaseName = ruleBaseNameFor(s)
+    val allInferenceRulesSharingHead = inferenceRules filter(ruleBaseNameFor(_) equals ruleBaseName)
+    s"inf${
+        // keep an index before the base name to prevent potential collision with user's name
+        optionalIndex(allInferenceRulesSharingHead indexOf s)
+      }_${ruleBaseName}"
   }
 
   // Given a variable, resolve it.  TODO: This should give a warning,
