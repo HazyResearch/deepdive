@@ -291,18 +291,18 @@ void read_domains(std::string filename, dd::FactorGraph &fg) {
     domain_size = be64toh(domain_size);
     assert(variable.cardinality == domain_size);
 
-    variable.domain = new std::vector<int>(domain_size);
+    std::vector<int> domain(domain_size);
     variable.domain_map = new std::unordered_map<int, int>();
 
     for (int i = 0; i < domain_size; i++) {
       file.read((char *)&value, 8);
       value = be64toh(value);
-      (*variable.domain)[i] = value;
+      domain[i] = value;
     }
 
-    std::sort(variable.domain->begin(), variable.domain->end());
+    std::sort(domain.begin(), domain.end());
     for (int i = 0; i < domain_size; i++) {
-      (*variable.domain_map)[(*variable.domain)[i]] = i;
+      (*variable.domain_map)[domain[i]] = i;
     }
   }
 }

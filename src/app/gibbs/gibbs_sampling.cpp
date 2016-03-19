@@ -352,20 +352,24 @@ void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet,
                   << agg_means[variable.id] / agg_nsamples[variable.id]
                   << "  NSAMPLE=" << agg_nsamples[variable.id] << std::endl;
 
-        if (variable.domain_type != DTYPE_BOOLEAN) {
-          if (variable.domain_type == DTYPE_MULTINOMIAL) {
+        if (variable.domain_type == DTYPE_MULTINOMIAL) {
+          if (variable.domain_map) {  // sparse
+            for (const auto &entry : *variable.domain_map) {
+              std::cout << "        @ " << entry.first << " -> "
+                        << 1.0 * multinomial_tallies[variable.n_start_i_tally +
+                                                     entry.second] /
+                               agg_nsamples[variable.id]
+                        << std::endl;
+            }
+
+          } else {  // dense case
             for (size_t j = 0; j < variable.cardinality; j++) {
               std::cout
-                  << "        @ " << variable.get_domain(j) << " -> "
+                  << "        @ " << j << " -> "
                   << 1.0 * multinomial_tallies[variable.n_start_i_tally + j] /
                          agg_nsamples[variable.id]
                   << std::endl;
             }
-          } else {
-            std::cerr << "ERROR: Only support boolean and multinomial "
-                         "variables for now!"
-                      << std::endl;
-            assert(false);
           }
         }
 
@@ -396,25 +400,31 @@ void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet,
       continue;
     }
 
-    if (variable.domain_type != DTYPE_BOOLEAN) {
-      if (variable.domain_type == DTYPE_MULTINOMIAL) {
-        for (size_t j = 0; j < variable.cardinality; j++) {
-          fout_text << variable.id << " " << variable.get_domain(j) << " "
-                    << (1.0 *
-                        multinomial_tallies[variable.n_start_i_tally + j] /
-                        agg_nsamples[variable.id])
-                    << std::endl;
+    switch (variable.domain_type) {
+      case DTYPE_BOOLEAN:
+        fout_text << variable.id << " " << 1 << " "
+                  << (agg_means[variable.id] / agg_nsamples[variable.id])
+                  << std::endl;
+        break;
+      case DTYPE_MULTINOMIAL:
+        if (variable.domain_map) {  // sparse
+          for (const auto &entry : *variable.domain_map) {
+            fout_text << variable.id << " " << entry.first << " "
+                      << (1.0 * multinomial_tallies[variable.n_start_i_tally +
+                                                    entry.second] /
+                          agg_nsamples[variable.id])
+                      << std::endl;
+          }
+        } else {
+          for (size_t j = 0; j < variable.cardinality; j++) {
+            fout_text << variable.id << " " << j << " "
+                      << (1.0 *
+                          multinomial_tallies[variable.n_start_i_tally + j] /
+                          agg_nsamples[variable.id])
+                      << std::endl;
+          }
         }
-      } else {
-        std::cerr
-            << "ERROR: Only support boolean and multinomial variables for now!"
-            << std::endl;
-        assert(false);
-      }
-    } else {
-      fout_text << variable.id << " " << 1 << " "
-                << (agg_means[variable.id] / agg_nsamples[variable.id])
-                << std::endl;
+        break;
     }
   }
   fout_text.close();

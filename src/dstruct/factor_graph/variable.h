@@ -39,7 +39,6 @@ namespace dd{
     // n_start_i_tally is the start position for the variable values in the array
     long n_start_i_tally;
 
-    std::vector<VariableValue> *domain; // domain of multinomial variable
     std::unordered_map<VariableValue, int> *domain_map; // map from value to index in the domain vector
 
     std::vector<long> tmp_factor_ids; // factor ids the variable connects to
@@ -62,11 +61,7 @@ namespace dd{
              const VariableValue & _current_value, const int & _n_factors,
              bool is_observation);
 
-    // get the index-th value in the domain
-    inline VariableValue get_domain(int index) const {
-      return domain ? (*domain)[index] : index;
-    }
-    // get the index of the
+    // get the index of the value
     inline int get_domain_index(int v) const {
       return domain_map ? (*domain_map)[v] : (int)v;
     }
