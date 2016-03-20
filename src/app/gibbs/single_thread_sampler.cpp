@@ -6,7 +6,7 @@ SingleThreadSampler::SingleThreadSampler(FactorGraph *_p_fg,
                                          bool sample_evidence, bool burn_in,
                                          bool learn_non_evidence)
     : p_fg(_p_fg),
-      p_rand_obj_buf(new double),
+      varlen_potential_buffer_(0),
       sample_evidence(sample_evidence),
       burn_in(burn_in),
       learn_non_evidence(learn_non_evidence) {
@@ -84,15 +84,19 @@ void SingleThreadSampler::sample_single_variable(long vid, bool is_inc) {
         // accept
         //}else{
 
-        potential_pos =
+        // positive and negative potential for boolean variables
+        // NOTE In the context of this file and single_thread_sampler.cpp, a
+        // potential for a variable value or proposal means the potential of
+        // the factors the variable connects to
+        double potential_pos =
             p_fg->template potential<false>(variable, newvalue);  // flip
-        potential_neg =
+        double potential_neg =
             p_fg->template potential<false>(variable, oldvalue);  // not flip
         // std::cout << vid << " -> " << newvalue << "(" << potential_pos << ")"
         //      << "    " << oldvalue << "(" << potential_neg << ")" <<
         //      std::endl;
-        *this->p_rand_obj_buf = erand48(this->p_rand_seed);
-        float r = (*this->p_rand_obj_buf);
+
+        float r = static_cast<float>(erand48(this->p_rand_seed));
         float prob = exp(potential_pos - potential_neg);
         // std::cout << r << "  " << prob << std::endl;
 
@@ -124,7 +128,9 @@ inline int dd::SingleThreadSampler::draw_sample(Variable &variable,
   int proposal = 0;
 
   switch (variable.domain_type) {
-    case DTYPE_BOOLEAN:
+    case DTYPE_BOOLEAN: {
+      double potential_pos;
+      double potential_neg;
       if (is_free_sample) {
         potential_pos = p_fg->template potential<true>(variable, 1);
         potential_neg = p_fg->template potential<true>(variable, 0);
@@ -133,77 +139,56 @@ inline int dd::SingleThreadSampler::draw_sample(Variable &variable,
         potential_neg = p_fg->template potential<false>(variable, 0);
       }
 
-      *this->p_rand_obj_buf = erand48(this->p_rand_seed);
+      double r = erand48(this->p_rand_seed);
       // sample the variable
       // flip a coin with probability
       // (exp(potential_pos) + exp(potential_neg)) / exp(potential_neg)
       // = exp(potential_pos - potential_neg) + 1
-      if ((*this->p_rand_obj_buf) * (1.0 + exp(potential_neg - potential_pos)) <
-          1.0) {
+      if (r * (1.0 + exp(potential_neg - potential_pos)) < 1.0) {
         proposal = 1;
       } else {
         proposal = 0;
       }
       break;
+    }
 
-    case DTYPE_MULTINOMIAL:
-      // varlen_potential_buffer contains potential for each proposals
-      while (variable.cardinality >= varlen_potential_buffer.size()) {
-        varlen_potential_buffer.push_back(0.0);
-      }
+    case DTYPE_MULTINOMIAL: {
+      varlen_potential_buffer_.reserve(variable.cardinality);
+      double sum = -100000.0;
 
-      sum = -100000.0;
-      acc = 0.0;
       proposal = -1;
 
-      // sparse case
-      if (variable.domain_map) {
-        for (const auto &entry : *variable.domain_map) {
-          if (is_free_sample) {
-            varlen_potential_buffer[entry.second] =
-                p_fg->template potential<true>(variable, entry.first);
-          } else {
-            varlen_potential_buffer[entry.second] =
-                p_fg->template potential<false>(variable, entry.first);
-          }
-          sum = logadd(sum, varlen_potential_buffer[entry.second]);
-        }
-
-        *this->p_rand_obj_buf = erand48(this->p_rand_seed);
-        for (const auto &entry : *variable.domain_map) {
-          acc += exp(varlen_potential_buffer[entry.second] - sum);
-          if (*this->p_rand_obj_buf <= acc) {
-            proposal = entry.first;
-            break;
-          }
-        }
-
-      } else {  // dense case
-
-        // calculate potential for each proposal
-        for (size_t i = 0; i < variable.cardinality; i++) {
-          if (is_free_sample) {
-            varlen_potential_buffer[i] =
-                p_fg->template potential<true>(variable, i);
-          } else {
-            varlen_potential_buffer[i] =
-                p_fg->template potential<false>(variable, i);
-          }
-          sum = logadd(sum, varlen_potential_buffer[i]);
-        }
-
-        *this->p_rand_obj_buf = erand48(this->p_rand_seed);
-        for (size_t i = 0; i < variable.cardinality; i++) {
-          acc += exp(varlen_potential_buffer[i] - sum);
-          if (*this->p_rand_obj_buf <= acc) {
-            proposal = i;
-            break;
-          }
-        }
-      }
+// calculate potential for each proposal given a way to iterate the domain
+#define COMPUTE_PROPOSAL(EACH_DOMAIN_VALUE, DOMAIN_VALUE, DOMAIN_INDEX)    \
+  do {                                                                     \
+          for                                                              \
+      EACH_DOMAIN_VALUE {                                                  \
+        varlen_potential_buffer_[DOMAIN_INDEX] =                           \
+            is_free_sample                                                 \
+                ? p_fg->template potential<true>(variable, DOMAIN_VALUE)   \
+                : p_fg->template potential<false>(variable, DOMAIN_VALUE); \
+        sum = logadd(sum, varlen_potential_buffer_[DOMAIN_INDEX]);         \
+      }                                                                    \
+    double r = erand48(this->p_rand_seed);                                 \
+        for                                                                \
+      EACH_DOMAIN_VALUE {                                                  \
+        r -= exp(varlen_potential_buffer_[DOMAIN_INDEX] - sum);            \
+        if (r <= 0) {                                                      \
+          proposal = DOMAIN_VALUE;                                         \
+          break;                                                           \
+        }                                                                  \
+      }                                                                    \
+  } while (0)
+      if (variable.domain_map)  // sparse case
+        COMPUTE_PROPOSAL((const auto &entry
+                          : *variable.domain_map),
+                         entry.first, entry.second);
+      else  // dense case
+        COMPUTE_PROPOSAL((size_t i = 0; i < variable.cardinality; ++i), i, i);
 
       assert(proposal != -1);
       break;
+    }
 
     default:
       // unsupported variable types
