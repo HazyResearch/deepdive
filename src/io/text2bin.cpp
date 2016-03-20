@@ -85,7 +85,7 @@ void load_weight(std::string input_filename, std::string output_filename) {
 void load_factor_with_fid(std::string input_filename,
                           std::string output_factors_filename,
                           std::string output_edges_filename, short funcid,
-                          long nvar, char **positives) {
+                          long nvar, const char *const *positives) {
   std::ifstream fin(input_filename.c_str());
   std::ofstream fout(output_factors_filename.c_str(),
                      std::ios::binary | std::ios::out);
@@ -225,7 +225,7 @@ static inline long parse_pgarray_or_die(
 // load factors
 // wid, vids
 void load_factor(std::string input_filename, std::string output_filename,
-                 short funcid, long nvar, char **positives) {
+                 short funcid, long nvar, const char *const *positives) {
   std::ifstream fin(input_filename.c_str());
   std::ofstream fout(output_filename.c_str(), std::ios::binary | std::ios::out);
 
@@ -362,22 +362,36 @@ void load_domain(std::string input_filename, std::string output_filename) {
 }
 
 int main(int argc, char **argv) {
-  std::string app(argv[1]);
+  // TODO consider using tclap
+  const auto &name = argv[1];
+  std::string app(name);
+  // common arguments
+  const auto &input_file = argv[2];
+  const auto &output_file = argv[3];
   if (app.compare("variable") == 0) {
-    load_var(argv[2], argv[3]);
+    load_var(input_file, output_file);
   } else if (app.compare("weight") == 0) {
-    load_weight(argv[2], argv[3]);
+    load_weight(input_file, output_file);
   } else if (app.compare("factor") == 0) {
-    std::string inc(argv[6]);
-    if (inc.compare("inc") == 0 || inc.compare("mat") == 0)
-      load_factor_with_fid(argv[2], argv[3], argv[7], atoi(argv[4]),
-                           atoi(argv[5]), &argv[8]);
+    const auto &func_id = argv[4];
+    const auto &num_vars = argv[5];
+    const auto &inc_mode = argv[6];
+    std::string inc(inc_mode);
+    bool is_incremental_mode =
+        inc.compare("inc") == 0 || inc.compare("mat") == 0;
+    const auto &edges_filename = is_incremental_mode ? argv[7] : NULL;
+    const auto &are_positives_or_not = is_incremental_mode ? argv[8] : argv[7];
+    if (is_incremental_mode)
+      load_factor_with_fid(input_file, output_file, edges_filename,
+                           atoi(func_id), atoi(num_vars),
+                           &are_positives_or_not);
     else
-      load_factor(argv[2], argv[3], atoi(argv[4]), atoi(argv[5]), &argv[7]);
+      load_factor(input_file, output_file, atoi(func_id), atoi(num_vars),
+                  &are_positives_or_not);
   } else if (app.compare("active") == 0) {
-    load_active(argv[2], argv[3]);
+    load_active(input_file, output_file);
   } else if (app.compare("domain") == 0) {
-    load_domain(argv[2], argv[3]);
+    load_domain(input_file, output_file);
   } else {
     std::cerr << "Unsupported type" << std::endl;
     exit(1);
