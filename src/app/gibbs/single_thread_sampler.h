@@ -17,36 +17,14 @@ namespace dd{
     // factor graph
     FactorGraph * const p_fg;
 
-    // positive and negative potential for boolean variables
-    // NOTE In the context of this file and single_thread_sampler.cpp,
-    // a potential for a variable value or proposal means the potential of the
-    // factors the variable connects to 
-    // TODO: these shouldn't be class members
-    double potential_pos;
-    double potential_neg;
-
-    double potential_pos_freeevid;
-    double potential_neg_freeevid;
-
-    // not used
-    double proposal_freevid;
-    double proposal_fixevid;
-
     // random number
-    double r;
     unsigned short p_rand_seed[3];
-    double * const p_rand_obj_buf;
 
-    // potentials for each possible value a variable takes on 
-    // (used for multinomial), see .cpp for more detail
-    // TODO: this shouldn't be a class member
-    std::vector<double> varlen_potential_buffer;
+    // potential for each proposals for multinomial
+    std::vector<double> varlen_potential_buffer_;
 
     // these are used for calculating potentials and probabilities
     // see single_thread_sampler.cpp for more detail
-    // TODO: these shouldn't be class members
-    double sum;
-    double acc;
     int multi_proposal;
 
     bool sample_evidence;

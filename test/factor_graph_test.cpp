@@ -23,11 +23,21 @@ class FactorGraphTest : public testing::Test {
   FactorGraphTest() : fg(dd::FactorGraph(18, 18, 1, 18)) {}
 
   virtual void SetUp() {
+    system(
+        "./text2bin variable test/biased_coin/variables.tsv "
+        "test/biased_coin/graph.variables");
+    system(
+        "./text2bin factor test/biased_coin/factors.tsv "
+        "test/biased_coin/graph.factors 4 1 0 "
+        "1");
+    system(
+        "./text2bin weight test/biased_coin/weights.tsv "
+        "test/biased_coin/graph.weights");
     const char *argv[21] = {"dw",      "gibbs",
-                            "-w",      "./test/coin/graph.weights",
-                            "-v",      "./test/coin/graph.variables",
-                            "-f",      "./test/coin/graph.factors",
-                            "-m",      "./test/coin/graph.meta",
+                            "-w",      "./test/biased_coin/graph.weights",
+                            "-v",      "./test/biased_coin/graph.variables",
+                            "-f",      "./test/biased_coin/graph.factors",
+                            "-m",      "./test/biased_coin/graph.meta",
                             "-o",      ".",
                             "-l",      "100",
                             "-i",      "100",

@@ -31,14 +31,14 @@ dd::FactorGraph::FactorGraph(long _n_var, long _n_factor, long _n_weight,
       variables(new Variable[_n_var]),
       factors(new Factor[_n_factor]),
       weights(new Weight[_n_weight]),
+      old_weight_values(NULL),
       compact_factors(new CompactFactor[_n_edge]),
       compact_factors_weightids(new int[_n_edge]),
       factor_ids(new long[_n_edge]),
       vifs(new VariableInFactor[_n_edge]),
       infrs(new InferenceResult(_n_var, _n_weight)),
       sorted(false),
-      safety_check_passed(false),
-      old_weight_values(NULL) {}
+      safety_check_passed(false) {}
 
 void dd::FactorGraph::copy_from(const FactorGraph *const p_other_fg) {
   // copy each member from the given graph
@@ -82,25 +82,36 @@ long dd::FactorGraph::get_multinomial_weight_id(
   /**
    * The weight ids are aligned in a continuous region according
    * to the numerical order of variable values.
-   * Say for two variables v1, v2, v3, with cardinality d. The numerical value
-   * is
-   * v1 * d^2 + v2 * d + v3.
+   * For example, for variable assignment indexes i1, ..., ik with cardinality
+   * d1, ..., dk
+   * The weight index is
+   * (...(((i1 * d2) + i2) * d3 + i3) * d4 + ...) * dk + ik
    */
   long weight_offset = 0;
   // for each variable in the factor
   for (long i = fs.n_start_i_vif; i < fs.n_start_i_vif + fs.n_variables; i++) {
     const VariableInFactor &vif = vifs[i];
+    Variable &variable = variables[vif.vid];
     if (vif.vid == vid) {
-      weight_offset =
-          weight_offset * (variables[vif.vid].upper_bound + 1) + proposal;
+      weight_offset = weight_offset * variable.cardinality +
+                      variable.get_domain_index(proposal);
     } else {
-      weight_offset = weight_offset * (variables[vif.vid].upper_bound + 1) +
-                      assignments[vif.vid];
+      weight_offset = weight_offset * variable.cardinality +
+                      variable.get_domain_index((int)assignments[vif.vid]);
     }
   }
-  long base_offset = &fs - compact_factors;  // note c++ will auto scale by
-                                             // sizeof(CompactFactor)
-  return *(compact_factors_weightids + base_offset) + weight_offset;
+
+  long weight_id = 0;
+  switch (fs.func_id) {
+    case FUNC_SPARSE_MULTINOMIAL:
+      weight_id = factors[fs.id].weight_ids[weight_offset];
+      break;
+    case FUNC_MULTINOMIAL:
+      weight_id = *(compact_factors_weightids + (&fs - compact_factors)) +
+                  weight_offset;
+      break;
+  }
+  return weight_id;
 }
 
 void dd::FactorGraph::update_weight(const Variable &variable) {
@@ -236,6 +247,8 @@ void dd::FactorGraph::load(const CmdParser &cmd, const bool is_quiet, int inc) {
     std::cout << "LOADED FACTORS: #" << n_loaded << std::endl;
   }
 
+  read_domains(cmd.domain_file, *this);
+
   if (inc) {
     // sort edges
     // NOTE This is very important, as read_edges assume variables,
@@ -362,7 +375,7 @@ void dd::FactorGraph::organize_graph_by_edge() {
     variable.n_start_i_factors = c_edge;
     if (variable.domain_type == DTYPE_MULTINOMIAL) {
       variable.n_start_i_tally = ntallies;
-      ntallies += variable.upper_bound - variable.lower_bound + 1;
+      ntallies += variable.cardinality;
     }
     for (const long &fid : variable.tmp_factor_ids) {
       factor_ids[c_edge] = fid;

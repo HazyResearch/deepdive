@@ -4,6 +4,7 @@
 *.o
 dw
 dw_test
+text2bin
 
 # Compiled Dynamic libraries
 *.so
@@ -20,5 +21,12 @@ lib/
 # others
 tags
 .DS_Store
-inference_result.out*
 *.json
+
+# test artifacts
+inference_result.out*
+test/*/*.bin
+test/*/graph.variables
+test/*/graph.weights
+test/*/graph.factors
+test/*/graph.domains

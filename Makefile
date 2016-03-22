@@ -1,6 +1,6 @@
 # Makefile for sampler
 
-.DEFAULT_GOAL := $(PROGRAM)
+.DEFAULT_GOAL := all
 
 # common compiler flags
 CXXFLAGS = -std=c++0x -Wall -fno-strict-aliasing
@@ -56,18 +56,24 @@ HEADERS += $(wildcard src/*.h src/*/*.h src/**/*.h src/*/*/*.hxx)
 # test files
 TEST_SOURCES += test/test.cpp
 TEST_SOURCES += test/FactorTest.cpp
-TEST_SOURCES += test/LogisticRegressionTest.cpp
 TEST_SOURCES += test/binary_parser_test.cpp
 TEST_SOURCES += test/loading_test.cpp
 TEST_SOURCES += test/factor_graph_test.cpp
 TEST_SOURCES += test/sampler_test.cpp
-TEST_SOURCES += test/multinomial.cpp
 TEST_OBJECTS = $(TEST_SOURCES:.cpp=.o)
 TEST_PROGRAM = $(PROGRAM)_test
 # test files need gtest
 $(TEST_OBJECTS): CXXFLAGS += -I./lib/gtest-1.7.0/include/
 $(TEST_PROGRAM): LDFLAGS += -L./lib/gtest/
 $(TEST_PROGRAM): LDLIBS += -lgtest
+
+# source files for other utilities
+TEXT2BIN_SOURCES += src/io/text2bin.cpp
+TEXT2BIN_OBJECTS = $(TEXT2BIN_SOURCES:.cpp=.o)
+TEXT2BIN_PROGRAM = text2bin
+
+all: $(PROGRAM) $(TEXT2BIN_PROGRAM)
+.PHONY: all
 
 # how to link our sampler
 $(PROGRAM): $(OBJECTS)
@@ -76,6 +82,10 @@ $(PROGRAM): $(OBJECTS)
 # how to link our sampler unit tests
 $(TEST_PROGRAM): $(TEST_OBJECTS) $(filter-out src/main.o,$(OBJECTS))
 	$(CXX) -o $@ $(LDFLAGS) $^ $(LDLIBS)
+
+# how to link the format converters
+$(TEXT2BIN_PROGRAM): $(TEXT2BIN_OBJECTS)
+	$(CXX) -o $@ $(LDFLAGS) $^
 
 # how to compile each source
 %.o: %.cpp
@@ -105,7 +115,7 @@ dep:
 
 # how to clean
 clean:
-	rm -f $(PROGRAM) $(OBJECTS) $(TEST_PROGRAM) $(TEST_OBJECTS)
+	rm -f $(PROGRAM) $(OBJECTS) $(TEST_PROGRAM) $(TEST_OBJECTS) $(TEXT2BIN_PROGRAM) $(TEXT2BIN_OBJECTS)
 .PHONY: clean
 
 # how to test
@@ -113,7 +123,7 @@ test: unit-test end2end-test
 unit-test: $(TEST_PROGRAM)
 	./$(TEST_PROGRAM)
 PATH := $(shell pwd)/test/bats/bin:$(PATH)
-end2end-test: $(PROGRAM)
+end2end-test: $(PROGRAM) $(TEXT2BIN_PROGRAM)
 	bats test/*.bats
 .PHONY: test unit-test end2end-test
 
@@ -126,5 +136,14 @@ else
 endif
 endif
 format:
-	$(CLANG_FORMAT) -i $(SOURCES) $(TEST_SOURCES) $(HEADERS)
+	$(CLANG_FORMAT) -i $(SOURCES) $(TEST_SOURCES) $(TEXT2BIN_SOURCES) $(HEADERS)
 .PHONY: format
+
+# how to quickly turn actual test output into expected ones
+actual-expected:
+	for actual in test/*/*.bin; do \
+	    expected="$$actual".txt; \
+	    [[ -e "$$expected" ]] || continue; \
+	    xxd "$$actual" >"$$expected"; \
+	done
+.PHONY: actual-expected

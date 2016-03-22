@@ -22,6 +22,8 @@ CmdParser::CmdParser(std::string _app_name) {
         "w", "weights", "weights file", false, "", "string", *cmd_);
     output_folder_ = new TCLAP::ValueArg<std::string>(
         "o", "outputFile", "Output Folder", false, "", "string", *cmd_);
+    domain_file_ = new TCLAP::ValueArg<std::string>(
+        "", "domains", "Multinomial domains", false, "", "string", *cmd_);
 
     original_folder_ = new TCLAP::ValueArg<std::string>(
         "r", "ori_folder", "Folder of original factor graph", false, "",
@@ -90,6 +92,7 @@ void CmdParser::parse(int argc, char **argv) {
   edge_file = edge_file_->getValue();
   weight_file = weight_file_->getValue();
   output_folder = output_folder_->getValue();
+  domain_file = domain_file_->getValue();
 
   delta_folder = delta_folder_->getValue();
   original_folder = original_folder_->getValue();
