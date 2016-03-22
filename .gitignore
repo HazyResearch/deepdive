@@ -6,6 +6,9 @@ dw
 dw_test
 text2bin
 
+# Compiled Dependency files
+*.d
+
 # Compiled Dynamic libraries
 *.so
 *.dylib
