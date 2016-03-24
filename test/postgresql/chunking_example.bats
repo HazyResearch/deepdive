@@ -12,7 +12,7 @@ get_f1score() {
 
 run_chunking_example() {
     cd "$BATS_TEST_DIRNAME"/chunking_example || skip
-    DEEPDIVE_CONFIG_EXTRA='deepdive.calibration.holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT dd_id FROM chunk WHERE word_id > '${SUBSAMPLE_NUM_WORDS_TRAIN}'"' \
+    DEEPDIVE_CONFIG_EXTRA='deepdive.calibration.holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT dd_id FROM dd_variables_chunk WHERE word_id > '${SUBSAMPLE_NUM_WORDS_TRAIN}'"' \
     deepdive compile
     deepdive model weights init
     deepdive redo process/init/app data/model/probabilities

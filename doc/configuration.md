@@ -404,7 +404,7 @@ The available directives are:
 
     ```
     calibration {
-      holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT id FROM mytable WHERE predicate"
+      holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT dd_id FROM dd_variables_mytable WHERE predicate"
     }
     ```
 

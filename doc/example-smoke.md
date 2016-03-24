@@ -97,12 +97,12 @@ deepdive sql "SELECT * FROM person_smokes_inference"
 ```
 
 ```
- person_id | id | label | category | expectation
------------+----+-------+----------+-------------
-         4 |  9 |       |        1 |       0.643
-         2 |  7 |       |        1 |       0.506
-         6 | 11 |       |        1 |       0.468
-         5 | 10 |       |        1 |       0.451
+ person_id | dd_id | label | category | expectation
+-----------+-------+-------+----------+-------------
+         4 |     9 |       |        1 |       0.643
+         2 |     7 |       |        1 |       0.506
+         6 |    11 |       |        1 |       0.468
+         5 |    10 |       |        1 |       0.451
 (4 rows)
 
 ```
@@ -112,17 +112,17 @@ deepdive sql "SELECT * FROM person_has_cancer_inference"
 ```
 
 ```
- person_id | id | label | category | expectation
------------+----+-------+----------+-------------
-         3 |  2 |       |        1 |       0.635
-         1 |  0 |       |        1 |       0.614
-         6 |  5 |       |        1 |        0.57
-         2 |  1 |       |        1 |       0.563
-         4 |  3 |       |        1 |       0.563
-         5 |  4 |       |        1 |       0.551
+ person_id | dd_id | label | category | expectation
+-----------+-------+-------+----------+-------------
+         3 |     2 |       |        1 |       0.635
+         1 |     0 |       |        1 |       0.614
+         6 |     5 |       |        1 |        0.57
+         2 |     1 |       |        1 |       0.563
+         4 |     3 |       |        1 |       0.563
+         5 |     4 |       |        1 |       0.551
 (6 rows)
 
 ```
 
-The `id` column is for internal usage and can be ignored by the user and `person_id` is the user defined identifier in the input data.
+The `dd_id` column is for internal usage and can be ignored by the user and `person_id` is the user defined identifier in the input data.
 You can see that DeepDive uses the given data and inference rules to predict the probability of the person being a smoker or having cancer in the `expectation` column.

@@ -27,14 +27,14 @@ deepdive.calibration.holdout_fraction: 0.25
 ### Custom holdout query
 
 DeepDive also supports a SQL query to define the holdout set.
-A custom holdout query must insert the internal `id` column of all variables that are to be held out into the `dd_graph_variables_holdout` table through an arbitrary SQL.
+A custom holdout query must insert the internal `dd_id` column of all variables that are to be held out into the `dd_graph_variables_holdout` table through an arbitrary SQL.
 
 For example, a custom holdout query can be specified as follows in `deepdive.conf`:
 
 ```hocon
 deepdive.calibration.holdout_query: """
     INSERT INTO dd_graph_variables_holdout(variable_id)
-    SELECT id
+    SELECT dd_id
     FROM mytable
     WHERE predicate
 """
