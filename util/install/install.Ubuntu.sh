@@ -14,24 +14,56 @@ install__deepdive_build_deps() {
     set -x
     sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test  # for gcc >= 4.8 on Precise (12.04)
     sudo apt-get update
-    sudo apt-get install -qy git rsync bzip2 libbz2-dev xz-utils build-essential flex make default-jdk
-    sudo apt-get install -qy ed  # mindbender
-    sudo apt-get install -qy gcc-4.8 g++-4.8 cmake unzip libnuma-dev  # sampler
+    build_deps=(
+        build-essential
+        bash
+        coreutils
+        git
+        make
+        rsync
+        bzip2
+        libbz2-dev
+        xz-utils
+        flex
+        default-jdk
+        sed
+        mawk
+        grep
+        bc
+        perl
+        python-software-properties
+        # mindbender
+        ed
+        # sampler
+        gcc-4.8
+        g++-4.8
+        cmake
+        unzip
+        libnuma-dev
+    )
+    sudo apt-get install -qy "${build_deps[@]}"
 }
 
 install__deepdive_runtime_deps() {
     set -x
     # install all runtime dependencies for DeepDive
     sudo apt-get update
-
-    # Many dependencies are already available in TravisCI
-    if [ -z "${TRAVIS:-}" ]; then
-        # install dependencies for deepdive
-        sudo apt-get install -qy coreutils python-software-properties default-jre-headless perl libltdl7
-    fi
-
-    # install additional packages for deepdive
-    sudo apt-get install -qy gnuplot bc
+    runtime_deps=(
+        bash
+        coreutils
+        make
+        rsync
+        bc
+        sed
+        grep
+        mawk
+        perl
+        python-software-properties
+        default-jre-headless
+        gnuplot
+        libltdl7  # for graphviz
+    )
+    sudo apt-get install -qy "${runtime_deps[@]}"
 }
 
 install_postgres_xl() {

@@ -1,6 +1,8 @@
 # build byproducts
 /dist
 /.build
+/.travis
+/.travis.tar
 /.github-release-assets
 /deepdive-*.tar.gz
 

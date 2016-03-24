@@ -5,7 +5,14 @@ set -eu
 
 # ensure buildkit submodule is there
 here=$(dirname "$0")
-[[ -e "$here"/buildkit/.git ]] || git submodule update --init "${here#$PWD/}"/buildkit
+Submodule="${here#$PWD/}"/buildkit
+[[ -e "$here"/buildkit/.git ]] || git submodule update --init "$Submodule"
+! grep -qv '^ ' <(git submodule status "$Submodule") || {
+    echo "# ERROR: submodule $Submodule has different commit checked out, retry after running either:"
+    echo "  git submodule update $Submodule  # to drop changes and checkout the recorded one, or:"
+    echo "  git add $Submodule               # to use the currently checked out one"
+    false
+} >&2
 cd "$here"
 
 # prepare runtime dependencies to bundle

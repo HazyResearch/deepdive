@@ -66,25 +66,25 @@ pids_command=() pids_load=() pids_unload=()
 if [[ -n $output_relation && -n $input_sql ]]; then # process with input from/output to database
     for i in $(seq $num_processes); do
         DEEPDIVE_CURRENT_PROCESS_INDEX=$i \
-        "$SHELL" -c "$command" <process-$i.input >process-$i.output &
+        bash -c "$command" <process-$i.input >process-$i.output &
         pids_command+=($!)
     done
 elif [[ -n $input_sql ]]; then # input-only process
     for i in $(seq $num_processes); do
         DEEPDIVE_CURRENT_PROCESS_INDEX=$i \
-        "$SHELL" -c "$command" <process-$i.input &
+        bash -c "$command" <process-$i.input &
         pids_command+=($!)
     done
 elif [[ -n $output_relation ]]; then # output-only process
     for i in $(seq $num_processes); do
         DEEPDIVE_CURRENT_PROCESS_INDEX=$i \
-        "$SHELL" -c "$command" >process-$i.output &
+        bash -c "$command" >process-$i.output &
         pids_command+=($!)
     done
 else # neither output_relation nor input_sql specified
     for i in $(seq $num_processes); do
         DEEPDIVE_CURRENT_PROCESS_INDEX=$i \
-        "$SHELL" -c "$command" &
+        bash -c "$command" &
         pids_command+=($!)
     done
 fi
