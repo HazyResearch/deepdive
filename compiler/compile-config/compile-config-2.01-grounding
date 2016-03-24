@@ -24,36 +24,10 @@ def factorWeightDescriptionSqlExpr:
 def multinomialFactorWeightCategoriesDescriptionSqlExpr:
     # to serialize category values describing an individual multinomial weight
     [ ( .function_.variables[]
-    | .columnId as $columnIdForThisVar
+    | .columnPrefix as $columnPrefixForThisVar
     | ( .schema.variablesCategoryColumns[]
-    | "\($columnIdForThisVar)_\(.)" | asSqlIdent )
+    | "\($columnPrefixForThisVar)\(.)" | asSqlIdent )
     ) ] | join(" ||'\t'|| ")
-    ;
-
-# generate a SQL CTE for redefining user's variable table names to have id columns with joins
-# necessary for .deepdive.inference.factors.*.input_query as well as .deepdive.calibration.holdout_query
-def withRedefinitionsWithJoinsForIdColumns:
-    if length > 0 then "WITH \(
-        [ .[]
-        | "\(.variablesTable | asSqlIdent) AS (\n\(
-            { SELECT:
-                [ ( .variablesKeyColumns[], deepdiveVariableIdColumn
-                | { alias: ., table: "i", column: . } )
-                # XXX add these back on demand for the cases where inference rule uses them
-                #, ( .variablesCategoryColumns[]
-                #| { alias: ., table: "v", column: . } )
-                ]
-            , FROM: { alias: "i", table: .variablesIdsTable }
-            #, JOIN:
-            #    [ { INNER: { alias: "v", table: .variablesTable  }
-            #      , ON: { and: [ .variablesKeyColumns[]
-            #                   | { eq: [ { table: "v", column: . }
-            #                           , { table: "i", column: . } ]
-            #                     } ] }
-            #      } ]
-            } | asSql)\n)"
-        ] | join("\n   , "))" | "\n\(.)\n----\n"
-    else "" end
     ;
 
 .deepdive_ as $deepdive
@@ -213,9 +187,7 @@ def withRedefinitionsWithJoinsForIdColumns:
             #
         \([ if $deepdive.calibration.holdout_query then
             # run user holdout query if configured
-            "\($deepdive.schema.variables_
-                | withRedefinitionsWithJoinsForIdColumns
-            )\($deepdive.calibration.holdout_query)"
+            $deepdive.calibration.holdout_query
           else
             # otherwise, randomly select from evidence variables of each variable table
             $deepdive.schema.variables_[] | "
@@ -234,9 +206,7 @@ def withRedefinitionsWithJoinsForIdColumns:
           end
         , if $deepdive.calibration.observation_query then
             # run user holdout query if configured
-            "\($deepdive.schema.variables_
-                | withRedefinitionsWithJoinsForIdColumns
-            )\($deepdive.calibration.holdout_query)"
+            $deepdive.calibration.holdout_query
           else empty
           end
         ] | map("deepdive sql \(asPrettySqlArg)") | join("\n"))
@@ -394,18 +364,15 @@ def withRedefinitionsWithJoinsForIdColumns:
 ## factor/*/materialize
 # Each inference rule's SQL query is run to materialize the factors and the
 # distinct weights used in them.
-| .deepdive_.execution.processes += merge($deepdive.inference.factors_[]
-    | [ .input_[]
-      | ltrimstr("data/")
-      | $deepdive.schema.variables_byName[.]
-      | select(type != "null")
-      ] as $schemaVariablesForThisFactor
-    | {
+| .deepdive_.execution.processes += merge($deepdive.inference.factors_[] | {
     # add a process for grounding factors
     "process/grounding/factor/\(.factorName)/materialize": {
         # materializing each factor requires the dependent variables to have their id assigned
         dependencies_: [
-            $schemaVariablesForThisFactor[]
+            .input_[]
+            | ltrimstr("data/")
+            | $deepdive.schema.variables_byName[.]
+            | select(type != "null")
             # the involved variables must have their ids all assigned
             | "process/grounding/variable/\(.variableName)/assign_id"?
         ],
@@ -421,16 +388,15 @@ def withRedefinitionsWithJoinsForIdColumns:
 
             # materialize factors using user input_query that pulls in assigned ids to involved variables
             deepdive create table \(.factorsTable | @sh) as \(
-                # allow .input_query to refer to the assigned variable ids by redefining the variable table names with SQL CTE
+                # FIXME materializing the factor table is in fact unnecessary/not-so-critical/unhelpful
+                # since we can evaluate it later directly while dumping, and finding all distinct weight parameters
+                # uses a stricter projection but may lose the query optimization opportunity by this materialization
                 { SELECT:
-                    [ ( .function_.variables[] | { table: "F", column: .columnId } )
-                    , ( .weight_.params[]      | { table: "F", column: . } )
+                    [ ( .function_.variables[] | { table: "Q", column: .columnId } )
+                    , ( .weight_.params[]      | { table: "Q", column: . } )
                     ]
                 , DISTINCT: true  # XXX maybe we should assume user is going to be make this true
-                , FROM: [ { alias: "F", sql:
-                    "\($schemaVariablesForThisFactor
-                        | withRedefinitionsWithJoinsForIdColumns
-                    )\(.input_query)" } ]
+                , FROM: [ { alias: "Q", sql: .input_query } ]
                 } | asSql | asPrettySqlArg)
 
             \(( { SELECT:
@@ -469,45 +435,47 @@ def withRedefinitionsWithJoinsForIdColumns:
                 # considering all the exact combintations of category values present in the factors
                 # assuming they'll be sparse
                 deepdive create table \(.weightsTable | @sh) as \(
+                    # NOTE Instead of having to join the variable tables back with the factor table just materialized to find the
+                    # exact category column combinations, we can simply start from the input query and project the needed columns.
                     { SELECT:
                         # weight parameters
-                        [ ( .weight_.params[] | { column: . } )
-                        # include category columns for every categorical variable
+                        [ ( .weight_.params[] | { table: "Q", column: . } )
+                        # and the category columns of every categorical variable,
+                        # projected from the factor's input_query following the naming convention
                         , ( .function_.variables[]
-                        | .columnId as $columnIdForThisVar
+                        | .columnPrefix as $columnPrefixForThisVar
                         | .schema.variablesCategoryColumns[]
-                        | { alias: "\($columnIdForThisVar)_\(.)", table: "v.\($columnIdForThisVar)", column: . } )
+                        | { alias: "\($columnPrefixForThisVar)\(.)", table: "\($columnPrefixForThisVar)v", column: . } )
                         # weight attributes
                         , { alias: "isfixed"  , expr: .weight_.is_fixed      }
                         , { alias: "initvalue", expr: .weight_.init_value    }
                         , { alias: "wid"      , expr: "CAST(NULL AS BIGINT)" } # to be assigned later by the assign_weight_id process
                         ]
                     , DISTINCT: true  # XXX this is inevitable
-                    # weights are exploded for the factor's variables' category values
-                    , FROM: [ { alias: "f", table: .factorsTable } ]
-                    # FIXME joins below can go away if DDlog could project them as well in the .input_query
-                    # or we could inject those pushed-down projections if it at least compiled into a sql.jq object
+                    , FROM: [ { alias: "Q", sql: .input_query } ]
                     , JOIN:
-                        [ ( .function_.variables[]
-                        | .columnId as $columnIdForThisVar
-                        | { INNER: { alias: "i.\($columnIdForThisVar)", table: .schema.variablesIdsTable }
-                          , ON: { eq: [ { table: "f"                          , column: $columnIdForThisVar }
-                                      , { table: "i.\($columnIdForThisVar)", column: deepdiveVariableIdColumn } ] }
-                          }
-                        , { INNER: { alias: "v.\($columnIdForThisVar)", table: .schema.variablesTable }
-                          , ON: [ ( .schema.variablesKeyColumns[]
-                                | { eq: [ { table: "v.\($columnIdForThisVar)", column: . }
-                                        , { table: "i.\($columnIdForThisVar)", column: . } ] } ) ] }
-                        ) ]
+                        # FIXME To avoid these joins, it should be much better to rewrite the .input_query to project the category
+                        # columns along with the weight parameters directly from the variable tables, rather than joining a reduced
+                        # result back with the original variablesTables. However, this requires .input_query to be structured and
+                        # hence a lot of change from both DDlog compiler and the user.
+                        [ .function_.variables[]
+                        | .columnPrefix as $columnPrefixForThisVar
+                        | { INNER: { alias: "\($columnPrefixForThisVar)v", table: .schema.variablesTable }
+                          , ON: [ .schema.variablesKeyColumns[]
+                                | { eq: [ { table: "\($columnPrefixForThisVar)v", column: "\(.)" }
+                                        , { table: "Q", column: "\($columnPrefixForThisVar)\(.)" }
+                                        ] }
+                                ] }
+                        ]
                     # NOTE We need/want ORDER_BY here because we want the weight ids to be ordered exactly by their category
                     # values, so we can avoid global ordering of the entire join of factor and weight later when dumping the
                     # factors to produce a well ordered list of weight ids.
                     , ORDER_BY:
                         # order by category columns for every categorical variable
                         [ ( .function_.variables[]
-                        | .columnId as $columnIdForThisVar
+                        | .columnPrefix as $columnPrefixForThisVar
                         | .schema.variablesCategoryColumns[]
-                        | { expr: { column: "\($columnIdForThisVar)_\(.)" } } )
+                        | { expr: { column: "\($columnPrefixForThisVar)\(.)" } } )
                         ]
                     } | asSql | asPrettySqlArg)
             fi
@@ -622,9 +590,9 @@ def withRedefinitionsWithJoinsForIdColumns:
                     | { column: ., table: "wg" } )
                     # include category columns for every categorical variable
                     , ( .function_.variables[]
-                    | .columnId as $columnIdForThisVar
+                    | .columnPrefix as $columnPrefixForThisVar
                     | .schema.variablesCategoryColumns[]
-                    | { alias: "\($columnIdForThisVar)_\(.)", table: "c.\($columnIdForThisVar)", column: "_\(.)" } )
+                    | { alias: "\($columnPrefixForThisVar)\(.)", table: "\($columnPrefixForThisVar)c", column: "_\(.)" } )
                     # weight attributes
                     , { column: "isfixed"  , table: "wg" }
                     , { column: "initvalue", table: "wg" }
@@ -639,7 +607,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                                         } | asSql)) + "
                                 end
                                 # and current variable's category id is added as the least significant digit
-                                + ({ table: "c.\(.[i].columnId)", column: "cid" } | asSqlExpr)
+                                + ({ table: "\(.[i].columnPrefix)c", column: "cid" } | asSqlExpr)
                                 ;
                             .function_.variables | offsetExpr(length-1)
                         ))" }
@@ -648,17 +616,11 @@ def withRedefinitionsWithJoinsForIdColumns:
                     [ { alias: "wg", table: .weightGroupsTable }
                     # cross join each weight with the categories of all involved categorical variables
                     , ( .function_.variables[]
-                    | .columnId as $columnIdForThisVar
-                    | { alias: "c.\($columnIdForThisVar)", table: .schema.variablesCategoriesTable } )
+                    | .columnPrefix as $columnPrefixForThisVar
+                    | { alias: "\($columnPrefixForThisVar)c", table: .schema.variablesCategoriesTable } )
                     ]
-                # NOTE This ordering is unncessary because the wid is robust from ordering, relying on their cids only.
-                #, ORDER_BY:
-                #    # order by category columns for every categorical variable
-                #    [ ( .function_.variables[]
-                #    | .columnId as $columnIdForThisVar
-                #    | .schema.variablesCategoryColumns[]
-                #    | { expr: { column: "\($columnIdForThisVar)_\(.)" } } )
-                #    ]
+                # NOTE No ordering with the category columns is necessary here because the wid can be determined as a linear
+                # combination of the corresponding cids.
                 } | asSql | @sh)
             else
                 # assign weight ids according to the partition as usual
@@ -757,7 +719,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                         ]
                     , FROM:
                         [ { alias: "f", table: .factorsTable }
-                        , { alias: "w", table: .weightGroupsTable }  # NOTE that we only dump one weight id per group
+                        , { alias: "w", table: .weightGroupsTable }  # NOTE that we only dump the first weight id per factor referring to the entire group
                         ]
                     , WHERE:
                         [ ( .weight_.params[]
@@ -771,52 +733,36 @@ def withRedefinitionsWithJoinsForIdColumns:
                     echo \(
                     { SELECT:
                         [ ( .function_.variables[]
-                        | { table: "f", column: .columnId } )
+                        | { table: "Q", column: .columnId } )
                         , { alias: "num_weights", expr: "COUNT(w.wid)" }
+                        # NOTE Putting an ORDER_BY here (in fact as a subquery for the GROUP_BY) is ludicruous since this is basically
+                        # exploding the data and then sorting it just to make the weight id ARRAYs be ordered in a particular way.
+                        # Keeping the weight ids ordered and relying on ARRAY_AGG(w.wid ORDER BY w.wid) is better.
                         , { alias: "weight_ids" , expr: "ARRAY_AGG(w.wid ORDER BY w.wid)" }
                         ]
-                    , FROM:
-                        [ { alias: "w", table: .weightsTable }
-                        , { alias: "f", table: .factorsTable }
-                        ]
+                    , FROM: [ { alias: "Q", sql: .input_query } ]
                     , JOIN:
-                        # FIXME joins below can go away if .factorsTable just duplicate these columns all from the "/materialize" process
+                        # FIXME similar to .weightsTable creation in */materialize process, these joins should go away with .input_query rewriting
                         [ ( .function_.variables[]
-                        | .columnId as $columnIdForThisVar
-                        | { INNER: { alias: "i.\($columnIdForThisVar)", table: .schema.variablesIdsTable }
-                          , ON: [ { eq: [ { table: "f"                          , column: $columnIdForThisVar }
-                                        , { table: "i.\($columnIdForThisVar)", column: deepdiveVariableIdColumn } ] }
-                                ] }
-                        , { INNER: { alias: "v.\($columnIdForThisVar)", table: .schema.variablesTable }
-                          , ON: [ ( .schema.variablesKeyColumns[]
-                                | { eq: [ { table: "v.\($columnIdForThisVar)", column: . }
-                                        , { table: "i.\($columnIdForThisVar)", column: . } ] } )
+                        | .columnPrefix as $columnPrefixForThisVar
+                        | { INNER: { alias: "\($columnPrefixForThisVar)v", table: .schema.variablesTable }
+                          , ON: [ .schema.variablesKeyColumns[]
+                                | { eq: [ { table: "\($columnPrefixForThisVar)v", column: . }
+                                        , { table: "Q", column: "\($columnPrefixForThisVar)\(.)" }
+                                        ] }
                                 ] } )
+                        # NOTE that this join is inevitable to find the weight ids tied to the factor
+                        , { INNER: { alias: "w", table: .weightsTable }
+                          , ON: [ ( .function_.variables[]
+                                | .columnPrefix as $columnPrefixForThisVar
+                                | ( .schema.variablesCategoryColumns[]
+                                | { eq: [ { table: "w", column: "\($columnPrefixForThisVar)\(.)" }
+                                        , { table: "\($columnPrefixForThisVar)v", column: . } ] } ) )
+                                ] }
                         ]
-                    , WHERE:
-                        [ ( .weight_.params[]
-                        | { eq: [ { table: "w", column: . }
-                                , { table: "f", column: . } ] } )
-                        , ( .function_.variables[]
-                        | .columnId as $columnIdForThisVar
-                        | ( .schema.variablesCategoryColumns[]
-                        | { eq: [ { table: "v.\($columnIdForThisVar)", column: . }
-                                , { table: "w", column: "\($columnIdForThisVar)_\(.)" } ] } ) )
-                        ]
-                    # XXX Putting this ORDER_BY here (as a subquery for the GROUP_BY) is ludicruous since this is basically
-                    # exploding the data and then sorting it just to make the weight id ARRAYs be ordered in a particular way.
-                    # Keeping the weight ids ordered and relying on ARRAY_AGG(w.wid ORDER BY w.wid) is better.
-                    #, ORDER_BY:
-                    #    [ ( .function_.variables[]
-                    #    | { table: "f", column: .columnId } )
-                    #    [ ( .function_.variables[]
-                    #    | .columnId as $columnIdForThisVar
-                    #    | ( .schema.variablesCategoryColumns[]
-                    #    | { expr: { column: "\($columnIdForThisVar)_\(.)" } } ) )
-                    #    ]
                     , GROUP_BY:
                         [ ( .function_.variables[]
-                        | { table: "f", column: .columnId } )
+                        | { table: "Q", column: .columnId } )
                         ]
                     } | asSql | asPrettySqlArg)
                 fi
