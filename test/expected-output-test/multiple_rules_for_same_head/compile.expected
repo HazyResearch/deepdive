@@ -202,7 +202,7 @@ input_query: """
 SELECT R0.dd_id AS "Q.R0.dd_id"
      , R0.x AS "Q.R0.x"
      , R0.x AS "dd_weight_column_0"
-FROM Q R0
+FROM dd_variables_Q R0
    , S R1
 WHERE R1.a = R0.x
   AND R0.x > 1000
@@ -220,7 +220,7 @@ deepdive.inference.factors.inf1_istrue_Q {
 input_query: """
 SELECT R0.dd_id AS "Q.R0.dd_id"
      , R0.x AS "Q.R0.x"
-FROM Q R0
+FROM dd_variables_Q R0
    , S R1
 WHERE R1.a = R0.x
   AND R0.x = 0
@@ -236,10 +236,14 @@ input_relations: [
 
 deepdive.inference.factors.inf_istrue_not_Q {
 input_query: """
-          SELECT R0.id AS "Q.R0.id" 
-          FROM Q R0, S R1
-        WHERE R1.a = R0.x  AND R0.x < 1000"""
-function: """Imply(!Q.R0.label)"""
+SELECT R0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+FROM dd_variables_Q R0
+   , S R1
+WHERE R1.a = R0.x
+  AND R0.x < 1000
+"""
+function: """Imply(!Q.R0.dd_label)"""
 weight: """?"""
 input_relations: [
   Q
@@ -255,8 +259,8 @@ SELECT R0.dd_id AS "Q.R0.dd_id"
      , R1.dd_id AS "Q.R1.dd_id"
      , R1.x AS "Q.R1.x"
      , R0.x AS "dd_weight_column_0"
-FROM Q R0
-   , Q R1
+FROM dd_variables_Q R0
+   , dd_variables_Q R1
    , S R2
    , R R3
    , S R4
@@ -281,8 +285,8 @@ SELECT R0.dd_id AS "Q.R0.dd_id"
      , R0.x AS "Q.R0.x"
      , R1.dd_id AS "Q.R1.dd_id"
      , R1.x AS "Q.R1.x"
-FROM Q R0
-   , Q R1
+FROM dd_variables_Q R0
+   , dd_variables_Q R1
    , S R2
    , R R3
    , S R4
@@ -304,10 +308,22 @@ input_relations: [
 
 deepdive.inference.factors.inf2_imply_Q_Q {
 input_query: """
-          SELECT R0.id AS "Q.R0.id" , R1.id AS "Q.R1.id" 
-          FROM Q R0, Q R1, S R2, R R3, S R4
-        WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x  AND (R0.x + R1.x) > 1000"""
-function: """Imply(Q.R0.label, Q.R1.label)"""
+SELECT R0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+     , R1.dd_id AS "Q.R1.dd_id"
+     , R1.x AS "Q.R1.x"
+FROM dd_variables_Q R0
+   , dd_variables_Q R1
+   , S R2
+   , R R3
+   , S R4
+WHERE R2.a = R0.x
+  AND R3.a = R0.x
+  AND R3.b = R1.x
+  AND R4.a = R1.x
+  AND (R0.x + R1.x) > 1000
+"""
+function: """Imply(Q.R0.dd_label, Q.R1.dd_label)"""
 weight: """10.0"""
 input_relations: [
   Q

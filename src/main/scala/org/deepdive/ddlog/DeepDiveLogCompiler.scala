@@ -93,8 +93,14 @@ class DeepDiveLogCompiler( program : DeepDiveLog.Program, config : DeepDiveLog.C
   // odd has happened.
   def resolveName( v : Variable ) : String = {
     v match { case Variable(v,relName,i) =>
-      if(attrNameForRelationAndPosition contains (relName,i)) {
-        attrNameForRelationAndPosition(relName,i)
+      val relNameNormalized =
+        // Drop deepdivePrefixForVariablesIdsTable.
+        // XXX This is ugly, but no alternative simpler way for now.  We should soon refactor the resolve*() stuffs as well as the QueryCompiler to make it produce an IR that's easier to manipulate post-hoc.
+        if (relName startsWith deepdivePrefixForVariablesIdsTable)
+          relName.substring(DeepDiveLogCompiler.deepdivePrefixForVariablesIdsTable.length)
+        else relName
+      if(attrNameForRelationAndPosition contains (relNameNormalized,i)) {
+        attrNameForRelationAndPosition(relNameNormalized,i)
       } else {
         // for views, columns names are in the form of "column_index"
         return s"column_${i}"
@@ -488,7 +494,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
         // Here we need to select from the bodies atoms as well as the head atoms,
         // which are the variable relations.
         // This is achieved by puting head atoms into the body.
-        val fakeBody        = headAsBody ++ cqBody
+        val fakeBody        = (headAsBody map { h => h.copy(name = s"$deepdivePrefixForVariablesIdsTable${h.name}") }) ++ cqBody
         val fakeCQ          = stmt.q.copy(bodies = List(fakeBody))
         val qc = new QueryCompiler(fakeCQ)
 
@@ -621,6 +627,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   val deepdiveWeightColumnPrefix = "dd_weight_column_"
   val deepdiveVariableIdColumn = "dd_id"
   val deepdiveVariableLabelColumn = "dd_label"
+  val deepdivePrefixForVariablesIdsTable = "dd_variables_"
 
   // entry point for compilation
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {

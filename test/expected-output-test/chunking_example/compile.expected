@@ -85,7 +85,7 @@ SELECT R0.dd_id AS "chunk.R0.dd_id"
      , R0.word_id AS "chunk.R0.word_id"
      , R3.feature AS "dd_weight_column_0"
      , R0.tag AS "dd_weight_column_1"
-FROM chunk R0
+FROM dd_variables_chunk R0
    , words R1
    , tags R2
    , word_features R3
@@ -116,8 +116,8 @@ SELECT R0.dd_id AS "chunk.R0.dd_id"
      , R1.word_id AS "chunk.R1.word_id"
      , R0.tag AS "dd_weight_column_0"
      , R1.tag AS "dd_weight_column_1"
-FROM chunk R0
-   , chunk R1
+FROM dd_variables_chunk R0
+   , dd_variables_chunk R1
    , words R2
    , words R3
    , tags R4
@@ -151,8 +151,8 @@ SELECT R0.dd_id AS "chunk.R0.dd_id"
      , R1.word_id AS "chunk.R1.word_id"
      , R0.tag AS "dd_weight_column_0"
      , R1.tag AS "dd_weight_column_1"
-FROM chunk R0
-   , chunk R1
+FROM dd_variables_chunk R0
+   , dd_variables_chunk R1
    , words R2
    , words R3
    , tags R4

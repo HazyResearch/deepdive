@@ -11,8 +11,8 @@ SELECT R0.dd_id AS "Q.R0.dd_id"
      , R1.dd_id AS "Q.R1.dd_id"
      , R1.x AS "Q.R1.x"
      , R1.x AS "dd_weight_column_0"
-FROM Q R0
-   , Q R1
+FROM dd_variables_Q R0
+   , dd_variables_Q R1
    , R R2
 WHERE R2.a = R0.x
   AND R2.b = R1.x
@@ -33,8 +33,8 @@ SELECT R0.dd_id AS "Q.R0.dd_id"
      , R1.dd_id AS "Q.R1.dd_id"
      , R1.x AS "Q.R1.x"
      , R1.x AS "dd_weight_column_0"
-FROM Q R0
-   , Q R1
+FROM dd_variables_Q R0
+   , dd_variables_Q R1
    , R R2
 WHERE R2.a = R0.x
   AND R2.b = R1.x
