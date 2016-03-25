@@ -10,6 +10,8 @@ set -euo pipefail
 : ${DEEPDIVE_COMPILE_INPUT_JSON:=} # compiling app.ddlog and merging deepdive.conf and schema.json can be skipped by specifying a precompiled deepdive.conf.json
 : ${DEEPDIVE_COMPILE_SKIP_DATAFLOW:=} ${DEEPDIVE_COMPILE_SKIP_CODEGEN:=} # some codegen steps can be disabled
 
+: ${CPPFLAGS:=}  # cpp flags for include/macro expansion
+
 DEEPDIVE_APP=$(find-deepdive-app)
 export DEEPDIVE_APP
 cd "$DEEPDIVE_APP"
@@ -45,12 +47,17 @@ export DEEPDIVE_ERROR_PREFIX="[ERROR] "
 ## compile a full deepdive.conf from source code
 if ! [[ -e $DEEPDIVE_COMPILE_INPUT_JSON ]]; then
 STEP "Parsing DeepDive application ($DEEPDIVE_APP) to generate:"
+# preprocess include/define directives and macro expansions in app.ddlog
+if [[ -r app.ddlog ]]; then
+    STEP " (Preprocessing app.ddlog)"
+    cpp $CPPFLAGS app.ddlog >run/"$compileDir"/app.ddlog
+fi
 STEP " run/compiled/schema.json"
 # compile schema in JSON
 touch run/"$compileDir"/schema.json run/"$compileDir"/deepdive.conf
-if [[ -r app.ddlog ]]; then
+if [[ -r run/"$compileDir"/app.ddlog ]]; then
     STEP "  from app.ddlog"
-    ddlog export-schema app.ddlog
+    ddlog export-schema run/"$compileDir"/app.ddlog
 else
     echo '{}'
 fi |
@@ -65,9 +72,9 @@ fi >run/"$compileDir"/schema.json
 STEP " run/compiled/deepdive.conf"
 {
 # compile DDlog rules
-if [[ -r app.ddlog ]]; then
+if [[ -r run/"$compileDir"/app.ddlog ]]; then
     STEP "  from app.ddlog"
-    ddlog compile app.ddlog
+    ddlog compile run/"$compileDir"/app.ddlog
 fi
 # append user's deepdive.conf
 if [[ -r deepdive.conf ]]; then

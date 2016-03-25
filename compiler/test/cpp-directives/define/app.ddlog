@@ -1,0 +1,4 @@
+#define N 100
+R(x INT).
+
+S(x) :- R(x), x > N.

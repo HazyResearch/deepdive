@@ -1,0 +1,6 @@
+R(x INT).
+#ifdef SOME_MACRO
+S(x) :- R(x), x > SOME_MACRO.
+#else
+S(x) :- R(x).
+#endif
