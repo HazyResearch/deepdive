@@ -50,7 +50,7 @@ STEP "Parsing DeepDive application ($DEEPDIVE_APP) to generate:"
 # preprocess include/define directives and macro expansions in app.ddlog
 if [[ -r app.ddlog ]]; then
     STEP " (Preprocessing app.ddlog)"
-    cpp $CPPFLAGS app.ddlog >run/"$compileDir"/app.ddlog
+    cpphs $CPPFLAGS app.ddlog >run/"$compileDir"/app.ddlog
 fi
 STEP " run/compiled/schema.json"
 # compile schema in JSON

@@ -1,0 +1,8 @@
+Q?(x INT).
+
+# some nested comments
+Q(x) :- S(x).
+
+# include confusing comments
+# x error confusing comments
+#  define confusing comments

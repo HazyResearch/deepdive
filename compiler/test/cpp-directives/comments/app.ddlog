@@ -1,0 +1,7 @@
+# some comments
+#include "a.ddlog"
+
+S(x) :- R(x).
+
+# some more comments
+#include "b.ddlog"

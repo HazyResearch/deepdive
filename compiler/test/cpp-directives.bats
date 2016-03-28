@@ -13,6 +13,12 @@ without_comments() {
     diff -u <(cat a.ddlog app.ddlog b.ddlog | without_comments) <(cat run/compiled/app.ddlog | without_comments)
 }
 
+@test "compiler handles # comments mixed with cpp directives" {
+    cd "${BATS_TEST_FILENAME%.bats}"/comments
+    deepdive compile
+    diff -u <(cat a.ddlog app.ddlog b.ddlog | without_comments) <(cat run/compiled/app.ddlog | without_comments)
+}
+
 @test "compiler supports #define directives" {
     cd "${BATS_TEST_FILENAME%.bats}"/define
     deepdive compile
