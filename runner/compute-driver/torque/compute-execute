@@ -80,6 +80,7 @@ export REMOTE_IN_DIR="$REMOTE_DEEPDIVE_TRANSIENT/remote.in"
 export REMOTE_OUT_DIR="$REMOTE_DEEPDIVE_TRANSIENT/remote.out"
 
 export REMOTE_DEEPDIVE_CWD="$REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME"
+export KRB_DIR=${krb_dir:-"/tmp/krb5cc_${ssh_user}_deepdive"}
 
 # show configuration
 echo "Executing with the following configuration:"
@@ -99,6 +100,11 @@ echo ""
 echo "Session information"
 echo " application id : $LOCAL_USER/$DEEPDIVE_APP -> $APP_ID"
 echo " session id     : $DEEPDIVE_CURRENT_PROCESS_NAME -> $SESSION_ID"
+
+if ! ssh $SSH_INFO "klist -s -c $KRB_DIR &> /dev/null"; then
+  echo "Cannot find Kerberos credentials at $KRB_DIR"
+  echo 'Please run `deepdive compute setup` to initialize Kerberos credentials.'
+fi
 
 # ensure all the directories needed exist in the remote node.
 ssh $SSH_INFO bash -c "'
@@ -155,22 +161,6 @@ ssh_with_env \
   REMOTE_ERR_DIR \
   REMOTE_SH_DIR \
   -- "deepdive compute remote-taskinit"
-
-# Ensure Kerberos authentication is succesful for user. Apparently this is
-# only needed for Mac OS X due to broken implementation of Kerberos.
-if [[ $(uname) = "Darwin" ]]; then
-  KRB_DIR="/tmp/krb5cc_${ssh_user}_deepdive"
-  if ! ssh $SSH_INFO "klist -s -c $KRB_DIR > /dev/null"; then
-    echo "Kerberos credentials either expired or not found in remote node."
-    echo "Please reenter password for $SSH_INFO."
-    ssh -t $SSH_INFO "kinit -r 30d -c $KRB_DIR"
-  else
-    echo "Kerberos credentials found at $SSH_INFO:$KRB_DIR"
-  fi
-else
-  KRB_DIR="__ignore__"
-fi
-export KRB_DIR
 
 # Submit job.
 # This is a hack that supposedly prints out the output of ssh asking for the
