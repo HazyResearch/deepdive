@@ -20,7 +20,7 @@ format=$1; shift
 STEP() { echo >&2 "$@"; }
 
 case $format in
-    tsv|csv)
+    tsj|tsv|csv)
         nsinks=$#
         if [[ $nsinks -gt 1 ]]; then
             STEP "unloading with $nsinks parallel connections: $(escape4sh "$query")"

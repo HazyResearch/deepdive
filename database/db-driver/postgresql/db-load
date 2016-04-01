@@ -16,28 +16,63 @@ table="$table${columns:+($columns)}"
 # load in parallel from multiple sources
 do_load() {
     local sql=$1; shift
+    local mkloadingexpr=$1; shift
     local nsources=$#
     if [[ $nsources -gt 1 ]]; then
         local i=1
         for source; do
+            eval '
             show_progress input_to "loading $table [$i/$nsources]" -- \
-            db-execute "$sql" <"$source" &
+            db-execute "$sql" <'"$("$mkloadingexpr" "$source")"' &
+            '
             let ++i
         done
         wait
     else
         source=$1; shift
+        eval '
         exec show_progress input_to "loading $table" -- \
-        db-execute "$sql" <"$source"
+        db-execute "$sql" <'"$("$mkloadingexpr" "$source")"'
+        '
     fi
 }
 
+copy_option=
+mkloadingexpr=escape4sh
 case $format in
     tsv)
-        do_load "\COPY $table FROM PSTDIN" "$@"
+        ;;
+    tsj)
+        copy_option+=" CSV"
+        sql_types_to_jq_for_tsj2tsv() {
+            # expect type names from STDIN
+            jq -R . |
+            # compile a jq program that parses tab-separated-JSONs and converts into CSV
+            jq -s -r '[ foreach .[] as $type (-1; .+1;
+                    "(.[\(.)]\({
+                        # map certain primitive types to decode JSON, namely strings
+                        TEXT: " | fromjson"
+                    }[$type | ascii_upcase] // ""))"
+                ) ] |
+                "split(\"\\t\") | [\(join(", "))] | @csv"
+                '
+        }
+        mkloadingexpr=primitive_type_handlers
+        primitive_type_handlers() {
+            local s=$1; shift
+            echo " <($(escape4sh jq -R -r "$(db-query "
+                    SELECT data_type
+                    FROM information_schema.columns
+                    WHERE table_name = '$table'
+                    ${columns:+"  AND column_name IN ($(IFS+=','; printf ",'%s'" $columns))"}
+                    ORDER BY ordinal_position
+                " tsv 0 | sql_types_to_jq_for_tsj2tsv)") <$(escape4sh "$s"))"
+        }
         ;;
     csv)
-        do_load "\COPY $table FROM PSTDIN CSV" "$@"
+        copy_option+="CSV"
         ;;
     *) error "$format: unsupported format by PostgreSQL driver" ;;
 esac
+
+do_load "\COPY $table FROM PSTDIN${copy_option:+ $copy_option}" "$mkloadingexpr" "$@"

@@ -11,6 +11,23 @@ header=${1:?No HEADER given}; shift
 
 copy_option=
 case $format in
+    tsj)
+        # Tab-Separated-JSONs format, assuming all column values are already in JSON
+        copy_option+=" CSV"
+        case $header in
+            0) ;;
+            1) copy_option+=" HEADER" ;;
+            *) error "$header: unrecognized value for HEADER"
+        esac
+        copy_option+=" DELIMITER E'\\t'"
+        copy_option+=" QUOTE E'\\b'"
+        copy_option+=" ESCAPE E'\\b'"
+        copy_option+=" NULL 'null'"
+        db-execute "COPY ($sql) TO STDOUT${copy_option:+ $copy_option}" "$@" |
+        # TODO jq -R -r for tojson on TEXT columns
+        jq filter
+        exit $?  # all done, no need to go further
+        ;;
     tsv)
         case $header in
             0) ;;
@@ -24,7 +41,7 @@ case $format in
         esac
         ;;
     csv)
-        copy_option+=" csv"
+        copy_option+=" CSV"
         case $header in
             0) ;;
             1) copy_option+=" HEADER" ;;

@@ -266,6 +266,12 @@ NastyJSON='
     compare_json "$NastyJSON" "$actual"
 }
 
+@test "$DBVARIANT deepdive sql eval format=json works" {
+    jq 'values' <<<"$NastyJSON"
+    actual=$(deepdive sql eval "$NastySQL" format=json)
+    compare_json "$NastyJSON" "$actual"
+}
+
 
 ###############################################################################
 ## a case where NULL is in an array

@@ -5,7 +5,8 @@
 
 | $deepdive.execution.processes | to_entries[]
 | .value.name = .key | .value
-| select(.style == "tsv_extractor")
+| select(.style | test("ts[jv]_extractor"))
+| (.style | rtrimstr("_extractor")) as $format
 | {
     path: "\(.name)/run.sh",
     mode: "+x",
@@ -18,7 +19,7 @@ cd \"$(dirname \"$0\")\"
 \(.before // "")
 
 export DEEPDIVE_CURRENT_PROCESS_NAME=\(.name | @sh)
-export DEEPDIVE_LOAD_FORMAT=tsv
+export DEEPDIVE_LOAD_FORMAT=\($format | @sh)
 
 deepdive compute execute \\
     input_sql=\(.input | @sh) \\
