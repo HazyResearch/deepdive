@@ -19,5 +19,5 @@ if [[ $# -gt 0 ]]; then
     eval "jq --null-input --raw-output $argsExpr '[$jqExpr] | join(\" \")'"
 else
     # without any arguments, escape each line in STDIN
-    sed "s/'/'\\''/g; s/^/'/; s/\$/'/" | tr '\n' ' '
+    sed "s/'/'\\\\''/g; s/^/'/; s/\$/'/" | tr '\n' ' ' | sed 's/ $//'
 fi
