@@ -43,30 +43,14 @@ case $format in
     tsv)
         ;;
     tsj)
-        copy_option+=" CSV"
-        sql_types_to_jq_for_tsj2tsv() {
-            # expect type names from STDIN
-            jq -R . |
-            # compile a jq program that parses tab-separated-JSONs and converts into CSV
-            jq -s -r '[ foreach .[] as $type (-1; .+1;
-                    "(.[\(.)]\({
-                        # map certain primitive types to decode JSON, namely strings
-                        TEXT: " | fromjson"
-                    }[$type | ascii_upcase] // ""))"
-                ) ] |
-                "split(\"\\t\") | [\(join(", "))] | @csv"
-                '
-        }
+        copy_option+=" CSV"  # CSV is better for distinguishing NULLs from empty strings
         mkloadingexpr=primitive_type_handlers
         primitive_type_handlers() {
             local s=$1; shift
-            echo " <($(escape4sh jq -R -r "$(db-query "
-                    SELECT data_type
-                    FROM information_schema.columns
-                    WHERE table_name = '$table'
-                    ${columns:+"  AND column_name IN ($(IFS+=','; printf ",'%s'" $columns))"}
-                    ORDER BY ordinal_position
-                " tsv 0 | sql_types_to_jq_for_tsj2tsv)") <$(escape4sh "$s"))"
+            echo " <($(eval escape4sh exec tsj2fmt csv "$(
+                db-execute "$(IFS+=,; sql_for_column_types "$table" $columns)" |
+                tr a-z A-Z | escape4sh
+            )") <$(escape4sh "$s"))"
         }
         ;;
     csv)

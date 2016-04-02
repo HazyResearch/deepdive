@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# sql_for_column_types -- Generates a SQL query that enumerates types of given table's columns
+# > sql_for_column_types TABLE [COLUMN...]
+##
+set -eu
+
+[[ $# -gt 0 ]] || usage "$0" "Missing TABLE"
+Table=$1; shift
+
+if [[ $# -gt 0 ]]; then
+    for Column; do
+        echo "COPY (
+            SELECT data_type
+            FROM information_schema.columns
+            WHERE table_name = '$Table'
+              AND column_name = '$Column'
+        ) TO STDOUT;"
+    done
+else
+    echo "COPY (
+        SELECT data_type
+        FROM information_schema.columns
+        WHERE table_name = '$Table'
+        ORDER BY ordinal_position
+    ) TO STDOUT;"
+fi
+# TODO escaping each output line may be desirable

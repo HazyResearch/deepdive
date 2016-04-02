@@ -6,7 +6,7 @@
 ##
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-24
-[[ $# -eq 0 ]] || {
+if [[ $# -gt 0 ]]; then
     # construct a jq expression that applies shell escaping for each given argument
     i=0 jqExpr=
     for a; do
@@ -17,4 +17,7 @@
     jqExpr=${jqExpr%, }
     # then run it
     eval "jq --null-input --raw-output $argsExpr '[$jqExpr] | join(\" \")'"
-}
+else
+    # without any arguments, escape each line in STDIN
+    sed "s/'/'\\''/g; s/^/'/; s/\$/'/" | tr '\n' ' '
+fi

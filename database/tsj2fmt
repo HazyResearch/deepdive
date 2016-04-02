@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# tsj2fmt -- Converts tab-separated JSON format to another format for easier consumption by databases, e.g., PostgreSQL
+# > tsj2fmt OUTPUT_FORMAT SQL_TYPE...
+#
+# Supported OUTPUT_FORMAT is tsv, csv.
+#
+# Ensure SQL_TYPEs are all in uppercase.
+##
+set -eu
+
+[[ $# -gt 0 ]] || usage "$0" "Missing OUTPUT_FORMAT"
+OutputFormat=$1; shift
+[[ $# -gt 0 ]] || usage "$0" "At least one SQL_TYPE must be specified"
+
+# for every type name, prepare a jq expression for conversion
+jqExprs= i=0
+for SqlType; do
+    jqExprs+=", (.[$i]"
+    case $SqlType in
+        TEXT)
+            # map certain primitive types to decode JSON, namely strings
+            jqExprs+=' | fromjson'
+            ;;
+        *)
+            # other types can stay intact in JSON, e.g., objects, arrays, numbers
+            jqExprs+=' | if . == "null" then null else . end'
+    esac
+    jqExprs+=")"
+    let ++i
+done
+jqArrayConstructor="[${jqExprs#, }]"
+
+jqOutputFormatting=
+case $OutputFormat in
+    tsv)
+        # TSV needs special handling for null to \N, and @tsv cannot be directly used
+        jqOutputFormatting+=' | map(if type == "null" then "\\N" else [.] | @tsv) | join("\t")'
+        ;;
+    csv)
+        jqOutputFormatting+=' | @csv'
+        ;;
+    *)
+        error "$OutputFormat: unsupported OUTPUT_FORMAT"
+esac
+
+exec jq -R -r 'split("\t") | '"$jqArrayConstructor$jqOutputFormatting"

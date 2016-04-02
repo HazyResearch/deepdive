@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# tsv2tsj -- Converts PostgreSQL TSV lines into TSJ, tab-separated JSONs lines
+#
+# $ tsv2tsj COLUMN_TYPE... <input.tsv >output.tsj
+#
+# The columns in the input TSV should have the same order as the given
+# COLUMN_TYPEs.
+#
+# Currently, only TEXT type is encoded into a JSON string, and other types,
+# such as JSON object, arrays, are kept intact, assuming they are already
+# JSON-encoded in the TSV.  PostgreSQL arrays may get translation in the
+# future.
+##
+set -euo pipefail
+
+[[ $# -gt 0 ]] || usage "$0" "Missing COLUMN_TYPE"
+
+# from given types for columns, compose some lines of Perl that maps PostgreSQL TSV format to JSON
+plStmts=
+for ColumnType; do
+    case $ColumnType in
+        TEXT)
+            plStmts+='print "\t"; print json_string shift;'
+            ;;
+        *)
+            plStmts+='print "\t"; print json_value shift;'
+    esac
+done
+plStmts=${plStmts#'print "\t"; '}
+
+exec perl -Mstrict -e '
+sub map_pgtsv_escape_seqs_to_json($) {
+    my $v = shift;
+    # map octal \OOO and hexadecimal \xHH escape sequences to JSON \uXXXX
+    $v =~ s/(?<!\\)((?:\\\\)*)\\([0-3][0-7]{2})/"$1\\u00".(sprintf "%02x", oct($2))/ge;
+    $v =~ s/(?<!\\)((?:\\\\)*)\\x([0-9a-fA-F]{2})/$1\\u00$2/g;
+    # backslash double quotes
+    $v =~ s/"/\\"/g;
+    # and backslash and the rest of control characters are already escaped
+    $v
+}
+sub json_string($) {
+    my $v = shift;
+    if ($v eq "\\N") { "null" }
+    else { '\''"'\''. (map_pgtsv_escape_seqs_to_json $v) .'\''"'\'' }
+}
+sub json_value($) {
+    my $v = shift;
+    if ($v eq "\\N") { "null" }
+    else { $v }
+}
+while ( <> ) {
+    chomp;
+    @ARGV = split "\t";
+    '"$plStmts"'
+    print "\n";
+}
+'
