@@ -26,10 +26,9 @@ services:
 
 cache:
   directories:
-    - .build/submodule
-    - extern/.build
-    - $HOME/.ivy2/cache
+    - .build
     - .github-release-assets
+    - $HOME/.ivy2/cache
 
 env:
   global:
