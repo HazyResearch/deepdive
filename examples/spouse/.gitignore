@@ -1,7 +1,7 @@
 /input/signalmedia
 /run
 /snapshot
-/udf/bazaar
+/udf/corenlp
 /search
 /mindbender/*.js
 /mindbender/*.js.map

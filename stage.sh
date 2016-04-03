@@ -138,6 +138,7 @@ done
 stage inference/deepdive-model                                    util/
 
 # DeepDive utilities
+stage extern/buildkit/fetch-verify                                util/
 stage util/draw_calibration_plot                                  util/
 stage util/calibration.py                                         util/
 stage util/calibration.plg                                        util/
