@@ -22,3 +22,9 @@
 @test "escape4sh gives empty output for no arguments nor input" {
     [ -z "$(escape4sh </dev/null)" ]
 }
+
+@test "escape4sh handles many arguments correctly" {
+    nargs=100
+    eval "set -- $(seq $nargs | sed 's/^/"arg  /; s/$/"/' | tr '\n' ' ')"
+    diff -u <(printf "found\targ  %s\n" $(seq $nargs)) <(sh -xc "$(escape4sh printf 'found\t%s\n' "$@")")
+}
