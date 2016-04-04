@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # torque/compute-setup -- Undoes tasks performed by compute-setup.
-# $ compute-setup 
+# $ compute-setup
 #
 ##
 set -euo pipefail

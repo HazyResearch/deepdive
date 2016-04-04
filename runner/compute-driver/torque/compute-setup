@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # torque/compute-setup -- Performs necessary setup tasks before compute-execute can be run
-# $ compute-setup 
+# $ compute-setup
 #
 ##
 set -euo pipefail
@@ -30,7 +30,7 @@ if ! ssh $SSH_INFO "type deepdive &> /dev/null"; then
   ssh $SSH_INFO "BRANCH=cf24958 bash <(curl -fsSL git.io/getdeepdive) deepdive_from_source_no_dependencies"
 else
   echo "DeepDive installation found at $ssh_host:$(ssh $SSH_INFO deepdive whereis installed .)"
-fi 
+fi
 
 if ! ssh $SSH_INFO "klist -s -c $KRB_DIR &> /dev/null"; then
   echo "Kerberos credentials either expired or not found in remote node."
