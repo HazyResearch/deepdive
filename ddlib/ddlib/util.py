@@ -3,7 +3,7 @@ import re
 import sys
 from inspect import isgeneratorfunction,getargspec
 import csv
-from StringIO import StringIO
+from io import StringIO
 
 def print_error(err_string):
   """Function to write to stderr"""
@@ -113,7 +113,7 @@ def print_pgtsv_element(x, n, t, d=0):
   # Handle NULLs first
   if x is None:
     if d == 0:
-      return '\N'
+      return r'\N'
     else:
       return ''
 
@@ -153,7 +153,7 @@ class PGTSVPrinter:
         num_rows_declared=len(self.fields), num_rows_found=len(out), row=out,
       ))
     else:
-      print '\t'.join(print_pgtsv_element(x, n, t) for x,(n,t) in zip(out, self.fields))
+      print('\t'.join(print_pgtsv_element(x, n, t) for x,(n,t) in zip(out, self.fields)))
 
 
 # how to get types specified as default values of a function
