@@ -31,7 +31,6 @@ You can install DeepDive and all its dependencies with a single command.
     ```
     ```
     ### DeepDive installer for Mac
-    + curl -fsSL https://github.com/HazyResearch/deepdive/raw/v0.8.x/util/install/install.Mac.sh
     1) deepdive                 5) postgres
     2) deepdive_examples_tests  6) run_deepdive_tests
     3) deepdive_from_release    7) spouse_example

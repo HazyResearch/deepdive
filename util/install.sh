@@ -2,10 +2,10 @@
 # DeepDive Installer
 set -euo pipefail
 
-: ${RELEASE:=v0.8.0}    # the DeepDive release version to install
-: ${BRANCH:=v0.8.x}     # the DeepDive branch to clone, download, and build
-: ${PREFIX:=~/local}    # the path to install deepdive
-: ${GITCLONE:=deepdive} # the path to clone deepdive's repo
+: ${RELEASE:=v0.8-STABLE}   # the DeepDive release version to install
+: ${BRANCH:=v0.8.x}         # the DeepDive branch to clone, download, and build
+: ${PREFIX:=~/local}        # the path to install deepdive
+: ${GITCLONE:=deepdive}     # the path to clone deepdive's repo
 
 : ${INSTALLER_BRANCH:=master}   # the branch from which the installer scripts should be downloaded
 INSTALLER_HOME_URL=https://github.com/HazyResearch/deepdive/raw/"${INSTALLER_BRANCH}"/util/install
@@ -40,7 +40,8 @@ timeout_or_do() {
     local timeout=${1:?Missing timeout in seconds}; shift
     local msg=${1:?Missing prompt message}; shift
     if [[ -t 0 ]]; then
-        if read -p "$msg" -t "$timeout" -n 1 -s; echo; [[ -n "$REPLY" ]]; then
+        local key=
+        if read -p "$msg" -t "$timeout" -n 1 -s key; echo; [[ -n "$key" ]]; then
             "$@"
         fi
     fi
@@ -260,13 +261,13 @@ source_script() {
         source "$INSTALLER_HOME_DIR/$script"
     else
         # may be this script is run as a one-liner, get script from GitHub
-        #source <(set -x; curl -fsSL "$INSTALLER_HOME_URL/$script") "$@"
+        #source <(curl -fsSL "$INSTALLER_HOME_URL/$script") "$@"
         # XXX using a workaround since source with process substitution has problem in bash 3 (OS X default)
         # See: https://bugzilla.altlinux.org/show_bug.cgi?id=7475
         init_INSTALLER_TEMP_DIR
         local script_path="$INSTALLER_TEMP_DIR/$script"
         mkdir -p "$(dirname "$script_path")"
-        (set -x; curl -fsSL "$INSTALLER_HOME_URL/$script" >"$script_path")
+        curl -fsSL "$INSTALLER_HOME_URL/$script" >"$script_path"
         source "$script_path" "$@"
     fi
 }

@@ -19,4 +19,8 @@ cd "$(dirname "$0")"
 # convert input tsv lines into JSON lines for Bazaar/Parser
 tsv2json "$@" |
 # start Bazaar/Parser to emit sentences TSV
-"$BAZAAR_HOME"/parser/run.sh -i json -k doc_id -v content
+"$BAZAAR_HOME"/parser/run.sh -i json -k doc_id -v content |
+# finally, fixup unescaped characters in the TSV emitted by Bazaar/Parser
+# (This will become unnecessary once HazyResearch/bazaar#20 is fixed)
+# See: http://www.postgresql.org/docs/9.5/static/sql-copy.html#AEN74312
+sed -e "$(for ch in b f r v; do printf 's/\'$ch'/\\\\'$ch'/g;'; done)"
