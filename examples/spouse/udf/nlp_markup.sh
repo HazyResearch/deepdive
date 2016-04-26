@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# A shell script that runs Bazaar/Parser over documents passed as input TSV lines
+# Run CoreNLP over documents passed as tab-separated JSONs input
 #
 # $ deepdive env udf/nlp_markup.sh
 ##
@@ -30,18 +30,20 @@ annotators=(
     lemma
     depparse
 )
-corenlp_properties=$(IFS=,; echo '
+corenlp_properties=$(echo '
 { "outputFormat"        : "json"
-, "annotators"          : "'"${annotators[*]}"'"
-, "tokenize.whitespace" : "true"
+, "annotators"          : "'"$(IFS=,; echo "${annotators[*]}")"'"
+, "tokenize.whitespace" : "false"
 }')
 corenlp_server_endpoint="http://localhost:$port/?properties= $(jq -r '@uri' <<<"$corenlp_properties")"
+echo "corenlp_server_endpoint=$corenlp_server_endpoint"
 
 # wait for CoreNLP server to boot up
-while ! curl -fsSL --globoff "$corenlp_server_endpoint" --data-raw 'foo' -o /dev/null
+while ! curl -fsSL --globoff "$corenlp_server_endpoint" --data-raw 'foo' >/dev/null
 do sleep 0.$RANDOM; done
 
 # parse each input TSJ line and have CoreNLP server process it over HTTP
+tsj-to-corenlp_http_api_reqs() {
 perl -e '
 use strict;
 use feature q(say);
@@ -50,7 +52,7 @@ use JSON;
 my $ua = LWP::UserAgent->new;
 my $req = HTTP::Request->new( POST => shift @ARGV );
 my $json = JSON->new->allow_nonref;
-while ( <> ) {
+while ( <STDIN> ) {
     # parse input document id and content line in TSJ
     chomp; my ($json_doc_id, $json_content) = split "\t";
     say STDERR "Parsing $json_doc_id";
@@ -67,4 +69,52 @@ while ( <> ) {
         say STDERR "CoreNLP server ERROR ", $resp->code, ": ", $resp->message;
     }
 }
-' "$corenlp_server_endpoint"
+' "$@"
+}
+tsj-to-corenlp_http_api_reqs "$corenlp_server_endpoint" | #docid content -- docid content.nlp
+
+jq -r '
+# TODO doc metadata
+[ .sentences[] |
+[ [.tokens[].word]
+, [.tokens[].lemma]
+, [.tokens[].pos]
+, [.tokens[] | [.characterOffsetBegin,.characterOffsetEnd]]
+] | map(@json) | join("\t")
+'
+
+# doc table
+jq -R -r '
+def withtsv(f) : split("\t") | f | join("\t");
+def withjson(f):    fromjson | f | tojson    ;
+
+withtsv(
+    [ .[0]
+    , .[1] | withjson(
+            .sentences[] |
+                [ [.tokens[].word]
+                , [.tokens[].lemma]
+                , [.tokens[].pos]
+                , [.tokens[] | [.characterOffsetBegin,.characterOffsetEnd]]
+                ]
+        )
+    ]
+)'
+
+# sentences table
+jq -R -r '
+def withtsv(f) : split("\t") | f | join("\t");
+def withjson(f):    fromjson | f | tojson    ;
+
+withtsv(
+    . as $row |
+    .[1] | (fromjson | .sentences[] |
+                [$row[0]] +
+                [ [.tokens[].word]
+                , [.tokens[].lemma]
+                , [.tokens[].pos]
+                , [.tokens[] | [.characterOffsetBegin,.characterOffsetEnd]]
+                | tojson]                                                  
+             )           
+              
+)'
