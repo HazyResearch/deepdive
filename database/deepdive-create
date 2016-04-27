@@ -38,16 +38,14 @@ Table=$1; shift
 case $What in
     table)
         if [[ $# -eq 0 ]]; then
-            DEEPDIVE_APP=$(find-deepdive-app)
-            app-has-been-compiled
-            sql=$(schema_json_to_sql "$DEEPDIVE_APP"/run/compiled/schema.json "$Table") ||
-                error "$Table: No such table defined in schema"
-            exec db-execute "$sql"
+            exec db-create-table-def "$Table" $(deepdive-relation column-types "$Table")
+            # TODO @distributed_by
+            #CREATE_TABLE_EXTRA_CLAUSES=" DISTRIBUTED BY
         else
             # show warning if the table exists in app schema
             if DEEPDIVE_APP=$(find-deepdive-app) &&
                     app-has-been-compiled &>/dev/null &&
-                    sql=$(schema_json_to_sql "$DEEPDIVE_APP"/run/compiled/schema.json "$Table"); then
+                    columns=$(deepdive-relation columns "$Table"); then
                 warning "$Table: Already defined in schema, overriding its definition"
             fi
             # create table from given definition
