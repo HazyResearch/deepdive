@@ -8,6 +8,52 @@ title: Managing input data and data products
 DeepDive provides a handful of commands and conventions to manage input data to an application as well as the data produced by it.
 The actual processing of the data is discussed in a page about [executing the DeepDive application](ops-execution.md).
 
+## Inspecting schema for relations in the DeepDive app
+
+There are a few handy ways to inspect the relational schema declared for a DeepDive app.
+Once the application is compiled, the following commands allow you to access the schema.
+
+### Listing relations
+
+```bash
+deepdive relation list
+```
+
+```
+articles
+has_spouse
+num_people
+person_mention
+sentences
+spouse_candidate
+spouse_feature
+spouse_label
+spouse_label__0
+spouse_label_resolved
+spouses_dbpedia
+```
+
+### Listing columns of a relation
+
+```bash
+deepdive relation columns articles
+```
+
+```
+id:text
+content:text
+```
+
+### Listing variable relations
+
+```bash
+deepdive relation variables
+```
+
+```
+has_spouse
+```
+
 
 ## Preparing the database for the DeepDive app
 
