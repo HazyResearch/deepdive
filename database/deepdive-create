@@ -38,9 +38,17 @@ Table=$1; shift
 case $What in
     table)
         if [[ $# -eq 0 ]]; then
-            exec db-create-table-def "$Table" $(deepdive-relation column-types "$Table")
-            # TODO @distributed_by
-            #CREATE_TABLE_EXTRA_CLAUSES=" DISTRIBUTED BY
+            DEEPDIVE_APP=$(find-deepdive-app)
+            export DEEPDIVE_APP
+            app-has-been-compiled
+            cd "$DEEPDIVE_APP"
+            # pick up any driver-specific extra options first for db-create-table e.g., @distributed_by columns
+            eval "$(
+                # XXX this jq can be quite wasteful but reduces the burden on the driver side
+                Relation="$Table" jq '.deepdive_.schema.relations[env.Relation]' run/compiled/config.json |
+                db-create-table-options
+            )"
+            exec db-create-table-def "$Table" $(deepdive-relation column-types "$Table") # TODO escape4sh
         else
             # show warning if the table exists in app schema
             if DEEPDIVE_APP=$(find-deepdive-app) &&
