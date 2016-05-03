@@ -29,6 +29,9 @@ class CmdParser {
   std::string original_folder;
   std::string delta_folder;
 
+  std::string graph_snapshot_file;
+  std::string weights_snapshot_file;
+
   int n_learning_epoch;
   int n_samples_per_learning_epoch;
   int n_inference_epoch;
@@ -40,6 +43,7 @@ class CmdParser {
   double reg_param;
   std::string regularization;
 
+  bool should_use_snapshot;
   bool should_be_quiet;
   bool should_sample_evidence;
   bool should_learn_non_evidence;
@@ -64,6 +68,9 @@ class CmdParser {
   TCLAP::ValueArg<std::string> *output_folder_;
   TCLAP::ValueArg<std::string> *domain_file_;
 
+  TCLAP::ValueArg<std::string> *graph_snapshot_file_;
+  TCLAP::ValueArg<std::string> *weights_snapshot_file_;
+
   TCLAP::MultiArg<int> *n_learning_epoch_;
   TCLAP::MultiArg<int> *n_samples_per_learning_epoch_;
   TCLAP::MultiArg<int> *n_inference_epoch_;
@@ -76,6 +83,7 @@ class CmdParser {
   TCLAP::MultiArg<double> *reg_param_;
   TCLAP::MultiArg<int> *burn_in_;
 
+  TCLAP::MultiSwitchArg *use_snapshot_;
   TCLAP::MultiSwitchArg *quiet_;
   TCLAP::MultiSwitchArg *sample_evidence_;
   TCLAP::MultiSwitchArg *learn_non_evidence_;

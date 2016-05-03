@@ -6,10 +6,10 @@
 
 // Read meta data file, return Meta struct
 Meta read_meta(string meta_file) {
+  Meta meta;
   ifstream file;
   file.open(meta_file.c_str());
   string buf;
-  Meta meta;
   getline(file, buf, ',');
   meta.num_weights = atoll(buf.c_str());
   getline(file, buf, ',');

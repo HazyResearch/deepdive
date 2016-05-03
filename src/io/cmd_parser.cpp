@@ -32,6 +32,13 @@ CmdParser::CmdParser(std::string _app_name) {
         "j", "delta_folder", "Folder of delta factor graph", false, "",
         "string", *cmd_);
 
+    graph_snapshot_file_ = new TCLAP::ValueArg<std::string>(
+        "", "graph_snapshot_file", "Binary file containing graph snapshot", false, 
+        "", "string", *cmd_);
+    weights_snapshot_file_ = new TCLAP::ValueArg<std::string>(
+        "", "weight_snapshot_file", "Binary file containing snapshot of weight values", false, 
+        "", "string", *cmd_);
+
     n_learning_epoch_ = new TCLAP::MultiArg<int>("l", "n_learning_epoch",
                                                  "Number of Learning Epochs",
                                                  true, "int", *cmd_);
@@ -59,6 +66,7 @@ CmdParser::CmdParser(std::string _app_name) {
         "", "regularization", "Regularization (l1 or l2)", false, "string",
         *cmd_);
 
+    use_snapshot_= new TCLAP::MultiSwitchArg("u", "use_snapshot", "resume computation from snapshotted graph and weights", *cmd_);
     quiet_ = new TCLAP::MultiSwitchArg("q", "quiet", "quiet output", *cmd_);
     sample_evidence_ = new TCLAP::MultiSwitchArg(
         "", "sample_evidence", "also sample evidence variables in inference",
@@ -97,6 +105,9 @@ void CmdParser::parse(int argc, char **argv) {
   delta_folder = delta_folder_->getValue();
   original_folder = original_folder_->getValue();
 
+  graph_snapshot_file = graph_snapshot_file_->getValue();
+  weights_snapshot_file = weights_snapshot_file_->getValue();
+
   n_learning_epoch = getLastValueOrDefault(n_learning_epoch_, -1);
   n_samples_per_learning_epoch =
       getLastValueOrDefault(n_samples_per_learning_epoch_, -1);
@@ -109,6 +120,7 @@ void CmdParser::parse(int argc, char **argv) {
   reg_param = getLastValueOrDefault(reg_param_, 0.01);
   regularization = getLastValueOrDefault(regularization_, std::string("l2"));
 
+  should_use_snapshot = use_snapshot_->getValue() > 0;
   should_be_quiet = quiet_->getValue() > 0;
   should_sample_evidence = sample_evidence_->getValue() > 0;
   should_learn_non_evidence = learn_non_evidence_->getValue() > 0;

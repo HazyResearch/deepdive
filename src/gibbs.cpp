@@ -293,9 +293,18 @@ void gibbs(dd::CmdParser &cmd_parser) {
   // load factor graph
   dd::FactorGraph fg(meta.num_variables, meta.num_factors, meta.num_weights,
                      meta.num_edges);
-  fg.load(cmd_parser, is_quiet, false);
+
+  if (cmd_parser.should_use_snapshot) {
+    fg.load_graph_snapshot(cmd_parser);
+  } else {
+    fg.load(cmd_parser, is_quiet, false);
+  }
   dd::GibbsSampling gibbs(&fg, &cmd_parser, n_datacopy, sample_evidence,
                           burn_in, learn_non_evidence);
+  
+  if (cmd_parser.should_use_snapshot) {
+    gibbs.load_weights_snapshot(is_quiet);
+  }
 
   // number of learning epochs
   // the factor graph is copied on each NUMA node, so the total epochs =
@@ -317,4 +326,9 @@ void gibbs(dd::CmdParser &cmd_parser) {
   // inference
   gibbs.inference(numa_aware_n_epoch, is_quiet, false, false);
   gibbs.aggregate_results_and_dump(is_quiet, 0);
+
+  if (cmd_parser.should_use_snapshot) {
+    gibbs.save_graph_snapshot(is_quiet);
+    gibbs.save_weights_snapshot(is_quiet);
+  }
 }

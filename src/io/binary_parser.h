@@ -37,6 +37,8 @@ typedef struct {
   long long num_variables;
   long long num_factors;
   long long num_edges;
+
+  /* Seems like the stuff below are unused */
   string weights_file;
   string variables_file;
   string factors_file;

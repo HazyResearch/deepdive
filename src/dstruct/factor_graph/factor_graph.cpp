@@ -343,6 +343,15 @@ void dd::FactorGraph::load(const CmdParser &cmd, const bool is_quiet, int inc) {
   }
 }
 
+void dd::FactorGraph::load_graph_snapshot(const CmdParser &cmd) {
+  // TODO: YOUR CODE HERE
+  
+  this->safety_check();
+  assert(this->is_usable());
+
+  return;
+}
+
 bool dd::compare_position(const VariableInFactor &x,
                           const VariableInFactor &y) {
   return x.n_position < y.n_position;
@@ -351,7 +360,7 @@ bool dd::compare_position(const VariableInFactor &x,
 void dd::FactorGraph::organize_graph_by_edge() {
   // number of edges
   c_edge = 0;
-  // put variables into the edge-based variable array vifs
+  // for each factor, put variables into the edge-based variable array vifs
   for (long i = 0; i < n_factor; i++) {
     Factor &factor = factors[i];
     factor.n_start_i_vif = c_edge;
@@ -366,7 +375,7 @@ void dd::FactorGraph::organize_graph_by_edge() {
 
   c_edge = 0;
   long ntallies = 0;
-  // for each variable, put the factors into factor_dups
+  // for each variable, put factors into compact_factors
   for (long i = 0; i < n_var; i++) {
     Variable &variable = variables[i];
     variable.n_factors =

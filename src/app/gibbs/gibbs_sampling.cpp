@@ -45,6 +45,66 @@ dd::GibbsSampling::GibbsSampling(FactorGraph *const _p_fg,
   }
 };
 
+void dd::GibbsSampling::save_graph_snapshot(const bool is_quiet) {
+  // TODO: YOUR CODE HERE
+  return;
+}
+
+void dd::GibbsSampling::save_weights_snapshot(const bool is_quiet) {
+  // Filename is p_cmd_parser->saved_weights_filename;
+  std::ofstream file;
+  file.open(p_cmd_parser->weights_snapshot_file, std::ios::out | std::ios::binary);
+
+  /* 
+   * Dump weights from only the first factor graph, since we have aggregated
+   * the results in the first factor graph.
+   *
+   * TODO: This means we could as easily move this function to the FactorGraph
+   * class, except it'll be awkward if load_weights_snapshot is still in
+   * GibbsSampling.
+   */
+  const FactorGraph& fg = factorgraphs[0];
+  long n_weights = fg.n_weight;
+  for (long i = 0; i < n_weights; i++) {
+    long wid = i;
+    file.write((char *)&wid, sizeof(long));
+    file.write((char *)&fg.infrs->weight_values[wid], sizeof(double));
+  }
+
+  file.close();
+}
+
+void dd::GibbsSampling::load_weights_snapshot(const bool is_quiet) {
+  // Filename is p_cmd_parser->saved_weights_filename;
+  std::ifstream file;
+  file.open(p_cmd_parser->weights_snapshot_file, std::ios::in | std::ios::binary);
+
+  /* 
+   * The number of weights in the file should match the one stored in the main
+   * copy of the factor graph.
+   */
+  long n_weights = p_fg->n_weight;
+  for (long i = 0; i < n_weights; i++) {
+    long wid;
+    double value;
+
+    file.read((char *)&wid, sizeof(long));
+    file.read((char *)&value, sizeof(double));
+
+    /*
+     * In addition, we assert that wid is stored in increasing order from 0
+     * to n_weights in the binary_file.
+     */
+    assert(wid == i);
+
+    for (int j = 0; j < n_numa_nodes; j++) {
+      factorgraphs[j].infrs->weight_values[wid] = value;
+    }
+  }
+
+  file.close();
+}
+
 void dd::GibbsSampling::inference(const int &n_epoch, const bool is_quiet,
                                   const bool is_mat, const bool is_inc) {
   Timer t_total;

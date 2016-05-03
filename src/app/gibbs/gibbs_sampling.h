@@ -52,6 +52,32 @@ namespace dd{
         int n_datacopy, bool sample_evidence, int burn_in, bool learn_non_evidence);
 
     /**
+     * Saves the weights snapshot into a binary file. 
+     *
+     * FIXME: This has the same logic as dump_weights() below. Potentially 
+     * merge both functions.
+     *
+     * FIXME: This function and its loading counterpart is located in this
+     * class since we have to take into account the weights from all the
+     * nodes.
+     */
+    void save_weights_snapshot(const bool is_quiet);
+
+    /**
+     * Loads the weights snapshot into all copies of the factor graph from the
+     * specified file. Useful in the context of running the sampler on
+     * different non-overlapping partitions of the same factor graph.
+     */
+    void load_weights_snapshot(const bool is_quiet);
+
+    /**
+     * Saves a snapshot of the graph in a binary file. Useful in the context
+     * of running the sampler on different non-overlapping partitions of 
+     * the same factor graph.
+     */
+    void save_graph_snapshot(const bool is_quiet);
+
+    /**
      * Performs learning
      * n_epoch number of epochs. A epoch is one pass over data
      * n_sample_per_epoch not used any more.
