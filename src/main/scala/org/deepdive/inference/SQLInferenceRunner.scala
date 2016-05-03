@@ -1185,6 +1185,8 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         execute(createCalibrationViewBooleanSQL(calibrationViewName, bucketedViewName, columnName))
       case MultinomialType(_) =>
         execute(createCalibrationViewMultinomialSQL(calibrationViewName, bucketedViewName, columnName))
+      case RealNumberType =>
+        return (buckets map ( bucket => (bucket, BucketData(0,0,0)))).toMap
     }
 
     val bucketData = dataStore.selectAsMap(selectCalibrationDataSQL(calibrationViewName)).map { row =>
