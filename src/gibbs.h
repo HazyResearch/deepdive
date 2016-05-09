@@ -1,11 +1,11 @@
 
+#include "common.h"
 #include <assert.h>
 #include <iostream>
-#include "common.h"
 #include <unistd.h>
 
-#include "io/cmd_parser.h"
 #include "io/binary_parser.h"
+#include "io/cmd_parser.h"
 
 #include "app/gibbs/gibbs_sampling.h"
 #include "dstruct/factor_graph/factor_graph.h"

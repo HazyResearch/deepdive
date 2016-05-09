@@ -4,9 +4,9 @@
  * Author: Feiran Wang
  */
 
-#include "gtest/gtest.h"
 #include "dstruct/factor_graph/factor_graph.h"
 #include "gibbs.h"
+#include "gtest/gtest.h"
 #include <fstream>
 
 using namespace dd;

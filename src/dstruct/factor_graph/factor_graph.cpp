@@ -1,8 +1,8 @@
 
-#include <iostream>
-#include "io/binary_parser.h"
 #include "dstruct/factor_graph/factor_graph.h"
 #include "dstruct/factor_graph/factor.h"
+#include "io/binary_parser.h"
+#include <iostream>
 
 #include <fstream>
 
@@ -345,7 +345,7 @@ void dd::FactorGraph::load(const CmdParser &cmd, const bool is_quiet, int inc) {
 
 void dd::FactorGraph::load_graph_snapshot(const CmdParser &cmd) {
   // TODO: YOUR CODE HERE
-  
+
   this->safety_check();
   assert(this->is_usable());
 

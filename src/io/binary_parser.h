@@ -1,8 +1,8 @@
 #ifndef BINARY_PARSER_H
 #define BINARY_PARSER_H
 
-#include <stdlib.h>
 #include "dstruct/factor_graph/factor_graph.h"
+#include <stdlib.h>
 
 // Following gives be64toh() and htobe64() for 64-bit big <-> host endian
 // conversions.

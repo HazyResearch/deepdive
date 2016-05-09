@@ -2,10 +2,10 @@
 #include "app/gibbs/gibbs_sampling.h"
 #include "app/gibbs/single_node_sampler.h"
 #include "common.h"
-#include <unistd.h>
+#include "timer.h"
 #include <fstream>
 #include <memory>
-#include "timer.h"
+#include <unistd.h>
 
 dd::GibbsSampling::GibbsSampling(FactorGraph *const _p_fg,
                                  CmdParser *const _p_cmd_parser, int n_datacopy,
@@ -53,9 +53,10 @@ void dd::GibbsSampling::save_graph_snapshot(const bool is_quiet) {
 void dd::GibbsSampling::save_weights_snapshot(const bool is_quiet) {
   // Filename is p_cmd_parser->saved_weights_filename;
   std::ofstream file;
-  file.open(p_cmd_parser->weights_snapshot_file, std::ios::out | std::ios::binary);
+  file.open(p_cmd_parser->weights_snapshot_file,
+            std::ios::out | std::ios::binary);
 
-  /* 
+  /*
    * Dump weights from only the first factor graph, since we have aggregated
    * the results in the first factor graph.
    *
@@ -63,7 +64,7 @@ void dd::GibbsSampling::save_weights_snapshot(const bool is_quiet) {
    * class, except it'll be awkward if load_weights_snapshot is still in
    * GibbsSampling.
    */
-  const FactorGraph& fg = factorgraphs[0];
+  const FactorGraph &fg = factorgraphs[0];
   long n_weights = fg.n_weight;
   for (long i = 0; i < n_weights; i++) {
     long wid = i;
@@ -77,9 +78,10 @@ void dd::GibbsSampling::save_weights_snapshot(const bool is_quiet) {
 void dd::GibbsSampling::load_weights_snapshot(const bool is_quiet) {
   // Filename is p_cmd_parser->saved_weights_filename;
   std::ifstream file;
-  file.open(p_cmd_parser->weights_snapshot_file, std::ios::in | std::ios::binary);
+  file.open(p_cmd_parser->weights_snapshot_file,
+            std::ios::in | std::ios::binary);
 
-  /* 
+  /*
    * The number of weights in the file should match the one stored in the main
    * copy of the factor graph.
    */

@@ -1,8 +1,8 @@
-#include <iostream>
-#include <fstream>
-#include <stdint.h>
 #include "binary_parser.h"
 #include "dstruct/factor_graph/factor.h"
+#include <fstream>
+#include <iostream>
+#include <stdint.h>
 
 // Read meta data file, return Meta struct
 Meta read_meta(string meta_file) {

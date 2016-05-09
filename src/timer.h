@@ -2,8 +2,8 @@
 #ifndef elly_Timer_h
 #define elly_Timer_h
 
-#include <time.h>
 #include <sys/time.h>
+#include <time.h>
 
 #ifdef __MACH__
 #include <mach/clock.h>

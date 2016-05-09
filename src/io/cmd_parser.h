@@ -1,8 +1,8 @@
 
-#include <string>
-#include <iostream>
 #include <algorithm>
 #include <assert.h>
+#include <iostream>
+#include <string>
 #include <tclap/CmdLine.h>
 
 #ifndef _CMD_PARSER_H_

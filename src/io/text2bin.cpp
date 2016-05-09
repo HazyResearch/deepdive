@@ -3,14 +3,14 @@
  * format used in DeepDive
  */
 
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <stdlib.h>
-#include <stdint.h>
-#include <assert.h>
-#include <vector>
 #include "io/binary_parser.h"
+#include <assert.h>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <stdint.h>
+#include <stdlib.h>
+#include <vector>
 
 using namespace std;
 

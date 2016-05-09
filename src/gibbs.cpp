@@ -301,7 +301,7 @@ void gibbs(dd::CmdParser &cmd_parser) {
   }
   dd::GibbsSampling gibbs(&fg, &cmd_parser, n_datacopy, sample_evidence,
                           burn_in, learn_non_evidence);
-  
+
   if (cmd_parser.should_use_snapshot) {
     gibbs.load_weights_snapshot(is_quiet);
   }

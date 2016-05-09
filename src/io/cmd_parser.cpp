@@ -33,11 +33,12 @@ CmdParser::CmdParser(std::string _app_name) {
         "string", *cmd_);
 
     graph_snapshot_file_ = new TCLAP::ValueArg<std::string>(
-        "", "graph_snapshot_file", "Binary file containing graph snapshot", false, 
-        "", "string", *cmd_);
+        "", "graph_snapshot_file", "Binary file containing graph snapshot",
+        false, "", "string", *cmd_);
     weights_snapshot_file_ = new TCLAP::ValueArg<std::string>(
-        "", "weight_snapshot_file", "Binary file containing snapshot of weight values", false, 
-        "", "string", *cmd_);
+        "", "weight_snapshot_file",
+        "Binary file containing snapshot of weight values", false, "", "string",
+        *cmd_);
 
     n_learning_epoch_ = new TCLAP::MultiArg<int>("l", "n_learning_epoch",
                                                  "Number of Learning Epochs",
@@ -66,7 +67,9 @@ CmdParser::CmdParser(std::string _app_name) {
         "", "regularization", "Regularization (l1 or l2)", false, "string",
         *cmd_);
 
-    use_snapshot_= new TCLAP::MultiSwitchArg("u", "use_snapshot", "resume computation from snapshotted graph and weights", *cmd_);
+    use_snapshot_ = new TCLAP::MultiSwitchArg(
+        "u", "use_snapshot",
+        "resume computation from snapshotted graph and weights", *cmd_);
     quiet_ = new TCLAP::MultiSwitchArg("q", "quiet", "quiet output", *cmd_);
     sample_evidence_ = new TCLAP::MultiSwitchArg(
         "", "sample_evidence", "also sample evidence variables in inference",

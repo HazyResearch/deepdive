@@ -1,7 +1,7 @@
-#include <limits.h>
-#include "dstruct/factor_graph/factor_graph.h"
 #include "dstruct/factor_graph/factor.h"
+#include "dstruct/factor_graph/factor_graph.h"
 #include "gtest/gtest.h"
+#include <limits.h>
 #include <math.h>
 
 #define EQ_TOL 0.00001
