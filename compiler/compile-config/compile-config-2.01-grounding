@@ -23,11 +23,13 @@ def factorWeightDescriptionSqlExpr:
     ;
 def multinomialFactorWeightCategoriesDescriptionSqlExpr:
     # to serialize category values describing an individual multinomial weight
+    "\(
     [ ( .function_.variables[]
     | .columnId as $columnIdForThisVar
     | ( .schema.variablesCategoryColumns[]
     | "\($columnIdForThisVar)_\(.)" | asSqlIdent )
     ) ] | join(" ||'\t'|| ")
+    ) || ''"
     ;
 
 # generate a SQL CTE for redefining user's variable table names to have id columns with joins
