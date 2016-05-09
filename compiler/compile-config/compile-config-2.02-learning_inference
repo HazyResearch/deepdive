@@ -23,11 +23,12 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
             flatten() { find -L \"$@\" -type f -exec pbzip2 -c -d -k {} +; }
             \($deepdive.sampler.sampler_cmd // "sampler-dw") \\
                 gibbs \\
-                -w <(flatten factorgraph/weights) \\
-                -v <(flatten factorgraph/variables) \\
-                -f <(flatten factorgraph/factors) \\
-                -m factorgraph/meta \\
-                -o weights \\
+                --variables <(flatten factorgraph/variables) \\
+                --domains <(flatten factorgraph/domains) \\
+                --factors <(flatten factorgraph/factors) \\
+                --weights <(flatten factorgraph/weights) \\
+                --fg_meta factorgraph/meta \\
+                --outputFile weights \\
                 \($deepdive.sampler.sampler_args // "#")
             mkdir -p probabilities
             mv -f weights/inference_result.out.text probabilities/
@@ -48,11 +49,12 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                 flatten() { find -L \"$@\" -type f -exec pbzip2 -c -d -k {} +; }
                 \($deepdive.sampler.sampler_cmd // "sampler-dw") \\
                     gibbs \\
-                    -w <(flatten factorgraph/weights) \\
-                    -v <(flatten factorgraph/variables) \\
-                    -f <(flatten factorgraph/factors) \\
-                    -m factorgraph/meta \\
-                    -o weights \\
+                    --variables <(flatten factorgraph/variables) \\
+                    --domains <(flatten factorgraph/domains) \\
+                    --factors <(flatten factorgraph/factors) \\
+                    --weights <(flatten factorgraph/weights) \\
+                    --fg_meta factorgraph/meta \\
+                    --outputFile weights \\
                     \($deepdive.sampler.sampler_args // "") \\
                     -l 0 \\
                     #
