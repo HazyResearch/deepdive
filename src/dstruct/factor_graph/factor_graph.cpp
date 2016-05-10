@@ -243,7 +243,7 @@ void dd::FactorGraph::compile(CompiledFactorGraph &cfg) {
    */
   for (long i = 0; i < n_factor; i++) {
     RawFactor &rf = factors[i];
-    rf.n_start_i_vif = c_edge;
+    rf.n_start_i_vif = i_edge;
 
     /*
      * Each factor knows how many variables it has. After sorting the variables
@@ -272,7 +272,7 @@ void dd::FactorGraph::compile(CompiledFactorGraph &cfg) {
     // I guess it's only at this point that we're sure tmp_factor_ids won't
     // change since we've fully loaded the graph.
     rv.n_factors = rv.tmp_factor_ids.size();
-    rv.n_start_i_factors = c_edge;
+    rv.n_start_i_factors = i_edge;
 
     if (rv.domain_type == DTYPE_MULTINOMIAL) {
       rv.n_start_i_tally = ntallies;
