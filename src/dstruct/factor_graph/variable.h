@@ -63,7 +63,7 @@ namespace dd{
 
     // get the index of the value
     inline int get_domain_index(int v) const {
-      return domain_map ? (*domain_map)[v] : (int)v;
+      return domain_map ? domain_map->at(v) : v;
     }
   };
 
