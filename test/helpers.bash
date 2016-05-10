@@ -11,31 +11,3 @@ compare_binary_with_xxd_text() {
         false
     fi
 }
-
-# convert the factor graph from tsv to binary format
-# and run the sampler
-run_end_to_end() {
-    local fg=$1; shift
-    cd "$fg"
-
-    # generate factor graph from tsv
-    for what in variable domain factor weight; do
-        for tsv in "$what"s*.tsv; do
-            [[ -e "$tsv" ]] || continue
-            text2bin "$what" "$tsv" graph."${tsv%.tsv}" $(
-                # use extra text2bin args if specified
-                ! [[ -e "${tsv%.tsv}".text2bin-opts ]] || cat "${tsv%.tsv}".text2bin-opts
-            )
-        done
-    done
-
-    # run sampler
-    dw gibbs \
-        -w <(cat graph.weights*) \
-        -v <(cat graph.variables*) \
-        -f <(cat graph.factors*) \
-        -m graph.meta \
-        -o . \
-        --domains <(cat graph.domains*) \
-        "$@"
-}

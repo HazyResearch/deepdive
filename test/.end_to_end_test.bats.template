@@ -1,0 +1,38 @@
+#!/usr/bin/env bats
+load helpers
+
+case $BATS_TEST_FILENAME in
+    *.bats) ;;
+    *)
+        echo >&2 "Cannot run the template directly.  Must be run through a .bats symlink pointing to this file ($BATS_TEST_FILENAME)"
+        false
+esac
+
+@test "end to end test: $(basename "$BATS_TEST_FILENAME" .bats)" {
+    cd "${BATS_TEST_FILENAME%.bats}"
+    
+    # convert the factor graph from tsv to binary format
+    for what in variable domain factor weight; do
+        for tsv in "$what"s*.tsv; do
+            [[ -e "$tsv" ]] || continue
+            text2bin "$what" "$tsv" graph."${tsv%.tsv}" $(
+                # use extra text2bin args if specified
+                ! [[ -e "${tsv%.tsv}".text2bin-args ]] || cat "${tsv%.tsv}".text2bin-args
+            )
+        done
+    done
+
+    # run sampler
+    dw gibbs \
+        -w <(cat graph.weights*) \
+        -v <(cat graph.variables*) \
+        -f <(cat graph.factors*) \
+        -m graph.meta \
+        -o . \
+        --domains <(cat graph.domains*) \
+        $(cat dw-args)
+
+    # check result
+    ! [[ -x ./check_result ]] ||
+    ./check_result
+}
