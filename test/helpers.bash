@@ -15,23 +15,27 @@ compare_binary_with_xxd_text() {
 # convert the factor graph from tsv to binary format
 # and run the sampler
 run_end_to_end() {
-    local fg=$1
-    local text2bin_factor_args=$2
-    local sampler_arg=$3
+    local fg=$1; shift
+    cd "$fg"
 
     # generate factor graph from tsv
-    text2bin variable "$fg"/variables.tsv "$fg"/graph.variables
-    text2bin weight   "$fg"/weights.tsv   "$fg"/graph.weights
-    text2bin factor   "$fg"/factors.tsv   "$fg"/graph.factors $text2bin_factor_args
-    text2bin domain   "$fg"/domains.tsv   "$fg"/graph.domains
+    for what in variable domain factor weight; do
+        for tsv in "$what"s*.tsv; do
+            [[ -e "$tsv" ]] || continue
+            text2bin "$what" "$tsv" graph."${tsv%.tsv}" $(
+                # use extra text2bin args if specified
+                ! [[ -e "${tsv%.tsv}".text2bin-opts ]] || cat "${tsv%.tsv}".text2bin-opts
+            )
+        done
+    done
 
     # run sampler
     dw gibbs \
-        -w <(cat "$fg"/graph.weights*) \
-        -v <(cat "$fg"/graph.variables*) \
-        -f <(cat "$fg"/graph.factors*) \
-        -m "$fg"/graph.meta \
-        -o "$fg" \
-        --domains <(cat "$fg"/graph.domains*) \
-        $sampler_arg
+        -w <(cat graph.weights*) \
+        -v <(cat graph.variables*) \
+        -f <(cat graph.factors*) \
+        -m graph.meta \
+        -o . \
+        --domains <(cat graph.domains*) \
+        "$@"
 }

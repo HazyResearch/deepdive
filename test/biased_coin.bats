@@ -6,12 +6,10 @@ load helpers
     # variables,
     # 1 weight, 18 factors, and 18 edges. Variables of id 0-8 are evidence: id 0-7
     # positive and id 8 negative.
-    fg=${BATS_TEST_FILENAME%.bats}
 
-    run_end_to_end $fg "4 1 0 1" "-l 2000 -i 2000 -s 1 --alpha 0.1 --diminish 0.995 --sample_evidence --reg_param 0"
+    run_end_to_end "${BATS_TEST_FILENAME%.bats}" -l 2000 -i 2000 -s 1 --alpha 0.1 --diminish 0.995 --sample_evidence --reg_param 0
 
     # check results
-    cd "$fg"
 
     # all weights should be around 2.1
     awk <inference_result.out.weights.text '{

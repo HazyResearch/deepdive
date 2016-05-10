@@ -7,12 +7,10 @@ load helpers
     # respectively.  There are 4 training examples with A = C = true, and only
     # one B is observed to be true. We expect the weight to be positive, and
     # probabilities to be > 0.9.
-    fg=${BATS_TEST_FILENAME%.bats}
 
-    run_end_to_end $fg "3 2 0 1 1" "-l 500 -i 500 -s 1 --alpha 0.1 --learn_non_evidence --reg_param 0"
+    run_end_to_end "${BATS_TEST_FILENAME%.bats}" -l 500 -i 500 -s 1 --alpha 0.1 --learn_non_evidence --reg_param 0
 
     # check results
-    cd "$fg"
 
     # all weights should be positive
     awk <inference_result.out.weights.text '{
