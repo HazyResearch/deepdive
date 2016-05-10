@@ -75,14 +75,14 @@ namespace dd {
     RawVariable();
 
     /**
-     * Constructs a variable with id, domain type, is evidence, lower bound, 
-     * upper bound, initial value, current value, number of factors 
+     * Constructs a variable with id, domain type, is evidence, lower bound,
+     * upper bound, initial value, current value, number of factors
      */
-    RawVariable(const long & _id, const int & _domain_type, 
-             const bool & _is_evid, const int & cardinality,
-             const VariableValue & _init_value, 
-             const VariableValue & _current_value, const int & _n_factors,
-             bool is_observation);
+    RawVariable(const long _id, const int _domain_type,
+             const bool _is_evid, const int _cardinality,
+             const VariableValue _init_value,
+             const VariableValue _current_value, const int _n_factors,
+             bool _is_observation);
   };
 
   /**

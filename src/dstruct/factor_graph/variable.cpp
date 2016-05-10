@@ -4,16 +4,16 @@ namespace dd {
 
 RawVariable::RawVariable() {}
 
-RawVariable::RawVariable(const long &_id, const int &_domain_type,
-                   const bool &_is_evid, const int &cardinality,
-                   const VariableValue &_init_value,
-                   const VariableValue &_current_value, const int &_n_factors,
-                   bool is_observation) {
+RawVariable::RawVariable(const long _id, const int _domain_type,
+                   const bool _is_evid, const int _cardinality,
+                   const VariableValue _init_value,
+                   const VariableValue _current_value, const int _n_factors,
+                   bool _is_observation) {
   this->id = _id;
   this->domain_type = _domain_type;
   this->is_evid = _is_evid;
-  this->is_observation = is_observation;
-  this->cardinality = cardinality;
+  this->is_observation = _is_observation;
+  this->cardinality = _cardinality;
   this->assignment_evid = _init_value;
   this->assignment_free = _current_value;
   this->n_factors = _n_factors;
