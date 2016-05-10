@@ -19,7 +19,7 @@ namespace dd {
   class RawVariable;
 
   /**
-   * A variable in factor graph
+   * A variable in the compiled factor graph.
    */
   class Variable {
   public:
@@ -36,9 +36,16 @@ namespace dd {
     int n_factors;                  // number of factors the variable connects to
     long n_start_i_factors;         // id of the first factor
 
-    // the values of multinomial variables are stored in an array like this
-    // [v11 v12 ... v1m v21 ... v2n ...] 
-    // where v1, v2 are two multinomial variables, with domain 1-m, and 1-n respectively.
+    /*
+     * The values of multinomial variables are stored in an array that looks
+     * roughly like this:
+     *
+     *   [v11 v12 ... v1m v21 ... v2n ...]
+     *
+     * where v1, v2 are two multinomial variables, with domain 1-m, and 1-n
+     * respectively.
+     */
+
     // n_start_i_tally is the start position for the variable values in the array
     long n_start_i_tally;
 
@@ -64,9 +71,12 @@ namespace dd {
     }
   };
 
-  /*
-   * Used by the raw FactorGraph to keep track of the temporary vector of
-   * factor IDs.
+  /**
+   * A variable in the raw factor graph.
+   *
+   * In addition to keeping track of all information a variable does, it also
+   * tracks of the temporary vector of factor IDs for the purposes of
+   * compilation.
    */
   class RawVariable: public Variable {
   public:
@@ -74,10 +84,6 @@ namespace dd {
 
     RawVariable();
 
-    /**
-     * Constructs a variable with id, domain type, is evidence, lower bound,
-     * upper bound, initial value, current value, number of factors
-     */
     RawVariable(const long _id, const int _domain_type,
              const bool _is_evid, const int _cardinality,
              const VariableValue _init_value,
@@ -93,7 +99,8 @@ namespace dd {
     long vid;               // variable id
     int n_position;         // position of the variable inside factor
     bool is_positive;       // whether the variable is positive or negated
-    // the variable's predicate value. A variable is "satisfied" if its value equals equal_to
+    // the variable's predicate value. A variable is "satisfied" if its value
+    // equals equal_to
     VariableValue equal_to;
 
     /**

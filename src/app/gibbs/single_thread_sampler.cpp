@@ -179,12 +179,20 @@ inline int dd::SingleThreadSampler::draw_sample(Variable &variable,
         }                                                                  \
       }                                                                    \
   } while (0)
-      if (variable.domain_map)  // sparse case
+      std::cout << "Test multinomial for variable i = " << variable.id << std::endl;
+      if (variable.domain_map) { // sparse case
+        std::cout << "-> sparse case" << std::endl;
         COMPUTE_PROPOSAL((const auto &entry
                           : *variable.domain_map),
                          entry.first, entry.second);
-      else  // dense case
+      }
+      else { // dense case
+        std::cout << "-> dense case" << std::endl;
+        std::cout << "-> v[i].cardinality: " << variable.cardinality << std::endl;
         COMPUTE_PROPOSAL((size_t i = 0; i < variable.cardinality; ++i), i, i);
+      }
+
+      std::cout << "END Test multinomial" << std::endl;
 
       assert(proposal != -1);
       break;

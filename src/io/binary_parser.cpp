@@ -1,5 +1,6 @@
 #include "binary_parser.h"
 #include "dstruct/factor_graph/factor.h"
+#include "dstruct/factor_graph/variable.h"
 #include <fstream>
 #include <iostream>
 #include <stdint.h>
@@ -279,12 +280,15 @@ void read_domains(std::string filename, dd::FactorGraph &fg) {
   ifstream file;
   file.open(filename.c_str(), ios::in | ios::binary);
   long id, value;
+
   while (true) {
     file.read((char *)&id, 8);
-    if (!file.good()) break;
+    if (!file.good()) {
+      return;
+    }
 
     id = be64toh(id);
-    dd::Variable &variable = fg.variables[id];
+    dd::RawVariable &variable = fg.variables[id];
 
     long domain_size;
     file.read((char *)&domain_size, 8);
@@ -292,7 +296,8 @@ void read_domains(std::string filename, dd::FactorGraph &fg) {
     assert(variable.cardinality == domain_size);
 
     std::vector<int> domain(domain_size);
-    variable.domain_map = new std::unordered_map<int, int>();
+    /* Notice that this is the first time variable.domain_map is initialized */
+    variable.domain_map = new std::unordered_map<dd::VariableValue, int>();
 
     for (int i = 0; i < domain_size; i++) {
       file.read((char *)&value, 8);
@@ -311,6 +316,7 @@ void read_domains(std::string filename, dd::FactorGraph &fg) {
       variable.assignment_free = variable.assignment_evid = domain[0];
     }
   }
+
 }
 
 void resume(string filename, int i, dd::CompiledFactorGraph &cfg) {

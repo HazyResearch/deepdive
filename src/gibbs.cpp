@@ -302,7 +302,7 @@ void gibbs(dd::CmdParser &cmd_parser) {
               << std::endl;
   }
 
-  // run on NUMA node 0
+  // Run on NUMA node 0
   numa_run_on_node(0);
   numa_set_localalloc();
 
@@ -312,7 +312,7 @@ void gibbs(dd::CmdParser &cmd_parser) {
   if (cmd_parser.should_use_snapshot) {
     gibbs.do_resume(is_quiet, n_datacopy, meta.num_variables, meta.num_factors, meta.num_weights, meta.num_edges);
   } else {
-    // load factor graph
+    // Load factor graph
     dd::FactorGraph fg(meta.num_variables, meta.num_factors, meta.num_weights, meta.num_edges);
     fg.load(cmd_parser, is_quiet, false);
 

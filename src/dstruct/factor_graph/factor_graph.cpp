@@ -274,6 +274,8 @@ void dd::FactorGraph::compile(CompiledFactorGraph &cfg) {
     rv.n_factors = rv.tmp_factor_ids.size();
     rv.n_start_i_factors = i_edge;
 
+    printf("Address of rv[%ld].domain_map = %p\n", i, rv.domain_map);
+
     if (rv.domain_type == DTYPE_MULTINOMIAL) {
       rv.n_start_i_tally = ntallies;
       ntallies += rv.cardinality;
@@ -331,6 +333,14 @@ dd::CompiledFactorGraph::CompiledFactorGraph(long _n_var, long _n_factor, long _
 }
 
 void dd::CompiledFactorGraph::copy_from(const CompiledFactorGraph *const p_other_fg) {
+  c_nvar = p_other_fg->c_nvar;
+  c_nfactor = p_other_fg->c_nfactor;
+  c_nweight = p_other_fg->c_nweight;
+  c_edge = p_other_fg->c_edge;
+
+  n_evid = p_other_fg->n_evid;
+  n_query = p_other_fg->n_query;
+
   // copy each member from the given graph
   memcpy(variables, p_other_fg->variables, sizeof(Variable) * n_var);
   memcpy(factors, p_other_fg->factors, sizeof(Factor) * n_factor);
@@ -340,10 +350,6 @@ void dd::CompiledFactorGraph::copy_from(const CompiledFactorGraph *const p_other
   memcpy(factor_ids, p_other_fg->factor_ids, sizeof(long) * n_edge);
   memcpy(vifs, p_other_fg->vifs, sizeof(VariableInFactor) * n_edge);
 
-  c_nvar = p_other_fg->c_nvar;
-  c_nfactor = p_other_fg->c_nfactor;
-  c_nweight = p_other_fg->c_nweight;
-  c_edge = p_other_fg->c_edge;
   sorted = p_other_fg->sorted;
   safety_check_passed = p_other_fg->safety_check_passed;
 

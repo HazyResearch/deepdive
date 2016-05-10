@@ -8,6 +8,10 @@ LDFLAGS =
 LDLIBS =
 CXXFLAGS += -I./lib/tclap/include/ -I./src
 
+ifeq ($(DEBUG), true)
+CXXFLAGS += -g
+endif
+
 # platform dependent compiler flags
 UNAME := $(shell uname)
 

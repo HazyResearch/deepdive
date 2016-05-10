@@ -93,7 +93,7 @@ namespace dd{
     long n_factor;
     long n_weight;
     long n_edge;
-    long n_tally;
+    long n_tally; // FIXME: Doesn't seem that this is being copied in copy_from()
 
     long c_nvar;
     long c_nfactor;
@@ -125,11 +125,12 @@ namespace dd{
     // pointer to inference result
     InferenceResult * const infrs;
 
+    bool sorted;
+
     // whether safety check has passed
     // see safety_check() below
     bool safety_check_passed;
 
-    bool sorted;
 
     CompiledFactorGraph();
 
@@ -189,7 +190,6 @@ namespace dd{
    */
   template<>
   inline void CompiledFactorGraph::update<true>(Variable & variable, const double & new_value){
-    std::cout << "update<true> Varaible" << std::endl;
     infrs->assignments_free[variable.id] = new_value;
   }
 
