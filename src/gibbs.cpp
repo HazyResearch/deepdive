@@ -109,7 +109,16 @@ void inc(dd::CmdParser &cmd_parser) {
       meta.num_factors + meta2.num_factors,
       meta.num_weights + meta2.num_weights, meta.num_edges + meta2.num_edges);
   fg.load(cmd_parser, is_quiet, 2);
-  dd::GibbsSampling gibbs(&fg, &cmd_parser, n_datacopy, false, 0, false);
+
+  dd::CompiledFactorGraph cfg(
+      meta.num_variables +
+          meta2.num_variables, /* THis is REALLY UGLY!!!! FIX!!!!*/
+      meta.num_factors + meta2.num_factors,
+      meta.num_weights + meta2.num_weights, meta.num_edges + meta2.num_edges);
+  fg.compile(cfg);
+
+  dd::GibbsSampling gibbs(&cmd_parser, false, 0, false);
+  gibbs.init(&cfg, n_datacopy);
 
   // number of learning epochs
   // the factor graph is copied on each NUMA node, so the total epochs =
@@ -178,7 +187,14 @@ void mat(dd::CmdParser &cmd_parser) {
   dd::FactorGraph fg(meta.num_variables, meta.num_factors, meta.num_weights,
                      meta.num_edges);
   fg.load(cmd_parser, is_quiet, 1);
-  dd::GibbsSampling gibbs(&fg, &cmd_parser, n_datacopy, false, 0, false);
+
+  dd::CompiledFactorGraph cfg(meta.num_variables, meta.num_factors, meta.num_weights,
+                     meta.num_edges);
+
+  fg.compile(cfg);
+
+  dd::GibbsSampling gibbs(&cmd_parser, false, 0, false);
+  gibbs.init(&cfg, n_datacopy);
 
   // number of learning epochs
   // the factor graph is copied on each NUMA node, so the total epochs =
@@ -290,20 +306,20 @@ void gibbs(dd::CmdParser &cmd_parser) {
   numa_run_on_node(0);
   numa_set_localalloc();
 
-  // load factor graph
-  dd::FactorGraph fg(meta.num_variables, meta.num_factors, meta.num_weights,
-                     meta.num_edges);
+  // Initialize Gibbs sampling application.
+  dd::GibbsSampling gibbs(&cmd_parser, sample_evidence, burn_in, learn_non_evidence);
 
   if (cmd_parser.should_use_snapshot) {
-    fg.load_graph_snapshot(cmd_parser);
+    gibbs.do_resume(is_quiet, n_datacopy, meta.num_variables, meta.num_factors, meta.num_weights, meta.num_edges);
   } else {
+    // load factor graph
+    dd::FactorGraph fg(meta.num_variables, meta.num_factors, meta.num_weights, meta.num_edges);
     fg.load(cmd_parser, is_quiet, false);
-  }
-  dd::GibbsSampling gibbs(&fg, &cmd_parser, n_datacopy, sample_evidence,
-                          burn_in, learn_non_evidence);
 
-  if (cmd_parser.should_use_snapshot) {
-    gibbs.load_weights_snapshot(is_quiet);
+    dd::CompiledFactorGraph cfg(meta.num_variables, meta.num_factors, meta.num_weights, meta.num_edges);
+    fg.compile(cfg);
+
+    gibbs.init(&cfg, n_datacopy);
   }
 
   // number of learning epochs
@@ -328,7 +344,6 @@ void gibbs(dd::CmdParser &cmd_parser) {
   gibbs.aggregate_results_and_dump(is_quiet, 0);
 
   if (cmd_parser.should_use_snapshot) {
-    gibbs.save_graph_snapshot(is_quiet);
-    gibbs.save_weights_snapshot(is_quiet);
+    gibbs.do_checkpoint(is_quiet);
   }
 }

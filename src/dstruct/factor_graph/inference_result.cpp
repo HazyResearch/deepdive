@@ -35,3 +35,23 @@ void dd::InferenceResult::init(Variable *variables, Weight *const weights) {
     weights_isfixed[weight.id] = weight.isfixed;
   }
 }
+
+void dd::InferenceResult::copy_from(InferenceResult &other) {
+  for (long i = 0; i < nvars; i++) {
+    assignments_free[i] = other.assignments_free[i];
+    assignments_evid[i] = other.assignments_evid[i];
+    agg_means[i] = other.agg_means[i];
+    agg_nsamples[i] = other.agg_nsamples[i];
+  }
+
+  ntallies = other.ntallies;
+  multinomial_tallies = new int[ntallies];
+  for (long i = 0; i < ntallies; i++) {
+    multinomial_tallies[i] = 0;
+  }
+
+  for (long i = 0; i < nweights; i++) {
+    weight_values[i] = other.weight_values[i];
+    weights_isfixed[i] = other.weights_isfixed[i];
+  }
+}

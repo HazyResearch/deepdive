@@ -1,21 +1,23 @@
 
 #include "app/gibbs/gibbs_sampling.h"
 #include "app/gibbs/single_node_sampler.h"
+#include "io/binary_parser.h"
 #include "common.h"
 #include "timer.h"
 #include <fstream>
 #include <memory>
 #include <unistd.h>
 
-dd::GibbsSampling::GibbsSampling(FactorGraph *const _p_fg,
-                                 CmdParser *const _p_cmd_parser, int n_datacopy,
+dd::GibbsSampling::GibbsSampling(CmdParser *const _p_cmd_parser,
                                  bool sample_evidence, int burn_in,
                                  bool learn_non_evidence)
-    : p_fg(_p_fg),
+    : p_fg(NULL),
       p_cmd_parser(_p_cmd_parser),
       sample_evidence(sample_evidence),
       burn_in(burn_in),
-      learn_non_evidence(learn_non_evidence) {
+      learn_non_evidence(learn_non_evidence) {}
+
+void dd::GibbsSampling::init(CompiledFactorGraph * const p_cfg, int n_datacopy) {
   // the highest node number available
   n_numa_nodes = numa_max_node();
 
@@ -28,25 +30,52 @@ dd::GibbsSampling::GibbsSampling(FactorGraph *const _p_fg,
   n_thread_per_numa = (sysconf(_SC_NPROCESSORS_CONF)) / (n_numa_nodes + 1);
   // n_thread_per_numa = 1;
 
-  this->factorgraphs.push_back(*p_fg);
+  this->factorgraphs.push_back(*p_cfg);
 
   // copy factor graphs
   for (int i = 1; i <= n_numa_nodes; i++) {
     numa_run_on_node(i);
     numa_set_localalloc();
 
-    std::cout << "CREATE FG ON NODE ..." << i << std::endl;
-    dd::FactorGraph fg(p_fg->n_var, p_fg->n_factor, p_fg->n_weight,
-                       p_fg->n_edge);
+    std::cout << "CREATE CFG ON NODE ..." << i << std::endl;
+    dd::CompiledFactorGraph cfg(p_cfg->n_var, p_cfg->n_factor, p_cfg->n_weight,
+                       p_cfg->n_edge);
 
-    fg.copy_from(p_fg);
+    cfg.copy_from(p_cfg);
 
-    this->factorgraphs.push_back(fg);
+    this->factorgraphs.push_back(cfg);
   }
 };
 
-void dd::GibbsSampling::save_graph_snapshot(const bool is_quiet) {
-  // TODO: YOUR CODE HERE
+void dd::GibbsSampling::do_resume(bool is_quiet, int n_datacopy, long n_var, long n_factor, long n_weight, long n_edge) {
+  n_numa_nodes = numa_max_node();
+
+  // if n_datacopy is valid, use it, otherwise, use numa_max_node
+  if (n_datacopy >= 1 && n_datacopy <= n_numa_nodes + 1) {
+    n_numa_nodes = n_datacopy - 1;
+  }
+
+  // max possible threads per NUMA node
+  n_thread_per_numa = (sysconf(_SC_NPROCESSORS_CONF)) / (n_numa_nodes + 1);
+
+  // Resume from checkpoint file while still maintaining NUMA awareness.
+  for (int i = 1; i<= n_numa_nodes; i++) {
+    numa_run_on_node(i);
+    numa_set_localalloc();
+
+    std::cout << "RESUMING CFG ON NODE " << i << "..." << std::endl;
+    dd::CompiledFactorGraph cfg(n_var, n_factor, n_weight, n_edge);
+
+    resume(p_cmd_parser->graph_snapshot_file, i, cfg);
+
+    this->factorgraphs.push_back(cfg);
+  }
+
+  this->load_weights_snapshot(is_quiet);
+}
+
+void dd::GibbsSampling::do_checkpoint(bool is_quiet) {
+  // TODO: Implement me!
   return;
 }
 
@@ -64,12 +93,12 @@ void dd::GibbsSampling::save_weights_snapshot(const bool is_quiet) {
    * class, except it'll be awkward if load_weights_snapshot is still in
    * GibbsSampling.
    */
-  const FactorGraph &fg = factorgraphs[0];
-  long n_weights = fg.n_weight;
+  const CompiledFactorGraph &cfg = factorgraphs[0];
+  long n_weights = cfg.n_weight;
   for (long i = 0; i < n_weights; i++) {
     long wid = i;
     file.write((char *)&wid, sizeof(long));
-    file.write((char *)&fg.infrs->weight_values[wid], sizeof(double));
+    file.write((char *)&cfg.infrs->weight_values[wid], sizeof(double));
   }
 
   file.close();
@@ -85,8 +114,8 @@ void dd::GibbsSampling::load_weights_snapshot(const bool is_quiet) {
    * The number of weights in the file should match the one stored in the main
    * copy of the factor graph.
    */
-  long n_weights = p_fg->n_weight;
-  for (long i = 0; i < n_weights; i++) {
+  long n_weight = p_fg->n_weight;
+  for (long i = 0; i < n_weight; i++) {
     long wid;
     double value;
 
@@ -238,12 +267,12 @@ void dd::GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
       single_node_samplers[i].wait_sgd();
     }
 
-    FactorGraph &cfg = this->factorgraphs[0];
+    CompiledFactorGraph &cfg = this->factorgraphs[0];
 
     // sum the weights and store in the first factor graph
     // the average weights will be calculated and assigned to all factor graphs
     for (int i = 1; i <= n_numa_nodes; i++) {
-      FactorGraph &cfg_other = this->factorgraphs[i];
+      CompiledFactorGraph &cfg_other = this->factorgraphs[i];
       for (int j = 0; j < nweight; j++) {
         cfg.infrs->weight_values[j] += cfg_other.infrs->weight_values[j];
       }
@@ -265,7 +294,7 @@ void dd::GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
     // set weights for other factor graph to be the same as the first factor
     // graph
     for (int i = 1; i <= n_numa_nodes; i++) {
-      FactorGraph &cfg_other = this->factorgraphs[i];
+      CompiledFactorGraph &cfg_other = this->factorgraphs[i];
       for (int j = 0; j < nweight; j++) {
         if (cfg.infrs->weights_isfixed[j] == false) {
           cfg_other.infrs->weight_values[j] = cfg.infrs->weight_values[j];
@@ -301,6 +330,7 @@ void dd::GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
   double elapsed = t_total.elapsed();
   std::cout << "TOTAL LEARNING TIME: " << elapsed << " sec." << std::endl;
 
+  /*
   if (is_inc) {
     std::cout << "CALCULATING DELTA WEIGHTS..." << std::endl;
     long nnot_change = 0;
@@ -333,11 +363,12 @@ void dd::GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
       // std::endl;
     }
   }
+  */
 }
 
 void dd::GibbsSampling::dump_weights(const bool is_quiet, int inc) {
   // learning weights snippets
-  FactorGraph const &cfg = this->factorgraphs[0];
+  CompiledFactorGraph const &cfg = this->factorgraphs[0];
   if (!is_quiet) {
     std::cout << "LEARNING SNIPPETS (QUERY WEIGHTS):" << std::endl;
     int ct = 0;
@@ -391,7 +422,7 @@ void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet,
 
   // sum variable assignments over all NUMA nodes
   for (int i = 0; i <= n_numa_nodes; i++) {
-    const FactorGraph &cfg = factorgraphs[i];
+    const CompiledFactorGraph &cfg = factorgraphs[i];
     for (long i = 0; i < factorgraphs[0].n_var; i++) {
       const Variable &variable = factorgraphs[0].variables[i];
       agg_means[variable.id] += cfg.infrs->agg_means[variable.id];

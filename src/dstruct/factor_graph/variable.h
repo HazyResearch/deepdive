@@ -9,11 +9,14 @@
 #define DTYPE_REAL        0x01
 #define DTYPE_MULTINOMIAL 0x04
 
-namespace dd{
+namespace dd {
 
   typedef int VariableValue;
   typedef long VariableIndex;
   typedef long FactorIndex;
+
+  class Variable;
+  class RawVariable;
 
   /**
    * A variable in factor graph
@@ -21,7 +24,7 @@ namespace dd{
   class Variable {
   public:
     long id;                        // variable id
-    int domain_type;                // variable domain type, can be DTYPE_BOOLEAN or 
+    int domain_type;                // variable domain type, can be DTYPE_BOOLEAN or
                                     // DTYPE_MULTINOMIAL
     bool is_evid;                   // whether the variable is evidence
     bool is_observation;            // observed variable (fixed)
@@ -41,8 +44,6 @@ namespace dd{
 
     std::unordered_map<VariableValue, int> *domain_map; // map from value to index in the domain vector
 
-    std::vector<long> tmp_factor_ids; // factor ids the variable connects to
-
     bool isactive;
 
     long long component_id;
@@ -52,19 +53,36 @@ namespace dd{
     Variable();
 
     /**
+     * Constructs a variable with only the important information from a
+     * temporary variable
+     */
+    Variable(RawVariable& raw_variable);
+
+    // get the index of the value
+    inline int get_domain_index(int v) const {
+      return domain_map ? (*domain_map)[v] : (int)v;
+    }
+  };
+
+  /*
+   * Used by the raw FactorGraph to keep track of the temporary vector of
+   * factor IDs.
+   */
+  class RawVariable: public Variable {
+  public:
+    std::vector<long> tmp_factor_ids; // factor ids the variable connects to
+
+    RawVariable();
+
+    /**
      * Constructs a variable with id, domain type, is evidence, lower bound, 
      * upper bound, initial value, current value, number of factors 
      */
-    Variable(const long & _id, const int & _domain_type, 
+    RawVariable(const long & _id, const int & _domain_type, 
              const bool & _is_evid, const int & cardinality,
              const VariableValue & _init_value, 
              const VariableValue & _current_value, const int & _n_factors,
              bool is_observation);
-
-    // get the index of the value
-    inline int get_domain_index(int v) const {
-      return domain_map ? domain_map->at(v) : v;
-    }
   };
 
   /**

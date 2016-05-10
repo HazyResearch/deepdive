@@ -2,7 +2,7 @@
 
 namespace dd {
 
-SingleThreadSampler::SingleThreadSampler(FactorGraph *_p_fg,
+SingleThreadSampler::SingleThreadSampler(CompiledFactorGraph *_p_fg,
                                          bool sample_evidence, bool burn_in,
                                          bool learn_non_evidence)
     : p_fg(_p_fg),

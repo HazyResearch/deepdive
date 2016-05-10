@@ -108,7 +108,7 @@ long long read_variables(string filename, dd::FactorGraph &fg) {
     double init_value = is_evidence ? initial_value : 0;
 
     fg.variables[id] =
-        dd::Variable(id, type_const, is_evidence, cardinality, init_value,
+        dd::RawVariable(id, type_const, is_evidence, cardinality, init_value,
                      init_value, edge_count, is_observation);
 
     fg.c_nvar++;
@@ -148,7 +148,7 @@ long long read_factors(string filename, dd::FactorGraph &fg) {
 
     count++;
 
-    fg.factors[fg.c_nfactor] = dd::Factor(fg.c_nfactor, -1, type, edge_count);
+    fg.factors[fg.c_nfactor] = dd::RawFactor(fg.c_nfactor, -1, type, edge_count);
 
     for (long long position = 0; position < edge_count; position++) {
       file.read((char *)&variable_id, 8);
@@ -216,7 +216,7 @@ long long read_factors_inc(string filename, dd::FactorGraph &fg) {
     edge_count = be64toh(edge_count);
 
     count++;
-    fg.factors[fg.c_nfactor] = dd::Factor(id, weightid, type, edge_count);
+    fg.factors[fg.c_nfactor] = dd::RawFactor(id, weightid, type, edge_count);
     fg.c_nfactor++;
   }
   file.close();
@@ -311,4 +311,14 @@ void read_domains(std::string filename, dd::FactorGraph &fg) {
       variable.assignment_free = variable.assignment_evid = domain[0];
     }
   }
+}
+
+void resume(string filename, int i, dd::CompiledFactorGraph &cfg) {
+  // TODO: Implement me!
+  return;
+}
+
+void checkpoint(string filename, vector<dd::CompiledFactorGraph> &cfgs) {
+  // TODO: Implement me!
+  return;
 }

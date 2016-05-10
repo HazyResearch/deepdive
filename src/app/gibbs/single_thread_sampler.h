@@ -15,7 +15,7 @@ namespace dd{
 
   public:
     // factor graph
-    FactorGraph * const p_fg;
+    CompiledFactorGraph * const p_fg;
 
     // random number
     unsigned short p_rand_seed[3];
@@ -34,8 +34,8 @@ namespace dd{
     /**
      * Constructs a SingleThreadSampler with given factor graph
      */ 
-    // SingleThreadSampler(FactorGraph * _p_fg);
-    SingleThreadSampler(FactorGraph * _p_fg, bool sample_evidence, bool burn_in,
+    // SingleThreadSampler(CompiledFactorGraph * _p_fg);
+    SingleThreadSampler(CompiledFactorGraph * _p_fg, bool sample_evidence, bool burn_in,
         bool learn_non_evidence);
 
     /**

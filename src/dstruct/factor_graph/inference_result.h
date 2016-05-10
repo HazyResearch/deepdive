@@ -34,6 +34,8 @@ namespace dd {
      * Initialize the class with given variables and weights
      */
     void init(Variable * variables, Weight * const weights);
+
+    void copy_from(InferenceResult &infrs);
   };
 }
 

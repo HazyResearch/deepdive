@@ -82,4 +82,18 @@ long long read_edges_inc(string filename, dd::FactorGraph &);
 // Loads domains for multinomial variables
 void read_domains(string filename, dd::FactorGraph &fg);
 
+/**
+ * Resumes the computation state from the last checkpoint.
+ *
+ * @param filename The file to load the checkpoint from.
+ * @param n_numa_nodes The index of the factor graph to load
+ * @param[out] cfgs The vector of CompiledFactorGraphs to be populated.
+ */
+void resume(string filename, int i, dd::CompiledFactorGraph &cfg);
+
+/**
+ * Checkpoints all copies of the compiled factor graph to a file.
+ */
+void checkpoint(string filename, vector<dd::CompiledFactorGraph> &cfgs);
+
 #endif

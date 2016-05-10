@@ -10,7 +10,7 @@ namespace dd{
 
   /**
    * Class for (NUMA-aware) gibbs sampling
-   * 
+   *
    * This class encapsulates gibbs learning and inference, and dumping results.
    * Note the factor graph is copied on each NUMA node.
    */
@@ -18,7 +18,7 @@ namespace dd{
   public:
 
     // factor graph
-    FactorGraph * const p_fg;
+    CompiledFactorGraph * p_fg;
 
     // command line parser
     CmdParser * const p_cmd_parser;
@@ -31,7 +31,7 @@ namespace dd{
     int n_thread_per_numa;
 
     // factor graph copies
-    std::vector<FactorGraph> factorgraphs;
+    std::vector<CompiledFactorGraph> factorgraphs;
 
     // sample evidence in inference
     bool sample_evidence;
@@ -45,37 +45,19 @@ namespace dd{
     /**
      * Constructs GibbsSampling class with given factor graph, command line parser,
      * and number of data copies. Allocate factor graph to NUMA nodes.
-     * n_datacopy number of factor graph copies. n_datacopy = 1 means only 
+     * n_datacopy number of factor graph copies. n_datacopy = 1 means only
      * keeping one factor graph.
      */
-    GibbsSampling(FactorGraph * const _p_fg, CmdParser * const _p_cmd_parser, 
-        int n_datacopy, bool sample_evidence, int burn_in, bool learn_non_evidence);
+    GibbsSampling(CmdParser * const _p_cmd_parser,
+        bool sample_evidence, int burn_in, bool learn_non_evidence);
 
-    /**
-     * Saves the weights snapshot into a binary file. 
-     *
-     * FIXME: This has the same logic as dump_weights() below. Potentially 
-     * merge both functions.
-     *
-     * FIXME: This function and its loading counterpart is located in this
-     * class since we have to take into account the weights from all the
-     * nodes.
-     */
-    void save_weights_snapshot(const bool is_quiet);
 
-    /**
-     * Loads the weights snapshot into all copies of the factor graph from the
-     * specified file. Useful in the context of running the sampler on
-     * different non-overlapping partitions of the same factor graph.
-     */
-    void load_weights_snapshot(const bool is_quiet);
+    void init(CompiledFactorGraph * const _p_cfg, int n_datacopy);
 
-    /**
-     * Saves a snapshot of the graph in a binary file. Useful in the context
-     * of running the sampler on different non-overlapping partitions of 
-     * the same factor graph.
-     */
-    void save_graph_snapshot(const bool is_quiet);
+    void do_resume(bool is_quiet, int n_datacopy, long n_var, long n_factor, long n_weight, long n_edge);
+
+    /* TODO: Implement checkpoint method */
+    void do_checkpoint(bool is_quiet);
 
     /**
      * Performs learning
@@ -110,6 +92,25 @@ namespace dd{
      */
     void dump_weights(const bool is_quiet, int inc);
 
+  private:
+    /**
+     * Saves the weights snapshot into a binary file.
+     *
+     * FIXME: This has the same logic as dump_weights() below. Potentially
+     * merge both functions.
+     *
+     * FIXME: This function and its loading counterpart is located in this
+     * class since we have to take into account the weights from all the
+     * nodes.
+     */
+    void save_weights_snapshot(const bool is_quiet);
+
+    /**
+     * Loads the weights snapshot into all copies of the factor graph from the
+     * specified file. Useful in the context of running the sampler on
+     * different non-overlapping partitions of the same factor graph.
+     */
+    void load_weights_snapshot(const bool is_quiet);
   };
 }
 

@@ -79,7 +79,7 @@ TEST(BinaryParserTest, read_domains) {
   dd::FactorGraph fg(num_variables, 1, 1, 1);
   // add variables
   for (int i = 0; i < num_variables; i++) {
-    fg.variables[i] = dd::Variable(i, 0, 0, domain_sizes[i], 0, 0, 0, 0);
+    fg.variables[i] = dd::RawVariable(i, 0, 0, domain_sizes[i], 0, 0, 0, 0);
   }
   read_domains("./test/domains/graph.domains", fg);
 

@@ -13,6 +13,10 @@
 
 namespace dd{
 
+  class CompactFactor;
+  class Factor;
+  class RawFactor;
+
   // enumeration for factor function types
   enum FACTOR_FUCNTION_TYPE{
     FUNC_IMPLY_MLN = 0,
@@ -189,8 +193,6 @@ namespace dd{
 
     long n_start_i_vif;     // start variable id
 
-    std::vector<VariableInFactor> tmp_variables; // variables in the factor
-
     // a list of weight for sparse multinomial factor
     // the weights are ordered by their corresponding variable assignments
     std::vector<long> weight_ids;
@@ -198,13 +200,25 @@ namespace dd{
     Factor();
 
     /**
+     * Construct a factor from a raw factor.
+     */
+    Factor(RawFactor &);
+
+  };
+
+  class RawFactor: public Factor {
+  public:
+    std::vector<VariableInFactor> tmp_variables;
+
+    RawFactor();
+
+    /**
      * Construct a factor with given id, weight id, function id, number of variables
      */
-    Factor(const FactorIndex & _id,
+    RawFactor(const FactorIndex & _id,
            const WeightIndex & _weight_id,
            const int & _func_id,
            const int & _n_variables);
-
   };
 
 }

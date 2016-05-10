@@ -16,7 +16,7 @@ namespace dd{
 
   public:
     // factor graph
-    FactorGraph * const p_fg;
+    CompiledFactorGraph * const p_fg;
     // number of threads
     int nthread;
     // node id
@@ -32,10 +32,10 @@ namespace dd{
      * Constructs a SingleNodeSampler given factor graph, number of threads, and
      * node id.
      */
-    SingleNodeSampler(FactorGraph * _p_fg, int _nthread, int _nodeid);
-    SingleNodeSampler(FactorGraph * _p_fg, int _nthread, int _nodeid, 
+    SingleNodeSampler(CompiledFactorGraph * _p_fg, int _nthread, int _nodeid);
+    SingleNodeSampler(CompiledFactorGraph * _p_fg, int _nthread, int _nodeid, 
       bool sample_evidence, int burn_in);
-    SingleNodeSampler(FactorGraph * _p_fg, int _nthread, int _nodeid, 
+    SingleNodeSampler(CompiledFactorGraph * _p_fg, int _nthread, int _nodeid, 
       bool sample_evidence, int burn_in, bool learn_non_evidence);
 
     /**

@@ -3,7 +3,7 @@
 
 namespace dd {
 
-void gibbs_single_thread_task(FactorGraph *const _p_fg, int i_worker,
+void gibbs_single_thread_task(CompiledFactorGraph *const _p_fg, int i_worker,
                               int n_worker, bool _sample_evidence,
                               bool burn_in) {
   SingleThreadSampler sampler =
@@ -11,18 +11,18 @@ void gibbs_single_thread_task(FactorGraph *const _p_fg, int i_worker,
   sampler.sample(i_worker, n_worker);
 }
 
-void gibbs_single_thread_sgd_task(FactorGraph *const _p_fg, int i_worker,
+void gibbs_single_thread_sgd_task(CompiledFactorGraph *const _p_fg, int i_worker,
                                   int n_worker, bool learn_non_evidence) {
   SingleThreadSampler sampler =
       SingleThreadSampler(_p_fg, false, 0, learn_non_evidence);
   sampler.sample_sgd(i_worker, n_worker);
 }
 
-SingleNodeSampler::SingleNodeSampler(FactorGraph *_p_fg, int _nthread,
+SingleNodeSampler::SingleNodeSampler(CompiledFactorGraph *_p_fg, int _nthread,
                                      int _nodeid)
     : p_fg(_p_fg), nthread(_nthread), nodeid(_nodeid) {}
 
-SingleNodeSampler::SingleNodeSampler(FactorGraph *_p_fg, int _nthread,
+SingleNodeSampler::SingleNodeSampler(CompiledFactorGraph *_p_fg, int _nthread,
                                      int _nodeid, bool sample_evidence,
                                      int burn_in)
     : p_fg(_p_fg),
@@ -31,7 +31,7 @@ SingleNodeSampler::SingleNodeSampler(FactorGraph *_p_fg, int _nthread,
       sample_evidence(sample_evidence),
       burn_in(burn_in) {}
 
-SingleNodeSampler::SingleNodeSampler(FactorGraph *_p_fg, int _nthread,
+SingleNodeSampler::SingleNodeSampler(CompiledFactorGraph *_p_fg, int _nthread,
                                      int _nodeid, bool sample_evidence,
                                      int burn_in, bool learn_non_evidence)
     : p_fg(_p_fg),

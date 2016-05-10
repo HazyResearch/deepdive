@@ -56,19 +56,34 @@ TEST_F(LoadingTest, load_factor_graph) {
   EXPECT_EQ(fg.n_query, 9);
   EXPECT_EQ(fg.c_nfactor, 18);
   EXPECT_EQ(fg.c_nweight, 1);
-  EXPECT_EQ(fg.c_edge, 18);
+
+  /* Due to how loading works in this new model, the factor graph is not
+   * supposed to count the edges during loading. This only happens after
+   * compile.
+   */
+  //EXPECT_EQ(fg.c_edge, 18);
 }
 
-// test for FactorGraph::organize_graph_by_edge function
+// test for FactorGraph::compile() function
 TEST_F(LoadingTest, organize_graph_by_edge) {
-  fg.organize_graph_by_edge();
-  fg.safety_check();
+  dd::CompiledFactorGraph cfg(18, 18, 1, 18);
+  fg.compile(cfg);
+
+  EXPECT_EQ(cfg.c_nvar, 18);
+  EXPECT_EQ(cfg.n_evid, 9);
+  EXPECT_EQ(cfg.n_query, 9);
+  EXPECT_EQ(cfg.c_nfactor, 18);
+  EXPECT_EQ(cfg.c_nweight, 1);
+  EXPECT_EQ(fg.c_edge, 18);
 }
 
 // test for FactorGraph::copy_from function
 TEST_F(LoadingTest, copy_from) {
-  dd::FactorGraph fg2(18, 18, 1, 18);
-  fg2.copy_from(&fg);
+  dd::CompiledFactorGraph cfg(18, 18, 1, 18);
+  fg.compile(cfg);
 
-  EXPECT_TRUE(memcmp(&fg, &fg2, sizeof(fg)));
+  dd::CompiledFactorGraph cfg2(18, 18, 1, 18);
+  cfg2.copy_from(&cfg);
+
+  EXPECT_TRUE(memcmp(&cfg, &cfg2, sizeof(cfg)));
 }

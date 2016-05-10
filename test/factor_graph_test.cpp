@@ -18,9 +18,9 @@ using namespace dd;
 // positive and id 8 negative.
 class FactorGraphTest : public testing::Test {
  protected:
-  dd::FactorGraph fg;
+  dd::CompiledFactorGraph cfg;
 
-  FactorGraphTest() : fg(dd::FactorGraph(18, 18, 1, 18)) {}
+  FactorGraphTest() : cfg(dd::CompiledFactorGraph(18, 18, 1, 18)) {}
 
   virtual void SetUp() {
     system(
@@ -45,36 +45,41 @@ class FactorGraphTest : public testing::Test {
                             "--alpha", "0.1",
                             ""};
     dd::CmdParser cmd_parser = parse_input(21, (char **)argv);
+
+    dd::FactorGraph fg(18, 18, 1, 18);
     fg.load(cmd_parser, false, 0);
+
+    fg.compile(cfg);
   }
 };
 
 // test update function
 TEST_F(FactorGraphTest, update_variable) {
-  fg.update<true>(fg.variables[0], 1);
-  EXPECT_EQ(fg.infrs->assignments_free[0], 1);
-  EXPECT_EQ(fg.infrs->assignments_evid[0], 1);
+  cfg.update<true>(cfg.variables[0], 1);
+  EXPECT_EQ(cfg.infrs->assignments_free[0], 1);
+  EXPECT_EQ(cfg.infrs->assignments_evid[0], 1);
 
-  fg.update<true>(fg.variables[0], 0);
-  EXPECT_EQ(fg.infrs->assignments_free[0], 0);
-  EXPECT_EQ(fg.infrs->assignments_evid[0], 1);
+  cfg.update<true>(cfg.variables[0], 0);
+  EXPECT_EQ(cfg.infrs->assignments_free[0], 0);
+  EXPECT_EQ(cfg.infrs->assignments_evid[0], 1);
 
-  fg.update<false>(fg.variables[10], 1);
-  EXPECT_EQ(fg.infrs->assignments_free[10], 0);
-  EXPECT_EQ(fg.infrs->assignments_evid[10], 1);
+  cfg.update<false>(cfg.variables[10], 1);
+  EXPECT_EQ(cfg.infrs->assignments_free[10], 0);
+  EXPECT_EQ(cfg.infrs->assignments_evid[10], 1);
 }
 
 // test update_weight function
 TEST_F(FactorGraphTest, update_weight) {
-  fg.stepsize = 0.1;
-  fg.update<true>(fg.variables[0], 0);
+  cfg.stepsize = 0.1;
+  cfg.update<true>(cfg.variables[0], 0);
 
-  fg.update_weight(fg.variables[0]);
-  EXPECT_EQ(fg.infrs->weight_values[0], 0.1);
+  cfg.update_weight(cfg.variables[0]);
+  std::cout << "The weight value is: " << cfg.infrs->weight_values[0] << std::endl;
+  EXPECT_EQ(cfg.infrs->weight_values[0], 0.1);
 
-  fg.update_weight(fg.variables[10]);
-  EXPECT_EQ(fg.infrs->weight_values[0], 0.1);
+  cfg.update_weight(cfg.variables[10]);
+  EXPECT_EQ(cfg.infrs->weight_values[0], 0.1);
 
-  fg.update_weight(fg.variables[10]);
-  EXPECT_EQ(fg.infrs->weight_values[0], 0.1);
+  cfg.update_weight(cfg.variables[10]);
+  EXPECT_EQ(cfg.infrs->weight_values[0], 0.1);
 }
