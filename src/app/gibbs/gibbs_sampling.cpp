@@ -17,7 +17,7 @@ dd::GibbsSampling::GibbsSampling(CmdParser *const _p_cmd_parser,
       burn_in(burn_in),
       learn_non_evidence(learn_non_evidence) {}
 
-void dd::GibbsSampling::init(CompiledFactorGraph * const p_cfg, int n_datacopy) {
+void dd::GibbsSampling::init(CompiledFactorGraph *const p_cfg, int n_datacopy) {
   // the highest node number available
   n_numa_nodes = numa_max_node();
 
@@ -39,7 +39,7 @@ void dd::GibbsSampling::init(CompiledFactorGraph * const p_cfg, int n_datacopy) 
 
     std::cout << "CREATE CFG ON NODE ..." << i << std::endl;
     dd::CompiledFactorGraph cfg(p_cfg->n_var, p_cfg->n_factor, p_cfg->n_weight,
-                       p_cfg->n_edge);
+                                p_cfg->n_edge);
 
     cfg.copy_from(p_cfg);
 
@@ -47,7 +47,8 @@ void dd::GibbsSampling::init(CompiledFactorGraph * const p_cfg, int n_datacopy) 
   }
 };
 
-void dd::GibbsSampling::do_resume(bool is_quiet, int n_datacopy, long n_var, long n_factor, long n_weight, long n_edge) {
+void dd::GibbsSampling::do_resume(bool is_quiet, int n_datacopy, long n_var,
+                                  long n_factor, long n_weight, long n_edge) {
   n_numa_nodes = numa_max_node();
 
   // if n_datacopy is valid, use it, otherwise, use numa_max_node
@@ -59,7 +60,7 @@ void dd::GibbsSampling::do_resume(bool is_quiet, int n_datacopy, long n_var, lon
   n_thread_per_numa = (sysconf(_SC_NPROCESSORS_CONF)) / (n_numa_nodes + 1);
 
   // Resume from checkpoint file while still maintaining NUMA awareness.
-  for (int i = 1; i<= n_numa_nodes; i++) {
+  for (int i = 1; i <= n_numa_nodes; i++) {
     numa_run_on_node(i);
     numa_set_localalloc();
 

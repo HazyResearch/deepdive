@@ -61,7 +61,7 @@ TEST_F(LoadingTest, load_factor_graph) {
    * supposed to count the edges during loading. This only happens after
    * compile.
    */
-  //EXPECT_EQ(fg.c_edge, 18);
+  // EXPECT_EQ(fg.c_edge, 18);
 }
 
 // test for FactorGraph::compile() function

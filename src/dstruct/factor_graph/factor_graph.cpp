@@ -16,12 +16,11 @@
 // sort according to id
 template <class T>
 class idsorter : public std::binary_function<T, T, bool> {
-public:
+ public:
   inline bool operator()(const T &left, const T &right) {
     return left.id < right.id;
   }
 };
-
 
 bool dd::FactorGraph::is_usable() {
   return this->sorted && this->safety_check_passed;
@@ -250,7 +249,8 @@ void dd::FactorGraph::compile(CompiledFactorGraph &cfg) {
      * within the factor by their position, lay the variables in this factor
      * one after another in the vifs array.
      */
-    std::sort(rf.tmp_variables.begin(), rf.tmp_variables.end(), dd::compare_position);
+    std::sort(rf.tmp_variables.begin(), rf.tmp_variables.end(),
+              dd::compare_position);
     for (const VariableInFactor &vif : rf.tmp_variables) {
       cfg.vifs[i_edge] = vif;
       i_edge++;
@@ -310,8 +310,8 @@ void dd::FactorGraph::compile(CompiledFactorGraph &cfg) {
   cfg.c_edge = i_edge;
 }
 
-dd::CompiledFactorGraph::CompiledFactorGraph(long _n_var, long _n_factor, long _n_weight,
-                             long _n_edge)
+dd::CompiledFactorGraph::CompiledFactorGraph(long _n_var, long _n_factor,
+                                             long _n_weight, long _n_edge)
     : n_var(_n_var),
       n_factor(_n_factor),
       n_weight(_n_weight),
@@ -329,10 +329,10 @@ dd::CompiledFactorGraph::CompiledFactorGraph(long _n_var, long _n_factor, long _
       factor_ids(new long[_n_edge]),
       vifs(new VariableInFactor[_n_edge]),
       infrs(new InferenceResult(_n_var, _n_weight)),
-      safety_check_passed(false) {
-}
+      safety_check_passed(false) {}
 
-void dd::CompiledFactorGraph::copy_from(const CompiledFactorGraph *const p_other_fg) {
+void dd::CompiledFactorGraph::copy_from(
+    const CompiledFactorGraph *const p_other_fg) {
   c_nvar = p_other_fg->c_nvar;
   c_nfactor = p_other_fg->c_nfactor;
   c_nweight = p_other_fg->c_nweight;
@@ -345,8 +345,10 @@ void dd::CompiledFactorGraph::copy_from(const CompiledFactorGraph *const p_other
   memcpy(variables, p_other_fg->variables, sizeof(Variable) * n_var);
   memcpy(factors, p_other_fg->factors, sizeof(Factor) * n_factor);
 
-  memcpy(compact_factors, p_other_fg->compact_factors, sizeof(CompactFactor) * n_edge);
-  memcpy(compact_factors_weightids, p_other_fg->compact_factors_weightids, sizeof(int) * n_edge);
+  memcpy(compact_factors, p_other_fg->compact_factors,
+         sizeof(CompactFactor) * n_edge);
+  memcpy(compact_factors_weightids, p_other_fg->compact_factors_weightids,
+         sizeof(int) * n_edge);
   memcpy(factor_ids, p_other_fg->factor_ids, sizeof(long) * n_edge);
   memcpy(vifs, p_other_fg->vifs, sizeof(VariableInFactor) * n_edge);
 
@@ -403,7 +405,8 @@ void dd::CompiledFactorGraph::update_weight(const Variable &variable) {
   // corresponding factors and weights in a continous region
   CompactFactor *const fs = compact_factors + variable.n_start_i_factors;
   const int *const ws = compact_factors_weightids + variable.n_start_i_factors;
-  std::cout << "variable.n_start_i_factors = " << variable.n_start_i_factors << std::endl;
+  std::cout << "variable.n_start_i_factors = " << variable.n_start_i_factors
+            << std::endl;
 
   // for each factor
   for (long i = 0; i < variable.n_factors; i++) {

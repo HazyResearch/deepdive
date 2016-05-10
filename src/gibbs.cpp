@@ -188,8 +188,8 @@ void mat(dd::CmdParser &cmd_parser) {
                      meta.num_edges);
   fg.load(cmd_parser, is_quiet, 1);
 
-  dd::CompiledFactorGraph cfg(meta.num_variables, meta.num_factors, meta.num_weights,
-                     meta.num_edges);
+  dd::CompiledFactorGraph cfg(meta.num_variables, meta.num_factors,
+                              meta.num_weights, meta.num_edges);
 
   fg.compile(cfg);
 
@@ -307,16 +307,20 @@ void gibbs(dd::CmdParser &cmd_parser) {
   numa_set_localalloc();
 
   // Initialize Gibbs sampling application.
-  dd::GibbsSampling gibbs(&cmd_parser, sample_evidence, burn_in, learn_non_evidence);
+  dd::GibbsSampling gibbs(&cmd_parser, sample_evidence, burn_in,
+                          learn_non_evidence);
 
   if (cmd_parser.should_use_snapshot) {
-    gibbs.do_resume(is_quiet, n_datacopy, meta.num_variables, meta.num_factors, meta.num_weights, meta.num_edges);
+    gibbs.do_resume(is_quiet, n_datacopy, meta.num_variables, meta.num_factors,
+                    meta.num_weights, meta.num_edges);
   } else {
     // Load factor graph
-    dd::FactorGraph fg(meta.num_variables, meta.num_factors, meta.num_weights, meta.num_edges);
+    dd::FactorGraph fg(meta.num_variables, meta.num_factors, meta.num_weights,
+                       meta.num_edges);
     fg.load(cmd_parser, is_quiet, false);
 
-    dd::CompiledFactorGraph cfg(meta.num_variables, meta.num_factors, meta.num_weights, meta.num_edges);
+    dd::CompiledFactorGraph cfg(meta.num_variables, meta.num_factors,
+                                meta.num_weights, meta.num_edges);
     fg.compile(cfg);
 
     gibbs.init(&cfg, n_datacopy);

@@ -11,8 +11,9 @@ void gibbs_single_thread_task(CompiledFactorGraph *const _p_fg, int i_worker,
   sampler.sample(i_worker, n_worker);
 }
 
-void gibbs_single_thread_sgd_task(CompiledFactorGraph *const _p_fg, int i_worker,
-                                  int n_worker, bool learn_non_evidence) {
+void gibbs_single_thread_sgd_task(CompiledFactorGraph *const _p_fg,
+                                  int i_worker, int n_worker,
+                                  bool learn_non_evidence) {
   SingleThreadSampler sampler =
       SingleThreadSampler(_p_fg, false, 0, learn_non_evidence);
   sampler.sample_sgd(i_worker, n_worker);

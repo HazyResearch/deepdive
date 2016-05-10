@@ -110,7 +110,7 @@ long long read_variables(string filename, dd::FactorGraph &fg) {
 
     fg.variables[id] =
         dd::RawVariable(id, type_const, is_evidence, cardinality, init_value,
-                     init_value, edge_count, is_observation);
+                        init_value, edge_count, is_observation);
 
     fg.c_nvar++;
     if (is_evidence) {
@@ -149,7 +149,8 @@ long long read_factors(string filename, dd::FactorGraph &fg) {
 
     count++;
 
-    fg.factors[fg.c_nfactor] = dd::RawFactor(fg.c_nfactor, -1, type, edge_count);
+    fg.factors[fg.c_nfactor] =
+        dd::RawFactor(fg.c_nfactor, -1, type, edge_count);
 
     for (long long position = 0; position < edge_count; position++) {
       file.read((char *)&variable_id, 8);
@@ -316,7 +317,6 @@ void read_domains(std::string filename, dd::FactorGraph &fg) {
       variable.assignment_free = variable.assignment_evid = domain[0];
     }
   }
-
 }
 
 void resume(string filename, int i, dd::CompiledFactorGraph &cfg) {

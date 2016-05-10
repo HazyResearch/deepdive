@@ -74,7 +74,8 @@ TEST_F(FactorGraphTest, update_weight) {
   cfg.update<true>(cfg.variables[0], 0);
 
   cfg.update_weight(cfg.variables[0]);
-  std::cout << "The weight value is: " << cfg.infrs->weight_values[0] << std::endl;
+  std::cout << "The weight value is: " << cfg.infrs->weight_values[0]
+            << std::endl;
   EXPECT_EQ(cfg.infrs->weight_values[0], 0.1);
 
   cfg.update_weight(cfg.variables[10]);

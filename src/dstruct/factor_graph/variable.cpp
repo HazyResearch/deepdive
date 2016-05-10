@@ -5,10 +5,10 @@ namespace dd {
 RawVariable::RawVariable() {}
 
 RawVariable::RawVariable(const long _id, const int _domain_type,
-                   const bool _is_evid, const int _cardinality,
-                   const VariableValue _init_value,
-                   const VariableValue _current_value, const int _n_factors,
-                   bool _is_observation) {
+                         const bool _is_evid, const int _cardinality,
+                         const VariableValue _init_value,
+                         const VariableValue _current_value,
+                         const int _n_factors, bool _is_observation) {
   this->id = _id;
   this->domain_type = _domain_type;
   this->is_evid = _is_evid;
@@ -26,19 +26,19 @@ RawVariable::RawVariable(const long _id, const int _domain_type,
 Variable::Variable() {}
 
 Variable::Variable(RawVariable &rv)
-  : id(rv.id),
-    domain_type(rv.domain_type),
-    is_evid(rv.is_evid),
-    is_observation(rv.is_observation),
-    cardinality(rv.cardinality),
-    assignment_evid(rv.assignment_evid),
-    assignment_free(rv.assignment_free),
-    n_factors(rv.n_factors),
-    n_start_i_factors(rv.n_start_i_factors),
-    n_start_i_tally(rv.n_start_i_tally),
-    domain_map(rv.domain_map),
-    isactive(rv.isactive),
-    component_id(rv.component_id) {}
+    : id(rv.id),
+      domain_type(rv.domain_type),
+      is_evid(rv.is_evid),
+      is_observation(rv.is_observation),
+      cardinality(rv.cardinality),
+      assignment_evid(rv.assignment_evid),
+      assignment_free(rv.assignment_free),
+      n_factors(rv.n_factors),
+      n_start_i_factors(rv.n_start_i_factors),
+      n_start_i_tally(rv.n_start_i_tally),
+      domain_map(rv.domain_map),
+      isactive(rv.isactive),
+      component_id(rv.component_id) {}
 
 bool VariableInFactor::satisfiedUsing(int value) const {
   return is_positive ? equal_to == value : !(equal_to == value);
