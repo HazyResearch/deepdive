@@ -304,5 +304,11 @@ void read_domains(std::string filename, dd::FactorGraph &fg) {
     for (int i = 0; i < domain_size; i++) {
       (*variable.domain_map)[domain[i]] = i;
     }
+
+    // adjust the initial assignments to a valid one instead of zero for query
+    // variables
+    if (!variable.is_evid) {
+      variable.assignment_free = variable.assignment_evid = domain[0];
+    }
   }
 }

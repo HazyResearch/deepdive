@@ -228,6 +228,8 @@ void dd::FactorGraph::load(const CmdParser &cmd, const bool is_quiet, int inc) {
     std::cout << "LOADED WEIGHTS: #" << n_loaded << std::endl;
   }
 
+  read_domains(cmd.domain_file, *this);
+
   this->sorted = true;
   infrs->init(variables, weights);
 
@@ -246,8 +248,6 @@ void dd::FactorGraph::load(const CmdParser &cmd, const bool is_quiet, int inc) {
   if (!is_quiet) {
     std::cout << "LOADED FACTORS: #" << n_loaded << std::endl;
   }
-
-  read_domains(cmd.domain_file, *this);
 
   if (inc) {
     // sort edges
