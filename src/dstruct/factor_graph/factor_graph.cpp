@@ -85,20 +85,16 @@ long dd::FactorGraph::get_multinomial_weight_id(
    * For example, for variable assignment indexes i1, ..., ik with cardinality
    * d1, ..., dk
    * The weight index is
-   * (...(((i1 * d2) + i2) * d3 + i3) * d4 + ...) * dk + ik
+   * (...((((0 * d1 + i1) * d2) + i2) * d3 + i3) * d4 + ...) * dk + ik
    */
   long weight_offset = 0;
   // for each variable in the factor
-  for (long i = fs.n_start_i_vif; i < fs.n_start_i_vif + fs.n_variables; i++) {
+  for (long i = fs.n_start_i_vif; i < fs.n_start_i_vif + fs.n_variables; ++i) {
     const VariableInFactor &vif = vifs[i];
-    Variable &variable = variables[vif.vid];
-    if (vif.vid == vid) {
-      weight_offset = weight_offset * variable.cardinality +
-                      variable.get_domain_index(proposal);
-    } else {
-      weight_offset = weight_offset * variable.cardinality +
-                      variable.get_domain_index((int)assignments[vif.vid]);
-    }
+    const Variable &variable = variables[vif.vid];
+    weight_offset *= variable.cardinality;
+    weight_offset += variable.get_domain_index(
+        (vif.vid == vid) ? proposal : (int)assignments[vif.vid]);
   }
 
   long weight_id = 0;
