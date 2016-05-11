@@ -348,27 +348,37 @@ void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet,
       const Variable &variable = factorgraphs[0].variables[i];
       if (variable.is_evid == false || sample_evidence) {
         ct++;
-        std::cout << "   " << variable.id << " EXP="
-                  << agg_means[variable.id] / agg_nsamples[variable.id]
+        std::cout << "   " << variable.id
                   << "  NSAMPLE=" << agg_nsamples[variable.id] << std::endl;
-
-        if (variable.domain_type == DTYPE_MULTINOMIAL) {
-          const auto &print_snippet = [&multinomial_tallies, &agg_nsamples,
-                                       variable](int domain_value,
-                                                 int domain_index) {
-            std::cout << "        @ " << domain_value << " -> "
-                      << 1.0 * multinomial_tallies[variable.n_start_i_tally +
-                                                   domain_index] /
-                             agg_nsamples[variable.id]
+        switch (variable.domain_type) {
+          case DTYPE_BOOLEAN:
+            std::cout << "        @ 1 -> EXP="
+                      << agg_means[variable.id] / agg_nsamples[variable.id]
                       << std::endl;
-          };
-          if (variable.domain_map) {  // sparse
-            for (const auto &entry : *variable.domain_map)
-              print_snippet(entry.first, entry.second);
-          } else {  // dense case
-            for (size_t j = 0; j < variable.cardinality; j++)
-              print_snippet(j, j);
+            break;
+
+          case DTYPE_MULTINOMIAL: {
+            const auto &print_snippet = [&multinomial_tallies, &agg_nsamples,
+                                         variable](int domain_value,
+                                                   int domain_index) {
+              std::cout << "        @ " << domain_value << " -> EXP="
+                        << 1.0 * multinomial_tallies[variable.n_start_i_tally +
+                                                     domain_index] /
+                               agg_nsamples[variable.id]
+                        << std::endl;
+            };
+            if (variable.domain_map) {  // sparse
+              for (const auto &entry : *variable.domain_map)
+                print_snippet(entry.first, entry.second);
+            } else {  // dense case
+              for (size_t j = 0; j < variable.cardinality; j++)
+                print_snippet(j, j);
+            }
+            break;
           }
+
+          default:
+            abort();
         }
 
         if (ct % 10 == 0) {
@@ -399,13 +409,14 @@ void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet,
     }
 
     switch (variable.domain_type) {
-      case DTYPE_BOOLEAN:
+      case DTYPE_BOOLEAN: {
         fout_text << variable.id << " " << 1 << " "
                   << (agg_means[variable.id] / agg_nsamples[variable.id])
                   << std::endl;
         break;
+      }
 
-      case DTYPE_MULTINOMIAL:
+      case DTYPE_MULTINOMIAL: {
         const auto &print_result = [&fout_text, &multinomial_tallies,
                                     &agg_nsamples, variable](int domain_value,
                                                              int domain_index) {
@@ -423,6 +434,10 @@ void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet,
           for (size_t j = 0; j < variable.cardinality; j++) print_result(j, j);
         }
         break;
+      }
+
+      default:
+        abort();
     }
   }
   fout_text.close();
