@@ -77,7 +77,8 @@ void dump_factors(const dd::FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
   for (int i = 0; i < fg.n_factor; ++i) {
     dd::Factor &f = fg.factors[i];
-    // FIXME this output is lossy since it drops the f.func_id and f.tmp_variables[*].is_positive
+    // FIXME this output is lossy since it drops the f.func_id and
+    // f.tmp_variables[*].is_positive
     // variable ids the factor is defined over
     for (const auto &v : f.tmp_variables) {
       fout << v.vid;
@@ -127,13 +128,17 @@ void dump_meta(const dd::FactorGraph &fg, const std::string &filename) {
   fout << "," << fg.n_factor;
   fout << "," << fg.n_edge;
   // XXX dummy file names
-  fout << "," << "graph.weights";
-  fout << "," << "graph.variables";
-  fout << "," << "graph.factors";
+  fout << ","
+       << "graph.weights";
+  fout << ","
+       << "graph.variables";
+  fout << ","
+       << "graph.factors";
   fout << std::endl;
 }
 
-void dump_factorgraph(const dd::FactorGraph &fg, const std::string& output_dir) {
+void dump_factorgraph(const dd::FactorGraph &fg,
+                      const std::string &output_dir) {
   dump_variables(fg, output_dir + "/variables.tsv");
   dump_factors(fg, output_dir + "/factors.tsv");
   dump_weights(fg, output_dir + "/weights.tsv");
