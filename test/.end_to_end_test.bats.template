@@ -30,7 +30,7 @@ esac
         -m graph.meta \
         -o . \
         --domains <(cat graph.domains*) \
-        $(cat dw-args)
+        --quiet $(cat dw-args)
 
     # check result
     ! [[ -x ./check_result ]] ||
