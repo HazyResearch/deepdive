@@ -12,6 +12,8 @@
 
 using namespace dd;
 
+const string get_copy_filename(const string &, int);
+
 // test fixture
 // the factor graph used for test is from biased coin, which contains 18
 // variables,
@@ -20,8 +22,11 @@ using namespace dd;
 class CheckpointTest : public testing::Test {
  protected:
   dd::CompiledFactorGraph cfg;
+  std::string checkpoint_filename;
 
-  CheckpointTest() : cfg(dd::CompiledFactorGraph(18, 18, 1, 18)) {}
+  CheckpointTest()
+      : cfg(dd::CompiledFactorGraph(18, 18, 1, 18)),
+        checkpoint_filename("graph.checkpoint") {}
 
   virtual void SetUp() {
     system(
@@ -51,6 +56,11 @@ class CheckpointTest : public testing::Test {
 
     fg.compile(cfg);
   }
+
+  virtual void TearDown() {
+    std::string cmd = "rm " + get_copy_filename(checkpoint_filename, 0);
+    system(cmd.c_str());
+  }
 };
 
 /*
@@ -59,104 +69,100 @@ class CheckpointTest : public testing::Test {
  * Well, this test just got long.
  */
 TEST_F(CheckpointTest, checkpoint_and_resume) {
-  std::string filename("graph.checkpoint");
-
   /* Sort of gives you an idea how to call checkpoint() */
   std::vector<CompiledFactorGraph> cfgs;
   cfgs.push_back(cfg);
-  checkpoint(filename, cfgs);
+  checkpoint(checkpoint_filename, cfgs);
 
   /* And an idea on how to call resume() */
   CompiledFactorGraph resumed_cfg(18, 18, 1, 18);
-  resume(filename, 0, resumed_cfg);
+  resume(checkpoint_filename, 0, resumed_cfg);
 
-  ASSERT_EQ(resumed_cfg.n_var, cfg.n_var);
-  ASSERT_EQ(resumed_cfg.n_factor, cfg.n_factor);
-  ASSERT_EQ(resumed_cfg.n_weight, cfg.n_weight);
-  ASSERT_EQ(resumed_cfg.n_edge, cfg.n_edge);
+  ASSERT_EQ(cfg.n_var, resumed_cfg.n_var);
+  ASSERT_EQ(cfg.n_factor, resumed_cfg.n_factor);
+  ASSERT_EQ(cfg.n_weight, resumed_cfg.n_weight);
+  ASSERT_EQ(cfg.n_edge, resumed_cfg.n_edge);
 
   /*
    * Check all arrays of variables, factors, compiled factors, compiled
    * variables, all that good stuff.
    */
   for (auto i = 0; i < cfg.n_var; i++) {
-    ASSERT_EQ(resumed_cfg.variables[i].id, cfg.variables[i].id);
-    ASSERT_EQ(resumed_cfg.variables[i].domain_type,
-              cfg.variables[i].domain_type);
+    ASSERT_EQ(cfg.variables[i].id, resumed_cfg.variables[i].id);
+    ASSERT_EQ(cfg.variables[i].domain_type,
+              resumed_cfg.variables[i].domain_type);
 
-    ASSERT_EQ(resumed_cfg.variables[i].is_evid, cfg.variables[i].is_evid);
-    ASSERT_EQ(resumed_cfg.variables[i].is_observation,
-              cfg.variables[i].is_observation);
-    ASSERT_EQ(resumed_cfg.variables[i].cardinality,
-              cfg.variables[i].cardinality);
+    ASSERT_EQ(cfg.variables[i].is_evid, resumed_cfg.variables[i].is_evid);
+    ASSERT_EQ(cfg.variables[i].is_observation,
+              resumed_cfg.variables[i].is_observation);
+    ASSERT_EQ(cfg.variables[i].cardinality,
+              resumed_cfg.variables[i].cardinality);
 
-    ASSERT_EQ(resumed_cfg.variables[i].assignment_evid,
-              cfg.variables[i].assignment_evid);
-    ASSERT_EQ(resumed_cfg.variables[i].assignment_free,
-              cfg.variables[i].assignment_free);
+    ASSERT_EQ(cfg.variables[i].assignment_evid,
+              resumed_cfg.variables[i].assignment_evid);
+    ASSERT_EQ(cfg.variables[i].assignment_free,
+              resumed_cfg.variables[i].assignment_free);
 
-    ASSERT_EQ(resumed_cfg.variables[i].n_factors, cfg.variables[i].n_factors);
-    ASSERT_EQ(resumed_cfg.variables[i].n_start_i_factors,
-              cfg.variables[i].n_start_i_factors);
+    ASSERT_EQ(cfg.variables[i].n_factors, resumed_cfg.variables[i].n_factors);
+    ASSERT_EQ(cfg.variables[i].n_start_i_factors,
+              resumed_cfg.variables[i].n_start_i_factors);
 
-    ASSERT_EQ(resumed_cfg.variables[i].n_start_i_tally,
-              cfg.variables[i].n_start_i_tally);
-    ASSERT_EQ(resumed_cfg.variables[i].isactive, cfg.variables[i].isactive);
+    ASSERT_EQ(cfg.variables[i].n_start_i_tally,
+              resumed_cfg.variables[i].n_start_i_tally);
 
     /* TODO: What to do with domain_map */
   }
 
   for (auto i = 0; i < cfg.n_factor; i++) {
-    ASSERT_EQ(resumed_cfg.factors[i].id, cfg.factors[i].id);
-    ASSERT_EQ(resumed_cfg.factors[i].weight_id, cfg.factors[i].weight_id);
-    ASSERT_EQ(resumed_cfg.factors[i].func_id, cfg.factors[i].func_id);
-    ASSERT_EQ(resumed_cfg.factors[i].n_variables, cfg.factors[i].n_variables);
-    ASSERT_EQ(resumed_cfg.factors[i].n_start_i_vif,
-              cfg.factors[i].n_start_i_vif);
+    ASSERT_EQ(cfg.factors[i].id, resumed_cfg.factors[i].id);
+    ASSERT_EQ(cfg.factors[i].weight_id, resumed_cfg.factors[i].weight_id);
+    ASSERT_EQ(cfg.factors[i].func_id, resumed_cfg.factors[i].func_id);
+    ASSERT_EQ(cfg.factors[i].n_variables, resumed_cfg.factors[i].n_variables);
+    ASSERT_EQ(cfg.factors[i].n_start_i_vif,
+              resumed_cfg.factors[i].n_start_i_vif);
 
     /* TODO: What to do with weight_ids? */
   }
 
   /* Check vifs, compact_factor_weightids, compact_factors, and factor_ids */
   for (auto i = 0; i < cfg.n_edge; i++) {
-    ASSERT_EQ(resumed_cfg.vifs[i].vid, cfg.vifs[i].vid);
-    ASSERT_EQ(resumed_cfg.vifs[i].n_position, cfg.vifs[i].n_position);
-    ASSERT_EQ(resumed_cfg.vifs[i].is_positive, cfg.vifs[i].is_positive);
-    ASSERT_EQ(resumed_cfg.vifs[i].equal_to, cfg.vifs[i].equal_to);
+    ASSERT_EQ(cfg.vifs[i].vid, resumed_cfg.vifs[i].vid);
+    ASSERT_EQ(cfg.vifs[i].n_position, resumed_cfg.vifs[i].n_position);
+    ASSERT_EQ(cfg.vifs[i].is_positive, resumed_cfg.vifs[i].is_positive);
+    ASSERT_EQ(cfg.vifs[i].equal_to, resumed_cfg.vifs[i].equal_to);
 
-    ASSERT_EQ(resumed_cfg.compact_factors[i].id, cfg.compact_factors[i].id);
-    ASSERT_EQ(resumed_cfg.compact_factors[i].func_id,
-              cfg.compact_factors[i].func_id);
-    ASSERT_EQ(resumed_cfg.compact_factors[i].n_variables,
-              cfg.compact_factors[i].n_variables);
-    ASSERT_EQ(resumed_cfg.compact_factors[i].n_start_i_vif,
-              cfg.compact_factors[i].n_start_i_vif);
+    ASSERT_EQ(cfg.compact_factors[i].id, resumed_cfg.compact_factors[i].id);
+    ASSERT_EQ(cfg.compact_factors[i].func_id,
+              resumed_cfg.compact_factors[i].func_id);
+    ASSERT_EQ(cfg.compact_factors[i].n_variables,
+              resumed_cfg.compact_factors[i].n_variables);
+    ASSERT_EQ(cfg.compact_factors[i].n_start_i_vif,
+              resumed_cfg.compact_factors[i].n_start_i_vif);
 
-    ASSERT_EQ(resumed_cfg.compact_factors_weightids[i],
-              cfg.compact_factors_weightids[i]);
+    ASSERT_EQ(cfg.compact_factors_weightids[i],
+              resumed_cfg.compact_factors_weightids[i]);
 
-    ASSERT_EQ(resumed_cfg.factor_ids[i], cfg.factor_ids[i]);
+    ASSERT_EQ(cfg.factor_ids[i], resumed_cfg.factor_ids[i]);
   }
 
   /* More importantly, ensure that the inference results are equal */
   for (auto i = 0; i < cfg.n_var; i++) {
-    ASSERT_EQ(resumed_cfg.infrs->agg_means[i], cfg.infrs->agg_means[i]);
-    ASSERT_EQ(resumed_cfg.infrs->agg_nsamples[i], cfg.infrs->agg_nsamples[i]);
-    ASSERT_EQ(resumed_cfg.infrs->assignments_free[i],
-              cfg.infrs->assignments_free[i]);
-    ASSERT_EQ(resumed_cfg.infrs->assignments_evid[i],
-              cfg.infrs->assignments_evid[i]);
+    ASSERT_EQ(cfg.infrs->agg_means[i], resumed_cfg.infrs->agg_means[i]);
+    ASSERT_EQ(cfg.infrs->agg_nsamples[i], resumed_cfg.infrs->agg_nsamples[i]);
+    ASSERT_EQ(cfg.infrs->assignments_free[i],
+              resumed_cfg.infrs->assignments_free[i]);
+    ASSERT_EQ(cfg.infrs->assignments_evid[i],
+              resumed_cfg.infrs->assignments_evid[i]);
   }
 
-  ASSERT_EQ(resumed_cfg.infrs->ntallies, cfg.infrs->ntallies);
+  ASSERT_EQ(cfg.infrs->ntallies, resumed_cfg.infrs->ntallies);
   for (auto i = 0; i < cfg.infrs->ntallies; i++) {
-    ASSERT_EQ(resumed_cfg.infrs->multinomial_tallies[i],
-              cfg.infrs->multinomial_tallies[i]);
+    ASSERT_EQ(cfg.infrs->multinomial_tallies[i],
+              resumed_cfg.infrs->multinomial_tallies[i]);
   }
 
-  for (auto i = 0; i < cfg.n_weight; i++) {
-    ASSERT_EQ(resumed_cfg.infrs->weight_values[i], cfg.infrs->weight_values[i]);
-    ASSERT_EQ(resumed_cfg.infrs->weights_isfixed[i],
-              cfg.infrs->weights_isfixed[i]);
-  }
+  /*
+   * If you're wondering why weights aren't checked, then you probably haven't
+   * read the code (which is fine!). Read binary_parser.cpp:checkpoint()
+   */
 }

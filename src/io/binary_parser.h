@@ -86,14 +86,21 @@ void read_domains(string filename, dd::FactorGraph &fg);
  * Resumes the computation state from the last checkpoint. It is critical
  * that we resume graphs one by one since we need to be NUMA aware.
  *
- * @param filename The file to load the checkpoint from.
- * @param n_numa_nodes The index of the factor graph to load
+ * @param filename
+ *   The base filename to load the checkpoint from. ".part$i" will be appended
+ *   to this parameter to generate the full checkpoint filename.
+ * @param i Indicates the NUMA node to which the factor graph should be loaded
  * @param[out] cfg The compiled factor graph to which the state is resumed
  */
 void resume(string filename, int i, dd::CompiledFactorGraph &cfg);
 
 /**
  * Checkpoints all copies of the compiled factor graph to various files.
+ *
+ * @param filename
+ *   The base filename to checkpoint to. ".part$i" will be appended into this
+ *   parameter to generate the full checkpoint filename.
+ * @param cfgs A list of CompiledFactorGraphs to write to file.
  */
 void checkpoint(string filename, vector<dd::CompiledFactorGraph> &cfgs);
 

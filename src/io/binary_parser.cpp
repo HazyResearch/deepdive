@@ -320,17 +320,127 @@ void read_domains(std::string filename, dd::FactorGraph &fg) {
   }
 }
 
-void resume(string filename, int i, dd::CompiledFactorGraph &cfg) { return; }
+/* Also used in test, but not exported in .h */
+const string get_copy_filename(const string &filename, int i) {
+  return filename + ".part" + to_string(i);
+}
+
+void resume(string filename, int i, dd::CompiledFactorGraph &cfg) {
+  ifstream inf;
+  inf.open(get_copy_filename(filename, i), ios::in | ios::binary);
+
+  /* Read metadata */
+  inf.read((char *)&cfg.n_var, sizeof(long));
+  inf.read((char *)&cfg.n_factor, sizeof(long));
+  inf.read((char *)&cfg.n_weight, sizeof(long));
+  inf.read((char *)&cfg.n_edge, sizeof(long));
+  inf.read((char *)&cfg.n_tally, sizeof(long));
+
+  inf.read((char *)&cfg.c_nvar, sizeof(long));
+  inf.read((char *)&cfg.c_nfactor, sizeof(long));
+  inf.read((char *)&cfg.c_nweight, sizeof(long));
+  inf.read((char *)&cfg.c_edge, sizeof(long));
+
+  inf.read((char *)&cfg.n_evid, sizeof(long));
+  inf.read((char *)&cfg.n_query, sizeof(long));
+
+  inf.read((char *)&cfg.stepsize, sizeof(double));
+
+  inf.read((char *)&cfg.is_inc, sizeof(int));
+
+  /*
+   * Note that at this point, we have recovered cfg.n_var. Plus, assume
+   * that the CompiledFactorGraph has been partially initialized through
+   * the graph.meta file, which should at least give us non-null arrays.
+   */
+  assert(cfg.variables);
+  for (auto j = 0; j < cfg.n_var; j++) {
+    inf.read((char *)&cfg.variables[j].id, sizeof(long));
+    inf.read((char *)&cfg.variables[j].domain_type, sizeof(int));
+    inf.read((char *)&cfg.variables[j].is_evid, sizeof(int));
+    inf.read((char *)&cfg.variables[j].is_observation, sizeof(int));
+    inf.read((char *)&cfg.variables[j].cardinality, sizeof(int));
+
+    inf.read((char *)&cfg.variables[j].assignment_evid,
+             sizeof(dd::VariableValue));
+    inf.read((char *)&cfg.variables[j].assignment_free,
+             sizeof(dd::VariableValue));
+
+    inf.read((char *)&cfg.variables[j].n_factors, sizeof(int));
+    inf.read((char *)&cfg.variables[j].n_start_i_factors, sizeof(long));
+
+    inf.read((char *)&cfg.variables[j].n_start_i_tally, sizeof(long));
+
+    /* XXX: Ignore last 3 components of Variable, might dump them anyways. */
+    /* XXX: What to do about domain_map, though? */
+  }
+
+  assert(cfg.factors);
+  for (auto j = 0; j < cfg.n_factor; j++) {
+    inf.read((char *)&cfg.factors[j].id, sizeof(dd::FactorIndex));
+    inf.read((char *)&cfg.factors[j].weight_id, sizeof(dd::WeightIndex));
+    inf.read((char *)&cfg.factors[j].func_id, sizeof(int));
+    inf.read((char *)&cfg.factors[j].n_variables, sizeof(int));
+    inf.read((char *)&cfg.factors[j].n_start_i_vif, sizeof(long));
+
+    /* XXX: Also ignoring weight_ids in Factors */
+  }
+
+  assert(cfg.compact_factors);
+  assert(cfg.compact_factors_weightids);
+  assert(cfg.factor_ids);
+  assert(cfg.vifs);
+  for (auto j = 0; j < cfg.n_edge; j++) {
+    inf.read((char *)&cfg.compact_factors[j].id, sizeof(dd::FactorIndex));
+    inf.read((char *)&cfg.compact_factors[j].func_id, sizeof(int));
+    inf.read((char *)&cfg.compact_factors[j].n_variables, sizeof(int));
+    inf.read((char *)&cfg.compact_factors[j].n_start_i_vif, sizeof(long));
+
+    inf.read((char *)&cfg.compact_factors_weightids[j], sizeof(int));
+
+    inf.read((char *)&cfg.factor_ids[j], sizeof(long));
+
+    inf.read((char *)&cfg.vifs[j].vid, sizeof(long));
+    inf.read((char *)&cfg.vifs[j].n_position, sizeof(int));
+    inf.read((char *)&cfg.vifs[j].is_positive, sizeof(int));
+    inf.read((char *)&cfg.vifs[j].equal_to, sizeof(dd::VariableValue));
+  }
+
+  assert(cfg.infrs);
+  inf.read((char *)&cfg.infrs->ntallies, sizeof(long));
+  for (auto j = 0; j < cfg.infrs->ntallies; j++) {
+    inf.read((char *)&cfg.infrs->multinomial_tallies[j], sizeof(long));
+  }
+
+  for (auto j = 0; j < cfg.n_var; j++) {
+    inf.read((char *)&cfg.infrs->agg_means[j], sizeof(double));
+    inf.read((char *)&cfg.infrs->agg_nsamples[j], sizeof(double));
+    inf.read((char *)&cfg.infrs->assignments_free[j],
+             sizeof(dd::VariableValue));
+    inf.read((char *)&cfg.infrs->assignments_evid[j],
+             sizeof(dd::VariableValue));
+  }
+
+  /*
+   * XXX: We don't write the weights in `infrs` on purpose, since they're
+   * going to be recovered by a separate workflow.
+   */
+
+  return;
+}
 
 /**
  * For now, assume we use the checkpointing model where we write each factor
  * graph into a separate file.
+ *
+ * TODO: It's worth explaining this process, and some design decisions that
+ * were made in much more detail. I will do that when I clean up the code.
  */
 void checkpoint(string filename, vector<dd::CompiledFactorGraph> &cfgs) {
   auto n_cfgs = cfgs.size();
   for (auto i = 0; i < n_cfgs; i++) {
     ofstream outf;
-    outf.open(filename + ".part" + to_string(i), ios::out | ios::binary);
+    outf.open(get_copy_filename(filename, i), ios::out | ios::binary);
 
     const auto &cfg = cfgs[i];
 
@@ -415,11 +525,10 @@ void checkpoint(string filename, vector<dd::CompiledFactorGraph> &cfgs) {
                  sizeof(dd::VariableValue));
     }
 
-    for (auto j = 0; j < cfg.n_weight; j++) {
-      outf.write((char *)&cfg.infrs->weights_isfixed[j], sizeof(int));
-      outf.write((char *)&cfg.infrs->assignments_evid[j],
-                 sizeof(dd::VariableValue));
-    }
+    /*
+     * XXX: We don't write the weights in `infrs` on purpose, since they're
+     * going to be recovered by a separate workflow.
+     */
 
     outf.close();
   }
