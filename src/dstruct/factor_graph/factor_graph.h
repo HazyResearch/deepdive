@@ -142,7 +142,6 @@ namespace dd{
      */
     void copy_from(const CompiledFactorGraph * const p_other_fg);
 
-
     /*
      * Given a factor and variable assignment, returns corresponding multinomial
      * factor weight id, using proposal value for the variable with id vid.

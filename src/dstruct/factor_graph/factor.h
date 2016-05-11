@@ -176,13 +176,13 @@ namespace dd{
 
 
   private:
-    inline bool is_variable_satisfied(const VariableInFactor& vif, const VariableIndex& vid, 
+    inline bool is_variable_satisfied(const VariableInFactor& vif, const VariableIndex& vid,
       const VariableValue * const var_values, const VariableValue & proposal) const;
 
   };
 
   /**
-   * A factor in the factor graph
+   * A factor in the compiled factor graph.
    */
   class Factor {
   public:
@@ -195,30 +195,46 @@ namespace dd{
 
     // a list of weight for sparse multinomial factor
     // the weights are ordered by their corresponding variable assignments
+    /* XXX(IVG): Need to learn more about this */
     std::vector<long> weight_ids;
 
+    /**
+     * Turns out the no-arg constructor is still required, since we're
+     * initializing arrays of these objects inside FactorGraph and
+     * CompiledFactorGraph.
+     */
     Factor();
 
     /**
-     * Construct a factor from a raw factor.
+     * Copy constructor from a RawFactor.
+     *
+     * Explicit note: don't have a constructor that takes the individual
+     * parameters such as id, weight_id, etc. since we expect Factors to be
+     * constructed from RawFactors during factor graph compilation.
      */
-    Factor(RawFactor &);
-
+    Factor(RawFactor &rf);
   };
 
+  /**
+   * A raw factor is used when loading the factor graph the first time.
+   */
   class RawFactor: public Factor {
   public:
+    /*
+     * Populated when loading the factor graph, used when compiling the factor
+     * graph, and after that, it's useless.
+     */
     std::vector<VariableInFactor> tmp_variables;
 
+    /**
+     * Need no-arg constructor to create arrays of uninitialized RawFactors.
+     */
     RawFactor();
-
     /**
      * Construct a factor with given id, weight id, function id, number of variables
      */
-    RawFactor(const FactorIndex & _id,
-           const WeightIndex & _weight_id,
-           const int & _func_id,
-           const int & _n_variables);
+    RawFactor(const FactorIndex _id, const WeightIndex _weight_id,
+              const int _func_id, const int _n_variables);
   };
 
 }
@@ -227,7 +243,3 @@ namespace dd{
 #include "dstruct/factor_graph/factor.hxx"
 
 #endif
-
-
-
-

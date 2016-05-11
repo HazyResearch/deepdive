@@ -251,8 +251,6 @@ void dd::GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
                 << "~" << ((i_epoch + 1) * nnode) << "...." << std::flush;
     }
 
-    std::cout << "Finding segfault 1" << std::endl;
-
     t.restart();
 
     // set stepsize
@@ -260,25 +258,17 @@ void dd::GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
       single_node_samplers[i].p_fg->stepsize = current_stepsize;
     }
 
-    std::cout << "Finding segfault 2" << std::endl;
-
     // performs stochastic gradient descent with sampling
     for (int i = 0; i < nnode; i++) {
       single_node_samplers[i].sample_sgd();
     }
-
-    std::cout << "Finding segfault 3" << std::endl;
 
     // wait the samplers to finish
     for (int i = 0; i < nnode; i++) {
       single_node_samplers[i].wait_sgd();
     }
 
-    std::cout << "Finding segfault 4" << std::endl;
-
     CompiledFactorGraph &cfg = this->factorgraphs[0];
-
-    std::cout << "Finding segfault 5" << std::endl;
 
     // sum the weights and store in the first factor graph
     // the average weights will be calculated and assigned to all factor graphs
@@ -288,8 +278,6 @@ void dd::GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
         cfg.infrs->weight_values[j] += cfg_other.infrs->weight_values[j];
       }
     }
-
-    std::cout << "Finding segfault 5" << std::endl;
 
     // calculate average weights and regularize weights
     for (int j = 0; j < nweight; j++) {

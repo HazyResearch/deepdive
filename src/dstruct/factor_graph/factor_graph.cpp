@@ -274,8 +274,6 @@ void dd::FactorGraph::compile(CompiledFactorGraph &cfg) {
     rv.n_factors = rv.tmp_factor_ids.size();
     rv.n_start_i_factors = i_edge;
 
-    printf("Address of rv[%ld].domain_map = %p\n", i, rv.domain_map);
-
     if (rv.domain_type == DTYPE_MULTINOMIAL) {
       rv.n_start_i_tally = ntallies;
       ntallies += rv.cardinality;
@@ -405,8 +403,6 @@ void dd::CompiledFactorGraph::update_weight(const Variable &variable) {
   // corresponding factors and weights in a continous region
   CompactFactor *const fs = compact_factors + variable.n_start_i_factors;
   const int *const ws = compact_factors_weightids + variable.n_start_i_factors;
-  std::cout << "variable.n_start_i_factors = " << variable.n_start_i_factors
-            << std::endl;
 
   // for each factor
   for (long i = 0; i < variable.n_factors; i++) {
