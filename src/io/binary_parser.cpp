@@ -320,42 +320,107 @@ void read_domains(std::string filename, dd::FactorGraph &fg) {
   }
 }
 
-void resume(string filename, int i, dd::CompiledFactorGraph &cfg) {
+void resume(string filename, int i, dd::CompiledFactorGraph &cfg) { return; }
 
-  return;
-}
-
+/**
+ * For now, assume we use the checkpointing model where we write each factor
+ * graph into a separate file.
+ */
 void checkpoint(string filename, vector<dd::CompiledFactorGraph> &cfgs) {
-  std::ofstream outf;
-  outf.open(filename, ios::out | ios::binary);
+  auto n_cfgs = cfgs.size();
+  for (auto i = 0; i < n_cfgs; i++) {
+    ofstream outf;
+    outf.open(filename + ".part" + to_string(i), ios::out | ios::binary);
 
-  int n_cfgs = cfgs.size();
-  const auto &first_cfg = cfgs[0];
-
-  /* First write the count of factor graphs */
-  outf.write((char *)&n_cfgs, sizeof(int));
-
-  /* Now write all the common things that a CompiledFactorGraph has. */
-  /* TODO: Need to convert to network order!? */
-  outf.write((char *)&first_cfg.n_var, sizeof(long));
-  outf.write((char *)&first_cfg.n_factor, sizeof(long));
-  outf.write((char *)&first_cfg.n_weight, sizeof(long));
-  outf.write((char *)&first_cfg.n_edge, sizeof(long));
-  outf.write((char *)&first_cfg.n_tally, sizeof(long));
-
-  outf.write((char *)&first_cfg.c_nvar, sizeof(long));
-  outf.write((char *)&first_cfg.c_nfactor, sizeof(long));
-  outf.write((char *)&first_cfg.c_nweight, sizeof(long));
-  outf.write((char *)&first_cfg.c_edge, sizeof(long));
-
-  outf.write((char *)&first_cfg.n_evid, sizeof(long));
-  outf.write((char *)&first_cfg.n_query, sizeof(long));
-
-  outf.write((char *)&first_cfg.n_query, sizeof(long));
-
-  for (auto i = 0; i < cfgs.size(); i++) {
     const auto &cfg = cfgs[i];
-    UNUSED(cfg);
+
+    /* Now write all the common things that a CompiledFactorGraph has. */
+    /* TODO: Need to convert to network order!? */
+    outf.write((char *)&cfg.n_var, sizeof(long));
+    outf.write((char *)&cfg.n_factor, sizeof(long));
+    outf.write((char *)&cfg.n_weight, sizeof(long));
+    outf.write((char *)&cfg.n_edge, sizeof(long));
+    outf.write((char *)&cfg.n_tally, sizeof(long));
+
+    outf.write((char *)&cfg.c_nvar, sizeof(long));
+    outf.write((char *)&cfg.c_nfactor, sizeof(long));
+    outf.write((char *)&cfg.c_nweight, sizeof(long));
+    outf.write((char *)&cfg.c_edge, sizeof(long));
+
+    outf.write((char *)&cfg.n_evid, sizeof(long));
+    outf.write((char *)&cfg.n_query, sizeof(long));
+
+    outf.write((char *)&cfg.stepsize, sizeof(double));
+
+    outf.write((char *)&cfg.is_inc, sizeof(int));
+
+    for (auto j = 0; j < cfg.n_var; j++) {
+      outf.write((char *)&cfg.variables[j].id, sizeof(long));
+      outf.write((char *)&cfg.variables[j].domain_type, sizeof(int));
+      outf.write((char *)&cfg.variables[j].is_evid, sizeof(int));
+      outf.write((char *)&cfg.variables[j].is_observation, sizeof(int));
+      outf.write((char *)&cfg.variables[j].cardinality, sizeof(int));
+
+      outf.write((char *)&cfg.variables[j].assignment_evid,
+                 sizeof(dd::VariableValue));
+      outf.write((char *)&cfg.variables[j].assignment_free,
+                 sizeof(dd::VariableValue));
+
+      outf.write((char *)&cfg.variables[j].n_factors, sizeof(int));
+      outf.write((char *)&cfg.variables[j].n_start_i_factors, sizeof(long));
+
+      outf.write((char *)&cfg.variables[j].n_start_i_tally, sizeof(long));
+
+      /* XXX: Ignore last 3 components of Variable, might dump them anyways. */
+      /* XXX: What to do about domain_map, though? */
+    }
+
+    for (auto j = 0; j < cfg.n_factor; j++) {
+      outf.write((char *)&cfg.factors[j].id, sizeof(dd::FactorIndex));
+      outf.write((char *)&cfg.factors[j].weight_id, sizeof(dd::WeightIndex));
+      outf.write((char *)&cfg.factors[j].func_id, sizeof(int));
+      outf.write((char *)&cfg.factors[j].n_variables, sizeof(int));
+      outf.write((char *)&cfg.factors[j].n_start_i_vif, sizeof(long));
+
+      /* XXX: Also ignoring weight_ids in Factors */
+    }
+
+    for (auto j = 0; j < cfg.n_edge; j++) {
+      outf.write((char *)&cfg.compact_factors[j].id, sizeof(dd::FactorIndex));
+      outf.write((char *)&cfg.compact_factors[j].func_id, sizeof(int));
+      outf.write((char *)&cfg.compact_factors[j].n_variables, sizeof(int));
+      outf.write((char *)&cfg.compact_factors[j].n_start_i_vif, sizeof(long));
+
+      outf.write((char *)&cfg.compact_factors_weightids[j], sizeof(int));
+
+      outf.write((char *)&cfg.factor_ids[j], sizeof(long));
+
+      outf.write((char *)&cfg.vifs[j].vid, sizeof(long));
+      outf.write((char *)&cfg.vifs[j].n_position, sizeof(int));
+      outf.write((char *)&cfg.vifs[j].is_positive, sizeof(int));
+      outf.write((char *)&cfg.vifs[j].equal_to, sizeof(dd::VariableValue));
+    }
+
+    outf.write((char *)&cfg.infrs->ntallies, sizeof(long));
+    for (auto j = 0; j < cfg.infrs->ntallies; j++) {
+      outf.write((char *)&cfg.infrs->multinomial_tallies[j], sizeof(long));
+    }
+
+    for (auto j = 0; j < cfg.n_var; j++) {
+      outf.write((char *)&cfg.infrs->agg_means[j], sizeof(double));
+      outf.write((char *)&cfg.infrs->agg_nsamples[j], sizeof(double));
+      outf.write((char *)&cfg.infrs->assignments_free[j],
+                 sizeof(dd::VariableValue));
+      outf.write((char *)&cfg.infrs->assignments_evid[j],
+                 sizeof(dd::VariableValue));
+    }
+
+    for (auto j = 0; j < cfg.n_weight; j++) {
+      outf.write((char *)&cfg.infrs->weights_isfixed[j], sizeof(int));
+      outf.write((char *)&cfg.infrs->assignments_evid[j],
+                 sizeof(dd::VariableValue));
+    }
+
+    outf.close();
   }
-  return;
 }

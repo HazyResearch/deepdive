@@ -17,12 +17,11 @@ using namespace dd;
 // variables,
 // 1 weight, 18 factors, and 18 edges. Variables of id 0-8 are evidence: id 0-7
 // positive and id 8 negative.
-class CheckpointTest: public testing::Test {
+class CheckpointTest : public testing::Test {
  protected:
   dd::CompiledFactorGraph cfg;
 
-  CheckpointTest()
-      : cfg(dd::CompiledFactorGraph(18, 18, 1, 18)) {}
+  CheckpointTest() : cfg(dd::CompiledFactorGraph(18, 18, 1, 18)) {}
 
   virtual void SetUp() {
     system(
@@ -82,19 +81,26 @@ TEST_F(CheckpointTest, checkpoint_and_resume) {
    */
   for (auto i = 0; i < cfg.n_var; i++) {
     ASSERT_EQ(resumed_cfg.variables[i].id, cfg.variables[i].id);
-    ASSERT_EQ(resumed_cfg.variables[i].domain_type, cfg.variables[i].domain_type);
+    ASSERT_EQ(resumed_cfg.variables[i].domain_type,
+              cfg.variables[i].domain_type);
 
     ASSERT_EQ(resumed_cfg.variables[i].is_evid, cfg.variables[i].is_evid);
-    ASSERT_EQ(resumed_cfg.variables[i].is_observation, cfg.variables[i].is_observation);
-    ASSERT_EQ(resumed_cfg.variables[i].cardinality, cfg.variables[i].cardinality);
+    ASSERT_EQ(resumed_cfg.variables[i].is_observation,
+              cfg.variables[i].is_observation);
+    ASSERT_EQ(resumed_cfg.variables[i].cardinality,
+              cfg.variables[i].cardinality);
 
-    ASSERT_EQ(resumed_cfg.variables[i].assignment_evid, cfg.variables[i].assignment_evid);
-    ASSERT_EQ(resumed_cfg.variables[i].assignment_free, cfg.variables[i].assignment_free);
+    ASSERT_EQ(resumed_cfg.variables[i].assignment_evid,
+              cfg.variables[i].assignment_evid);
+    ASSERT_EQ(resumed_cfg.variables[i].assignment_free,
+              cfg.variables[i].assignment_free);
 
     ASSERT_EQ(resumed_cfg.variables[i].n_factors, cfg.variables[i].n_factors);
-    ASSERT_EQ(resumed_cfg.variables[i].n_start_i_factors, cfg.variables[i].n_start_i_factors);
+    ASSERT_EQ(resumed_cfg.variables[i].n_start_i_factors,
+              cfg.variables[i].n_start_i_factors);
 
-    ASSERT_EQ(resumed_cfg.variables[i].n_start_i_tally, cfg.variables[i].n_start_i_tally);
+    ASSERT_EQ(resumed_cfg.variables[i].n_start_i_tally,
+              cfg.variables[i].n_start_i_tally);
     ASSERT_EQ(resumed_cfg.variables[i].isactive, cfg.variables[i].isactive);
 
     /* TODO: What to do with domain_map */
@@ -105,7 +111,8 @@ TEST_F(CheckpointTest, checkpoint_and_resume) {
     ASSERT_EQ(resumed_cfg.factors[i].weight_id, cfg.factors[i].weight_id);
     ASSERT_EQ(resumed_cfg.factors[i].func_id, cfg.factors[i].func_id);
     ASSERT_EQ(resumed_cfg.factors[i].n_variables, cfg.factors[i].n_variables);
-    ASSERT_EQ(resumed_cfg.factors[i].n_start_i_vif, cfg.factors[i].n_start_i_vif);
+    ASSERT_EQ(resumed_cfg.factors[i].n_start_i_vif,
+              cfg.factors[i].n_start_i_vif);
 
     /* TODO: What to do with weight_ids? */
   }
@@ -118,11 +125,15 @@ TEST_F(CheckpointTest, checkpoint_and_resume) {
     ASSERT_EQ(resumed_cfg.vifs[i].equal_to, cfg.vifs[i].equal_to);
 
     ASSERT_EQ(resumed_cfg.compact_factors[i].id, cfg.compact_factors[i].id);
-    ASSERT_EQ(resumed_cfg.compact_factors[i].func_id, cfg.compact_factors[i].func_id);
-    ASSERT_EQ(resumed_cfg.compact_factors[i].n_variables, cfg.compact_factors[i].n_variables);
-    ASSERT_EQ(resumed_cfg.compact_factors[i].n_start_i_vif, cfg.compact_factors[i].n_start_i_vif);
+    ASSERT_EQ(resumed_cfg.compact_factors[i].func_id,
+              cfg.compact_factors[i].func_id);
+    ASSERT_EQ(resumed_cfg.compact_factors[i].n_variables,
+              cfg.compact_factors[i].n_variables);
+    ASSERT_EQ(resumed_cfg.compact_factors[i].n_start_i_vif,
+              cfg.compact_factors[i].n_start_i_vif);
 
-    ASSERT_EQ(resumed_cfg.compact_factors_weightids[i], cfg.compact_factors_weightids[i]);
+    ASSERT_EQ(resumed_cfg.compact_factors_weightids[i],
+              cfg.compact_factors_weightids[i]);
 
     ASSERT_EQ(resumed_cfg.factor_ids[i], cfg.factor_ids[i]);
   }
@@ -131,17 +142,21 @@ TEST_F(CheckpointTest, checkpoint_and_resume) {
   for (auto i = 0; i < cfg.n_var; i++) {
     ASSERT_EQ(resumed_cfg.infrs->agg_means[i], cfg.infrs->agg_means[i]);
     ASSERT_EQ(resumed_cfg.infrs->agg_nsamples[i], cfg.infrs->agg_nsamples[i]);
-    ASSERT_EQ(resumed_cfg.infrs->assignments_free[i], cfg.infrs->assignments_free[i]);
-    ASSERT_EQ(resumed_cfg.infrs->assignments_evid[i], cfg.infrs->assignments_evid[i]);
+    ASSERT_EQ(resumed_cfg.infrs->assignments_free[i],
+              cfg.infrs->assignments_free[i]);
+    ASSERT_EQ(resumed_cfg.infrs->assignments_evid[i],
+              cfg.infrs->assignments_evid[i]);
   }
 
   ASSERT_EQ(resumed_cfg.infrs->ntallies, cfg.infrs->ntallies);
   for (auto i = 0; i < cfg.infrs->ntallies; i++) {
-    ASSERT_EQ(resumed_cfg.infrs->multinomial_tallies[i], cfg.infrs->multinomial_tallies[i]);
+    ASSERT_EQ(resumed_cfg.infrs->multinomial_tallies[i],
+              cfg.infrs->multinomial_tallies[i]);
   }
 
   for (auto i = 0; i < cfg.n_weight; i++) {
     ASSERT_EQ(resumed_cfg.infrs->weight_values[i], cfg.infrs->weight_values[i]);
-    ASSERT_EQ(resumed_cfg.infrs->weights_isfixed[i], cfg.infrs->weights_isfixed[i]);
+    ASSERT_EQ(resumed_cfg.infrs->weights_isfixed[i],
+              cfg.infrs->weights_isfixed[i]);
   }
 }
