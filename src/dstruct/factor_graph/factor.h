@@ -36,9 +36,12 @@ namespace dd{
   };
 
   /**
-   * Encapsulates a factor function in the factor graph
+   * Encapsulates a factor function in the factor graph.
+   *
+   * This looks strikingly similar to Factor, but the purpose of this class is
+   * to indicate that this is accessed through edge-based array.
    */
-  class CompactFactor{
+  class CompactFactor {
   public:
     FactorIndex id;       // factor id
     int func_id;          // function type id

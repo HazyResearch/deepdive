@@ -1,4 +1,3 @@
-
 #include "factor.h"
 
 namespace dd {

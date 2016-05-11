@@ -1,3 +1,4 @@
+#include "common.h"
 #include "binary_parser.h"
 #include "dstruct/factor_graph/factor.h"
 #include "dstruct/factor_graph/variable.h"
@@ -320,11 +321,41 @@ void read_domains(std::string filename, dd::FactorGraph &fg) {
 }
 
 void resume(string filename, int i, dd::CompiledFactorGraph &cfg) {
-  // TODO: Implement me!
+
   return;
 }
 
 void checkpoint(string filename, vector<dd::CompiledFactorGraph> &cfgs) {
-  // TODO: Implement me!
+  std::ofstream outf;
+  outf.open(filename, ios::out | ios::binary);
+
+  int n_cfgs = cfgs.size();
+  const auto &first_cfg = cfgs[0];
+
+  /* First write the count of factor graphs */
+  outf.write((char *)&n_cfgs, sizeof(int));
+
+  /* Now write all the common things that a CompiledFactorGraph has. */
+  /* TODO: Need to convert to network order!? */
+  outf.write((char *)&first_cfg.n_var, sizeof(long));
+  outf.write((char *)&first_cfg.n_factor, sizeof(long));
+  outf.write((char *)&first_cfg.n_weight, sizeof(long));
+  outf.write((char *)&first_cfg.n_edge, sizeof(long));
+  outf.write((char *)&first_cfg.n_tally, sizeof(long));
+
+  outf.write((char *)&first_cfg.c_nvar, sizeof(long));
+  outf.write((char *)&first_cfg.c_nfactor, sizeof(long));
+  outf.write((char *)&first_cfg.c_nweight, sizeof(long));
+  outf.write((char *)&first_cfg.c_edge, sizeof(long));
+
+  outf.write((char *)&first_cfg.n_evid, sizeof(long));
+  outf.write((char *)&first_cfg.n_query, sizeof(long));
+
+  outf.write((char *)&first_cfg.n_query, sizeof(long));
+
+  for (auto i = 0; i < cfgs.size(); i++) {
+    const auto &cfg = cfgs[i];
+    UNUSED(cfg);
+  }
   return;
 }

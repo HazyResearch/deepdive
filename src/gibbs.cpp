@@ -1,5 +1,6 @@
 
 #include "gibbs.h"
+#include "common.h"
 #include <cmath>
 
 /*
@@ -236,7 +237,7 @@ void gibbs(dd::CmdParser &cmd_parser) {
   // check arguments
   if (fg_file == "" || weight_file == "" || variable_file == "" ||
       factor_file == "" || output_folder == "") {
-    std::cout << "factor graph files not specified" << std::endl;
+    std::cout << "Some factor graph files not specified" << std::endl;
     exit(1);
   }
 
@@ -311,9 +312,11 @@ void gibbs(dd::CmdParser &cmd_parser) {
                           learn_non_evidence);
 
   if (cmd_parser.should_use_snapshot) {
+    dprintf("Resuming computation from snapshot...");
     gibbs.do_resume(is_quiet, n_datacopy, meta.num_variables, meta.num_factors,
                     meta.num_weights, meta.num_edges);
   } else {
+    dprintf("Initializing...");
     // Load factor graph
     dd::FactorGraph fg(meta.num_variables, meta.num_factors, meta.num_weights,
                        meta.num_edges);

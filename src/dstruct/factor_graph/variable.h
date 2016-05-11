@@ -49,6 +49,7 @@ namespace dd {
     // n_start_i_tally is the start position for the variable values in the array
     long n_start_i_tally;
 
+    /* FIXME: Ugh how to deal with this? */
     std::unordered_map<VariableValue, int> *domain_map; // map from value to index in the domain vector
 
     bool isactive;

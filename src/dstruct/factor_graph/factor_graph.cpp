@@ -1,4 +1,3 @@
-
 #include "dstruct/factor_graph/factor_graph.h"
 #include "dstruct/factor_graph/factor.h"
 #include "io/binary_parser.h"

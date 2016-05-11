@@ -9,7 +9,7 @@ LDLIBS =
 CXXFLAGS += -I./lib/tclap/include/ -I./src
 
 ifeq ($(DEBUG), true)
-CXXFLAGS += -g
+CXXFLAGS += -g -DDEBUG
 endif
 
 # platform dependent compiler flags
@@ -32,8 +32,11 @@ ifeq ($(UNAME), Darwin)
 ifndef CXX
 CXX = clang++
 endif
+ifneq ($(DEBUG), true)
+CXXFLAGS += -O3
+endif
 # optimization
-CXXFLAGS += -O3 -stdlib=libc++ -mmacosx-version-min=10.7
+CXXFLAGS += -stdlib=libc++ -mmacosx-version-min=10.7
 CXXFLAGS += -flto
 endif
 
@@ -62,6 +65,7 @@ TEST_SOURCES += test/test.cpp
 TEST_SOURCES += test/FactorTest.cpp
 TEST_SOURCES += test/binary_parser_test.cpp
 TEST_SOURCES += test/loading_test.cpp
+TEST_SOURCES += test/checkpoint_test.cpp
 TEST_SOURCES += test/factor_graph_test.cpp
 TEST_SOURCES += test/sampler_test.cpp
 TEST_OBJECTS = $(TEST_SOURCES:.cpp=.o)

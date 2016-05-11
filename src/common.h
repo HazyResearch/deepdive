@@ -1,7 +1,7 @@
-
-
 #ifndef _COMMON_H
 #define _COMMON_H
+
+#include <stdio.h>
 
 #ifndef __MACH__
 #include <numa.h>
@@ -30,6 +30,20 @@
 
 #define LOG_2 0.693147180559945
 #define MINUS_LOG_THRESHOLD -18.42
+
+/**
+ * To use, make with DEBUG flag turned on.
+ */
+#ifdef DEBUG
+#define dprintf(fmt, ...) printf(fmt, ##__VA_ARGS__);
+#else
+#define dprintf(fmt, ...) 0
+#endif
+
+/**
+ * Explicitly say things are unused if they are actually unused.
+ */
+#define UNUSED(var) (void)(var)
 
 enum inc_mode { ORIGINAL, MAT, INC };
 

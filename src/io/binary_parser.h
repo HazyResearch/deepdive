@@ -83,16 +83,17 @@ long long read_edges_inc(string filename, dd::FactorGraph &);
 void read_domains(string filename, dd::FactorGraph &fg);
 
 /**
- * Resumes the computation state from the last checkpoint.
+ * Resumes the computation state from the last checkpoint. It is critical
+ * that we resume graphs one by one since we need to be NUMA aware.
  *
  * @param filename The file to load the checkpoint from.
  * @param n_numa_nodes The index of the factor graph to load
- * @param[out] cfgs The vector of CompiledFactorGraphs to be populated.
+ * @param[out] cfg The compiled factor graph to which the state is resumed
  */
 void resume(string filename, int i, dd::CompiledFactorGraph &cfg);
 
 /**
- * Checkpoints all copies of the compiled factor graph to a file.
+ * Checkpoints all copies of the compiled factor graph to various files.
  */
 void checkpoint(string filename, vector<dd::CompiledFactorGraph> &cfgs);
 
