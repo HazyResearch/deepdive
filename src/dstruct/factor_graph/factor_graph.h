@@ -44,8 +44,6 @@ namespace dd{
     RawFactor * const factors;
     Weight * const weights;
 
-    float * old_weight_values;
-
     // whether the factor graph loading has been finalized
     // see sort_by_id() below
     bool sorted;
@@ -64,12 +62,6 @@ namespace dd{
      * Loads the factor graph using arguments specified from command line
      */
     void load(const CmdParser & cmd, const bool is_quiet, int inc);
-
-    /**
-     * Construct the edge-based store of factor graph in compact_factors, etc.
-     * Refer to the class member comments for more detail.
-     */
-    void organize_graph_by_edge();
 
     void compile(CompiledFactorGraph &cfg);
 

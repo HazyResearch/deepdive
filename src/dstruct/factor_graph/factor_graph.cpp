@@ -39,7 +39,6 @@ dd::FactorGraph::FactorGraph(long _n_var, long _n_factor, long _n_weight,
       variables(new RawVariable[_n_var]),
       factors(new RawFactor[_n_factor]),
       weights(new Weight[_n_weight]),
-      old_weight_values(NULL),
       sorted(false),
       safety_check_passed(false) {}
 
@@ -143,6 +142,8 @@ void dd::FactorGraph::compile(CompiledFactorGraph &cfg) {
     Factor f(rf);
     cfg.factors[i] = f;
   }
+  dprintf("i_edge = %ld n_edge = %ld", i_edge, n_edge);
+  assert(i_edge == n_edge);
 
   i_edge = 0;
   long ntallies = 0;
@@ -183,6 +184,7 @@ void dd::FactorGraph::compile(CompiledFactorGraph &cfg) {
   /* Initialize the InferenceResult array in the end of compilation */
   cfg.infrs->init(cfg.variables, weights);
 
+  assert(i_edge == n_edge);
   /*
    * XXX: Ideally, we don't care about the factor graph anymore at this
    * point, but for consistency, I will update the c_edge variable as well.

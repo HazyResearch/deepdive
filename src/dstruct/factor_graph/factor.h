@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include <vector>
 #include <assert.h>
@@ -7,9 +6,12 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <mutex>
 
 #ifndef _FACTOR_H_
 #define _FACTOR_H_
+
+static std::mutex m;
 
 namespace dd{
 
@@ -136,12 +138,11 @@ namespace dd{
                                    const VariableValue * const var_values, 
                                    const VariableIndex &, const VariableValue &) const;
 
-
     /** 
      * Returns potential of the factor. 
      * (potential is the value of the factor) 
-     * The potential is calculated using the proposal value for variable with id vid, and 
-     * var_values for other variables in the factor
+     * The potential is calculated using the proposal value for variable with
+     * id vid, and var_values for other variables in the factor.
      *
      * vifs pointer to variables in the factor graph
      * var_values pointer to variable values (array)
@@ -154,6 +155,7 @@ namespace dd{
     inline double potential(const VariableInFactor * const vifs,
       const VariableValue * const var_values,
       const VariableIndex & vid, const VariableValue & proposal) const{
+
       switch (func_id) {
         case FUNC_IMPLY_MLN   :return _potential_imply_mln(vifs, var_values, vid, proposal);
         case FUNC_IMPLY_neg1_1: return _potential_imply(vifs, var_values, vid, proposal);
