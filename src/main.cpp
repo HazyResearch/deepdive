@@ -1,16 +1,4 @@
-
 #include "gibbs.h"
-#include "io/bin2text.h"
 
-int main(int argv, char **argc) {
-  // parse arguments
-  dd::CmdParser cmd_parser = parse_input(argv, argc);
-
-  // run gibbs sampler
-  if (cmd_parser.app_name == "gibbs") {
-    gibbs(cmd_parser);
-    return 0;
-  } else if (cmd_parser.app_name == "bin2text") {
-    return bin2text(cmd_parser);
-  }
-}
+// a simple main that delegates to dw() to ease test with gtest
+int main(int argc, char *argv[]) { return dw(argc, argv); }

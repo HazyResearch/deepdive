@@ -21,7 +21,7 @@ namespace dd{
     CompiledFactorGraph * p_fg;
 
     // command line parser
-    CmdParser * const p_cmd_parser;
+    const CmdParser * const p_cmd_parser;
 
     // the highest node number available
     // actually, number of NUMA nodes = n_numa_nodes + 1
@@ -48,7 +48,7 @@ namespace dd{
      * n_datacopy number of factor graph copies. n_datacopy = 1 means only
      * keeping one factor graph.
      */
-    GibbsSampling(CmdParser * const _p_cmd_parser,
+    GibbsSampling(const CmdParser * const _p_cmd_parser,
         bool sample_evidence, int burn_in, bool learn_non_evidence);
 
 

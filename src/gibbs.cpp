@@ -1,37 +1,28 @@
 #include "gibbs.h"
 #include "io/binary_format.h"
 #include "app/gibbs/gibbs_sampling.h"
+#include "io/bin2text.h"
 #include "dstruct/factor_graph/factor_graph.h"
 #include <cmath>
+#include <map>
 #include "assert.h"
 #include "common.h"
 #include "unistd.h"
 
-/*
- * Parse input arguments
- */
-dd::CmdParser parse_input(int argc, char **argv) {
-  std::vector<std::string> new_args;
-  if (argc < 2 ||
-      (strcmp(argv[1], "gibbs") != 0 && strcmp(argv[1], "mat") != 0 &&
-       strcmp(argv[1], "inc") != 0 && strcmp(argv[1], "bin2text") != 0)) {
-    new_args.push_back(std::string(argv[0]) + " " + "gibbs");
-    new_args.push_back("-h");
-  } else {
-    new_args.push_back(std::string(argv[0]) + " " + std::string(argv[1]));
-    for (int i = 2; i < argc; i++) {
-      new_args.push_back(std::string(argv[i]));
-    }
-  }
-  char **new_argv = new char *[new_args.size()];
-  for (size_t i = 0; i < new_args.size(); i++) {
-    new_argv[i] = new char[new_args[i].length() + 1];
-    std::copy(new_args[i].begin(), new_args[i].end(), new_argv[i]);
-    new_argv[i][new_args[i].length()] = '\0';
-  }
-  std::string app_name = argc < 2 ? "" : argv[1];
-  dd::CmdParser cmd_parser(app_name.c_str(), new_args.size(), new_argv);
-  return cmd_parser;
+// the command-line entry point
+int dw(int argc, const char *const argv[]) {
+  // available modes
+  const std::map<std::string, int (*)(const dd::CmdParser &)> MODES = {
+      {"gibbs", gibbs},  // to do the learning and inference with Gibbs sampling
+      {"bin2text", bin2text},  // to dump TSV of binary factor graphs
+  };
+
+  // parse command-line arguments
+  dd::CmdParser cmd_parser(argc, argv);
+
+  // dispatch to the correct function
+  const auto &mode = MODES.find(cmd_parser.app_name);
+  return (mode != MODES.end()) ? mode->second(cmd_parser) : 1;
 }
 
 // compute number of NUMA-aware epochs for learning or inference
@@ -40,7 +31,6 @@ int compute_n_epochs(int n_epoch, int n_numa_node, int n_datacopy) {
   if (n_datacopy >= 1 && n_datacopy <= n_numa_node + 1) {
     n_valid_node = n_datacopy;
   }
-
   return std::ceil((double)n_epoch / n_valid_node);
 }
 
@@ -59,7 +49,7 @@ void init_weights(dd::CmdParser &cmd_parser) {
   return;
 }
 
-void gibbs(dd::CmdParser &cmd_parser) {
+int gibbs(const dd::CmdParser &cmd_parser) {
   // number of NUMA nodes
   int n_numa_node = numa_max_node() + 1;
   // number of max threads per NUMA node
@@ -205,4 +195,6 @@ void gibbs(dd::CmdParser &cmd_parser) {
   if (cmd_parser.should_use_snapshot) {
     gibbs.do_checkpoint(is_quiet);
   }
+
+  return 0;
 }

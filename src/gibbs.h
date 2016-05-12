@@ -1,11 +1,11 @@
 #include "io/cmd_parser.h"
 
-/*
- * Parse input arguments
+/**
+ * Command-line interface.
  */
-dd::CmdParser parse_input(int argc, char **argv);
+int dw(int argc, const char *const argv[]);
 
 /**
  * Runs gibbs sampling using the given command line parser
  */
-void gibbs(dd::CmdParser &cmd_parser);
+int gibbs(const dd::CmdParser &cmd_parser);

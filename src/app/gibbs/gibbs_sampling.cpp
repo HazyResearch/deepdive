@@ -7,7 +7,7 @@
 #include <memory>
 #include <unistd.h>
 
-dd::GibbsSampling::GibbsSampling(CmdParser *const _p_cmd_parser,
+dd::GibbsSampling::GibbsSampling(const CmdParser *const _p_cmd_parser,
                                  bool sample_evidence, int burn_in,
                                  bool learn_non_evidence)
     : p_fg(NULL),

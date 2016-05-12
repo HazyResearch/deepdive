@@ -33,18 +33,19 @@ class LoadingTest : public testing::Test {
     system(
         "./text2bin weight test/biased_coin/weights.tsv "
         "test/biased_coin/graph.weights");
-    const char *argv[21] = {"dw",      "gibbs",
-                            "-w",      "./test/biased_coin/graph.weights",
-                            "-v",      "./test/biased_coin/graph.variables",
-                            "-f",      "./test/biased_coin/graph.factors",
-                            "-m",      "./test/biased_coin/graph.meta",
-                            "-o",      ".",
-                            "-l",      "100",
-                            "-i",      "100",
-                            "-s",      "1",
-                            "--alpha", "0.1",
-                            ""};
-    dd::CmdParser cmd_parser = parse_input(21, (char **)argv);
+    const char *argv[] = {
+        "dw",      "gibbs",
+        "-w",      "./test/biased_coin/graph.weights",
+        "-v",      "./test/biased_coin/graph.variables",
+        "-f",      "./test/biased_coin/graph.factors",
+        "-m",      "./test/biased_coin/graph.meta",
+        "-o",      ".",
+        "-l",      "100",
+        "-i",      "100",
+        "-s",      "1",
+        "--alpha", "0.1",
+    };
+    dd::CmdParser cmd_parser(sizeof(argv) / sizeof(*argv), argv);
     fg.load_variables(cmd_parser.variable_file);
     fg.load_weights(cmd_parser.weight_file);
     fg.load_domains(cmd_parser.domain_file);

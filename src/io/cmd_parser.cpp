@@ -15,10 +15,13 @@ static inline T getLastValueOrDefault(TCLAP::MultiArg<T> *arg, T defaultValue) {
   }
 }
 
-CmdParser::CmdParser(std::string _app_name, int argc, char **argv) {
-  app_name = _app_name;
+CmdParser::CmdParser(int argc, const char *const argv[]) {
+  const char *arg0 = argv[0];
+  app_name = argc > 1 ? argv[1] : "";
+  ++argv;
+  --argc;
 
-  if (app_name == "mat" || app_name == "gibbs" || app_name == "inc") {
+  if (app_name == "gibbs") {
     cmd_ = new TCLAP::CmdLine("DimmWitted GIBBS", ' ', DimmWittedVersion);
 
     fg_file_ = new TCLAP::ValueArg<std::string>("m", "fg_meta",
@@ -147,10 +150,8 @@ CmdParser::CmdParser(std::string _app_name, int argc, char **argv) {
     domain_file = domain_file_->getValue();
 
   } else {
-    std::cout << "ERROR: UNKNOWN APP NAME " << app_name << std::endl;
-    std::cout << "AVAILABLE APP {gibbs/bin2text/mat/inc}" << app_name
-              << std::endl;
-    assert(false);
+    if (argc > 0) std::cerr << app_name << ": Unrecognized MODE" << std::endl;
+    std::cerr << "Usage: " << arg0 << " [ gibbs | bin2text ]" << std::endl;
   }
 }
 }

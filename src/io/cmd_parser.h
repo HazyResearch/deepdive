@@ -48,7 +48,7 @@ class CmdParser {
   bool should_sample_evidence;
   bool should_learn_non_evidence;
 
-  CmdParser(std::string _app_name, int argc, char **argv);
+  CmdParser(int argc, const char *const argv[]);
 
   /**
    * parses the given command line arguments
