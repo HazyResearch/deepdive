@@ -90,10 +90,14 @@ def withRedefinitionsWithJoinsForIdColumns:
             ]
         , FROM: [ { alias: "v", table: .variablesTable } ]
         , GROUP_BY: [ .variablesCategoryColumns[] |         { table: "v", column: . }   ]
-        , ORDER_BY: [ .variablesCategoryColumns[] | { expr: { table: "v", column: . } } ]
         } | asSql | asPrettySqlArg)
         # assign unique id to every distinct category
-        deepdive db assign_sequential_id \(.variablesCategoriesTable | @sh) cid 0
+        deepdive db assign_sequential_id \(.variablesCategoriesTable | @sh) cid 0 1 \(
+            # order by category columns to keep the cids and wids in sync
+            [ .variablesCategoryColumns[]
+            | { column: "_\(.)" }
+            | asSqlExpr
+            ] | join(", ") | @sh)
         # TODO look at the count distribution to determine whether this is actually a dense categorical variable
         # for now, simply relying on a user environment to decide which representation to use for multinomial factors
         if $DEEPDIVE_GROUNDING_DENSE_MULTINOMIAL; then
@@ -501,16 +505,6 @@ def withRedefinitionsWithJoinsForIdColumns:
                                 | { eq: [ { table: "v.\($columnIdForThisVar)", column: . }
                                         , { table: "i.\($columnIdForThisVar)", column: . } ] } ) ] }
                         ) ]
-                    # NOTE We need/want ORDER_BY here because we want the weight ids to be ordered exactly by their category
-                    # values, so we can avoid global ordering of the entire join of factor and weight later when dumping the
-                    # factors to produce a well ordered list of weight ids.
-                    , ORDER_BY:
-                        # order by category columns for every categorical variable
-                        [ ( .function_.variables[]
-                        | .columnId as $columnIdForThisVar
-                        | .schema.variablesCategoryColumns[]
-                        | { expr: { column: "\($columnIdForThisVar)_\(.)" } } )
-                        ]
                     } | asSql | asPrettySqlArg)
             fi
             " else # factors over boolean variables
@@ -664,7 +658,17 @@ def withRedefinitionsWithJoinsForIdColumns:
                 } | asSql | @sh)
             else
                 # assign weight ids according to the partition as usual
-                deepdive db assign_sequential_id \(.weightsTable | @sh) wid $baseId
+                deepdive db assign_sequential_id \(.weightsTable | @sh) wid $baseId 1 \(
+                    # NOTE We need/want ORDER_BY here because we want the weight ids to be ordered exactly by their category
+                    # values, so we can avoid global ordering of the entire join of factor and weight later when dumping the
+                    # factors to produce a well ordered list of weight ids.
+                    # order by category columns for every categorical variable
+                    [ ( .function_.variables[]
+                    | .columnId as $columnIdForThisVar
+                    | .schema.variablesCategoryColumns[]
+                    | { column: "\($columnIdForThisVar)_\(.)" } )
+                    | asSqlExpr
+                    ] | join(", ") | @sh)
             fi
             " else # boolean factors don't need special care
             "
