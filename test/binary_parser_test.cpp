@@ -70,11 +70,12 @@ TEST(BinaryFormatTest, read_weights) {
 // test read domains
 TEST(BinaryFormatTest, read_domains) {
   system(
-      "./text2bin domain test/domains/domains.tsv"
+      "./text2bin domain test/domains/domains.tsv "
       "test/domains/graph.domains");
   int num_variables = 3;
   int domain_sizes[] = {1, 2, 3};
   dd::FactorGraph fg(num_variables, 1, 1, 1);
+
   // add variables
   for (int i = 0; i < num_variables; i++) {
     fg.variables[i] = dd::RawVariable(i, 0, 0, domain_sizes[i], 0, 0, 0, 0);

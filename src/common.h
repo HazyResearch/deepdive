@@ -37,7 +37,7 @@
 #ifdef DEBUG
 #define dprintf(fmt, ...) printf(fmt, ##__VA_ARGS__);
 #else
-#define dprintf(fmt, ...) 0
+#define dprintf(fmt, ...) (void)(0)
 #endif
 
 /**
