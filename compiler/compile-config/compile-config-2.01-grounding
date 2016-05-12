@@ -42,17 +42,17 @@ def withRedefinitionsWithJoinsForIdColumns:
                 [ ( .variablesKeyColumns[], deepdiveVariableIdColumn
                 | { alias: ., table: "i", column: . } )
                 # XXX add these back on demand for the cases where inference rule uses them
-                #, ( .variablesCategoryColumns[]
-                #| { alias: ., table: "v", column: . } )
+                , ( .variablesCategoryColumns[]
+                | { alias: ., table: "v", column: . } )
                 ]
             , FROM: { alias: "i", table: .variablesIdsTable }
-            #, JOIN:
-            #    [ { INNER: { alias: "v", table: .variablesTable  }
-            #      , ON: { and: [ .variablesKeyColumns[]
-            #                   | { eq: [ { table: "v", column: . }
-            #                           , { table: "i", column: . } ]
-            #                     } ] }
-            #      } ]
+            , JOIN:
+                [ { INNER: { alias: "v", table: .variablesTable  }
+                  , ON: { and: [ .variablesKeyColumns[]
+                               | { eq: [ { table: "v", column: . }
+                                       , { table: "i", column: . } ]
+                                 } ] }
+                  } ]
             } | asSql)\n)"
         ] | join("\n   , "))" | "\n\(.)\n----\n"
     else "" end
@@ -493,6 +493,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                     , FROM: [ { alias: "f", table: .factorsTable } ]
                     # FIXME joins below can go away if DDlog could project them as well in the .input_query
                     # or we could inject those pushed-down projections if it at least compiled into a sql.jq object
+# XXX this join prevents us from defining a partial weight distribution
                     , JOIN:
                         [ ( .function_.variables[]
                         | .columnId as $columnIdForThisVar
