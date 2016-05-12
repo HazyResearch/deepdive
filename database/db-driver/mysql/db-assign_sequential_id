@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # db-assign_sequential_id -- Assigns a unique integer to every row for a table using a MySQL user-defined variable
 # > eval "$(db-parse "$url")"
-# > db-assign_sequential_id TABLE COLUMN BEGIN_ID [INCREMENT]
+# > db-assign_sequential_id TABLE COLUMN BEGIN_ID [INCREMENT] [ORDER_BY]
 ##
 set -euo pipefail
 
@@ -9,6 +9,8 @@ set -euo pipefail
 [[ $# -gt 1 ]] || usage "$0" "Missing COLUMN"
 [[ $# -gt 2 ]] || usage "$0" "Missing BEGIN_ID"
 Table=$1 Column=$2 BeginId=$3 Increment=${4:-1}
+
+[[ $# -le 4 ]] || usage "$0" "ORDER_BY unsupported"
 
 [[ $Increment -ne 0 ]] || usage "$0" "INCREMENT must be non-zero"
 

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # db-assign_sequential_id -- Assigns a unique integer to every row for a table using PostgreSQL sequence generator
 # > eval "$(db-parse "$url")"
-# > db-assign_sequential_id TABLE COLUMN BEGIN_ID [INCREMENT]
+# > db-assign_sequential_id TABLE COLUMN BEGIN_ID [INCREMENT] [ORDER_BY...]
 ##
 set -euo pipefail
 
 [[ $# -gt 0 ]] || usage "$0" "Missing TABLE"
 [[ $# -gt 1 ]] || usage "$0" "Missing COLUMN"
 [[ $# -gt 2 ]] || usage "$0" "Missing BEGIN_ID"
-Table=$1 Column=$2 BeginId=$3 Increment=${4:-1}
+Table=$1 Column=$2 BeginId=$3 Increment=${4:-1} OrderBy=${5:-}
 
 [[ $Increment -ne 0 ]] || usage "$0" "INCREMENT must be non-zero"
 
@@ -16,7 +16,7 @@ Table=$1 Column=$2 BeginId=$3 Increment=${4:-1}
 # See: http://www.postgresql.org/docs/8.2/static/sql-createlanguage.html
 # See: http://www.postgresql.org/docs/8.2/static/plpgsql-overview.html
 # See: http://www.postgresql.org/docs/8.2/static/plpython-funcs.html
-if db-supports_pg_lang "plpgsql" && db-supports_pg_lang "plpythonu"; then
+if [[ -z $OrderBy ]] && db-supports_pg_lang "plpgsql" && db-supports_pg_lang "plpythonu"; then
     db-execute "
     CREATE OR REPLACE FUNCTION fast_seqassign_init()
     RETURNS INT AS \$\$
@@ -89,17 +89,6 @@ if db-supports_pg_lang "plpgsql" && db-supports_pg_lang "plpythonu"; then
 "
 
 else # if either plpgsql or plpythonu is not available
-# Fall back to using PostgreSQL sequence generator named after the table and column
-# See: http://www.postgresql.org/docs/current/static/sql-createsequence.html
-seq="dd_seq_${Table}_${Column}"
-minMaxValues=
-if   [[ $Increment -gt 0 && $BeginId -le 0 ]]; then minMaxValues="MINVALUE $BeginId NO MAXVALUE"
-elif [[ $Increment -lt 0 && $BeginId -ge 0 ]]; then minMaxValues="NO MINVALUE MAXVALUE $BeginId"
-fi
-db-execute "
-    DROP SEQUENCE IF EXISTS $seq CASCADE;
-    CREATE TEMPORARY SEQUENCE $seq INCREMENT BY $Increment $minMaxValues START $BeginId NO CYCLE;
-
-    UPDATE $Table SET $Column = nextval('$seq');
-"
+    # Delegate to PostgreSQL's way of assigning sequence
+    exec "$(dirname "$0")"/../postgresql/"$(basename "$0")" "$@"
 fi
