@@ -40,182 +40,19 @@ int compute_n_epochs(int n_epoch, int n_numa_node, int n_datacopy) {
   return std::ceil((double)n_epoch / n_valid_node);
 }
 
-/**
-* The incremental function does the following
-   (1) load the original graph
-   (2) load whether a variable is used for learning or not
-   (3) run learning for all variables that used for learning
-   (4) caluclate the delta weight
-   (5) add delta weight's factor to variables used for inference
-   (6) load "compact factor" obtained by relaxation to variables used for
-inference
-   (7) run inference on all variables
-*
-**/
-void inc(dd::CmdParser &cmd_parser) {
-  // number of NUMA nodes
-  int n_numa_node = numa_max_node() + 1;
-
-  // get command line arguments
-  std::string original_folder = cmd_parser.original_folder;
-  std::string delta_folder = cmd_parser.delta_folder;
-
-  // check arguments
-  if (original_folder == "" || delta_folder == "") {
-    std::cout << "original folder or delta folder not specified" << std::endl;
-    exit(1);
-  }
-
-  // get command line arguments
-  std::string fg_file = original_folder + "/graph.meta";
-  std::string weight_file = original_folder + "/graph.weights";
-  std::string variable_file = original_folder + "/graph.variables";
-  std::string factor_file = original_folder + "/graph.factors";
-  std::string edge_file = original_folder + "/graph.edges";
-
-  std::string delta_fg_file = delta_folder + "/graph.meta";
-
-  std::string output_folder = delta_folder;
-
-  int n_learning_epoch = cmd_parser.n_learning_epoch;
-  int n_samples_per_learning_epoch = cmd_parser.n_samples_per_learning_epoch;
-  int n_inference_epoch = cmd_parser.n_inference_epoch;
-
-  double stepsize = cmd_parser.stepsize;
-  double stepsize2 = cmd_parser.stepsize2;
-  // hack to support two parameters to specify step size
-  if (stepsize == 0.01) stepsize = stepsize2;
-  double decay = cmd_parser.decay;
-
-  int n_datacopy = cmd_parser.n_datacopy;
-  double reg_param = cmd_parser.reg_param;
-  bool is_quiet = cmd_parser.should_be_quiet;
-
-  regularization reg = cmd_parser.regularization == "l1" ? REG_L1 : REG_L2;
-
-  Meta meta = read_meta(fg_file);
-  Meta meta2 = read_meta(delta_fg_file);
-
-  // run on NUMA node 0
-  numa_run_on_node(0);
-  numa_set_localalloc();
-
-  // std::cout << "#######" << meta.num_factors+meta2.num_factors << std::endl;
-
-  // load factor graph
-  dd::FactorGraph fg(
-      meta.num_variables +
-          meta2.num_variables, /* THis is REALLY UGLY!!!! FIX!!!!*/
-      meta.num_factors + meta2.num_factors,
-      meta.num_weights + meta2.num_weights, meta.num_edges + meta2.num_edges);
-  fg.load(cmd_parser, is_quiet, 2);
-
-  dd::CompiledFactorGraph cfg(
-      meta.num_variables +
-          meta2.num_variables, /* THis is REALLY UGLY!!!! FIX!!!!*/
-      meta.num_factors + meta2.num_factors,
-      meta.num_weights + meta2.num_weights, meta.num_edges + meta2.num_edges);
-  fg.compile(cfg);
-
-  dd::GibbsSampling gibbs(&cmd_parser, false, 0, false);
-  gibbs.init(&cfg, n_datacopy);
-
-  // number of learning epochs
-  // the factor graph is copied on each NUMA node, so the total epochs =
-  // epochs specified / number of NUMA nodes
-  int numa_aware_n_learning_epoch =
-      compute_n_epochs(n_learning_epoch, n_numa_node, n_datacopy);
-
-  // learning
-  gibbs.learn(numa_aware_n_learning_epoch, n_samples_per_learning_epoch,
-              stepsize, decay, reg_param, is_quiet, true, reg);
-
-  // dump weights
-  gibbs.dump_weights(is_quiet, 2);
-
-  // number of inference epochs
-  int numa_aware_n_epoch =
-      compute_n_epochs(n_inference_epoch, n_numa_node, n_datacopy);
-
-  // inference
-  gibbs.inference(numa_aware_n_epoch, is_quiet, false, true);
-  gibbs.aggregate_results_and_dump(is_quiet, 2);
+void compact(dd::CmdParser &cmd_parser) {
+  // TODO: Implement me!
+  return;
 }
 
-void mat(dd::CmdParser &cmd_parser) {
-  // number of NUMA nodes
-  int n_numa_node = numa_max_node() + 1;
+void init_assignments(dd::CmdParser &cmd_parser) {
+  // TODO: Implement me!
+  return;
+}
 
-  // get command line arguments
-  std::string original_folder = cmd_parser.original_folder;
-
-  // check arguments
-  if (original_folder == "") {
-    std::cout << "original folder not specified" << std::endl;
-    exit(1);
-  }
-
-  // get command line arguments
-  std::string fg_file = original_folder + "/graph.meta";
-  std::string weight_file = original_folder + "/graph.weights";
-  std::string variable_file = original_folder + "/graph.variables";
-  std::string factor_file = original_folder + "/graph.factors";
-  std::string edge_file = original_folder + "/graph.edges";
-
-  int n_learning_epoch = cmd_parser.n_learning_epoch;
-  int n_samples_per_learning_epoch = cmd_parser.n_samples_per_learning_epoch;
-  int n_inference_epoch = cmd_parser.n_inference_epoch;
-
-  double stepsize = cmd_parser.stepsize;
-  double stepsize2 = cmd_parser.stepsize2;
-  // hack to support two parameters to specify step size
-  if (stepsize == 0.01) stepsize = stepsize2;
-  double decay = cmd_parser.decay;
-
-  int n_datacopy = cmd_parser.n_datacopy;
-  double reg_param = cmd_parser.reg_param;
-  bool is_quiet = cmd_parser.should_be_quiet;
-  regularization reg = cmd_parser.regularization == "l1" ? REG_L1 : REG_L2;
-
-  Meta meta = read_meta(fg_file);
-
-  // run on NUMA node 0
-  numa_run_on_node(0);
-  numa_set_localalloc();
-
-  // load factor graph
-  dd::FactorGraph fg(meta.num_variables, meta.num_factors, meta.num_weights,
-                     meta.num_edges);
-  fg.load(cmd_parser, is_quiet, 1);
-
-  dd::CompiledFactorGraph cfg(meta.num_variables, meta.num_factors,
-                              meta.num_weights, meta.num_edges);
-
-  fg.compile(cfg);
-
-  dd::GibbsSampling gibbs(&cmd_parser, false, 0, false);
-  gibbs.init(&cfg, n_datacopy);
-
-  // number of learning epochs
-  // the factor graph is copied on each NUMA node, so the total epochs =
-  // epochs specified / number of NUMA nodes
-  int numa_aware_n_learning_epoch =
-      compute_n_epochs(n_learning_epoch, n_numa_node, n_datacopy);
-
-  // learning
-  gibbs.learn(numa_aware_n_learning_epoch, n_samples_per_learning_epoch,
-              stepsize, decay, reg_param, is_quiet, false, reg);
-
-  // dump weights
-  gibbs.dump_weights(is_quiet, 1);
-
-  // number of inference epochs
-  int numa_aware_n_epoch =
-      compute_n_epochs(n_inference_epoch, n_numa_node, n_datacopy);
-
-  // inference
-  gibbs.inference(numa_aware_n_epoch, is_quiet, true, false);
-  gibbs.aggregate_results_and_dump(is_quiet, 1);
+void init_weights(dd::CmdParser &cmd_parser) {
+  // TODO: Implement me!
+  return;
 }
 
 void gibbs(dd::CmdParser &cmd_parser) {
@@ -336,18 +173,18 @@ void gibbs(dd::CmdParser &cmd_parser) {
 
   // learning
   gibbs.learn(numa_aware_n_learning_epoch, n_samples_per_learning_epoch,
-              stepsize, decay, reg_param, is_quiet, false, reg);
+              stepsize, decay, reg_param, is_quiet, reg);
 
   // dump weights
-  gibbs.dump_weights(is_quiet, 0);
+  gibbs.dump_weights(is_quiet);
 
   // number of inference epochs
   int numa_aware_n_epoch =
       compute_n_epochs(n_inference_epoch, n_numa_node, n_datacopy);
 
   // inference
-  gibbs.inference(numa_aware_n_epoch, is_quiet, false, false);
-  gibbs.aggregate_results_and_dump(is_quiet, 0);
+  gibbs.inference(numa_aware_n_epoch, is_quiet);
+  gibbs.aggregate_results_and_dump(is_quiet);
 
   if (cmd_parser.should_use_snapshot) {
     gibbs.do_checkpoint(is_quiet);

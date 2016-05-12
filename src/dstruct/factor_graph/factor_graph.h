@@ -92,7 +92,6 @@ namespace dd{
     long n_factor;
     long n_weight;
     long n_edge;
-    long n_tally; // FIXME: Doesn't seem that this is being copied in copy_from()
 
     long c_nvar;
     long c_nfactor;

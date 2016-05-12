@@ -25,6 +25,7 @@ namespace dd {
     // assignment to variables, see variable.h for more detail
     VariableValue * const assignments_free;
     VariableValue * const assignments_evid;
+
     double * const weight_values; // array of weight values
     bool * const weights_isfixed; // array of whether weight is fixed
 

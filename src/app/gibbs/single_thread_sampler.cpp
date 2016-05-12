@@ -24,7 +24,7 @@ void SingleThreadSampler::sample(const int &i_sharding, const int &n_sharding) {
 
   // sample each variable in the partition
   for (long i = start; i < end; i++) {
-    this->sample_single_variable(i, p_fg->is_inc);
+    this->sample_single_variable(i);
   }
 }
 
@@ -63,64 +63,19 @@ void SingleThreadSampler::sample_sgd_single_variable(long vid) {
   this->p_fg->update_weight(variable);
 }
 
-void SingleThreadSampler::sample_single_variable(long vid, bool is_inc) {
+void SingleThreadSampler::sample_single_variable(long vid) {
   // this function uses the same sampling technique as in
   // sample_sgd_single_variable
 
   Variable &variable = this->p_fg->variables[vid];
   if (variable.is_observation) return;
 
-  if (is_inc) {
-    if (variable.domain_type == DTYPE_BOOLEAN ||
-        variable.domain_type == DTYPE_MULTINOMIAL) {
-      if (variable.is_evid == false || sample_evidence) {
-        int newvalue = variable.next_sample;
-        // std::cout << newvalue << std::endl;
-        int oldvalue = p_fg->infrs->assignments_evid[vid];
-
-        // if(newvalue == oldvalue){
-        // p_fg->template update<false>(variable, newvalue);
-        // std::cout << "/" << std::endl;
-        // accept
-        //}else{
-
-        // positive and negative potential for boolean variables
-        // NOTE In the context of this file and single_thread_sampler.cpp, a
-        // potential for a variable value or proposal means the potential of
-        // the factors the variable connects to
-        double potential_pos =
-            p_fg->template potential<false>(variable, newvalue);  // flip
-        double potential_neg =
-            p_fg->template potential<false>(variable, oldvalue);  // not flip
-        // std::cout << vid << " -> " << newvalue << "(" << potential_pos << ")"
-        //      << "    " << oldvalue << "(" << potential_neg << ")" <<
-        //      std::endl;
-
-        float r = static_cast<float>(erand48(this->p_rand_seed));
-        float prob = exp(potential_pos - potential_neg);
-        // std::cout << r << "  " << prob << std::endl;
-
-        if (r < prob) {
-          p_fg->template update<false>(variable, newvalue);
-        } else {
-          p_fg->template update<false>(variable, oldvalue);
-          // std::cout << "~" << std::endl;
-        }
-        //}
-      }
-
-    } else {
-      std::cout << "INC DOES NOT SUPPORT BOOLEAN" << std::endl;
-    }
-  } else {
-    if (variable.is_evid == false || sample_evidence) {
-      int proposal = draw_sample(variable, sample_evidence);
-      p_fg->template update<false>(variable, (double)proposal);
-      if (sample_evidence)
-        p_fg->template update<true>(variable, (double)proposal);
-    }
+  if (variable.is_evid == false || sample_evidence) {
+    int proposal = draw_sample(variable, sample_evidence);
+    p_fg->template update<false>(variable, (double)proposal);
+    if (sample_evidence)
+      p_fg->template update<true>(variable, (double)proposal);
   }
-}
 }
 
 inline int dd::SingleThreadSampler::draw_sample(Variable &variable,
@@ -199,4 +154,5 @@ inline int dd::SingleThreadSampler::draw_sample(Variable &variable,
   }
 
   return proposal;
+}
 }

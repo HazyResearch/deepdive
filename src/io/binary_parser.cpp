@@ -195,88 +195,6 @@ long long read_factors(string filename, dd::FactorGraph &fg) {
   return count;
 }
 
-// Read factors (incremental mode)
-// The format of each line in factor file is: factor_id, weight_id, type,
-// edge_count
-// It is binary format without delimiter.
-long long read_factors_inc(string filename, dd::FactorGraph &fg) {
-  ifstream file;
-  file.open(filename.c_str(), ios::in | ios::binary);
-  long long count = 0;
-  long long id;
-  long long weightid;
-  short type;
-  long long edge_count;
-  while (file.good()) {
-    file.read((char *)&id, 8);
-    file.read((char *)&weightid, 8);
-    file.read((char *)&type, 2);
-    if (!file.read((char *)&edge_count, 8)) break;
-
-    id = be64toh(id);
-    weightid = be64toh(weightid);
-    type = be16toh(type);
-    edge_count = be64toh(edge_count);
-
-    count++;
-    fg.factors[fg.c_nfactor] = dd::RawFactor(id, weightid, type, edge_count);
-    fg.c_nfactor++;
-  }
-  file.close();
-  return count;
-}
-
-// Read edges (incremental mode)
-// The format of each line in factor file is: variable_id, factor_id, position,
-// padding
-// It is binary format without delimiter.
-long long read_edges_inc(string filename, dd::FactorGraph &fg) {
-  ifstream file;
-  file.open(filename.c_str(), ios::in | ios::binary);
-  long long count = 0;
-  long long variable_id;
-  long long factor_id;
-  long long position;
-  bool ispositive;
-  char padding;
-  long long equal_predicate;
-  while (file.good()) {
-    // read fields
-    file.read((char *)&variable_id, 8);
-    file.read((char *)&factor_id, 8);
-    file.read((char *)&position, 8);
-    file.read((char *)&padding, 1);
-    if (!file.read((char *)&equal_predicate, 8)) break;
-
-    variable_id = be64toh(variable_id);
-    factor_id = be64toh(factor_id);
-    position = be64toh(position);
-    ispositive = padding;
-    equal_predicate = be64toh(equal_predicate);
-
-    count++;
-    // printf("varid=%lli, factorid=%lli, position=%lli, predicate=%lli\n",
-    // variable_id, factor_id, position, equal_predicate);
-
-    // wrong id
-    if (variable_id >= fg.n_var || variable_id < 0) {
-      assert(false);
-    }
-
-    if (factor_id >= fg.n_factor || factor_id < 0) {
-      std::cout << "wrong fid = " << factor_id << std::endl;
-      assert(false);
-    }
-
-    // add variables to factors
-    fg.factors[factor_id].tmp_variables.push_back(dd::VariableInFactor(
-        variable_id, position, ispositive, equal_predicate));
-    fg.variables[variable_id].tmp_factor_ids.push_back(factor_id);
-  }
-  file.close();
-  return count;
-}
-
 // read domains for multinomial
 void read_domains(std::string filename, dd::FactorGraph &fg) {
   ifstream file;
@@ -334,7 +252,6 @@ void resume(string filename, int i, dd::CompiledFactorGraph &cfg) {
   inf.read((char *)&cfg.n_factor, sizeof(long));
   inf.read((char *)&cfg.n_weight, sizeof(long));
   inf.read((char *)&cfg.n_edge, sizeof(long));
-  inf.read((char *)&cfg.n_tally, sizeof(long));
 
   inf.read((char *)&cfg.c_nvar, sizeof(long));
   inf.read((char *)&cfg.c_nfactor, sizeof(long));
@@ -450,7 +367,6 @@ void checkpoint(string filename, vector<dd::CompiledFactorGraph> &cfgs) {
     outf.write((char *)&cfg.n_factor, sizeof(long));
     outf.write((char *)&cfg.n_weight, sizeof(long));
     outf.write((char *)&cfg.n_edge, sizeof(long));
-    outf.write((char *)&cfg.n_tally, sizeof(long));
 
     outf.write((char *)&cfg.c_nvar, sizeof(long));
     outf.write((char *)&cfg.c_nfactor, sizeof(long));

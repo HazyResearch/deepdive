@@ -77,16 +77,16 @@ TEST_F(SamplerTest, sample_single_variable) {
   }
   cfg.infrs->weight_values[0] = 2;
 
-  sampler.sample_single_variable(0, false);
+  sampler.sample_single_variable(0);
   EXPECT_EQ(cfg.infrs->assignments_evid[0], 1);
 
-  sampler.sample_single_variable(10, false);
+  sampler.sample_single_variable(10);
   EXPECT_EQ(cfg.infrs->assignments_evid[10], 1);
 
   cfg.infrs->weight_values[0] = 20;
-  sampler.sample_single_variable(11, false);
+  sampler.sample_single_variable(11);
   EXPECT_EQ(cfg.infrs->assignments_evid[11], 1);
 
-  sampler.sample_single_variable(12, false);
+  sampler.sample_single_variable(12);
   EXPECT_EQ(cfg.infrs->assignments_evid[12], 1);
 }

@@ -60,7 +60,7 @@ namespace dd{
     /**
      * Samples a single variable with id vid
      */
-    void sample_single_variable(long vid, bool is_inc);
+    void sample_single_variable(long vid);
 
     // sample a single variable
     inline int draw_sample(Variable &variable, bool is_free_sample);

@@ -64,25 +64,12 @@ void dd::FactorGraph::load(const CmdParser &cmd, const bool is_quiet, int inc) {
   std::string filename_factors;
   std::string filename_variables;
   std::string filename_weights;
-  if (inc) {
-    filename_weights = cmd.original_folder + "/graph.weights";
-    filename_variables = cmd.original_folder + "/graph.variables";
-    filename_factors = cmd.original_folder + "/graph.factors";
-    filename_edges = cmd.original_folder + "/graph.edges";
-  } else {
-    filename_weights = cmd.weight_file;
-    filename_variables = cmd.variable_file;
-    filename_factors = cmd.factor_file;
-  }
+  filename_weights = cmd.weight_file;
+  filename_variables = cmd.variable_file;
+  filename_factors = cmd.factor_file;
 
   // load variables
   long long n_loaded = read_variables(filename_variables, *this);
-
-  if (cmd.delta_folder != "") {
-    std::cout << "Loading delta..." << std::endl;
-    std::cout << cmd.delta_folder + "/graph.variables" << std::endl;
-    n_loaded += read_variables(cmd.delta_folder + "/graph.variables", *this);
-  }
   assert(n_loaded == n_var);
   if (!is_quiet) {
     std::cout << "LOADED VARIABLES: #" << n_loaded << std::endl;
@@ -92,127 +79,24 @@ void dd::FactorGraph::load(const CmdParser &cmd, const bool is_quiet, int inc) {
 
   // load weights
   n_loaded = read_weights(filename_weights, *this);
-  if (cmd.delta_folder != "") {
-    std::cout << "Loading delta..." << std::endl;
-    n_loaded += read_weights(cmd.delta_folder + "/graph.weights", *this);
-  }
   assert(n_loaded == n_weight);
   if (!is_quiet) {
     std::cout << "LOADED WEIGHTS: #" << n_loaded << std::endl;
   }
 
   read_domains(cmd.domain_file, *this);
-
   this->sorted = true;
 
   // load factors
-  if (inc)
-    n_loaded = read_factors_inc(filename_factors, *this);
-  else
-    n_loaded = read_factors(filename_factors, *this);
-  if (cmd.delta_folder != "") {
-    std::cout << "Loading delta..." << cmd.delta_folder + "/graph.factors"
-              << std::endl;
-    n_loaded += read_factors_inc(cmd.delta_folder + "/graph.factors", *this);
-  }
+  n_loaded = read_factors(filename_factors, *this);
 
   assert(n_loaded == n_factor);
   if (!is_quiet) {
     std::cout << "LOADED FACTORS: #" << n_loaded << std::endl;
   }
 
-  if (inc) {
-    // sort edges
-    // NOTE This is very important, as read_edges assume variables,
-    // factors and weights are ordered so that their id is the index
-    // where they are stored in the array
-    std::sort(&factors[0], &factors[n_factor], idsorter<Factor>());
-    // load edges
-    n_loaded = read_edges_inc(filename_edges, *this);
-    if (cmd.delta_folder != "") {
-      std::cout << "Loading delta..." << std::endl;
-      n_loaded += read_edges_inc(cmd.delta_folder + "/graph.edges", *this);
-    }
-
-    if (!is_quiet) {
-      std::cout << "LOADED EDGES: #" << n_loaded << std::endl;
-    }
-  }
-
-  // load active variables
-  std::string active_vars = cmd.original_folder + "/active.variables";
-  long long active_id;
-  std::ifstream file;
-  file.open(active_vars.c_str(), ios::in | ios::binary);
-  while (file.good()) {
-    if (!file.read((char *)&active_id, 8)) break;
-    active_id = bswap_64(active_id);
-    this->variables[active_id].isactive = true;
-  }
-
-  // a slow, but good enough algorithm for connected components
-  /* XXX(IVG) I have no idea what this is. Commenting out for now. */
-  /*
-  std::string useful_training =
-      cmd.original_folder + "/mat_components_hasevids";
-  std::ofstream fout2(useful_training.c_str());
-  long long component_id = -1;
-  for (long long vid = 0; vid < n_var; vid++) {
-    const Variable &var = this->variables[vid];
-    if (var.component_id != -1) continue;
-    component_id++;
-    bool isuseful_for_training = false;
-    std::vector<long long> vars_to_work_on;
-    vars_to_work_on.push_back(vid);
-    long long var_to_work_on;
-    while (vars_to_work_on.size() != 0) {
-      var_to_work_on = vars_to_work_on.back();
-      vars_to_work_on.pop_back();
-      this->variables[var_to_work_on].component_id = component_id;
-      if (this->variables[var_to_work_on].is_evid) {
-        isuseful_for_training = true;
-      }
-      for (long long fid : this->variables[var_to_work_on].tmp_factor_ids) {
-        const Factor &factor = this->factors[fid];
-        for (const VariableInFactor &next_var : factor.tmp_variables) {
-          if (this->variables[next_var.vid].component_id != -1) {
-            assert(this->variables[next_var.vid].component_id == component_id);
-          } else {
-            this->variables[next_var.vid].component_id = component_id;
-            vars_to_work_on.push_back(next_var.vid);
-          }
-        }
-      }
-    }
-    fout2 << component_id << " " << isuseful_for_training << std::endl;
-  }
-  std::string component_file = cmd.original_folder + "/mat_active_components";
-  std::ofstream fout(component_file.c_str());
-  for (long long vid = 0; vid < n_var; vid++) {
-    const Variable &var = this->variables[vid];
-    assert(var.component_id != -1);
-    if (var.isactive) {
-      fout << var.id << " " << var.component_id << std::endl;
-    }
-  }
-  */
-
   this->safety_check();
   assert(this->is_usable() == true);
-
-  if (inc == 2) {
-    std::cout << "LOADING PREVIOUS WEIGHT..." << std::endl;
-    this->old_weight_values = new float[n_weight];
-    std::ifstream fin(cmd.original_folder +
-                      "/inference_result.out.weights.text");
-    long long wid;
-    float weight;
-    while (fin >> wid >> weight) {
-      this->weights[wid].weight = weight;
-      this->old_weight_values[wid] = weight;
-    }
-    fin.close();
-  }
 }
 
 /**
