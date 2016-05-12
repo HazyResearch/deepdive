@@ -6,12 +6,9 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-#include <mutex>
 
 #ifndef _FACTOR_H_
 #define _FACTOR_H_
-
-static std::mutex m;
 
 namespace dd{
 
