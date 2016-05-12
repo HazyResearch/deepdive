@@ -152,15 +152,27 @@ void gibbs(dd::CmdParser &cmd_parser) {
                           learn_non_evidence);
 
   if (cmd_parser.should_use_snapshot) {
-    dprintf("Resuming computation from snapshot...");
+    dprintf("Resuming factor graph from checkpoint...\n");
     gibbs.do_resume(is_quiet, n_datacopy, meta.num_variables, meta.num_factors,
                     meta.num_weights, meta.num_edges);
   } else {
-    dprintf("Initializing...");
     // Load factor graph
+    dprintf("Initializing factor graph...\n");
     dd::FactorGraph fg(meta.num_variables, meta.num_factors, meta.num_weights,
                        meta.num_edges);
-    fg.load(cmd_parser, is_quiet, false);
+
+    fg.load_variables(cmd_parser.variable_file);
+    fg.load_weights(cmd_parser.weight_file);
+    fg.load_domains(cmd_parser.domain_file);
+    fg.load_factors(cmd_parser.factor_file);
+    fg.safety_check();
+
+    assert(fg.is_usable());
+
+    if (!is_quiet) {
+      std::cout << "Printing FactorGraph statistics:" << std::endl;
+      std::cout << fg << std::endl;
+    }
 
     dd::CompiledFactorGraph cfg(meta.num_variables, meta.num_factors,
                                 meta.num_weights, meta.num_edges);

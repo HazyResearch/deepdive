@@ -25,7 +25,6 @@ namespace dd{
     long n_factor;
     long n_weight;
     long n_edge;
-    long n_tally;
 
     long c_nvar;
     long c_nfactor;
@@ -59,10 +58,31 @@ namespace dd{
     FactorGraph(long _n_var, long _n_factor, long _n_weight, long _n_edge);
 
     /**
-     * Loads the factor graph using arguments specified from command line
+     * Loads the corresponding array of objects (weights, variables, factors,
+     * domains) into the factor graph.
+     *
+     * From some old documentation, seems like the proper way to do this is:
+     *   1. read variables
+     *   2. read weights
+     *   3. sort variables and weights by id
+     *   4. read factors
+     *
+     * Where Step 3 seems to be obsolete, since we're reading in variables and
+     * weights that are in order.
      */
-    void load(const CmdParser & cmd, const bool is_quiet, int inc);
+    void load_weights(const std::string filename);
+    void load_variables(const std::string filename);
+    void load_factors(const std::string filename);
+    void load_domains(const std::string filename);
 
+    /**
+     * Compiles the factor graph into a format that's more appropriate for
+     * inference and learning.
+     *
+     * Since the original factor graph initializes the new factor graph,
+     * it also has to transfer the variable, factor, and weight counts,
+     * and other statistics as well.
+     */
     void compile(CompiledFactorGraph &cfg);
 
     /**
@@ -76,6 +96,23 @@ namespace dd{
      */
     bool is_usable();
   };
+
+
+  /**
+   * Sorry for my noobness; I don't really know where to place this function 
+   */
+  inline std::ostream& operator<<(std::ostream &out, dd::FactorGraph const &fg) {
+    out << "FactorGraph(";
+    out << "n_var = " << fg.n_var << ", ";
+    out << "n_factor = " << fg.n_factor << ", ";
+    out << "n_weight = " << fg.n_weight << ", ";
+    out << "n_edge = " << fg.n_edge << ", ";
+
+    out << "n_evid = " << fg.n_evid << ", ";
+    out << "n_query = " << fg.n_query << ", ";
+    out << "safety_check_passed = " << fg.safety_check_passed << ")";
+    return out;
+  }
 
   class CompiledFactorGraph {
   public:
@@ -120,7 +157,6 @@ namespace dd{
     // whether safety check has passed
     // see safety_check() below
     bool safety_check_passed;
-
 
     CompiledFactorGraph();
 

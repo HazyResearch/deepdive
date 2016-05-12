@@ -21,10 +21,6 @@ class idsorter : public std::binary_function<T, T, bool> {
   }
 };
 
-bool dd::FactorGraph::is_usable() {
-  return this->sorted && this->safety_check_passed;
-}
-
 dd::FactorGraph::FactorGraph(long _n_var, long _n_factor, long _n_weight,
                              long _n_edge)
     : n_var(_n_var),
@@ -42,70 +38,6 @@ dd::FactorGraph::FactorGraph(long _n_var, long _n_factor, long _n_weight,
       sorted(false),
       safety_check_passed(false) {}
 
-// Load factor graph from files
-// It contains two different mode: original mode and incremental mode.
-// The logic for this function is:
-// original:
-//   1. read variables
-//   2. read weights
-//   3. sort variables and weights by id
-//   4. read factors
-// incremental:
-//   1. read variables
-//   2. read weights
-//   3. sort variables and weights by id
-//   4. read factors
-//   5. sort factors by id
-//   6. read edges
-void dd::FactorGraph::load(const CmdParser &cmd, const bool is_quiet, int inc) {
-  // get factor graph file names from command line arguments
-  std::string filename_edges;
-  std::string filename_factors;
-  std::string filename_variables;
-  std::string filename_weights;
-  filename_weights = cmd.weight_file;
-  filename_variables = cmd.variable_file;
-  filename_factors = cmd.factor_file;
-
-  // load variables
-  long long n_loaded = read_variables(filename_variables, *this);
-  assert(n_loaded == n_var);
-  if (!is_quiet) {
-    std::cout << "LOADED VARIABLES: #" << n_loaded << std::endl;
-    std::cout << "         N_QUERY: #" << n_query << std::endl;
-    std::cout << "         N_EVID : #" << n_evid << std::endl;
-  }
-
-  // load weights
-  n_loaded = read_weights(filename_weights, *this);
-  assert(n_loaded == n_weight);
-  if (!is_quiet) {
-    std::cout << "LOADED WEIGHTS: #" << n_loaded << std::endl;
-  }
-
-  read_domains(cmd.domain_file, *this);
-  this->sorted = true;
-
-  // load factors
-  n_loaded = read_factors(filename_factors, *this);
-
-  assert(n_loaded == n_factor);
-  if (!is_quiet) {
-    std::cout << "LOADED FACTORS: #" << n_loaded << std::endl;
-  }
-
-  this->safety_check();
-  assert(this->is_usable() == true);
-}
-
-/**
- * Compiles the factor graph into a format that's more appropriate for
- * inference and learning.
- *
- * Since the original factor graph initializes the new factor graph,
- * it also has to transfer the variable, factor, and weight counts,
- * and other statistics as well.
- */
 void dd::FactorGraph::compile(CompiledFactorGraph &cfg) {
   cfg.c_nvar = c_nvar;
   cfg.c_nfactor = c_nfactor;
@@ -191,6 +123,29 @@ void dd::FactorGraph::compile(CompiledFactorGraph &cfg) {
    */
   c_edge = i_edge;
   cfg.c_edge = i_edge;
+}
+
+void dd::FactorGraph::safety_check() {
+  // check whether variables, factors, and weights are stored
+  // in the order of their id
+  long s = n_var;
+  for (long i = 0; i < s; i++) {
+    assert(this->variables[i].id == i);
+  }
+  s = n_factor;
+  for (long i = 0; i < s; i++) {
+    assert(this->factors[i].id == i);
+  }
+  s = n_weight;
+  for (long i = 0; i < s; i++) {
+    assert(this->weights[i].id == i);
+  }
+  this->sorted = true;
+  this->safety_check_passed = true;
+}
+
+bool dd::FactorGraph::is_usable() {
+  return this->sorted && this->safety_check_passed;
 }
 
 dd::CompiledFactorGraph::CompiledFactorGraph(long _n_var, long _n_factor,
@@ -338,22 +293,4 @@ void dd::CompiledFactorGraph::update_weight(const Variable &variable) {
 bool dd::compare_position(const VariableInFactor &x,
                           const VariableInFactor &y) {
   return x.n_position < y.n_position;
-}
-
-void dd::FactorGraph::safety_check() {
-  // check whether variables, factors, and weights are stored
-  // in the order of their id
-  long s = n_var;
-  for (long i = 0; i < s; i++) {
-    assert(this->variables[i].id == i);
-  }
-  s = n_factor;
-  for (long i = 0; i < s; i++) {
-    assert(this->factors[i].id == i);
-  }
-  s = n_weight;
-  for (long i = 0; i < s; i++) {
-    assert(this->weights[i].id == i);
-  }
-  this->safety_check_passed = true;
 }

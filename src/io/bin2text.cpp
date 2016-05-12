@@ -152,7 +152,12 @@ int bin2text(const dd::CmdParser &cmd_parser) {
   // load factor graph
   dd::FactorGraph fg(meta.num_variables, meta.num_factors, meta.num_weights,
                      meta.num_edges);
-  fg.load(cmd_parser, false, false);
+  fg.load_variables(cmd_parser.variable_file);
+  fg.load_weights(cmd_parser.weight_file);
+  fg.load_domains(cmd_parser.domain_file);
+  fg.load_factors(cmd_parser.factor_file);
+  fg.safety_check();
+
   dump_factorgraph(fg, cmd_parser.output_folder);
 
   return 0;

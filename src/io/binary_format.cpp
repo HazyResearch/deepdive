@@ -1,5 +1,12 @@
+/**
+ * This file contains binary formatting methods for FactorGraphs and
+ * CompactFactorGraphs. We think this file is a good place to put the
+ * definitions of these methods as it conveys the intentions quite clearly
+ * (i.e. for binary formatting of these objects).
+ */
 #include "common.h"
 #include "binary_format.h"
+#include "dstruct/factor_graph/factor_graph.h"
 #include "dstruct/factor_graph/factor.h"
 #include "dstruct/factor_graph/variable.h"
 #include <fstream>
@@ -28,10 +35,10 @@ Meta read_meta(string meta_file) {
   return meta;
 }
 
-// Read weights and load into factor graph
-long long read_weights(string filename, dd::FactorGraph &fg) {
+void dd::FactorGraph::load_weights(const std::string filename) {
   ifstream file;
-  file.open(filename.c_str(), ios::in | ios::binary);
+  file.open(filename, ios::in | ios::binary);
+
   long long count = 0;
   long long id;
   bool isfixed;
@@ -49,18 +56,19 @@ long long read_weights(string filename, dd::FactorGraph &fg) {
     initial_value = *(double *)&tmp;
 
     // load into factor graph
-    fg.weights[id] = dd::Weight(id, initial_value, isfixed);
-    fg.c_nweight++;
+    weights[id] = dd::Weight(id, initial_value, isfixed);
+    c_nweight++;
     count++;
   }
   file.close();
-  return count;
+
+  assert(n_weight == c_nweight);
 }
 
-// Read variables
-long long read_variables(string filename, dd::FactorGraph &fg) {
+void dd::FactorGraph::load_variables(const std::string filename) {
   ifstream file;
-  file.open(filename.c_str(), ios::in | ios::binary);
+  file.open(filename, ios::in | ios::binary);
+
   long long count = 0;
   long long id;
   char isevidence;
@@ -85,9 +93,10 @@ long long read_variables(string filename, dd::FactorGraph &fg) {
     edge_count = be64toh(edge_count);
     cardinality = be64toh(cardinality);
 
-    // printf("----- id=%lli isevidence=%d initial=%f type=%d edge_count=%lli
-    // cardinality=%lli\n", id, isevidence, initial_value, type, edge_count,
-    // cardinality);
+    dprintf(
+        "----- id=%lli isevidence=%d initial=%f type=%d edge_count=%lli"
+        "cardinality=%lli\n",
+        id, isevidence, initial_value, type, edge_count, cardinality);
 
     count++;
 
@@ -109,27 +118,23 @@ long long read_variables(string filename, dd::FactorGraph &fg) {
     bool is_observation = isevidence == 2;
     double init_value = is_evidence ? initial_value : 0;
 
-    fg.variables[id] =
+    variables[id] =
         dd::RawVariable(id, type_const, is_evidence, cardinality, init_value,
                         init_value, edge_count, is_observation);
 
-    fg.c_nvar++;
+    c_nvar++;
     if (is_evidence) {
-      fg.n_evid++;
+      n_evid++;
     } else {
-      fg.n_query++;
+      n_query++;
     }
   }
   file.close();
 
-  return count;
+  assert(n_var == c_nvar);
 }
 
-// Read factors (original mode)
-// The format of each line in factor file is: weight_id, type, equal_predicate,
-// edge_count, variable_id_1, padding_1, ..., variable_id_k, padding_k
-// It is binary format without delimiter.
-long long read_factors(string filename, dd::FactorGraph &fg) {
+void dd::FactorGraph::load_factors(string filename) {
   ifstream file;
   file.open(filename.c_str(), ios::in | ios::binary);
   long long count = 0;
@@ -150,23 +155,20 @@ long long read_factors(string filename, dd::FactorGraph &fg) {
 
     count++;
 
-    fg.factors[fg.c_nfactor] =
-        dd::RawFactor(fg.c_nfactor, -1, type, edge_count);
+    factors[c_nfactor] = dd::RawFactor(c_nfactor, -1, type, edge_count);
 
     for (long long position = 0; position < edge_count; position++) {
       file.read((char *)&variable_id, 8);
       file.read((char *)&ispositive, 1);
       variable_id = be64toh(variable_id);
 
-      // wrong id
-      if (variable_id >= fg.n_var || variable_id < 0) {
-        assert(false);
-      }
+      // check for wrong id
+      assert(variable_id < n_var && variable_id >= 0);
 
       // add variables to factors
-      fg.factors[fg.c_nfactor].tmp_variables.push_back(dd::VariableInFactor(
+      factors[c_nfactor].tmp_variables.push_back(dd::VariableInFactor(
           variable_id, position, ispositive, equal_predicate));
-      fg.variables[variable_id].tmp_factor_ids.push_back(fg.c_nfactor);
+      variables[variable_id].tmp_factor_ids.push_back(c_nfactor);
     }
 
     switch (type) {
@@ -174,11 +176,12 @@ long long read_factors(string filename, dd::FactorGraph &fg) {
         long n_weights = 0;
         file.read((char *)&n_weights, 8);
         n_weights = be64toh(n_weights);
-        fg.factors[fg.c_nfactor].weight_ids.reserve(n_weights);
+
+        factors[c_nfactor].weight_ids.reserve(n_weights);
         for (long j = 0; j < n_weights; j++) {
           file.read((char *)&weightid, 8);
           weightid = be64toh(weightid);
-          fg.factors[fg.c_nfactor].weight_ids.push_back(weightid);
+          factors[c_nfactor].weight_ids.push_back(weightid);
         }
         break;
       }
@@ -186,17 +189,17 @@ long long read_factors(string filename, dd::FactorGraph &fg) {
       default:
         file.read((char *)&weightid, 8);
         weightid = be64toh(weightid);
-        fg.factors[fg.c_nfactor].weight_id = weightid;
+        factors[c_nfactor].weight_id = weightid;
     }
 
-    fg.c_nfactor++;
+    c_nfactor++;
   }
   file.close();
-  return count;
+
+  assert(n_factor == c_nfactor);
 }
 
-// read domains for multinomial
-void read_domains(std::string filename, dd::FactorGraph &fg) {
+void dd::FactorGraph::load_domains(std::string filename) {
   ifstream file;
   file.open(filename.c_str(), ios::in | ios::binary);
   long id, value;
@@ -208,7 +211,7 @@ void read_domains(std::string filename, dd::FactorGraph &fg) {
     }
 
     id = be64toh(id);
-    dd::RawVariable &variable = fg.variables[id];
+    dd::RawVariable &variable = variables[id];
 
     long domain_size;
     file.read((char *)&domain_size, 8);

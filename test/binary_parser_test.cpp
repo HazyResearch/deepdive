@@ -19,13 +19,12 @@ using namespace dd;
 // positive and id 8 negative.
 
 // test read_variables
-TEST(BinaryParserTest, read_variables) {
+TEST(BinaryFormatTest, read_variables) {
   system(
       "./text2bin variable test/biased_coin/variables.tsv "
       "test/biased_coin/graph.variables");
   dd::FactorGraph fg(18, 1, 1, 1);
-  long nvars = read_variables("./test/biased_coin/graph.variables", fg);
-  EXPECT_EQ(nvars, 18);
+  fg.load_variables("./test/biased_coin/graph.variables");
   EXPECT_EQ(fg.c_nvar, 18);
   EXPECT_EQ(fg.n_evid, 9);
   EXPECT_EQ(fg.n_query, 9);
@@ -38,14 +37,13 @@ TEST(BinaryParserTest, read_variables) {
 }
 
 // test read_factors
-TEST(BinaryParserTest, read_factors) {
+TEST(BinaryFormatTest, read_factors) {
   system(
       "./text2bin factor test/biased_coin/factors.tsv "
       "test/biased_coin/graph.factors 4 1 0 "
       "1");
   dd::FactorGraph fg(18, 18, 1, 18);
-  int nfactors = read_factors("./test/biased_coin/graph.factors", fg);
-  EXPECT_EQ(nfactors, 18);
+  fg.load_factors("./test/biased_coin/graph.factors");
   EXPECT_EQ(fg.c_nfactor, 18);
   EXPECT_EQ(fg.factors[0].id, 0);
   EXPECT_EQ(fg.factors[0].weight_id, 0);
@@ -57,13 +55,12 @@ TEST(BinaryParserTest, read_factors) {
 }
 
 // test read_weights
-TEST(BinaryParserTest, read_weights) {
+TEST(BinaryFormatTest, read_weights) {
   system(
       "./text2bin weight test/biased_coin/weights.tsv "
       "test/biased_coin/graph.weights");
   dd::FactorGraph fg(1, 1, 1, 1);
-  int nweights = read_weights("./test/biased_coin/graph.weights", fg);
-  EXPECT_EQ(nweights, 1);
+  fg.load_weights("./test/biased_coin/graph.weights");
   EXPECT_EQ(fg.c_nweight, 1);
   EXPECT_EQ(fg.weights[0].id, 0);
   EXPECT_EQ(fg.weights[0].isfixed, false);
@@ -71,9 +68,10 @@ TEST(BinaryParserTest, read_weights) {
 }
 
 // test read domains
-TEST(BinaryParserTest, read_domains) {
+TEST(BinaryFormatTest, read_domains) {
   system(
-      "./text2bin domain test/domains/domains.tsv test/domains/graph.domains");
+      "./text2bin domain test/domains/domains.tsv"
+      "test/domains/graph.domains");
   int num_variables = 3;
   int domain_sizes[] = {1, 2, 3};
   dd::FactorGraph fg(num_variables, 1, 1, 1);
@@ -81,7 +79,7 @@ TEST(BinaryParserTest, read_domains) {
   for (int i = 0; i < num_variables; i++) {
     fg.variables[i] = dd::RawVariable(i, 0, 0, domain_sizes[i], 0, 0, 0, 0);
   }
-  read_domains("./test/domains/graph.domains", fg);
+  fg.load_domains("./test/domains/graph.domains");
 
   for (int i = 0; i < num_variables; i++) {
     EXPECT_EQ(fg.variables[i].domain_map->size(), domain_sizes[i]);

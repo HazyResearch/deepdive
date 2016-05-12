@@ -44,7 +44,11 @@ class SamplerTest : public testing::Test {
                             ""};
     dd::CmdParser cmd_parser = parse_input(21, (char **)argv);
     dd::FactorGraph fg(18, 18, 1, 18);
-    fg.load(cmd_parser, false, 0);
+    fg.load_variables(cmd_parser.variable_file);
+    fg.load_weights(cmd_parser.weight_file);
+    fg.load_domains(cmd_parser.domain_file);
+    fg.load_factors(cmd_parser.factor_file);
+    fg.safety_check();
 
     fg.compile(cfg);
   }
