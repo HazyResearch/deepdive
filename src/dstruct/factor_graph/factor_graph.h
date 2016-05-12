@@ -123,54 +123,42 @@ namespace dd{
      */
     template<bool does_change_evid>
     inline double potential(const Variable & variable, const double & proposal){
-
       // potential
       double pot = 0.0;  
-      double tmp;
-      // weight id
-      long wid = 0;
       // pointer to the first factor the given variable connects to
       // the factors that the given variable connects to are stored in a continuous
       // region of the array
-      CompactFactor * const fs = &compact_factors[variable.n_start_i_factors];
-      // the weights, corresponding to the factor with the same index
-      const int * const ws = &compact_factors_weightids[variable.n_start_i_factors];   
-      
-      // boolean type
-      if (variable.domain_type == DTYPE_BOOLEAN) {   
-        // for all factors that the variable connects to, calculate the 
-        // weighted potential
-        for(long i=0;i<variable.n_factors;i++){
-          if(ws[i] == -1){
-            continue;
-          //  //std::cout << "Skip" << std::endl;
+      CompactFactor* const fs = &compact_factors[variable.n_start_i_factors];
+      VariableValue* const assignments =
+          does_change_evid ? infrs->assignments_free : infrs->assignments_evid;
+      switch (variable.domain_type) {
+        case DTYPE_BOOLEAN: {
+          // the weights, corresponding to the factor with the same index
+          const int* const ws =
+              &compact_factors_weightids[variable.n_start_i_factors];
+          // for all factors that the variable connects to, calculate the
+          // weighted potential
+          for (long i = 0; i < variable.n_factors; ++i) {
+            long wid = ws[i];
+            pot += infrs->weight_values[wid] *
+                   fs[i].potential(vifs, assignments, variable.id, proposal);
           }
-          if(does_change_evid == true){
-            tmp = fs[i].potential(
-                vifs, infrs->assignments_free, variable.id, proposal);
-          }else{
-            tmp = fs[i].potential(
-                vifs, infrs->assignments_evid, variable.id, proposal);
-          }
-          pot += infrs->weight_values[ws[i]] * tmp;
+          break;
         }
-      } else if (variable.domain_type == DTYPE_MULTINOMIAL) { // multinomial
-        for (long i = 0; i < variable.n_factors; i++) {
-          //if(ws[i] == -1){
-          //  continue;
-          //  //std::cout << "Skip" << std::endl;
-          //}
-          if(does_change_evid == true) {
-            tmp = fs[i].potential(vifs, infrs->assignments_free, variable.id, proposal);
-            // get weight id associated with this factor and variable assignment
-            wid = get_multinomial_weight_id(infrs->assignments_free, fs[i], variable.id, proposal);
-          } else {
-            tmp = fs[i].potential(vifs, infrs->assignments_evid, variable.id, proposal);
-            wid = get_multinomial_weight_id(infrs->assignments_evid, fs[i], variable.id, proposal);
+        case DTYPE_MULTINOMIAL: {
+          for (long i = 0; i < variable.n_factors; ++i) {
+            // get weight id associated with this factor and variable
+            // assignment
+            long wid = get_multinomial_weight_id(assignments, fs[i],
+                                                 variable.id, proposal);
+            pot += infrs->weight_values[wid] *
+                   fs[i].potential(vifs, assignments, variable.id, proposal);
           }
-          pot += infrs->weight_values[wid] * tmp;
+          break;
         }
-      } // end if for variable type
+        default:
+          abort();
+      }
       return pot;
     }
 
@@ -219,10 +207,16 @@ namespace dd{
   template<>
   inline void FactorGraph::update<false>(Variable & variable, const double & new_value){
     infrs->assignments_evid[variable.id] = new_value;
-    infrs->agg_means[variable.id] += new_value;
     infrs->agg_nsamples[variable.id]  ++ ;
-    if (variable.domain_type == DTYPE_MULTINOMIAL) {
-      infrs->multinomial_tallies[variable.n_start_i_tally + variable.get_domain_index((int)new_value)] ++;
+    switch (variable.domain_type) {
+        case DTYPE_BOOLEAN:
+          infrs->agg_means[variable.id] += new_value;
+          break;
+        case DTYPE_MULTINOMIAL:
+          infrs->multinomial_tallies[variable.n_start_i_tally + variable.get_domain_index((int)new_value)] ++;
+          break;
+        default:
+          abort();
     }
   }
 
@@ -232,7 +226,4 @@ namespace dd{
 }
 
 #endif
-
-
-
 

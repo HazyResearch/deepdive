@@ -9,7 +9,7 @@ dd::CmdParser parse_input(int argc, char **argv) {
   std::vector<std::string> new_args;
   if (argc < 2 ||
       (strcmp(argv[1], "gibbs") != 0 && strcmp(argv[1], "mat") != 0 &&
-       strcmp(argv[1], "inc") != 0)) {
+       strcmp(argv[1], "inc") != 0 && strcmp(argv[1], "bin2text") != 0)) {
     new_args.push_back(std::string(argv[0]) + " " + "gibbs");
     new_args.push_back("-h");
   } else {
@@ -25,8 +25,7 @@ dd::CmdParser parse_input(int argc, char **argv) {
     new_argv[i][new_args[i].length()] = '\0';
   }
   std::string app_name = argc < 2 ? "" : argv[1];
-  dd::CmdParser cmd_parser(app_name.c_str());
-  cmd_parser.parse(new_args.size(), new_argv);
+  dd::CmdParser cmd_parser(app_name.c_str(), new_args.size(), new_argv);
   return cmd_parser;
 }
 

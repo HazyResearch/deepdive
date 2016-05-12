@@ -85,20 +85,16 @@ long dd::FactorGraph::get_multinomial_weight_id(
    * For example, for variable assignment indexes i1, ..., ik with cardinality
    * d1, ..., dk
    * The weight index is
-   * (...(((i1 * d2) + i2) * d3 + i3) * d4 + ...) * dk + ik
+   * (...((((0 * d1 + i1) * d2) + i2) * d3 + i3) * d4 + ...) * dk + ik
    */
   long weight_offset = 0;
   // for each variable in the factor
-  for (long i = fs.n_start_i_vif; i < fs.n_start_i_vif + fs.n_variables; i++) {
+  for (long i = fs.n_start_i_vif; i < fs.n_start_i_vif + fs.n_variables; ++i) {
     const VariableInFactor &vif = vifs[i];
-    Variable &variable = variables[vif.vid];
-    if (vif.vid == vid) {
-      weight_offset = weight_offset * variable.cardinality +
-                      variable.get_domain_index(proposal);
-    } else {
-      weight_offset = weight_offset * variable.cardinality +
-                      variable.get_domain_index((int)assignments[vif.vid]);
-    }
+    const Variable &variable = variables[vif.vid];
+    weight_offset *= variable.cardinality;
+    weight_offset += variable.get_domain_index(
+        (vif.vid == vid) ? proposal : (int)assignments[vif.vid]);
   }
 
   long weight_id = 0;
@@ -121,42 +117,50 @@ void dd::FactorGraph::update_weight(const Variable &variable) {
   // for each factor
   for (long i = 0; i < variable.n_factors; i++) {
     // boolean variable
-    if (variable.domain_type == DTYPE_BOOLEAN) {
-      // only update weight when it is not fixed
-      if (infrs->weights_isfixed[ws[i]] == false) {
-        // stochastic gradient ascent
-        // increment weight with stepsize * gradient of weight
-        // gradient of weight = E[f|D] - E[f], where D is evidence variables,
-        // f is the factor function, E[] is expectation. Expectation is
-        // calculated
-        // using a sample of the variable.
-        infrs->weight_values[ws[i]] +=
-            stepsize * (this->template potential<false>(fs[i]) -
-                        this->template potential<true>(fs[i]));
+    switch (variable.domain_type) {
+      case DTYPE_BOOLEAN: {
+        // only update weight when it is not fixed
+        if (infrs->weights_isfixed[ws[i]] == false) {
+          // stochastic gradient ascent
+          // increment weight with stepsize * gradient of weight
+          // gradient of weight = E[f|D] - E[f], where D is evidence variables,
+          // f is the factor function, E[] is expectation. Expectation is
+          // calculated
+          // using a sample of the variable.
+          infrs->weight_values[ws[i]] +=
+              stepsize * (this->template potential<false>(fs[i]) -
+                          this->template potential<true>(fs[i]));
+        }
+        break;
       }
-    } else if (variable.domain_type == DTYPE_MULTINOMIAL) {
-      // two weights need to be updated
-      // sample with evidence fixed, I0, with corresponding weight w1
-      // sample without evidence unfixed, I1, with corresponding weight w2
-      // gradient of wd0 = f(I0) - I(w1==w2)f(I1)
-      // gradient of wd1 = I(w1==w2)f(I0) - f(I1)
-      long wid1 =
-          get_multinomial_weight_id(infrs->assignments_evid, fs[i], -1, -1);
-      long wid2 =
-          get_multinomial_weight_id(infrs->assignments_free, fs[i], -1, -1);
-      int equal = (wid1 == wid2);
+      case DTYPE_MULTINOMIAL: {
+        // two weights need to be updated
+        // sample with evidence fixed, I0, with corresponding weight w1
+        // sample without evidence unfixed, I1, with corresponding weight w2
+        // gradient of wd0 = f(I0) - I(w1==w2)f(I1)
+        // gradient of wd1 = I(w1==w2)f(I0) - f(I1)
+        long wid1 =
+            get_multinomial_weight_id(infrs->assignments_evid, fs[i], -1, -1);
+        long wid2 =
+            get_multinomial_weight_id(infrs->assignments_free, fs[i], -1, -1);
+        int equal = (wid1 == wid2);
 
-      if (infrs->weights_isfixed[wid1] == false) {
-        infrs->weight_values[wid1] +=
-            stepsize * (this->template potential<false>(fs[i]) -
-                        equal * this->template potential<true>(fs[i]));
+        if (infrs->weights_isfixed[wid1] == false) {
+          infrs->weight_values[wid1] +=
+              stepsize * (this->template potential<false>(fs[i]) -
+                          equal * this->template potential<true>(fs[i]));
+        }
+
+        if (infrs->weights_isfixed[wid2] == false) {
+          infrs->weight_values[wid2] +=
+              stepsize * (equal * this->template potential<false>(fs[i]) -
+                          this->template potential<true>(fs[i]));
+        }
+        break;
       }
 
-      if (infrs->weights_isfixed[wid2] == false) {
-        infrs->weight_values[wid2] +=
-            stepsize * (equal * this->template potential<false>(fs[i]) -
-                        this->template potential<true>(fs[i]));
-      }
+      default:
+        abort();
     }
   }
 }

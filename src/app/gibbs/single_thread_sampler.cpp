@@ -116,6 +116,8 @@ void SingleThreadSampler::sample_single_variable(long vid, bool is_inc) {
     if (variable.is_evid == false || sample_evidence) {
       int proposal = draw_sample(variable, sample_evidence);
       p_fg->template update<false>(variable, (double)proposal);
+      if (sample_evidence)
+        p_fg->template update<true>(variable, (double)proposal);
     }
   }
 }
