@@ -38,7 +38,7 @@ else # ORDER BY given COLUMNs
     for col in "${columns[@]}"; do
         if [[ $col = $Column ]]; then
             # use ROW_NUMBER() OVER ORDER BY with given clause
-            set -- "$@" "ROW_NUMBER() OVER (ORDER BY $OrderBy) AS \"${col//\"/\"\"}\""
+            set -- "$@" "$BeginId + $Increment * ((ROW_NUMBER() OVER (ORDER BY $OrderBy)) - 1) AS \"${col//\"/\"\"}\""
         else
             set -- "$@" "\"${col//\"/\"\"}\""
         fi
