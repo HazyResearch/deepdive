@@ -1,5 +1,5 @@
 /**
- * Unit tests for binary parser
+ * Unit tests for binary format
  *
  * Author: Feiran Wang
  */
@@ -7,7 +7,7 @@
 #include "dstruct/factor_graph/factor.h"
 #include "dstruct/factor_graph/factor_graph.h"
 #include "gibbs.h"
-#include "io/binary_parser.h"
+#include "io/binary_format.h"
 #include "gtest/gtest.h"
 #include <fstream>
 

@@ -5,7 +5,7 @@
  */
 
 #include "dstruct/factor_graph/factor_graph.h"
-#include "io/binary_parser.h"
+#include "io/binary_format.h"
 #include "gibbs.h"
 #include "gtest/gtest.h"
 #include <fstream>

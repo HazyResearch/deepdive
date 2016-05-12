@@ -1,7 +1,11 @@
-
 #include "gibbs.h"
-#include "common.h"
+#include "io/binary_format.h"
+#include "app/gibbs/gibbs_sampling.h"
+#include "dstruct/factor_graph/factor_graph.h"
 #include <cmath>
+#include "assert.h"
+#include "common.h"
+#include "unistd.h"
 
 /*
  * Parse input arguments

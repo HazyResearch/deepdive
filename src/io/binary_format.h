@@ -1,5 +1,5 @@
-#ifndef BINARY_PARSER_H
-#define BINARY_PARSER_H
+#ifndef BINARY_FORMAT_H
+#define BINARY_FORMAT_H
 
 #include "dstruct/factor_graph/factor_graph.h"
 #include <stdlib.h>

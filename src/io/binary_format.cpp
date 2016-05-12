@@ -1,5 +1,5 @@
 #include "common.h"
-#include "binary_parser.h"
+#include "binary_format.h"
 #include "dstruct/factor_graph/factor.h"
 #include "dstruct/factor_graph/variable.h"
 #include <fstream>

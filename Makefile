@@ -43,7 +43,7 @@ endif
 # source files
 SOURCES += src/gibbs.cpp
 SOURCES += src/io/cmd_parser.cpp
-SOURCES += src/io/binary_parser.cpp
+SOURCES += src/io/binary_format.cpp
 SOURCES += src/io/bin2text.cpp
 SOURCES += src/main.cpp
 SOURCES += src/dstruct/factor_graph/weight.cpp
