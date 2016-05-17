@@ -62,9 +62,9 @@ PROGRAM = dw
 HEADERS += $(wildcard src/*.h src/*.hh)
 
 # test files
-TEST_SOURCES += test/test.cc
-TEST_SOURCES += test/FactorTest.cc
-TEST_SOURCES += test/binary_parser_test.cc
+TEST_SOURCES += test/test_main.cc
+TEST_SOURCES += test/factor_test.cc
+TEST_SOURCES += test/binary_format_test.cc
 TEST_SOURCES += test/loading_test.cc
 TEST_SOURCES += test/checkpoint_test.cc
 TEST_SOURCES += test/factor_graph_test.cc
