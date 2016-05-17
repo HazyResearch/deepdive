@@ -142,6 +142,7 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
         "output_file_path", *cmd_);
 
     //  factor-specific arguments
+    // TODO turn these into labeled args
     TCLAP::UnlabeledValueArg<int> text2bin_factor_func_id_(
         "func_id",
         "factor function id (See: "
@@ -150,6 +151,7 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
         true, 0, "func_id");
     TCLAP::UnlabeledValueArg<int> text2bin_factor_arity_(
         "arity", "arity of the factor, e.g., 1 | 2 | ...", true, 1, "arity");
+    // TODO get rid of this ignored argument
     TCLAP::UnlabeledValueArg<std::string> text2bin_factor_ignored_(
         "ignored", "original", true, "original", "ignored");
     TCLAP::UnlabeledMultiArg<int> text2bin_factor_positives_or_not_(
