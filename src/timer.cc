@@ -23,4 +23,5 @@ float Timer::elapsed() {
   return (_end.tv_sec - _start.tv_sec) +
          (_end.tv_nsec - _start.tv_nsec) / 1000000000.0;
 }
-}
+
+}  // namespace dd

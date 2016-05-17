@@ -54,4 +54,5 @@ VariableInFactor::VariableInFactor(const long &_vid, const int &_n_position,
   this->is_positive = _is_positive;
   this->equal_to = _equal_to;
 }
-}
+
+}  // namespace dd

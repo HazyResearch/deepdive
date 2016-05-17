@@ -1,3 +1,6 @@
+#ifndef DIMMWITTED_CMD_PARSER_H_
+#define DIMMWITTED_CMD_PARSER_H_
+
 #include "factor.h"
 
 #include <algorithm>
@@ -5,9 +8,6 @@
 #include <iostream>
 #include <string>
 #include <tclap/CmdLine.h>
-
-#ifndef _CMD_PARSER_H_
-#define _CMD_PARSER_H_
 
 namespace dd {
 
@@ -104,6 +104,7 @@ class CmdParser {
   friend std::ostream &operator<<(std::ostream &stream,
                                   const CmdParser &cmd_parser);
 };
-}
 
-#endif
+}  // namespace dd
+
+#endif  // DIMMWITTED_CMD_PARSER_H_

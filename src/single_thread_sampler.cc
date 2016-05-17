@@ -152,4 +152,5 @@ inline int dd::SingleThreadSampler::draw_sample(Variable &variable,
 
   return proposal;
 }
-}
+
+}  // namespace dd

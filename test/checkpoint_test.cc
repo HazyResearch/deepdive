@@ -10,9 +10,9 @@
 #include <gtest/gtest.h>
 #include <fstream>
 
-using namespace dd;
+namespace dd {
 
-const string get_copy_filename(const string &, int);
+const std::string get_copy_filename(const std::string &, int);
 
 // test fixture
 // the factor graph used for test is from biased coin, which contains 18
@@ -171,3 +171,5 @@ TEST_F(CheckpointTest, checkpoint_and_resume) {
    * read the code (which is fine!). Read binary_parser.cpp:checkpoint()
    */
 }
+
+}  // namespace dd

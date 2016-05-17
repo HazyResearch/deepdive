@@ -5,8 +5,10 @@
 
 #include <fstream>
 
-dd::FactorGraph::FactorGraph(long _n_var, long _n_factor, long _n_weight,
-                             long _n_edge)
+namespace dd {
+
+FactorGraph::FactorGraph(long _n_var, long _n_factor, long _n_weight,
+                         long _n_edge)
     : n_var(_n_var),
       n_factor(_n_factor),
       n_weight(_n_weight),
@@ -22,7 +24,7 @@ dd::FactorGraph::FactorGraph(long _n_var, long _n_factor, long _n_weight,
       sorted(false),
       safety_check_passed(false) {}
 
-void dd::FactorGraph::compile(CompiledFactorGraph &cfg) {
+void FactorGraph::compile(CompiledFactorGraph &cfg) {
   cfg.c_nvar = c_nvar;
   cfg.c_nfactor = c_nfactor;
   cfg.c_nweight = c_nweight;
@@ -48,7 +50,7 @@ void dd::FactorGraph::compile(CompiledFactorGraph &cfg) {
      * one after another in the vifs array.
      */
     std::sort(rf.tmp_variables.begin(), rf.tmp_variables.end(),
-              dd::compare_position);
+              compare_position);
     for (const VariableInFactor &vif : rf.tmp_variables) {
       cfg.vifs[i_edge] = vif;
       i_edge++;
@@ -109,7 +111,7 @@ void dd::FactorGraph::compile(CompiledFactorGraph &cfg) {
   cfg.c_edge = i_edge;
 }
 
-void dd::FactorGraph::safety_check() {
+void FactorGraph::safety_check() {
   // check whether variables, factors, and weights are stored
   // in the order of their id
   long s = n_var;
@@ -128,12 +130,12 @@ void dd::FactorGraph::safety_check() {
   this->safety_check_passed = true;
 }
 
-bool dd::FactorGraph::is_usable() {
+bool FactorGraph::is_usable() {
   return this->sorted && this->safety_check_passed;
 }
 
-dd::CompiledFactorGraph::CompiledFactorGraph(long _n_var, long _n_factor,
-                                             long _n_weight, long _n_edge)
+CompiledFactorGraph::CompiledFactorGraph(long _n_var, long _n_factor,
+                                         long _n_weight, long _n_edge)
     : n_var(_n_var),
       n_factor(_n_factor),
       n_weight(_n_weight),
@@ -153,7 +155,7 @@ dd::CompiledFactorGraph::CompiledFactorGraph(long _n_var, long _n_factor,
       infrs(new InferenceResult(_n_var, _n_weight)),
       safety_check_passed(false) {}
 
-void dd::CompiledFactorGraph::copy_from(
+void CompiledFactorGraph::copy_from(
     const CompiledFactorGraph *const p_other_fg) {
   c_nvar = p_other_fg->c_nvar;
   c_nfactor = p_other_fg->c_nfactor;
@@ -185,7 +187,7 @@ void dd::CompiledFactorGraph::copy_from(
   }
 }
 
-long dd::CompiledFactorGraph::get_multinomial_weight_id(
+long CompiledFactorGraph::get_multinomial_weight_id(
     const VariableValue *assignments, const CompactFactor &fs, long vid,
     long proposal) {
   /**
@@ -219,7 +221,7 @@ long dd::CompiledFactorGraph::get_multinomial_weight_id(
   return weight_id;
 }
 
-void dd::CompiledFactorGraph::update_weight(const Variable &variable) {
+void CompiledFactorGraph::update_weight(const Variable &variable) {
   // corresponding factors and weights in a continous region
   CompactFactor *const fs = compact_factors + variable.n_start_i_factors;
   const int *const ws = compact_factors_weightids + variable.n_start_i_factors;
@@ -274,7 +276,8 @@ void dd::CompiledFactorGraph::update_weight(const Variable &variable) {
   }
 }
 
-bool dd::compare_position(const VariableInFactor &x,
-                          const VariableInFactor &y) {
+bool compare_position(const VariableInFactor &x, const VariableInFactor &y) {
   return x.n_position < y.n_position;
 }
+
+}  // namespace dd

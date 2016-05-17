@@ -1,10 +1,10 @@
+#ifndef DIMMWITTED_SINGLE_NODE_SAMPLER_H_
+#define DIMMWITTED_SINGLE_NODE_SAMPLER_H_
+
 #include "single_thread_sampler.h"
 #include <stdlib.h>
 #include <thread>
 #include "common.h"
-
-#ifndef _SINGLE_NODE_SAMPLER_H
-#define _SINGLE_NODE_SAMPLER_H
 
 namespace dd {
 
@@ -63,6 +63,7 @@ class SingleNodeSampler {
    */
   void wait_sgd();
 };
-}
 
-#endif
+}  // namespace dd
+
+#endif  // DIMMWITTED_SINGLE_NODE_SAMPLER_H_

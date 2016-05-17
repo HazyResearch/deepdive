@@ -16,6 +16,8 @@
 #include <assert.h>
 #include <vector>
 
+namespace dd {
+
 constexpr char field_delim = '\t';  // tsv file delimiter
 
 void dump_variables(const dd::FactorGraph &fg, const std::string &filename) {
@@ -162,3 +164,5 @@ int bin2text(const dd::CmdParser &cmd_parser) {
 
   return 0;
 }
+
+}  // namespace dd

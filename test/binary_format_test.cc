@@ -11,7 +11,7 @@
 #include <gtest/gtest.h>
 #include <fstream>
 
-using namespace dd;
+namespace dd {
 
 // the factor graph used for test is from biased coin, which contains 18
 // variables,
@@ -90,3 +90,5 @@ TEST(BinaryFormatTest, read_domains) {
   EXPECT_EQ(fg.variables[2].get_domain_index(3), 1);
   EXPECT_EQ(fg.variables[2].get_domain_index(5), 2);
 }
+
+}  // namespace dd

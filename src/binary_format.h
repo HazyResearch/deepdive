@@ -1,5 +1,5 @@
-#ifndef BINARY_FORMAT_H
-#define BINARY_FORMAT_H
+#ifndef DIMMWITTED_BINARY_FORMAT_H_
+#define DIMMWITTED_BINARY_FORMAT_H_
 
 #include "factor_graph.h"
 #include <stdlib.h>
@@ -29,7 +29,7 @@
 #define htobe64(x) htobe64(x)
 #endif
 
-using namespace std;
+namespace dd {
 
 // meta data
 typedef struct {
@@ -39,10 +39,10 @@ typedef struct {
   long long num_edges;
 
   /* Seems like the stuff below are unused */
-  string weights_file;
-  string variables_file;
-  string factors_file;
-  string edges_file;
+  std::string weights_file;
+  std::string variables_file;
+  std::string factors_file;
+  std::string edges_file;
 } Meta;
 
 std::ostream &operator<<(std::ostream &stream, const Meta &meta);
@@ -52,37 +52,37 @@ std::ostream &operator<<(std::ostream &stream, const Meta &meta);
  * For reference of factor graph file formats, refer to
  * deepdive.stanford.edu
  */
-Meta read_meta(string meta_file);
+Meta read_meta(std::string meta_file);
 
 /**
  * Loads weights from the given file into the given factor graph
  */
-long long read_weights(string filename, dd::FactorGraph &);
+long long read_weights(std::string filename, dd::FactorGraph &);
 
 /**
  * Loads variables from the given file into the given factor graph
  */
-long long read_variables(string filename, dd::FactorGraph &);
+long long read_variables(std::string filename, dd::FactorGraph &);
 
 /**
  * Loads factors from the given file into the given factor graph (original mode)
  */
-long long read_factors(string filename, dd::FactorGraph &);
+long long read_factors(std::string filename, dd::FactorGraph &);
 
 /**
  * Loads factors from the given file into the given factor graph (incremental
  * mode)
  */
-long long read_factors_inc(string filename, dd::FactorGraph &);
+long long read_factors_inc(std::string filename, dd::FactorGraph &);
 
 /**
  * Loads edges from the given file into the given factor graph (incremental
  * mode)
  */
-long long read_edges_inc(string filename, dd::FactorGraph &);
+long long read_edges_inc(std::string filename, dd::FactorGraph &);
 
 // Loads domains for multinomial variables
-void read_domains(string filename, dd::FactorGraph &fg);
+void read_domains(std::string filename, dd::FactorGraph &fg);
 
 /**
  * Resumes the computation state from the last checkpoint. It is critical
@@ -94,7 +94,7 @@ void read_domains(string filename, dd::FactorGraph &fg);
  * @param i Indicates the NUMA node to which the factor graph should be loaded
  * @param[out] cfg The compiled factor graph to which the state is resumed
  */
-void resume(string filename, int i, dd::CompiledFactorGraph &cfg);
+void resume(std::string filename, int i, dd::CompiledFactorGraph &cfg);
 
 /**
  * Checkpoints all copies of the compiled factor graph to various files.
@@ -104,6 +104,9 @@ void resume(string filename, int i, dd::CompiledFactorGraph &cfg);
  *   parameter to generate the full checkpoint filename.
  * @param cfgs A list of CompiledFactorGraphs to write to file.
  */
-void checkpoint(string filename, vector<dd::CompiledFactorGraph> &cfgs);
+void checkpoint(std::string filename,
+                std::vector<dd::CompiledFactorGraph> &cfgs);
 
-#endif
+}  // namespace dd
+
+#endif  // DIMMWITTED_BINARY_FORMAT_H_

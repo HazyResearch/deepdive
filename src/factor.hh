@@ -1,7 +1,7 @@
 namespace dd {
 
 // whether a variable's value or proposal satisfies the is_equal condition
-inline bool dd::CompactFactor::is_variable_satisfied(
+inline bool CompactFactor::is_variable_satisfied(
     const VariableInFactor &vif, const VariableIndex &vid,
     const VariableValue *const var_values,
     const VariableValue &proposal) const {
@@ -14,7 +14,7 @@ inline bool dd::CompactFactor::is_variable_satisfied(
  * the 'proposal' argument.
  *
  */
-inline double dd::CompactFactor::_potential_equal(
+inline double CompactFactor::_potential_equal(
     const VariableInFactor *const vifs, const VariableValue *const var_values,
     const VariableIndex &vid, const VariableValue &proposal) const {
   const VariableInFactor &vif = vifs[n_start_i_vif];
@@ -39,7 +39,7 @@ inline double dd::CompactFactor::_potential_equal(
  * 'proposal' argument.
  *
  */
-inline double dd::CompactFactor::_potential_and(
+inline double CompactFactor::_potential_and(
     const VariableInFactor *const vifs, const VariableValue *const var_values,
     const VariableIndex &vid, const VariableValue &proposal) const {
   /* Iterate over the factor variables */
@@ -59,7 +59,7 @@ inline double dd::CompactFactor::_potential_and(
  * 'proposal' argument.
  *
  */
-inline double dd::CompactFactor::_potential_or(
+inline double CompactFactor::_potential_or(
     const VariableInFactor *const vifs, const VariableValue *const var_values,
     const VariableIndex &vid, const VariableValue &proposal) const {
   /* Iterate over the factor variables */
@@ -86,7 +86,7 @@ inline double dd::CompactFactor::_potential_or(
  * return 1.0 if the body is not satisfied.
  *
  */
-inline double dd::CompactFactor::_potential_imply_mln(
+inline double CompactFactor::_potential_imply_mln(
     const VariableInFactor *const vifs, const VariableValue *const var_values,
     const VariableIndex &vid, const VariableValue &proposal) const {
   /* Compute the value of the body of the rule */
@@ -123,7 +123,7 @@ inline double dd::CompactFactor::_potential_imply_mln(
  *  return 0.0 if the body is not satisfied.
  *
  */
-inline double dd::CompactFactor::_potential_imply(
+inline double CompactFactor::_potential_imply(
     const VariableInFactor *const vifs, const VariableValue *const var_values,
     const VariableIndex &vid, const VariableValue &proposal) const {
   /* Compute the value of the body of the rule */
@@ -149,7 +149,7 @@ inline double dd::CompactFactor::_potential_imply(
 }
 
 // potential for multinomial variable
-inline double dd::CompactFactor::_potential_multinomial(
+inline double CompactFactor::_potential_multinomial(
     const VariableInFactor *vifs, const VariableValue *var_values,
     const VariableIndex &vid, const VariableValue &proposal) const {
   return 1.0;
@@ -160,7 +160,7 @@ inline double dd::CompactFactor::_potential_multinomial(
  * 'proposal' argument.
  *
  */
-inline double dd::CompactFactor::_potential_oneistrue(
+inline double CompactFactor::_potential_oneistrue(
     const VariableInFactor *const vifs, const VariableValue *const var_values,
     const VariableIndex &vid, const VariableValue &proposal) const {
   bool found = false;
@@ -185,7 +185,7 @@ inline double dd::CompactFactor::_potential_oneistrue(
 }
 
 // potential for linear expression
-inline double dd::CompactFactor::_potential_linear(
+inline double CompactFactor::_potential_linear(
     const VariableInFactor *const vifs, const VariableValue *const var_values,
     const VariableIndex &vid, const VariableValue &proposal) const {
   double res = 0.0;
@@ -206,7 +206,7 @@ inline double dd::CompactFactor::_potential_linear(
 }
 
 // potential for linear expression
-inline double dd::CompactFactor::_potential_ratio(
+inline double CompactFactor::_potential_ratio(
     const VariableInFactor *const vifs, const VariableValue *const var_values,
     const VariableIndex &vid, const VariableValue &proposal) const {
   double res = 1.0;
@@ -225,7 +225,7 @@ inline double dd::CompactFactor::_potential_ratio(
 }
 
 // potential for linear expression
-inline double dd::CompactFactor::_potential_logical(
+inline double CompactFactor::_potential_logical(
     const VariableInFactor *const vifs, const VariableValue *const var_values,
     const VariableIndex &vid, const VariableValue &proposal) const {
   double res = 0.0;
@@ -248,4 +248,5 @@ inline double dd::CompactFactor::_potential_logical(
       return 0.0;
   }
 }
-}
+
+}  // namespace dd

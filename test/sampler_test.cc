@@ -10,6 +10,8 @@
 #include <gtest/gtest.h>
 #include <fstream>
 
+namespace dd {
+
 // test fixture
 class SamplerTest : public testing::Test {
  protected:
@@ -95,3 +97,5 @@ TEST_F(SamplerTest, sample_single_variable) {
   sampler.sample_single_variable(12);
   EXPECT_EQ(cfg.infrs->assignments_evid[12], 1);
 }
+
+}  // namespace dd

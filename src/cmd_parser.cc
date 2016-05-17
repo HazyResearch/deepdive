@@ -1,4 +1,3 @@
-
 #include "cmd_parser.h"
 
 namespace dd {
@@ -231,4 +230,5 @@ std::ostream& operator<<(std::ostream& stream, const CmdParser& args) {
   stream << "# IGNORE -t (threads). ALWAYS USE ALL THREADS. #" << std::endl;
   return stream;
 }
-}
+
+}  // namespace dd

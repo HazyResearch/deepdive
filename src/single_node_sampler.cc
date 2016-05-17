@@ -85,4 +85,5 @@ void SingleNodeSampler::wait_sgd() {
     this->threads[i].join();
   }
 }
-}
+
+}  // namespace dd

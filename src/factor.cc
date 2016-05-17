@@ -31,4 +31,5 @@ Factor::Factor(RawFactor &rf)
       n_variables(rf.n_variables),
       n_start_i_vif(rf.n_start_i_vif),
       weight_ids(rf.weight_ids) {}
-}
+
+}  // namespace dd

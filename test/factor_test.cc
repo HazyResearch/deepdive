@@ -6,7 +6,7 @@
 
 #define EQ_TOL 0.00001
 
-using namespace dd;
+namespace dd {
 
 TEST(FactorTest, ONE_VAR_FACTORS) {
   VariableInFactor vifs[1];
@@ -182,3 +182,5 @@ TEST(FactorTest, THREE_VAR_IMPLY) {
               EQ_TOL);
   EXPECT_NEAR(f._potential_logical(vifs, values, vid, propose), 1.0, EQ_TOL);
 }
+
+}  // namespace dd

@@ -1,10 +1,9 @@
+#ifndef DIMMWITTED_GIBBS_SAMPLING_H_
+#define DIMMWITTED_GIBBS_SAMPLING_H_
 
-#include <iostream>
 #include "cmd_parser.h"
 #include "factor_graph.h"
-
-#ifndef _GIBBS_SAMPLING_H_
-#define _GIBBS_SAMPLING_H_
+#include <iostream>
 
 namespace dd {
 
@@ -114,6 +113,7 @@ class GibbsSampling {
    */
   void load_weights_snapshot(const bool is_quiet);
 };
-}
 
-#endif
+}  // namespace dd
+
+#endif  // DIMMWITTED_GIBBS_SAMPLING_H_

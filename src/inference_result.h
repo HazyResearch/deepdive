@@ -1,9 +1,8 @@
+#ifndef DIMMWITTED_INFERENCE_RESULT_H_
+#define DIMMWITTED_INFERENCE_RESULT_H_
 
 #include "variable.h"
 #include "weight.h"
-
-#ifndef _INFERENCE_RESULT_H_
-#define _INFERENCE_RESULT_H_
 
 namespace dd {
 /**
@@ -37,6 +36,7 @@ class InferenceResult {
 
   void copy_from(InferenceResult &infrs);
 };
-}
 
-#endif
+}  // namespace dd
+
+#endif  // DIMMWITTED_INFERENCE_RESULT_H_

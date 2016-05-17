@@ -1,5 +1,5 @@
-#ifndef elly_Timer_h
-#define elly_Timer_h
+#ifndef DIMMWITTED_TIMER_H_
+#define DIMMWITTED_TIMER_H_
 
 #include <sys/time.h>
 #include <time.h>
@@ -41,6 +41,7 @@ class Timer {
    */
   float elapsed();
 };
-}
 
-#endif
+}  // namespace dd
+
+#endif  // DIMMWITTED_TIMER_H_

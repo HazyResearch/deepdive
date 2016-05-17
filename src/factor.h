@@ -1,3 +1,6 @@
+#ifndef DIMMWITTED_FACTOR_H_
+#define DIMMWITTED_FACTOR_H_
+
 #include <iostream>
 #include <vector>
 #include <assert.h>
@@ -6,9 +9,6 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-
-#ifndef _FACTOR_H_
-#define _FACTOR_H_
 
 namespace dd {
 
@@ -279,9 +279,10 @@ class RawFactor : public Factor {
   RawFactor(const FactorIndex _id, const WeightIndex _weight_id,
             const int _func_id, const int _n_variables);
 };
-}
+
+}  // namespace dd
 
 // TODO: Find better approach than a .hxx file
 #include "factor.hh"
 
-#endif
+#endif  // DIMMWITTED_FACTOR_H_

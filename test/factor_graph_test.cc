@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 #include <fstream>
 
-using namespace dd;
+namespace dd {
 
 // test fixture
 // the factor graph used for test is from biased coin, which contains 18
@@ -89,3 +89,5 @@ TEST_F(FactorGraphTest, update_weight) {
   cfg.update_weight(cfg.variables[10]);
   EXPECT_EQ(cfg.infrs->weight_values[0], 0.1);
 }
+
+}  // namespace dd

@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 #include <fstream>
 
-using namespace dd;
+namespace dd {
 
 // test fixture
 // the factor graph used for test is from biased coin, which contains 18
@@ -92,3 +92,5 @@ TEST_F(LoadingTest, copy_from) {
 
   EXPECT_TRUE(memcmp(&cfg, &cfg2, sizeof(cfg)));
 }
+
+}  // namespace dd

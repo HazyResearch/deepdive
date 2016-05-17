@@ -1,5 +1,5 @@
-#ifndef _WEIGHT_H_
-#define _WEIGHT_H_
+#ifndef DIMMWITTED_WEIGHT_H_
+#define DIMMWITTED_WEIGHT_H_
 
 namespace dd {
 
@@ -18,6 +18,7 @@ class Weight {
 
   Weight();
 };
-}
 
-#endif
+}  // namespace dd
+
+#endif  // DIMMWITTED_WEIGHT_H_

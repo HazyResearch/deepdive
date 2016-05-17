@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <vector>
 
-using namespace std;
+namespace dd {
 
 constexpr char field_delim = '\t';  // tsv file delimiter
 
@@ -80,7 +80,7 @@ void load_weight(std::string input_filename, std::string output_filename) {
 }
 
 static inline long parse_pgarray(
-    std::istream &input, std::function<void(const string &)> parse_element,
+    std::istream &input, std::function<void(const std::string &)> parse_element,
     long expected_count = -1) {
   if (input.peek() == '{') {
     input.get();
@@ -103,7 +103,7 @@ static inline long parse_pgarray(
   }
 }
 static inline long parse_pgarray_or_die(
-    std::istream &input, std::function<void(const string &)> parse_element,
+    std::istream &input, std::function<void(const std::string &)> parse_element,
     long expected_count = -1) {
   long count = parse_pgarray(input, parse_element, expected_count);
   if (count >= 0) {
@@ -126,15 +126,15 @@ void load_factor(std::string input_filename, std::string output_filename,
   long weightid = 0;
   long nedge = 0;
   long predicate = funcid == 5 ? -1 : 1;
-  vector<long> variables;
+  std::vector<long> variables;
 
   funcid = htobe16(funcid);
 
   predicate = htobe64(predicate);
 
-  string line;
+  std::string line;
   while (getline(fin, line)) {
-    string field;
+    std::string field;
     istringstream ss(line);
     variables.clear();
 
@@ -144,7 +144,7 @@ void load_factor(std::string input_filename, std::string output_filename,
     // variable ids
     long n_vars = 0;
     auto parse_variableid = [&variables, &n_vars,
-                             &nedge](const string &element) {
+                             &nedge](const std::string &element) {
       long variableid = atol(element.c_str());
       variableid = htobe64(variableid);
       variables.push_back(variableid);
@@ -179,7 +179,7 @@ void load_factor(std::string input_filename, std::string output_filename,
         num_weightids = htobe64(num_weightids);
         fout.write((char *)&num_weightids, 8);
         // and that many weight ids
-        parse_pgarray_or_die(ss, [&fout](const string &element) {
+        parse_pgarray_or_die(ss, [&fout](const std::string &element) {
           long weightid = atol(element.c_str());
           weightid = htobe64(weightid);
           fout.write((char *)&weightid, 8);
@@ -207,7 +207,7 @@ void load_domain(std::string input_filename, std::string output_filename) {
   std::ifstream fin(input_filename.c_str());
   std::ofstream fout(output_filename.c_str(), std::ios::binary | std::ios::out);
 
-  string line;
+  std::string line;
   while (getline(fin, line)) {
     istringstream line_input(line);
     long vid, cardinality, cardinality_big;
@@ -223,7 +223,7 @@ void load_domain(std::string input_filename, std::string output_filename) {
 
     // an array of domain values
     istringstream domain_input(domain);
-    parse_pgarray_or_die(domain_input, [&fout](const string &subfield) {
+    parse_pgarray_or_die(domain_input, [&fout](const std::string &subfield) {
       long value = atol(subfield.c_str());
       value = htobe64(value);
       fout.write((char *)&value, 8);
@@ -252,3 +252,5 @@ int text2bin(const dd::CmdParser &args) {
   }
   return 0;
 }
+
+}  // namespace dd

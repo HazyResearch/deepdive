@@ -7,16 +7,18 @@
 #include <memory>
 #include <unistd.h>
 
-dd::GibbsSampling::GibbsSampling(const CmdParser *const _p_cmd_parser,
-                                 bool sample_evidence, int burn_in,
-                                 bool learn_non_evidence)
+namespace dd {
+
+GibbsSampling::GibbsSampling(const CmdParser *const _p_cmd_parser,
+                             bool sample_evidence, int burn_in,
+                             bool learn_non_evidence)
     : p_fg(NULL),
       p_cmd_parser(_p_cmd_parser),
       sample_evidence(sample_evidence),
       burn_in(burn_in),
       learn_non_evidence(learn_non_evidence) {}
 
-void dd::GibbsSampling::init(CompiledFactorGraph *const p_cfg, int n_datacopy) {
+void GibbsSampling::init(CompiledFactorGraph *const p_cfg, int n_datacopy) {
   // the highest node number available
   n_numa_nodes = numa_max_node();
 
@@ -37,8 +39,8 @@ void dd::GibbsSampling::init(CompiledFactorGraph *const p_cfg, int n_datacopy) {
     numa_set_localalloc();
 
     std::cout << "CREATE CFG ON NODE ..." << i << std::endl;
-    dd::CompiledFactorGraph cfg(p_cfg->n_var, p_cfg->n_factor, p_cfg->n_weight,
-                                p_cfg->n_edge);
+    CompiledFactorGraph cfg(p_cfg->n_var, p_cfg->n_factor, p_cfg->n_weight,
+                            p_cfg->n_edge);
 
     cfg.copy_from(p_cfg);
 
@@ -46,8 +48,8 @@ void dd::GibbsSampling::init(CompiledFactorGraph *const p_cfg, int n_datacopy) {
   }
 };
 
-void dd::GibbsSampling::do_resume(bool is_quiet, int n_datacopy, long n_var,
-                                  long n_factor, long n_weight, long n_edge) {
+void GibbsSampling::do_resume(bool is_quiet, int n_datacopy, long n_var,
+                              long n_factor, long n_weight, long n_edge) {
   n_numa_nodes = numa_max_node();
 
   // if n_datacopy is valid, use it, otherwise, use numa_max_node
@@ -64,7 +66,7 @@ void dd::GibbsSampling::do_resume(bool is_quiet, int n_datacopy, long n_var,
     numa_set_localalloc();
 
     std::cout << "RESUMING CFG ON NODE " << i << "..." << std::endl;
-    dd::CompiledFactorGraph cfg(n_var, n_factor, n_weight, n_edge);
+    CompiledFactorGraph cfg(n_var, n_factor, n_weight, n_edge);
 
     resume(p_cmd_parser->graph_snapshot_file, i, cfg);
 
@@ -74,12 +76,12 @@ void dd::GibbsSampling::do_resume(bool is_quiet, int n_datacopy, long n_var,
   this->load_weights_snapshot(is_quiet);
 }
 
-void dd::GibbsSampling::do_checkpoint(bool is_quiet) {
+void GibbsSampling::do_checkpoint(bool is_quiet) {
   // TODO: Implement me!
   return;
 }
 
-void dd::GibbsSampling::save_weights_snapshot(const bool is_quiet) {
+void GibbsSampling::save_weights_snapshot(const bool is_quiet) {
   // Filename is p_cmd_parser->saved_weights_filename;
   std::ofstream file;
   file.open(p_cmd_parser->weights_snapshot_file,
@@ -104,7 +106,7 @@ void dd::GibbsSampling::save_weights_snapshot(const bool is_quiet) {
   file.close();
 }
 
-void dd::GibbsSampling::load_weights_snapshot(const bool is_quiet) {
+void GibbsSampling::load_weights_snapshot(const bool is_quiet) {
   // Filename is p_cmd_parser->saved_weights_filename;
   std::ifstream file;
   file.open(p_cmd_parser->weights_snapshot_file,
@@ -136,7 +138,7 @@ void dd::GibbsSampling::load_weights_snapshot(const bool is_quiet) {
   file.close();
 }
 
-void dd::GibbsSampling::inference(const int &n_epoch, const bool is_quiet) {
+void GibbsSampling::inference(const int &n_epoch, const bool is_quiet) {
   Timer t_total;
 
   Timer t;
@@ -186,10 +188,10 @@ void dd::GibbsSampling::inference(const int &n_epoch, const bool is_quiet) {
   std::cout << "TOTAL INFERENCE TIME: " << elapsed << " sec." << std::endl;
 }
 
-void dd::GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
-                              const double &stepsize, const double &decay,
-                              const double reg_param, const bool is_quiet,
-                              const regularization reg) {
+void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
+                          const double &stepsize, const double &decay,
+                          const double reg_param, const bool is_quiet,
+                          const regularization reg) {
   Timer t_total;
 
   double current_stepsize = stepsize;
@@ -299,7 +301,7 @@ void dd::GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
   std::cout << "TOTAL LEARNING TIME: " << elapsed << " sec." << std::endl;
 }
 
-void dd::GibbsSampling::dump_weights(const bool is_quiet) {
+void GibbsSampling::dump_weights(const bool is_quiet) {
   // learning weights snippets
   CompiledFactorGraph const &cfg = this->factorgraphs[0];
   if (!is_quiet) {
@@ -330,7 +332,7 @@ void dd::GibbsSampling::dump_weights(const bool is_quiet) {
   fout_text.close();
 }
 
-void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet) {
+void GibbsSampling::aggregate_results_and_dump(const bool is_quiet) {
   // sum of variable assignments
   std::unique_ptr<double[]> agg_means(new double[factorgraphs[0].n_var]);
   // number of samples
@@ -482,3 +484,5 @@ void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet) {
     }
   }
 }
+
+}  // namespace dd

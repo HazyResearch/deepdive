@@ -1,9 +1,9 @@
+#ifndef DIMMWITTED_SINGLE_THREAD_SAMPLER_H_
+#define DIMMWITTED_SINGLE_THREAD_SAMPLER_H_
+
 #include "factor_graph.h"
 #include "timer.h"
 #include "common.h"
-
-#ifndef _SINGLE_THREAD_SAMPLER_H
-#define _SINGLE_THREAD_SAMPLER_H
 
 namespace dd {
 
@@ -65,6 +65,7 @@ class SingleThreadSampler {
   // sample a single variable
   inline int draw_sample(Variable &variable, bool is_free_sample);
 };
-}
 
-#endif
+}  // namespace dd
+
+#endif  // DIMMWITTED_SINGLE_THREAD_SAMPLER_H_

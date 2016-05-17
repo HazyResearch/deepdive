@@ -1,7 +1,9 @@
 #include "inference_result.h"
 #include <iostream>
 
-dd::InferenceResult::InferenceResult(long _nvars, long _nweights)
+namespace dd {
+
+InferenceResult::InferenceResult(long _nvars, long _nweights)
     : nvars(_nvars),
       nweights(_nweights),
       agg_means(new double[_nvars]),
@@ -11,7 +13,7 @@ dd::InferenceResult::InferenceResult(long _nvars, long _nweights)
       weight_values(new double[_nweights]),
       weights_isfixed(new bool[_nweights]) {}
 
-void dd::InferenceResult::init(Variable *variables, Weight *const weights) {
+void InferenceResult::init(Variable *variables, Weight *const weights) {
   ntallies = 0;
   for (long t = 0; t < nvars; t++) {
     const Variable &variable = variables[t];
@@ -36,7 +38,7 @@ void dd::InferenceResult::init(Variable *variables, Weight *const weights) {
   }
 }
 
-void dd::InferenceResult::copy_from(InferenceResult &other) {
+void InferenceResult::copy_from(InferenceResult &other) {
   for (long i = 0; i < nvars; i++) {
     assignments_free[i] = other.assignments_free[i];
     assignments_evid[i] = other.assignments_evid[i];
@@ -55,3 +57,5 @@ void dd::InferenceResult::copy_from(InferenceResult &other) {
     weights_isfixed[i] = other.weights_isfixed[i];
   }
 }
+
+}  // namespace dd

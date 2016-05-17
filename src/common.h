@@ -1,5 +1,5 @@
-#ifndef _COMMON_H
-#define _COMMON_H
+#ifndef DIMMWITTED_COMMON_H_
+#define DIMMWITTED_COMMON_H_
 
 #include <stdio.h>
 
@@ -40,6 +40,8 @@
 #define dprintf(fmt, ...) (void)(0)
 #endif
 
+namespace dd {
+
 /**
  * Explicitly say things are unused if they are actually unused.
  */
@@ -72,4 +74,6 @@ inline double logadd(double log_a, double log_b) {
   return (log_a + log1p(exp(negative_absolute_difference)));
 }
 
-#endif
+}  // namespace dd
+
+#endif  // DIMMWITTED_COMMON_H_

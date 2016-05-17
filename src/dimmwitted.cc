@@ -10,6 +10,8 @@
 #include "common.h"
 #include "unistd.h"
 
+namespace dd {
+
 // the command-line entry point
 int dw(int argc, const char *const argv[]) {
   // available modes
@@ -141,3 +143,5 @@ int gibbs(const dd::CmdParser &args) {
 
   return 0;
 }
+
+}  // namespace dd

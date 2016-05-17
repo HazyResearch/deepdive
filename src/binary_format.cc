@@ -13,12 +13,14 @@
 #include <iostream>
 #include <stdint.h>
 
+namespace dd {
+
 // Read meta data file, return Meta struct
-Meta read_meta(string meta_file) {
+Meta read_meta(std::string meta_file) {
   Meta meta;
-  ifstream file;
+  std::ifstream file;
   file.open(meta_file.c_str());
-  string buf;
+  std::string buf;
   getline(file, buf, ',');
   meta.num_weights = atoll(buf.c_str());
   getline(file, buf, ',');
@@ -44,9 +46,9 @@ std::ostream &operator<<(std::ostream &stream, const Meta &meta) {
   return stream;
 }
 
-void dd::FactorGraph::load_weights(const std::string filename) {
-  ifstream file;
-  file.open(filename, ios::in | ios::binary);
+void FactorGraph::load_weights(const std::string filename) {
+  std::ifstream file;
+  file.open(filename, std::ios::in | std::ios::binary);
 
   long long count = 0;
   long long id;
@@ -65,7 +67,7 @@ void dd::FactorGraph::load_weights(const std::string filename) {
     initial_value = *(double *)&tmp;
 
     // load into factor graph
-    weights[id] = dd::Weight(id, initial_value, isfixed);
+    weights[id] = Weight(id, initial_value, isfixed);
     c_nweight++;
     count++;
   }
@@ -74,9 +76,9 @@ void dd::FactorGraph::load_weights(const std::string filename) {
   assert(n_weight == c_nweight);
 }
 
-void dd::FactorGraph::load_variables(const std::string filename) {
-  ifstream file;
-  file.open(filename, ios::in | ios::binary);
+void FactorGraph::load_variables(const std::string filename) {
+  std::ifstream file;
+  file.open(filename, std::ios::in | std::ios::binary);
 
   long long count = 0;
   long long id;
@@ -118,9 +120,10 @@ void dd::FactorGraph::load_variables(const std::string filename) {
         type_const = DTYPE_MULTINOMIAL;
         break;
       default:
-        cerr << "[ERROR] Only Boolean and Multinomial variables are supported "
-                "now!"
-             << endl;
+        std::cerr
+            << "[ERROR] Only Boolean and Multinomial variables are supported "
+               "now!"
+            << std::endl;
         abort();
     }
     bool is_evidence = isevidence >= 1;
@@ -128,8 +131,8 @@ void dd::FactorGraph::load_variables(const std::string filename) {
     double init_value = is_evidence ? initial_value : 0;
 
     variables[id] =
-        dd::RawVariable(id, type_const, is_evidence, cardinality, init_value,
-                        init_value, edge_count, is_observation);
+        RawVariable(id, type_const, is_evidence, cardinality, init_value,
+                    init_value, edge_count, is_observation);
 
     c_nvar++;
     if (is_evidence) {
@@ -143,9 +146,9 @@ void dd::FactorGraph::load_variables(const std::string filename) {
   assert(n_var == c_nvar);
 }
 
-void dd::FactorGraph::load_factors(string filename) {
-  ifstream file;
-  file.open(filename.c_str(), ios::in | ios::binary);
+void FactorGraph::load_factors(std::string filename) {
+  std::ifstream file;
+  file.open(filename.c_str(), std::ios::in | std::ios::binary);
   long long count = 0;
   long long variable_id;
   long long weightid;
@@ -164,7 +167,7 @@ void dd::FactorGraph::load_factors(string filename) {
 
     count++;
 
-    factors[c_nfactor] = dd::RawFactor(c_nfactor, -1, type, edge_count);
+    factors[c_nfactor] = RawFactor(c_nfactor, -1, type, edge_count);
 
     for (long long position = 0; position < edge_count; position++) {
       file.read((char *)&variable_id, 8);
@@ -175,13 +178,13 @@ void dd::FactorGraph::load_factors(string filename) {
       assert(variable_id < n_var && variable_id >= 0);
 
       // add variables to factors
-      factors[c_nfactor].tmp_variables.push_back(dd::VariableInFactor(
-          variable_id, position, ispositive, equal_predicate));
+      factors[c_nfactor].tmp_variables.push_back(
+          VariableInFactor(variable_id, position, ispositive, equal_predicate));
       variables[variable_id].tmp_factor_ids.push_back(c_nfactor);
     }
 
     switch (type) {
-      case (dd::FUNC_SPARSE_MULTINOMIAL): {
+      case (FUNC_SPARSE_MULTINOMIAL): {
         long n_weights = 0;
         file.read((char *)&n_weights, 8);
         n_weights = be64toh(n_weights);
@@ -208,9 +211,9 @@ void dd::FactorGraph::load_factors(string filename) {
   assert(n_factor == c_nfactor);
 }
 
-void dd::FactorGraph::load_domains(std::string filename) {
-  ifstream file;
-  file.open(filename.c_str(), ios::in | ios::binary);
+void FactorGraph::load_domains(std::string filename) {
+  std::ifstream file;
+  file.open(filename.c_str(), std::ios::in | std::ios::binary);
   long id, value;
 
   while (true) {
@@ -220,7 +223,7 @@ void dd::FactorGraph::load_domains(std::string filename) {
     }
 
     id = be64toh(id);
-    dd::RawVariable &variable = variables[id];
+    RawVariable &variable = variables[id];
 
     long domain_size;
     file.read((char *)&domain_size, 8);
@@ -229,7 +232,7 @@ void dd::FactorGraph::load_domains(std::string filename) {
 
     std::vector<int> domain(domain_size);
     /* Notice that this is the first time variable.domain_map is initialized */
-    variable.domain_map = new std::unordered_map<dd::VariableValue, int>();
+    variable.domain_map = new std::unordered_map<VariableValue, int>();
 
     for (int i = 0; i < domain_size; i++) {
       file.read((char *)&value, 8);
@@ -251,13 +254,13 @@ void dd::FactorGraph::load_domains(std::string filename) {
 }
 
 /* Also used in test, but not exported in .h */
-const string get_copy_filename(const string &filename, int i) {
-  return filename + ".part" + to_string(i);
+const std::string get_copy_filename(const std::string &filename, int i) {
+  return filename + ".part" + std::to_string(i);
 }
 
-void resume(string filename, int i, dd::CompiledFactorGraph &cfg) {
-  ifstream inf;
-  inf.open(get_copy_filename(filename, i), ios::in | ios::binary);
+void resume(std::string filename, int i, CompiledFactorGraph &cfg) {
+  std::ifstream inf;
+  inf.open(get_copy_filename(filename, i), std::ios::in | std::ios::binary);
 
   /* Read metadata */
   inf.read((char *)&cfg.n_var, sizeof(long));
@@ -290,10 +293,8 @@ void resume(string filename, int i, dd::CompiledFactorGraph &cfg) {
     inf.read((char *)&cfg.variables[j].is_observation, sizeof(int));
     inf.read((char *)&cfg.variables[j].cardinality, sizeof(int));
 
-    inf.read((char *)&cfg.variables[j].assignment_evid,
-             sizeof(dd::VariableValue));
-    inf.read((char *)&cfg.variables[j].assignment_free,
-             sizeof(dd::VariableValue));
+    inf.read((char *)&cfg.variables[j].assignment_evid, sizeof(VariableValue));
+    inf.read((char *)&cfg.variables[j].assignment_free, sizeof(VariableValue));
 
     inf.read((char *)&cfg.variables[j].n_factors, sizeof(int));
     inf.read((char *)&cfg.variables[j].n_start_i_factors, sizeof(long));
@@ -306,8 +307,8 @@ void resume(string filename, int i, dd::CompiledFactorGraph &cfg) {
 
   assert(cfg.factors);
   for (auto j = 0; j < cfg.n_factor; j++) {
-    inf.read((char *)&cfg.factors[j].id, sizeof(dd::FactorIndex));
-    inf.read((char *)&cfg.factors[j].weight_id, sizeof(dd::WeightIndex));
+    inf.read((char *)&cfg.factors[j].id, sizeof(FactorIndex));
+    inf.read((char *)&cfg.factors[j].weight_id, sizeof(WeightIndex));
     inf.read((char *)&cfg.factors[j].func_id, sizeof(int));
     inf.read((char *)&cfg.factors[j].n_variables, sizeof(int));
     inf.read((char *)&cfg.factors[j].n_start_i_vif, sizeof(long));
@@ -320,7 +321,7 @@ void resume(string filename, int i, dd::CompiledFactorGraph &cfg) {
   assert(cfg.factor_ids);
   assert(cfg.vifs);
   for (auto j = 0; j < cfg.n_edge; j++) {
-    inf.read((char *)&cfg.compact_factors[j].id, sizeof(dd::FactorIndex));
+    inf.read((char *)&cfg.compact_factors[j].id, sizeof(FactorIndex));
     inf.read((char *)&cfg.compact_factors[j].func_id, sizeof(int));
     inf.read((char *)&cfg.compact_factors[j].n_variables, sizeof(int));
     inf.read((char *)&cfg.compact_factors[j].n_start_i_vif, sizeof(long));
@@ -332,7 +333,7 @@ void resume(string filename, int i, dd::CompiledFactorGraph &cfg) {
     inf.read((char *)&cfg.vifs[j].vid, sizeof(long));
     inf.read((char *)&cfg.vifs[j].n_position, sizeof(int));
     inf.read((char *)&cfg.vifs[j].is_positive, sizeof(int));
-    inf.read((char *)&cfg.vifs[j].equal_to, sizeof(dd::VariableValue));
+    inf.read((char *)&cfg.vifs[j].equal_to, sizeof(VariableValue));
   }
 
   assert(cfg.infrs);
@@ -344,10 +345,8 @@ void resume(string filename, int i, dd::CompiledFactorGraph &cfg) {
   for (auto j = 0; j < cfg.n_var; j++) {
     inf.read((char *)&cfg.infrs->agg_means[j], sizeof(double));
     inf.read((char *)&cfg.infrs->agg_nsamples[j], sizeof(double));
-    inf.read((char *)&cfg.infrs->assignments_free[j],
-             sizeof(dd::VariableValue));
-    inf.read((char *)&cfg.infrs->assignments_evid[j],
-             sizeof(dd::VariableValue));
+    inf.read((char *)&cfg.infrs->assignments_free[j], sizeof(VariableValue));
+    inf.read((char *)&cfg.infrs->assignments_evid[j], sizeof(VariableValue));
   }
 
   /*
@@ -365,11 +364,11 @@ void resume(string filename, int i, dd::CompiledFactorGraph &cfg) {
  * TODO: It's worth explaining this process, and some design decisions that
  * were made in much more detail. I will do that when I clean up the code.
  */
-void checkpoint(string filename, vector<dd::CompiledFactorGraph> &cfgs) {
+void checkpoint(std::string filename, std::vector<CompiledFactorGraph> &cfgs) {
   auto n_cfgs = cfgs.size();
   for (auto i = 0; i < n_cfgs; i++) {
-    ofstream outf;
-    outf.open(get_copy_filename(filename, i), ios::out | ios::binary);
+    std::ofstream outf;
+    outf.open(get_copy_filename(filename, i), std::ios::out | std::ios::binary);
 
     const auto &cfg = cfgs[i];
 
@@ -400,9 +399,9 @@ void checkpoint(string filename, vector<dd::CompiledFactorGraph> &cfgs) {
       outf.write((char *)&cfg.variables[j].cardinality, sizeof(int));
 
       outf.write((char *)&cfg.variables[j].assignment_evid,
-                 sizeof(dd::VariableValue));
+                 sizeof(VariableValue));
       outf.write((char *)&cfg.variables[j].assignment_free,
-                 sizeof(dd::VariableValue));
+                 sizeof(VariableValue));
 
       outf.write((char *)&cfg.variables[j].n_factors, sizeof(int));
       outf.write((char *)&cfg.variables[j].n_start_i_factors, sizeof(long));
@@ -414,8 +413,8 @@ void checkpoint(string filename, vector<dd::CompiledFactorGraph> &cfgs) {
     }
 
     for (auto j = 0; j < cfg.n_factor; j++) {
-      outf.write((char *)&cfg.factors[j].id, sizeof(dd::FactorIndex));
-      outf.write((char *)&cfg.factors[j].weight_id, sizeof(dd::WeightIndex));
+      outf.write((char *)&cfg.factors[j].id, sizeof(FactorIndex));
+      outf.write((char *)&cfg.factors[j].weight_id, sizeof(WeightIndex));
       outf.write((char *)&cfg.factors[j].func_id, sizeof(int));
       outf.write((char *)&cfg.factors[j].n_variables, sizeof(int));
       outf.write((char *)&cfg.factors[j].n_start_i_vif, sizeof(long));
@@ -424,7 +423,7 @@ void checkpoint(string filename, vector<dd::CompiledFactorGraph> &cfgs) {
     }
 
     for (auto j = 0; j < cfg.n_edge; j++) {
-      outf.write((char *)&cfg.compact_factors[j].id, sizeof(dd::FactorIndex));
+      outf.write((char *)&cfg.compact_factors[j].id, sizeof(FactorIndex));
       outf.write((char *)&cfg.compact_factors[j].func_id, sizeof(int));
       outf.write((char *)&cfg.compact_factors[j].n_variables, sizeof(int));
       outf.write((char *)&cfg.compact_factors[j].n_start_i_vif, sizeof(long));
@@ -436,7 +435,7 @@ void checkpoint(string filename, vector<dd::CompiledFactorGraph> &cfgs) {
       outf.write((char *)&cfg.vifs[j].vid, sizeof(long));
       outf.write((char *)&cfg.vifs[j].n_position, sizeof(int));
       outf.write((char *)&cfg.vifs[j].is_positive, sizeof(int));
-      outf.write((char *)&cfg.vifs[j].equal_to, sizeof(dd::VariableValue));
+      outf.write((char *)&cfg.vifs[j].equal_to, sizeof(VariableValue));
     }
 
     outf.write((char *)&cfg.infrs->ntallies, sizeof(long));
@@ -448,9 +447,9 @@ void checkpoint(string filename, vector<dd::CompiledFactorGraph> &cfgs) {
       outf.write((char *)&cfg.infrs->agg_means[j], sizeof(double));
       outf.write((char *)&cfg.infrs->agg_nsamples[j], sizeof(double));
       outf.write((char *)&cfg.infrs->assignments_free[j],
-                 sizeof(dd::VariableValue));
+                 sizeof(VariableValue));
       outf.write((char *)&cfg.infrs->assignments_evid[j],
-                 sizeof(dd::VariableValue));
+                 sizeof(VariableValue));
     }
 
     /*
@@ -461,3 +460,5 @@ void checkpoint(string filename, vector<dd::CompiledFactorGraph> &cfgs) {
     outf.close();
   }
 }
+
+}  // namespace dd

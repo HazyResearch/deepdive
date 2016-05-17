@@ -1,3 +1,6 @@
+#ifndef DIMMWITTED_FACTOR_GRAPH_H_
+#define DIMMWITTED_FACTOR_GRAPH_H_
+
 #include "cmd_parser.h"
 #include "common.h"
 
@@ -8,10 +11,8 @@
 
 #include <xmmintrin.h>
 
-#ifndef _FACTOR_GRAPH_H_
-#define _FACTOR_GRAPH_H_
-
 namespace dd {
+
 class FactorGraph;
 class CompiledFactorGraph;
 
@@ -302,6 +303,7 @@ inline void CompiledFactorGraph::update_not_changing_evid(
 
 // sort variable in factor by their position
 bool compare_position(const VariableInFactor& x, const VariableInFactor& y);
-}
 
-#endif
+}  // namespace dd
+
+#endif  // DIMMWITTED_FACTOR_GRAPH_H_

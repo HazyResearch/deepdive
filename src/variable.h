@@ -1,8 +1,8 @@
+#ifndef DIMMWITTED_VARIABLE_H_
+#define DIMMWITTED_VARIABLE_H_
+
 #include <vector>
 #include <unordered_map>
-
-#ifndef _VARIABLE_H_
-#define _VARIABLE_H_
 
 #define DTYPE_BOOLEAN 0x00
 #define DTYPE_REAL 0x01
@@ -114,6 +114,7 @@ class VariableInFactor {
   VariableInFactor(const long& _vid, const int& _n_position,
                    const bool& _is_positive, const VariableValue& _equal_to);
 };
-}
 
-#endif
+}  // namespace dd
+
+#endif  // DIMMWITTED_VARIABLE_H_
