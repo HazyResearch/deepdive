@@ -215,11 +215,9 @@ class CompiledFactorGraph {
 
 inline double CompiledFactorGraph::potential(bool does_change_evid,
                                              const CompactFactor& factor) {
-  if (does_change_evid) {
-    return factor.potential(vifs, infrs->assignments_free, -1, -1);
-  } else {
-    return factor.potential(vifs, infrs->assignments_evid, -1, -1);
-  }
+  return factor.potential(vifs, does_change_evid ? infrs->assignments_free
+                                                 : infrs->assignments_evid,
+                          -1, -1);
 }
 
 inline double CompiledFactorGraph::potential(bool does_change_evid,
