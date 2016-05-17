@@ -4,7 +4,6 @@
 *.o
 dw
 dw_test
-text2bin
 
 # Compiled Dependency files
 *.d

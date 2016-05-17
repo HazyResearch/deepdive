@@ -126,6 +126,9 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
     should_sample_evidence = sample_evidence_->getValue() > 0;
     should_learn_non_evidence = learn_non_evidence_->getValue() > 0;
 
+  } else if (app_name == "text2bin") {
+      // TODO
+
   } else if (app_name == "bin2text") {
     cmd_ = new TCLAP::CmdLine("DimmWitted bin2text", ' ', DimmWittedVersion);
 

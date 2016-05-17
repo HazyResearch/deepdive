@@ -21,7 +21,7 @@ using namespace dd;
 // test read_variables
 TEST(BinaryFormatTest, read_variables) {
   system(
-      "./text2bin variable test/biased_coin/variables.tsv "
+      "dw text2bin variable test/biased_coin/variables.tsv "
       "test/biased_coin/graph.variables");
   dd::FactorGraph fg(18, 1, 1, 1);
   fg.load_variables("./test/biased_coin/graph.variables");
@@ -39,7 +39,7 @@ TEST(BinaryFormatTest, read_variables) {
 // test read_factors
 TEST(BinaryFormatTest, read_factors) {
   system(
-      "./text2bin factor test/biased_coin/factors.tsv "
+      "dw text2bin factor test/biased_coin/factors.tsv "
       "test/biased_coin/graph.factors 4 1 0 "
       "1");
   dd::FactorGraph fg(18, 18, 1, 18);
@@ -57,7 +57,7 @@ TEST(BinaryFormatTest, read_factors) {
 // test read_weights
 TEST(BinaryFormatTest, read_weights) {
   system(
-      "./text2bin weight test/biased_coin/weights.tsv "
+      "dw text2bin weight test/biased_coin/weights.tsv "
       "test/biased_coin/graph.weights");
   dd::FactorGraph fg(1, 1, 1, 1);
   fg.load_weights("./test/biased_coin/graph.weights");
@@ -70,7 +70,7 @@ TEST(BinaryFormatTest, read_weights) {
 // test read domains
 TEST(BinaryFormatTest, read_domains) {
   system(
-      "./text2bin domain test/domains/domains.tsv "
+      "dw text2bin domain test/domains/domains.tsv "
       "test/domains/graph.domains");
   int num_variables = 3;
   int domain_sizes[] = {1, 2, 3};

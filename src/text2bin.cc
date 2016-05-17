@@ -361,7 +361,8 @@ void load_domain(std::string input_filename, std::string output_filename) {
   fout.close();
 }
 
-int main(int argc, char **argv) {
+int text2bin(const dd::CmdParser &args) {
+  char *argv[] = {}; // FIXME shim to make it just compile
   // TODO consider using tclap
   const auto &name = argv[1];
   std::string app(name);

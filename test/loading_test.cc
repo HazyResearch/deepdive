@@ -24,14 +24,14 @@ class LoadingTest : public testing::Test {
 
   virtual void SetUp() {
     system(
-        "./text2bin variable test/biased_coin/variables.tsv "
+        "dw text2bin variable test/biased_coin/variables.tsv "
         "test/biased_coin/graph.variables");
     system(
-        "./text2bin factor test/biased_coin/factors.tsv "
+        "dw text2bin factor test/biased_coin/factors.tsv "
         "test/biased_coin/graph.factors 4 1 0 "
         "1");
     system(
-        "./text2bin weight test/biased_coin/weights.tsv "
+        "dw text2bin weight test/biased_coin/weights.tsv "
         "test/biased_coin/graph.weights");
     const char *argv[] = {
         "dw",      "gibbs",

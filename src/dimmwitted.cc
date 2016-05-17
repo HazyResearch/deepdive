@@ -1,6 +1,7 @@
 #include "dimmwitted.h"
 #include "binary_format.h"
 #include "gibbs_sampling.h"
+#include "text2bin.h"
 #include "bin2text.h"
 #include "factor_graph.h"
 #include <cmath>
@@ -14,6 +15,7 @@ int dw(int argc, const char *const argv[]) {
   // available modes
   const std::map<std::string, int (*)(const dd::CmdParser &)> MODES = {
       {"gibbs", gibbs},  // to do the learning and inference with Gibbs sampling
+      {"text2bin", text2bin},  // to generate binary factor graphs from TSV
       {"bin2text", bin2text},  // to dump TSV of binary factor graphs
   };
 

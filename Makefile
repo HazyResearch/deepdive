@@ -45,6 +45,7 @@ SOURCES += src/dimmwitted.cc
 SOURCES += src/cmd_parser.cc
 SOURCES += src/binary_format.cc
 SOURCES += src/bin2text.cc
+SOURCES += src/text2bin.cc
 SOURCES += src/main.cc
 SOURCES += src/weight.cc
 SOURCES += src/variable.cc
@@ -76,12 +77,7 @@ $(TEST_OBJECTS): CXXFLAGS += -I./lib/gtest-1.7.0/include/
 $(TEST_PROGRAM): LDFLAGS += -L./lib/gtest/
 $(TEST_PROGRAM): LDLIBS += -lgtest
 
-# source files for other utilities
-TEXT2BIN_SOURCES += src/text2bin.cc
-TEXT2BIN_OBJECTS = $(TEXT2BIN_SOURCES:.cc=.o)
-TEXT2BIN_PROGRAM = text2bin
-
-all: $(PROGRAM) $(TEXT2BIN_PROGRAM)
+all: $(PROGRAM)
 .PHONY: all
 
 # how to link our sampler
@@ -91,10 +87,6 @@ $(PROGRAM): $(OBJECTS)
 # how to link our sampler unit tests
 $(TEST_PROGRAM): $(TEST_OBJECTS) $(filter-out src/main.o,$(OBJECTS))
 	$(CXX) -o $@ $(LDFLAGS) $^ $(LDLIBS)
-
-# how to link the format converters
-$(TEXT2BIN_PROGRAM): $(TEXT2BIN_OBJECTS)
-	$(CXX) -o $@ $(LDFLAGS) $^
 
 # compiler generated dependency
 # See: http://stackoverflow.com/a/16969086
@@ -126,12 +118,12 @@ dep:
 
 # how to clean
 clean:
-	rm -f $(PROGRAM) $(OBJECTS) $(TEST_PROGRAM) $(TEST_OBJECTS) $(TEXT2BIN_PROGRAM) $(TEXT2BIN_OBJECTS) $(DEPENDENCIES)
+	rm -f $(PROGRAM) $(OBJECTS) $(TEST_PROGRAM) $(TEST_OBJECTS) $(DEPENDENCIES)
 .PHONY: clean
 
 # how to test
 include test/bats.mk
-test: $(PROGRAM) $(TEST_PROGRAM) $(TEXT2BIN_PROGRAM)
+test: $(PROGRAM) $(TEST_PROGRAM)
 
 # how to format code
 ifndef CLANG_FORMAT
