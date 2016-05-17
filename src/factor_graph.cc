@@ -239,8 +239,8 @@ void CompiledFactorGraph::update_weight(const Variable &variable) {
           // calculated
           // using a sample of the variable.
           infrs->weight_values[ws[i]] +=
-              stepsize *
-              (this->potential(false, fs[i]) - this->potential(true, fs[i]));
+              stepsize * (this->potential(fs[i], infrs->assignments_evid) -
+                          this->potential(fs[i], infrs->assignments_free));
         }
         break;
       }
@@ -258,14 +258,14 @@ void CompiledFactorGraph::update_weight(const Variable &variable) {
 
         if (!infrs->weights_isfixed[wid1]) {
           infrs->weight_values[wid1] +=
-              stepsize * (this->potential(false, fs[i]) -
-                          equal * this->potential(true, fs[i]));
+              stepsize * (potential(fs[i], infrs->assignments_evid) -
+                          equal * potential(fs[i], infrs->assignments_free));
         }
 
         if (!infrs->weights_isfixed[wid2]) {
           infrs->weight_values[wid2] +=
-              stepsize * (equal * this->potential(false, fs[i]) -
-                          this->potential(true, fs[i]));
+              stepsize * (equal * potential(fs[i], infrs->assignments_evid) -
+                          potential(fs[i], infrs->assignments_free));
         }
         break;
       }

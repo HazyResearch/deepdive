@@ -53,13 +53,14 @@ void SingleThreadSampler::sample_sgd_single_variable(long vid) {
   int proposal = 0;
 
   // sample the variable with evidence unchanged
-  proposal = variable.is_evid ? variable.assignment_evid
-                              : draw_sample(variable, false);
-  p_fg->update_evid(variable, (double)proposal);
+  proposal = variable.is_evid
+                 ? variable.assignment_evid
+                 : draw_sample(variable, p_fg->infrs->assignments_evid);
+  p_fg->infrs->assignments_evid[variable.id] = proposal;
 
   // sample the variable regardless of whether it's evidence
-  proposal = draw_sample(variable, true);
-  p_fg->update_changing_evid(variable, (double)proposal);
+  proposal = draw_sample(variable, p_fg->infrs->assignments_free);
+  p_fg->infrs->assignments_free[variable.id] = proposal;
 
   this->p_fg->update_weight(variable);
 }
@@ -72,22 +73,22 @@ void SingleThreadSampler::sample_single_variable(long vid) {
   if (variable.is_observation) return;
 
   if (!variable.is_evid || sample_evidence) {
-    int proposal = draw_sample(variable, sample_evidence);
-    p_fg->update_not_changing_evid(variable, (double)proposal);
-    if (sample_evidence) p_fg->update_changing_evid(variable, (double)proposal);
+    int proposal = draw_sample(variable, p_fg->infrs->assignments_evid);
+    p_fg->update_not_changing_evid(variable, (double)proposal,
+                                   p_fg->infrs->assignments_evid);
   }
 }
 
-inline int dd::SingleThreadSampler::draw_sample(Variable &variable,
-                                                bool is_free_sample) {
+inline int dd::SingleThreadSampler::draw_sample(
+    Variable &variable, VariableValue *const assignments) {
   int proposal = 0;
 
   switch (variable.domain_type) {
     case DTYPE_BOOLEAN: {
       double potential_pos;
       double potential_neg;
-      potential_pos = p_fg->potential(is_free_sample, variable, 1);
-      potential_neg = p_fg->potential(is_free_sample, variable, 0);
+      potential_pos = p_fg->potential(variable, 1, assignments);
+      potential_neg = p_fg->potential(variable, 0, assignments);
 
       double r = erand48(this->p_rand_seed);
       // sample the variable
@@ -114,7 +115,7 @@ inline int dd::SingleThreadSampler::draw_sample(Variable &variable,
           for                                                           \
       EACH_DOMAIN_VALUE {                                               \
         varlen_potential_buffer_[DOMAIN_INDEX] =                        \
-            p_fg->potential(is_free_sample, variable, DOMAIN_VALUE);    \
+            p_fg->potential(variable, DOMAIN_VALUE, assignments);       \
         sum = logadd(sum, varlen_potential_buffer_[DOMAIN_INDEX]);      \
       }                                                                 \
     double r = erand48(this->p_rand_seed);                              \

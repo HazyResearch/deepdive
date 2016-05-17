@@ -63,7 +63,7 @@ class SingleThreadSampler {
   void sample_single_variable(long vid);
 
   // sample a single variable
-  inline int draw_sample(Variable &variable, bool is_free_sample);
+  inline int draw_sample(Variable &variable, VariableValue *const assignments);
 };
 
 }  // namespace dd

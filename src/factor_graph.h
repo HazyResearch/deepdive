@@ -188,19 +188,18 @@ class CompiledFactorGraph {
    */
   void update_weight(const Variable& variable);
 
+  inline void update_not_changing_evid(Variable& variable,
+                                       const double& new_value,
+                                       VariableValue* const assignments);
+
   /**
    * Returns potential of the given factor
    *
    * does_change_evid = true, use the free assignment. Otherwise, use the
    * evid assignement.
    */
-  inline double potential(bool does_change_evid, const CompactFactor& factor);
-
-  inline void update_changing_evid(Variable& variable, const double& new_value);
-  inline void update_not_changing_evid(Variable& variable,
-                                       const double& new_value);
-
-  inline void update_evid(Variable& variable, const double& new_value);
+  inline double potential(const CompactFactor& factor,
+                          VariableValue* const assignments);
 
   /**
    * Returns log-linear weighted potential of the all factors for the given
@@ -209,28 +208,24 @@ class CompiledFactorGraph {
    * does_change_evid = true, use the free assignment. Otherwise, use the
    * evid assignement.
    */
-  inline double potential(bool does_change_evid, const Variable& variable,
-                          const double& proposal);
+  inline double potential(const Variable& variable, const double& proposal,
+                          VariableValue* const assignments);
 };
 
-inline double CompiledFactorGraph::potential(bool does_change_evid,
-                                             const CompactFactor& factor) {
-  return factor.potential(vifs, does_change_evid ? infrs->assignments_free
-                                                 : infrs->assignments_evid,
-                          -1, -1);
+inline double CompiledFactorGraph::potential(const CompactFactor& factor,
+                                             VariableValue* const assignments) {
+  return factor.potential(vifs, assignments, -1, -1);
 }
 
-inline double CompiledFactorGraph::potential(bool does_change_evid,
-                                             const Variable& variable,
-                                             const double& proposal) {
+inline double CompiledFactorGraph::potential(const Variable& variable,
+                                             const double& proposal,
+                                             VariableValue* const assignments) {
   // potential
   double pot = 0.0;
   // pointer to the first factor the given variable connects to
   // the factors that the given variable connects to are stored in a continuous
   // region of the array
   CompactFactor* const fs = &compact_factors[variable.n_start_i_factors];
-  VariableValue* const assignments =
-      does_change_evid ? infrs->assignments_free : infrs->assignments_evid;
   switch (variable.domain_type) {
     case DTYPE_BOOLEAN: {
       // the weights, corresponding to the factor with the same index
@@ -263,28 +258,13 @@ inline double CompiledFactorGraph::potential(bool does_change_evid,
 }
 
 /**
- * Updates the free variable assignment for the given variable using new_value
- */
-inline void CompiledFactorGraph::update_changing_evid(Variable& variable,
-                                                      const double& new_value) {
-  infrs->assignments_free[variable.id] = new_value;
-}
-
-/**
- * Updates the evid assignments for the given variable useing new_value
- */
-inline void CompiledFactorGraph::update_evid(Variable& variable,
-                                             const double& new_value) {
-  infrs->assignments_evid[variable.id] = new_value;
-}
-
-/**
  * Updates the evid assignments for the given variable useing new_value, for
  * inference
  */
 inline void CompiledFactorGraph::update_not_changing_evid(
-    Variable& variable, const double& new_value) {
-  infrs->assignments_evid[variable.id] = new_value;
+    Variable& variable, const double& new_value,
+    VariableValue* const assignments) {
+  assignments[variable.id] = new_value;
   infrs->agg_nsamples[variable.id]++;
   switch (variable.domain_type) {
     case DTYPE_BOOLEAN:

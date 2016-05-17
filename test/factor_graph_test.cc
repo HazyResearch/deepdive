@@ -58,25 +58,10 @@ class FactorGraphTest : public testing::Test {
   }
 };
 
-// test update function
-TEST_F(FactorGraphTest, update_variable) {
-  cfg.update_changing_evid(cfg.variables[0], 1);
-  EXPECT_EQ(cfg.infrs->assignments_free[0], 1);
-  EXPECT_EQ(cfg.infrs->assignments_evid[0], 1);
-
-  cfg.update_changing_evid(cfg.variables[0], 0);
-  EXPECT_EQ(cfg.infrs->assignments_free[0], 0);
-  EXPECT_EQ(cfg.infrs->assignments_evid[0], 1);
-
-  cfg.update_not_changing_evid(cfg.variables[10], 1);
-  EXPECT_EQ(cfg.infrs->assignments_free[10], 0);
-  EXPECT_EQ(cfg.infrs->assignments_evid[10], 1);
-}
-
 // test update_weight function
 TEST_F(FactorGraphTest, update_weight) {
   cfg.stepsize = 0.1;
-  cfg.update_changing_evid(cfg.variables[0], 0);
+  cfg.infrs->assignments_free[cfg.variables[0].id] = 0;
 
   cfg.update_weight(cfg.variables[0]);
   std::cout << "The weight value is: " << cfg.infrs->weight_values[0]
