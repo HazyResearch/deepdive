@@ -64,41 +64,12 @@ int gibbs(const dd::CmdParser &args) {
     std::cout << "################################################"
               << std::endl;
     std::cout << std::endl;
-    std::cout << "#################GIBBS SAMPLING#################"
-              << std::endl;
-    std::cout << "# fg_file            : " << args.fg_file << std::endl;
-    std::cout << "# weight_file        : " << args.weight_file << std::endl;
-    std::cout << "# variable_file      : " << args.variable_file << std::endl;
-    std::cout << "# factor_file        : " << args.factor_file << std::endl;
-    std::cout << "# output_folder      : " << args.output_folder << std::endl;
-    std::cout << "# n_learning_epoch   : " << args.n_learning_epoch
-              << std::endl;
-    std::cout << "# n_samples/l. epoch : " << args.n_samples_per_learning_epoch
-              << std::endl;
-    std::cout << "# n_inference_epoch  : " << args.n_inference_epoch
-              << std::endl;
-    std::cout << "# stepsize           : " << args.stepsize << std::endl;
-    std::cout << "# decay              : " << args.decay << std::endl;
-    std::cout << "# regularization     : " << args.reg_param << std::endl;
-    std::cout << "# burn_in            : " << args.burn_in << std::endl;
-    std::cout << "# learn_non_evidence : " << args.should_learn_non_evidence
-              << std::endl;
-    std::cout << "################################################"
-              << std::endl;
-    std::cout << "# IGNORE -s (n_samples/l. epoch). ALWAYS -s 1. #"
-              << std::endl;
-    std::cout << "# IGNORE -t (threads). ALWAYS USE ALL THREADS. #"
-              << std::endl;
+    std::cout << args << std::endl;
   }
 
   Meta meta = read_meta(args.fg_file);
   if (!args.should_be_quiet) {
-    std::cout << "################################################"
-              << std::endl;
-    std::cout << "# nvar               : " << meta.num_variables << std::endl;
-    std::cout << "# nfac               : " << meta.num_factors << std::endl;
-    std::cout << "# nweight            : " << meta.num_weights << std::endl;
-    std::cout << "# nedge              : " << meta.num_edges << std::endl;
+    std::cout << meta << std::endl;
   }
 
   // Run on NUMA node 0

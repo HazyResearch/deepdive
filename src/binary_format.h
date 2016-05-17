@@ -45,6 +45,8 @@ typedef struct {
   string edges_file;
 } Meta;
 
+std::ostream &operator<<(std::ostream &stream, const Meta &meta);
+
 /**
  * Reads meta data from the given file.
  * For reference of factor graph file formats, refer to

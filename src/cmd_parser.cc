@@ -7,7 +7,7 @@ constexpr char DimmWittedVersion[] = "0.01";
 
 // a handy way to get value from MultiArg
 template <class T>
-static inline T getLastValueOrDefault(TCLAP::MultiArg<T> *arg, T defaultValue) {
+static inline T getLastValueOrDefault(TCLAP::MultiArg<T>* arg, T defaultValue) {
   if (arg->getValue().empty()) {
     return defaultValue;
   } else {
@@ -15,8 +15,8 @@ static inline T getLastValueOrDefault(TCLAP::MultiArg<T> *arg, T defaultValue) {
   }
 }
 
-CmdParser::CmdParser(int argc, const char *const argv[]) {
-  const char *arg0 = argv[0];
+CmdParser::CmdParser(int argc, const char* const argv[]) {
+  const char* arg0 = argv[0];
   app_name = argc > 1 ? argv[1] : "";
   ++argv;
   --argc;
@@ -156,5 +156,28 @@ CmdParser::CmdParser(int argc, const char *const argv[]) {
     if (argc > 0) std::cerr << app_name << ": Unrecognized MODE" << std::endl;
     std::cerr << "Usage: " << arg0 << " [ gibbs | bin2text ]" << std::endl;
   }
+}
+
+std::ostream& operator<<(std::ostream& stream, const CmdParser& args) {
+  stream << "#################GIBBS SAMPLING#################" << std::endl;
+  stream << "# fg_file            : " << args.fg_file << std::endl;
+  stream << "# weight_file        : " << args.weight_file << std::endl;
+  stream << "# variable_file      : " << args.variable_file << std::endl;
+  stream << "# factor_file        : " << args.factor_file << std::endl;
+  stream << "# output_folder      : " << args.output_folder << std::endl;
+  stream << "# n_learning_epoch   : " << args.n_learning_epoch << std::endl;
+  stream << "# n_samples/l. epoch : " << args.n_samples_per_learning_epoch
+         << std::endl;
+  stream << "# n_inference_epoch  : " << args.n_inference_epoch << std::endl;
+  stream << "# stepsize           : " << args.stepsize << std::endl;
+  stream << "# decay              : " << args.decay << std::endl;
+  stream << "# regularization     : " << args.reg_param << std::endl;
+  stream << "# burn_in            : " << args.burn_in << std::endl;
+  stream << "# learn_non_evidence : " << args.should_learn_non_evidence
+         << std::endl;
+  stream << "################################################" << std::endl;
+  stream << "# IGNORE -s (n_samples/l. epoch). ALWAYS -s 1. #" << std::endl;
+  stream << "# IGNORE -t (threads). ALWAYS USE ALL THREADS. #" << std::endl;
+  return stream;
 }
 }

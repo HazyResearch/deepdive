@@ -91,6 +91,9 @@ class CmdParser {
   TCLAP::MultiArg<std::string> *regularization_;
 
   TCLAP::CmdLine *cmd_;
+
+  friend std::ostream &operator<<(std::ostream &stream,
+                                  const CmdParser &cmd_parser);
 };
 }
 

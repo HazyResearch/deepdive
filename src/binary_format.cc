@@ -35,6 +35,15 @@ Meta read_meta(string meta_file) {
   return meta;
 }
 
+std::ostream &operator<<(std::ostream &stream, const Meta &meta) {
+  stream << "################################################" << std::endl;
+  stream << "# nvar               : " << meta.num_variables << std::endl;
+  stream << "# nfac               : " << meta.num_factors << std::endl;
+  stream << "# nweight            : " << meta.num_weights << std::endl;
+  stream << "# nedge              : " << meta.num_edges << std::endl;
+  return stream;
+}
+
 void dd::FactorGraph::load_weights(const std::string filename) {
   ifstream file;
   file.open(filename, ios::in | ios::binary);
