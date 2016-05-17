@@ -87,13 +87,8 @@ inline int dd::SingleThreadSampler::draw_sample(Variable &variable,
     case DTYPE_BOOLEAN: {
       double potential_pos;
       double potential_neg;
-      if (is_free_sample) {
-        potential_pos = p_fg->potential(true, variable, 1);
-        potential_neg = p_fg->potential(true, variable, 0);
-      } else {
-        potential_pos = p_fg->potential(false, variable, 1);
-        potential_neg = p_fg->potential(false, variable, 0);
-      }
+      potential_pos = p_fg->potential(is_free_sample, variable, 1);
+      potential_neg = p_fg->potential(is_free_sample, variable, 0);
 
       double r = erand48(this->p_rand_seed);
       // sample the variable
