@@ -21,6 +21,9 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
   ++argv;
   --argc;
 
+  // for TCLAP, see:
+  // http://tclap.sourceforge.net/manual.html#FUNDAMENTAL_CLASSES
+
   if (app_name == "gibbs") {
     cmd_ = new TCLAP::CmdLine("DimmWitted GIBBS", ' ', DimmWittedVersion);
 
@@ -127,7 +130,50 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
     should_learn_non_evidence = learn_non_evidence_->getValue() > 0;
 
   } else if (app_name == "text2bin") {
-      // TODO
+    cmd_ = new TCLAP::CmdLine("DimmWitted text2bin", ' ', DimmWittedVersion);
+    TCLAP::UnlabeledValueArg<std::string> text2bin_mode_(
+        "mode", "what to convert", true, "",
+        "variable | domain | factor | weight", *cmd_);
+    TCLAP::UnlabeledValueArg<std::string> text2bin_input_(
+        "input", "path to an input file formatted in TSV, tab-separated values",
+        true, "/dev/stdin", "input_file_path", *cmd_);
+    TCLAP::UnlabeledValueArg<std::string> text2bin_output_(
+        "output", "path to an output file", true, "/dev/stdout",
+        "output_file_path", *cmd_);
+
+    //  factor-specific arguments
+    TCLAP::UnlabeledValueArg<int> text2bin_factor_func_id_(
+        "func_id",
+        "factor function id (See: "
+        "https://github.com/HazyResearch/sampler/blob/master/src/dstruct/"
+        "factor_graph/factor.h)",
+        true, 0, "func_id");
+    TCLAP::UnlabeledValueArg<int> text2bin_factor_arity_(
+        "arity", "arity of the factor, e.g., 1 | 2 | ...", true, 1, "arity");
+    TCLAP::UnlabeledValueArg<std::string> text2bin_factor_ignored_(
+        "ignored", "original", true, "original", "ignored");
+    TCLAP::UnlabeledMultiArg<int> text2bin_factor_positives_or_not_(
+        "var_is_positive",
+        "whether each variable in position is positive or not, 1 or 0", 1,
+        "var_is_positive");
+    if (argc > 0 && std::string(argv[1]) == "factor") {
+      cmd_->add(text2bin_factor_func_id_);
+      cmd_->add(text2bin_factor_arity_);
+      cmd_->add(text2bin_factor_ignored_);
+      cmd_->add(text2bin_factor_positives_or_not_);
+    }
+
+    cmd_->parse(argc, argv);
+
+    text2bin_mode = text2bin_mode_.getValue();
+    text2bin_input = text2bin_input_.getValue();
+    text2bin_output = text2bin_output_.getValue();
+    text2bin_factor_func_id =
+        static_cast<FACTOR_FUCNTION_TYPE>(text2bin_factor_func_id_.getValue());
+    text2bin_factor_arity = text2bin_factor_arity_.getValue();
+    for (int positive_or_not : text2bin_factor_positives_or_not_.getValue()) {
+      text2bin_factor_positives_or_not.push_back(positive_or_not != 0);
+    }
 
   } else if (app_name == "bin2text") {
     cmd_ = new TCLAP::CmdLine("DimmWitted bin2text", ' ', DimmWittedVersion);

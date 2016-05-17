@@ -1,3 +1,4 @@
+#include "factor.h"
 
 #include <algorithm>
 #include <assert.h>
@@ -47,6 +48,14 @@ class CmdParser {
   bool should_be_quiet;
   bool should_sample_evidence;
   bool should_learn_non_evidence;
+
+  // text2bin specific members
+  std::string text2bin_mode;
+  std::string text2bin_input;
+  std::string text2bin_output;
+  FACTOR_FUCNTION_TYPE text2bin_factor_func_id;
+  int text2bin_factor_arity;
+  std::vector<bool> text2bin_factor_positives_or_not;
 
   CmdParser(int argc, const char *const argv[]);
 
