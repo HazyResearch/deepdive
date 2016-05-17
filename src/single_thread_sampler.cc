@@ -74,8 +74,22 @@ void SingleThreadSampler::sample_single_variable(long vid) {
 
   if (!variable.is_evid || sample_evidence) {
     int proposal = draw_sample(variable, p_fg->infrs->assignments_evid);
-    p_fg->update_not_changing_evid(variable, (double)proposal,
-                                   p_fg->infrs->assignments_evid);
+    p_fg->infrs->assignments_evid[variable.id] = proposal;
+
+    // bookkeep aggregates for computing marginals
+    p_fg->infrs->agg_nsamples[variable.id]++;
+    switch (variable.domain_type) {
+      case DTYPE_BOOLEAN:
+        p_fg->infrs->agg_means[variable.id] += proposal;
+        break;
+      case DTYPE_MULTINOMIAL:
+        p_fg->infrs
+            ->multinomial_tallies[variable.n_start_i_tally +
+                                  variable.get_domain_index((int)proposal)]++;
+        break;
+      default:
+        abort();
+    }
   }
 }
 

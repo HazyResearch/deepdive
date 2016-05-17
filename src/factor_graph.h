@@ -188,10 +188,6 @@ class CompiledFactorGraph {
    */
   void update_weight(const Variable& variable);
 
-  inline void update_not_changing_evid(Variable& variable,
-                                       const double& new_value,
-                                       VariableValue* const assignments);
-
   /**
    * Returns potential of the given factor
    *
@@ -255,28 +251,6 @@ inline double CompiledFactorGraph::potential(const Variable& variable,
       abort();
   }
   return pot;
-}
-
-/**
- * Updates the evid assignments for the given variable useing new_value, for
- * inference
- */
-inline void CompiledFactorGraph::update_not_changing_evid(
-    Variable& variable, const double& new_value,
-    VariableValue* const assignments) {
-  assignments[variable.id] = new_value;
-  infrs->agg_nsamples[variable.id]++;
-  switch (variable.domain_type) {
-    case DTYPE_BOOLEAN:
-      infrs->agg_means[variable.id] += new_value;
-      break;
-    case DTYPE_MULTINOMIAL:
-      infrs->multinomial_tallies[variable.n_start_i_tally +
-                                 variable.get_domain_index((int)new_value)]++;
-      break;
-    default:
-      abort();
-  }
 }
 
 // sort variable in factor by their position
