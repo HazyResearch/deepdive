@@ -70,7 +70,7 @@ void SingleThreadSampler::sample_single_variable(long vid) {
   Variable &variable = this->p_fg->variables[vid];
   if (variable.is_observation) return;
 
-  if (variable.is_evid == false || sample_evidence) {
+  if (!variable.is_evid || sample_evidence) {
     int proposal = draw_sample(variable, sample_evidence);
     p_fg->update_not_changing_evid(variable, (double)proposal);
     if (sample_evidence) p_fg->update_changing_evid(variable, (double)proposal);

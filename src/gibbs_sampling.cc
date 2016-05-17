@@ -251,7 +251,7 @@ void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
     // calculate average weights and regularize weights
     for (int j = 0; j < nweight; j++) {
       cfg.infrs->weight_values[j] /= nnode;
-      if (cfg.infrs->weights_isfixed[j] == false) {
+      if (!cfg.infrs->weights_isfixed[j]) {
         if (reg == REG_L2)
           cfg.infrs->weight_values[j] *=
               (1.0 / (1.0 + reg_param * current_stepsize));
@@ -266,7 +266,7 @@ void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
     for (int i = 1; i <= n_numa_nodes; i++) {
       CompiledFactorGraph &cfg_other = this->factorgraphs[i];
       for (int j = 0; j < nweight; j++) {
-        if (cfg.infrs->weights_isfixed[j] == false) {
+        if (!cfg.infrs->weights_isfixed[j]) {
           cfg_other.infrs->weight_values[j] = cfg.infrs->weight_values[j];
         }
       }
@@ -368,7 +368,7 @@ void GibbsSampling::aggregate_results_and_dump(const bool is_quiet) {
     int ct = 0;
     for (long i = 0; i < factorgraphs[0].n_var; i++) {
       const Variable &variable = factorgraphs[0].variables[i];
-      if (variable.is_evid == false || sample_evidence) {
+      if (!variable.is_evid || sample_evidence) {
         ct++;
         std::cout << "   " << variable.id
                   << "  NSAMPLE=" << agg_nsamples[variable.id] << std::endl;
@@ -419,7 +419,7 @@ void GibbsSampling::aggregate_results_and_dump(const bool is_quiet) {
   std::ofstream fout_text(filename_text.c_str());
   for (long i = 0; i < factorgraphs[0].n_var; i++) {
     const Variable &variable = factorgraphs[0].variables[i];
-    if (variable.is_evid == true && !sample_evidence) {
+    if (variable.is_evid && !sample_evidence) {
       continue;
     }
 
@@ -467,7 +467,7 @@ void GibbsSampling::aggregate_results_and_dump(const bool is_quiet) {
     int bad = 0;
     for (long i = 0; i < factorgraphs[0].n_var; i++) {
       const Variable &variable = factorgraphs[0].variables[i];
-      if (variable.is_evid == true && !sample_evidence) {
+      if (variable.is_evid && !sample_evidence) {
         continue;
       }
       int bin = (int)(agg_means[variable.id] / agg_nsamples[variable.id] * 10);

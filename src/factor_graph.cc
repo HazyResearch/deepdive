@@ -231,7 +231,7 @@ void CompiledFactorGraph::update_weight(const Variable &variable) {
     switch (variable.domain_type) {
       case DTYPE_BOOLEAN: {
         // only update weight when it is not fixed
-        if (infrs->weights_isfixed[ws[i]] == false) {
+        if (!infrs->weights_isfixed[ws[i]]) {
           // stochastic gradient ascent
           // increment weight with stepsize * gradient of weight
           // gradient of weight = E[f|D] - E[f], where D is evidence variables,
@@ -256,13 +256,13 @@ void CompiledFactorGraph::update_weight(const Variable &variable) {
             get_multinomial_weight_id(infrs->assignments_free, fs[i], -1, -1);
         int equal = (wid1 == wid2);
 
-        if (infrs->weights_isfixed[wid1] == false) {
+        if (!infrs->weights_isfixed[wid1]) {
           infrs->weight_values[wid1] +=
               stepsize * (this->potential(false, fs[i]) -
                           equal * this->potential(true, fs[i]));
         }
 
-        if (infrs->weights_isfixed[wid2] == false) {
+        if (!infrs->weights_isfixed[wid2]) {
           infrs->weight_values[wid2] +=
               stepsize * (equal * this->potential(false, fs[i]) -
                           this->potential(true, fs[i]));
