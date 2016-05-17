@@ -1,28 +1,23 @@
 #ifndef _WEIGHT_H_
 #define _WEIGHT_H_
 
-namespace dd{
+namespace dd {
 
-  typedef long WeightIndex;
+typedef long WeightIndex;
 
-  /**
-   * Encapsulates a weight for factors. 
-   */
-  class Weight {
-  public:
-    long id;        // weight id
-    double weight;  // weight value
-    bool isfixed;   // whether the weight is fixed
+/**
+ * Encapsulates a weight for factors.
+ */
+class Weight {
+ public:
+  long id;        // weight id
+  double weight;  // weight value
+  bool isfixed;   // whether the weight is fixed
 
-    Weight(const long & _id,
-           const double & _weight,
-           const bool & _isfixed);
+  Weight(const long& _id, const double& _weight, const bool& _isfixed);
 
-    Weight();
-
-  }; 
-
-
+  Weight();
+};
 }
 
 #endif

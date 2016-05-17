@@ -59,7 +59,7 @@ OBJECTS = $(SOURCES:.cpp=.o)
 PROGRAM = dw
 
 # header files
-HEADERS += $(wildcard src/*.h src/*/*.h src/**/*.h src/*/*/*.hxx)
+HEADERS += $(wildcard src/*.h src/*.hxx)
 
 # test files
 TEST_SOURCES += test/test.cpp
