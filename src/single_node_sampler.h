@@ -1,5 +1,4 @@
-
-#include "app/gibbs/single_thread_sampler.h"
+#include "single_thread_sampler.h"
 #include <stdlib.h>
 #include <thread>
 #include "common.h"

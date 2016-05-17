@@ -1,6 +1,6 @@
   
-#include "dstruct/factor_graph/variable.h"
-#include "dstruct/factor_graph/weight.h"
+#include "variable.h"
+#include "weight.h"
 
 #ifndef _INFERENCE_RESULT_H_
 #define _INFERENCE_RESULT_H_

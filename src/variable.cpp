@@ -1,4 +1,4 @@
-#include "dstruct/factor_graph/variable.h"
+#include "variable.h"
 
 namespace dd {
 

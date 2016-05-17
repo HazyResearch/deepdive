@@ -1,4 +1,3 @@
-
 #ifndef elly_Timer_h
 #define elly_Timer_h
 

@@ -1,6 +1,6 @@
-#include "dstruct/factor_graph/factor.h"
-#include "dstruct/factor_graph/factor_graph.h"
-#include "gtest/gtest.h"
+#include "factor.h"
+#include "factor_graph.h"
+#include <gtest/gtest.h>
 #include <limits.h>
 #include <math.h>
 

@@ -1,5 +1,4 @@
-
-#include "app/gibbs/single_node_sampler.h"
+#include "single_node_sampler.h"
 
 namespace dd {
 

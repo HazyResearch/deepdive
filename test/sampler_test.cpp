@@ -4,10 +4,10 @@
  * Author: Feiran Wang
  */
 
-#include "app/gibbs/single_thread_sampler.h"
-#include "dstruct/factor_graph/factor_graph.h"
-#include "gibbs.h"
-#include "gtest/gtest.h"
+#include "single_thread_sampler.h"
+#include "factor_graph.h"
+#include "dimmwitted.h"
+#include <gtest/gtest.h>
 #include <fstream>
 
 // test fixture

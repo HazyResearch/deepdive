@@ -1,7 +1,7 @@
 #ifndef BINARY_FORMAT_H
 #define BINARY_FORMAT_H
 
-#include "dstruct/factor_graph/factor_graph.h"
+#include "factor_graph.h"
 #include <stdlib.h>
 
 // Following gives be64toh() and htobe64() for 64-bit big <-> host endian

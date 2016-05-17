@@ -1,6 +1,6 @@
-#include "app/gibbs/gibbs_sampling.h"
-#include "app/gibbs/single_node_sampler.h"
-#include "io/binary_format.h"
+#include "gibbs_sampling.h"
+#include "single_node_sampler.h"
+#include "binary_format.h"
 #include "common.h"
 #include "timer.h"
 #include <fstream>

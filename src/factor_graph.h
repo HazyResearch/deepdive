@@ -1,10 +1,10 @@
-#include "io/cmd_parser.h"
+#include "cmd_parser.h"
 #include "common.h"
 
-#include "dstruct/factor_graph/variable.h"
-#include "dstruct/factor_graph/factor.h"
-#include "dstruct/factor_graph/weight.h"
-#include "dstruct/factor_graph/inference_result.h"
+#include "variable.h"
+#include "factor.h"
+#include "weight.h"
+#include "inference_result.h"
 
 #include <xmmintrin.h>
 

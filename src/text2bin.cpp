@@ -3,7 +3,7 @@
  * format used in DeepDive
  */
 
-#include "io/binary_format.h"
+#include "binary_format.h"
 #include <assert.h>
 #include <fstream>
 #include <iostream>

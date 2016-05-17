@@ -1,5 +1,4 @@
-
-#include "dstruct/factor_graph/factor_graph.h"
+#include "factor_graph.h"
 #include "timer.h"
 #include "common.h"
 

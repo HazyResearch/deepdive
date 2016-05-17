@@ -1,8 +1,8 @@
 #include <iostream>
 #include <vector>
 #include <assert.h>
-#include "dstruct/factor_graph/variable.h"
-#include "dstruct/factor_graph/weight.h"
+#include "variable.h"
+#include "weight.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -242,6 +242,6 @@ namespace dd{
 }
 
 // TODO: Find better approach than a .hxx file
-#include "dstruct/factor_graph/factor.hxx"
+#include "factor.hxx"
 
 #endif

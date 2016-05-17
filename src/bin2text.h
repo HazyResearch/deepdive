@@ -1,5 +1,5 @@
 #include "cmd_parser.h"
-#include "dstruct/factor_graph/factor_graph.h"
+#include "factor_graph.h"
 
 #include <string>
 

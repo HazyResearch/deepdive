@@ -1,8 +1,8 @@
-#include "gibbs.h"
-#include "io/binary_format.h"
-#include "app/gibbs/gibbs_sampling.h"
-#include "io/bin2text.h"
-#include "dstruct/factor_graph/factor_graph.h"
+#include "dimmwitted.h"
+#include "binary_format.h"
+#include "gibbs_sampling.h"
+#include "bin2text.h"
+#include "factor_graph.h"
 #include <cmath>
 #include <map>
 #include "assert.h"

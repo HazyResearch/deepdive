@@ -4,11 +4,11 @@
  * Author: Feiran Wang
  */
 
-#include "dstruct/factor_graph/factor.h"
-#include "dstruct/factor_graph/factor_graph.h"
-#include "gibbs.h"
-#include "io/binary_format.h"
-#include "gtest/gtest.h"
+#include "factor.h"
+#include "factor_graph.h"
+#include "dimmwitted.h"
+#include "binary_format.h"
+#include <gtest/gtest.h>
 #include <fstream>
 
 using namespace dd;

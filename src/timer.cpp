@@ -1,5 +1,3 @@
-
-
 #include "timer.h"
 
 #ifdef __MACH__

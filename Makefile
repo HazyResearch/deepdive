@@ -41,19 +41,19 @@ CXXFLAGS += -flto
 endif
 
 # source files
-SOURCES += src/gibbs.cpp
-SOURCES += src/io/cmd_parser.cpp
-SOURCES += src/io/binary_format.cpp
-SOURCES += src/io/bin2text.cpp
+SOURCES += src/dimmwitted.cpp
+SOURCES += src/cmd_parser.cpp
+SOURCES += src/binary_format.cpp
+SOURCES += src/bin2text.cpp
 SOURCES += src/main.cpp
-SOURCES += src/dstruct/factor_graph/weight.cpp
-SOURCES += src/dstruct/factor_graph/variable.cpp
-SOURCES += src/dstruct/factor_graph/factor.cpp
-SOURCES += src/dstruct/factor_graph/factor_graph.cpp
-SOURCES += src/dstruct/factor_graph/inference_result.cpp
-SOURCES += src/app/gibbs/gibbs_sampling.cpp
-SOURCES += src/app/gibbs/single_thread_sampler.cpp
-SOURCES += src/app/gibbs/single_node_sampler.cpp
+SOURCES += src/weight.cpp
+SOURCES += src/variable.cpp
+SOURCES += src/factor.cpp
+SOURCES += src/factor_graph.cpp
+SOURCES += src/inference_result.cpp
+SOURCES += src/gibbs_sampling.cpp
+SOURCES += src/single_thread_sampler.cpp
+SOURCES += src/single_node_sampler.cpp
 SOURCES += src/timer.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 PROGRAM = dw
@@ -77,7 +77,7 @@ $(TEST_PROGRAM): LDFLAGS += -L./lib/gtest/
 $(TEST_PROGRAM): LDLIBS += -lgtest
 
 # source files for other utilities
-TEXT2BIN_SOURCES += src/io/text2bin.cpp
+TEXT2BIN_SOURCES += src/text2bin.cpp
 TEXT2BIN_OBJECTS = $(TEXT2BIN_SOURCES:.cpp=.o)
 TEXT2BIN_PROGRAM = text2bin
 

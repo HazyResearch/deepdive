@@ -6,9 +6,9 @@
  */
 #include "common.h"
 #include "binary_format.h"
-#include "dstruct/factor_graph/factor_graph.h"
-#include "dstruct/factor_graph/factor.h"
-#include "dstruct/factor_graph/variable.h"
+#include "factor_graph.h"
+#include "factor.h"
+#include "variable.h"
 #include <fstream>
 #include <iostream>
 #include <stdint.h>

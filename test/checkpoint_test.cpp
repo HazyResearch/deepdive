@@ -4,10 +4,10 @@
  * Author: Ivan Gozali
  */
 
-#include "dstruct/factor_graph/factor_graph.h"
-#include "io/binary_format.h"
-#include "gibbs.h"
-#include "gtest/gtest.h"
+#include "factor_graph.h"
+#include "binary_format.h"
+#include "dimmwitted.h"
+#include <gtest/gtest.h>
 #include <fstream>
 
 using namespace dd;

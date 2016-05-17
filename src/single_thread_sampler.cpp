@@ -1,4 +1,4 @@
-#include "app/gibbs/single_thread_sampler.h"
+#include "single_thread_sampler.h"
 
 namespace dd {
 

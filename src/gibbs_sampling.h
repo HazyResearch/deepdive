@@ -1,7 +1,7 @@
 
 #include <iostream>
-#include "io/cmd_parser.h"
-#include "dstruct/factor_graph/factor_graph.h"
+#include "cmd_parser.h"
+#include "factor_graph.h"
 
 #ifndef _GIBBS_SAMPLING_H_
 #define _GIBBS_SAMPLING_H_

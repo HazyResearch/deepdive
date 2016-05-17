@@ -4,9 +4,9 @@
  */
 
 #include "bin2text.h"
-#include "io/binary_format.h"
-#include "dstruct/factor_graph/factor_graph.h"
-#include "gibbs.h"
+#include "binary_format.h"
+#include "factor_graph.h"
+#include "dimmwitted.h"
 
 #include <iostream>
 #include <fstream>

@@ -1,4 +1,3 @@
-
 #ifndef _WEIGHT_H_
 #define _WEIGHT_H_
 
