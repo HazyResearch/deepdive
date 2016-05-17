@@ -282,6 +282,6 @@ class RawFactor : public Factor {
 }
 
 // TODO: Find better approach than a .hxx file
-#include "factor.hxx"
+#include "factor.hh"
 
 #endif

@@ -41,35 +41,35 @@ CXXFLAGS += -flto
 endif
 
 # source files
-SOURCES += src/dimmwitted.cpp
-SOURCES += src/cmd_parser.cpp
-SOURCES += src/binary_format.cpp
-SOURCES += src/bin2text.cpp
-SOURCES += src/main.cpp
-SOURCES += src/weight.cpp
-SOURCES += src/variable.cpp
-SOURCES += src/factor.cpp
-SOURCES += src/factor_graph.cpp
-SOURCES += src/inference_result.cpp
-SOURCES += src/gibbs_sampling.cpp
-SOURCES += src/single_thread_sampler.cpp
-SOURCES += src/single_node_sampler.cpp
-SOURCES += src/timer.cpp
-OBJECTS = $(SOURCES:.cpp=.o)
+SOURCES += src/dimmwitted.cc
+SOURCES += src/cmd_parser.cc
+SOURCES += src/binary_format.cc
+SOURCES += src/bin2text.cc
+SOURCES += src/main.cc
+SOURCES += src/weight.cc
+SOURCES += src/variable.cc
+SOURCES += src/factor.cc
+SOURCES += src/factor_graph.cc
+SOURCES += src/inference_result.cc
+SOURCES += src/gibbs_sampling.cc
+SOURCES += src/single_thread_sampler.cc
+SOURCES += src/single_node_sampler.cc
+SOURCES += src/timer.cc
+OBJECTS = $(SOURCES:.cc=.o)
 PROGRAM = dw
 
 # header files
-HEADERS += $(wildcard src/*.h src/*.hxx)
+HEADERS += $(wildcard src/*.h src/*.hh)
 
 # test files
-TEST_SOURCES += test/test.cpp
-TEST_SOURCES += test/FactorTest.cpp
-TEST_SOURCES += test/binary_parser_test.cpp
-TEST_SOURCES += test/loading_test.cpp
-TEST_SOURCES += test/checkpoint_test.cpp
-TEST_SOURCES += test/factor_graph_test.cpp
-TEST_SOURCES += test/sampler_test.cpp
-TEST_OBJECTS = $(TEST_SOURCES:.cpp=.o)
+TEST_SOURCES += test/test.cc
+TEST_SOURCES += test/FactorTest.cc
+TEST_SOURCES += test/binary_parser_test.cc
+TEST_SOURCES += test/loading_test.cc
+TEST_SOURCES += test/checkpoint_test.cc
+TEST_SOURCES += test/factor_graph_test.cc
+TEST_SOURCES += test/sampler_test.cc
+TEST_OBJECTS = $(TEST_SOURCES:.cc=.o)
 TEST_PROGRAM = $(PROGRAM)_test
 # test files need gtest
 $(TEST_OBJECTS): CXXFLAGS += -I./lib/gtest-1.7.0/include/
@@ -77,8 +77,8 @@ $(TEST_PROGRAM): LDFLAGS += -L./lib/gtest/
 $(TEST_PROGRAM): LDLIBS += -lgtest
 
 # source files for other utilities
-TEXT2BIN_SOURCES += src/text2bin.cpp
-TEXT2BIN_OBJECTS = $(TEXT2BIN_SOURCES:.cpp=.o)
+TEXT2BIN_SOURCES += src/text2bin.cc
+TEXT2BIN_OBJECTS = $(TEXT2BIN_SOURCES:.cc=.o)
 TEXT2BIN_PROGRAM = text2bin
 
 all: $(PROGRAM) $(TEXT2BIN_PROGRAM)
@@ -98,12 +98,12 @@ $(TEXT2BIN_PROGRAM): $(TEXT2BIN_OBJECTS)
 
 # compiler generated dependency
 # See: http://stackoverflow.com/a/16969086
-DEPENDENCIES = $(SOURCES:.cpp=.d) $(TEST_SOURCES:.cpp=.d) $(TEXT2BIN_SOURCES:.cpp=.d)
+DEPENDENCIES = $(SOURCES:.cc=.d) $(TEST_SOURCES:.cc=.d) $(TEXT2BIN_SOURCES:.cc=.d)
 -include $(DEPENDENCIES)
 CXXFLAGS += -MMD
 
 # how to compile each source
-%.o: %.cpp
+%.o: %.cc
 	$(CXX) -o $@ $(CPPFLAGS) $(CXXFLAGS) -c $<
 
 # how to get dependencies prepared
