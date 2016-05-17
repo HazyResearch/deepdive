@@ -53,7 +53,8 @@ void SingleThreadSampler::sample_sgd_single_variable(long vid) {
   int proposal = 0;
 
   // sample the variable with evidence unchanged
-  proposal = draw_sample(variable, false);
+  proposal = variable.is_evid ? variable.assignment_evid
+                              : draw_sample(variable, false);
   p_fg->update_evid(variable, (double)proposal);
 
   // sample the variable regardless of whether it's evidence
@@ -79,8 +80,6 @@ void SingleThreadSampler::sample_single_variable(long vid) {
 
 inline int dd::SingleThreadSampler::draw_sample(Variable &variable,
                                                 bool is_free_sample) {
-  if (variable.is_evid && !is_free_sample) return variable.assignment_evid;
-
   int proposal = 0;
 
   switch (variable.domain_type) {
