@@ -25,6 +25,8 @@ lib/
 tags
 .DS_Store
 *.json
+.color_coded
+.ycm_extra_conf.py*
 
 # test artifacts
 inference_result.out*
