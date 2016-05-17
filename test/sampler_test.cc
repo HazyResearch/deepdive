@@ -58,7 +58,7 @@ class SamplerTest : public testing::Test {
 // test for sample_sgd_single_variable
 // the pseudo random number has been precalculated...
 TEST_F(SamplerTest, sample_sgd_single_variable) {
-  cfg.update<true>(cfg.variables[0], 1);
+  cfg.update_changing_evid(cfg.variables[0], 1);
   cfg.stepsize = 0.1;
   for (int i = 0; i < 3; i++) {
     sampler.p_rand_seed[i] = 1;
@@ -76,7 +76,7 @@ TEST_F(SamplerTest, sample_sgd_single_variable) {
 
 // test for sample_single_variable
 TEST_F(SamplerTest, sample_single_variable) {
-  cfg.update<true>(cfg.variables[0], 1);
+  cfg.update_changing_evid(cfg.variables[0], 1);
   for (int i = 0; i < 3; i++) {
     sampler.p_rand_seed[i] = 1;
   }

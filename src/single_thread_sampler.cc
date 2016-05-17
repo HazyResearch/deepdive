@@ -58,7 +58,7 @@ void SingleThreadSampler::sample_sgd_single_variable(long vid) {
 
   // sample the variable regardless of whether it's evidence
   proposal = draw_sample(variable, true);
-  p_fg->template update<true>(variable, (double)proposal);
+  p_fg->update_changing_evid(variable, (double)proposal);
 
   this->p_fg->update_weight(variable);
 }
@@ -72,9 +72,8 @@ void SingleThreadSampler::sample_single_variable(long vid) {
 
   if (variable.is_evid == false || sample_evidence) {
     int proposal = draw_sample(variable, sample_evidence);
-    p_fg->template update<false>(variable, (double)proposal);
-    if (sample_evidence)
-      p_fg->template update<true>(variable, (double)proposal);
+    p_fg->update_not_changing_evid(variable, (double)proposal);
+    if (sample_evidence) p_fg->update_changing_evid(variable, (double)proposal);
   }
 }
 
@@ -89,11 +88,11 @@ inline int dd::SingleThreadSampler::draw_sample(Variable &variable,
       double potential_pos;
       double potential_neg;
       if (is_free_sample) {
-        potential_pos = p_fg->template potential<true>(variable, 1);
-        potential_neg = p_fg->template potential<true>(variable, 0);
+        potential_pos = p_fg->potential(true, variable, 1);
+        potential_neg = p_fg->potential(true, variable, 0);
       } else {
-        potential_pos = p_fg->template potential<false>(variable, 1);
-        potential_neg = p_fg->template potential<false>(variable, 0);
+        potential_pos = p_fg->potential(false, variable, 1);
+        potential_neg = p_fg->potential(false, variable, 0);
       }
 
       double r = erand48(this->p_rand_seed);
@@ -116,25 +115,23 @@ inline int dd::SingleThreadSampler::draw_sample(Variable &variable,
       proposal = -1;
 
 // calculate potential for each proposal given a way to iterate the domain
-#define COMPUTE_PROPOSAL(EACH_DOMAIN_VALUE, DOMAIN_VALUE, DOMAIN_INDEX)    \
-  do {                                                                     \
-          for                                                              \
-      EACH_DOMAIN_VALUE {                                                  \
-        varlen_potential_buffer_[DOMAIN_INDEX] =                           \
-            is_free_sample                                                 \
-                ? p_fg->template potential<true>(variable, DOMAIN_VALUE)   \
-                : p_fg->template potential<false>(variable, DOMAIN_VALUE); \
-        sum = logadd(sum, varlen_potential_buffer_[DOMAIN_INDEX]);         \
-      }                                                                    \
-    double r = erand48(this->p_rand_seed);                                 \
-        for                                                                \
-      EACH_DOMAIN_VALUE {                                                  \
-        r -= exp(varlen_potential_buffer_[DOMAIN_INDEX] - sum);            \
-        if (r <= 0) {                                                      \
-          proposal = DOMAIN_VALUE;                                         \
-          break;                                                           \
-        }                                                                  \
-      }                                                                    \
+#define COMPUTE_PROPOSAL(EACH_DOMAIN_VALUE, DOMAIN_VALUE, DOMAIN_INDEX) \
+  do {                                                                  \
+          for                                                           \
+      EACH_DOMAIN_VALUE {                                               \
+        varlen_potential_buffer_[DOMAIN_INDEX] =                        \
+            p_fg->potential(is_free_sample, variable, DOMAIN_VALUE);    \
+        sum = logadd(sum, varlen_potential_buffer_[DOMAIN_INDEX]);      \
+      }                                                                 \
+    double r = erand48(this->p_rand_seed);                              \
+        for                                                             \
+      EACH_DOMAIN_VALUE {                                               \
+        r -= exp(varlen_potential_buffer_[DOMAIN_INDEX] - sum);         \
+        if (r <= 0) {                                                   \
+          proposal = DOMAIN_VALUE;                                      \
+          break;                                                        \
+        }                                                               \
+      }                                                                 \
   } while (0)
       if (variable.domain_map) {  // sparse case
         COMPUTE_PROPOSAL((const auto &entry

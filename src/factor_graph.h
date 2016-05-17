@@ -100,7 +100,7 @@ class FactorGraph {
 /**
  * Sorry for my noobness; I don't really know where to place this function
  */
-inline std::ostream& operator<<(std::ostream& out, dd::FactorGraph const& fg) {
+inline std::ostream& operator<<(std::ostream& out, FactorGraph const& fg) {
   out << "FactorGraph(";
   out << "n_var = " << fg.n_var << ", ";
   out << "n_factor = " << fg.n_factor << ", ";
@@ -193,11 +193,11 @@ class CompiledFactorGraph {
    * does_change_evid = true, use the free assignment. Otherwise, use the
    * evid assignement.
    */
-  template <bool does_change_evid>
-  inline double potential(const CompactFactor& factor);
+  inline double potential(bool does_change_evid, const CompactFactor& factor);
 
-  template <bool does_change_evid>
-  inline void update(Variable& variable, const double& new_value);
+  inline void update_changing_evid(Variable& variable, const double& new_value);
+  inline void update_not_changing_evid(Variable& variable,
+                                       const double& new_value);
 
   inline void update_evid(Variable& variable, const double& new_value);
 
@@ -208,51 +208,12 @@ class CompiledFactorGraph {
    * does_change_evid = true, use the free assignment. Otherwise, use the
    * evid assignement.
    */
-  template <bool does_change_evid>
-  inline double potential(const Variable& variable, const double& proposal);
+  inline double potential(bool does_change_evid, const Variable& variable,
+                          const double& proposal);
 };
 
-/**
- * Updates the free variable assignment for the given variable using new_value
- */
-template <>
-inline void CompiledFactorGraph::update<true>(Variable& variable,
-                                              const double& new_value) {
-  infrs->assignments_free[variable.id] = new_value;
-}
-
-/**
- * Updates the evid assignments for the given variable useing new_value
- */
-inline void CompiledFactorGraph::update_evid(Variable& variable,
-                                             const double& new_value) {
-  infrs->assignments_evid[variable.id] = new_value;
-}
-
-/**
- * Updates the evid assignments for the given variable useing new_value, for
- * inference
- */
-template <>
-inline void CompiledFactorGraph::update<false>(Variable& variable,
-                                               const double& new_value) {
-  infrs->assignments_evid[variable.id] = new_value;
-  infrs->agg_nsamples[variable.id]++;
-  switch (variable.domain_type) {
-    case DTYPE_BOOLEAN:
-      infrs->agg_means[variable.id] += new_value;
-      break;
-    case DTYPE_MULTINOMIAL:
-      infrs->multinomial_tallies[variable.n_start_i_tally +
-                                 variable.get_domain_index((int)new_value)]++;
-      break;
-    default:
-      abort();
-  }
-}
-
-template <bool does_change_evid>
-inline double CompiledFactorGraph::potential(const CompactFactor& factor) {
+inline double CompiledFactorGraph::potential(bool does_change_evid,
+                                             const CompactFactor& factor) {
   if (does_change_evid == true) {
     return factor.potential(vifs, infrs->assignments_free, -1, -1);
   } else {
@@ -260,8 +221,8 @@ inline double CompiledFactorGraph::potential(const CompactFactor& factor) {
   }
 }
 
-template <bool does_change_evid>
-inline double CompiledFactorGraph::potential(const Variable& variable,
+inline double CompiledFactorGraph::potential(bool does_change_evid,
+                                             const Variable& variable,
                                              const double& proposal) {
   // potential
   double pot = 0.0;
@@ -300,6 +261,43 @@ inline double CompiledFactorGraph::potential(const Variable& variable,
       abort();
   }
   return pot;
+}
+
+/**
+ * Updates the free variable assignment for the given variable using new_value
+ */
+inline void CompiledFactorGraph::update_changing_evid(Variable& variable,
+                                                      const double& new_value) {
+  infrs->assignments_free[variable.id] = new_value;
+}
+
+/**
+ * Updates the evid assignments for the given variable useing new_value
+ */
+inline void CompiledFactorGraph::update_evid(Variable& variable,
+                                             const double& new_value) {
+  infrs->assignments_evid[variable.id] = new_value;
+}
+
+/**
+ * Updates the evid assignments for the given variable useing new_value, for
+ * inference
+ */
+inline void CompiledFactorGraph::update_not_changing_evid(
+    Variable& variable, const double& new_value) {
+  infrs->assignments_evid[variable.id] = new_value;
+  infrs->agg_nsamples[variable.id]++;
+  switch (variable.domain_type) {
+    case DTYPE_BOOLEAN:
+      infrs->agg_means[variable.id] += new_value;
+      break;
+    case DTYPE_MULTINOMIAL:
+      infrs->multinomial_tallies[variable.n_start_i_tally +
+                                 variable.get_domain_index((int)new_value)]++;
+      break;
+    default:
+      abort();
+  }
 }
 
 // sort variable in factor by their position
