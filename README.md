@@ -45,3 +45,14 @@ You can then compile using
 ## Reference
 
 [C. Zhang and C. Ré. DimmWitted: A study of main-memory statistical analytics. PVLDB, 2014.](http://www.vldb.org/pvldb/vol7/p1283-zhang.pdf)
+
+
+## Development
+
+* Run `make -j` to build.
+* Run `make -j test` to test.
+* Follow [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html).
+* Travis CI tests will error unless you run `make format` before git commits.
+* Tests are written with [gtest](https://github.com/google/googletest) and [bats](https://github.com/sstephenson/bats).
+* Command-line parsing is done with [TCLAP](http://tclap.sourceforge.net).
+* NUMA control is done with [libnuma](http://oss.sgi.com/projects/libnuma/).
