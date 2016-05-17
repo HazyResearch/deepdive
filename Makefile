@@ -130,10 +130,8 @@ clean:
 .PHONY: clean
 
 # how to test
-test: PATH := $(shell pwd)/test/bats/bin:$(PATH)
+include test/bats.mk
 test: $(PROGRAM) $(TEST_PROGRAM) $(TEXT2BIN_PROGRAM)
-	bats test/*.bats
-.PHONY: test
 
 # how to format code
 ifndef CLANG_FORMAT
