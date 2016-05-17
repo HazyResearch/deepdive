@@ -186,7 +186,7 @@ class CompiledFactorGraph {
    * Used in learning phase, after sampling one variable,
    * update corresponding weights (stochastic gradient descent).
    */
-  void update_weight(const Variable& variable);
+  void update_weight(const Variable& variable, InferenceResult* const infrs);
 
   /**
    * Returns potential of the given factor

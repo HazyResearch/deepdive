@@ -221,7 +221,8 @@ long CompiledFactorGraph::get_multinomial_weight_id(
   return weight_id;
 }
 
-void CompiledFactorGraph::update_weight(const Variable &variable) {
+void CompiledFactorGraph::update_weight(const Variable &variable,
+                                        InferenceResult *const infrs) {
   // corresponding factors and weights in a continous region
   CompactFactor *const fs = compact_factors + variable.n_start_i_factors;
   const int *const ws = compact_factors_weightids + variable.n_start_i_factors;
@@ -239,8 +240,8 @@ void CompiledFactorGraph::update_weight(const Variable &variable) {
           // calculated
           // using a sample of the variable.
           infrs->weight_values[ws[i]] +=
-              stepsize * (this->potential(fs[i], infrs->assignments_evid) -
-                          this->potential(fs[i], infrs->assignments_free));
+              stepsize * (potential(fs[i], infrs->assignments_evid) -
+                          potential(fs[i], infrs->assignments_free));
         }
         break;
       }

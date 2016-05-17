@@ -62,7 +62,7 @@ void SingleThreadSampler::sample_sgd_single_variable(long vid) {
   proposal = draw_sample(variable, p_fg->infrs->assignments_free);
   p_fg->infrs->assignments_free[variable.id] = proposal;
 
-  this->p_fg->update_weight(variable);
+  p_fg->update_weight(variable, p_fg->infrs);
 }
 
 void SingleThreadSampler::sample_single_variable(long vid) {
