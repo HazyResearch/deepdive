@@ -5,15 +5,6 @@
 
 #include <fstream>
 
-// sort according to id
-template <class T>
-class idsorter : public std::binary_function<T, T, bool> {
- public:
-  inline bool operator()(const T &left, const T &right) {
-    return left.id < right.id;
-  }
-};
-
 dd::FactorGraph::FactorGraph(long _n_var, long _n_factor, long _n_weight,
                              long _n_edge)
     : n_var(_n_var),
