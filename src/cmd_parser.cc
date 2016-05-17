@@ -114,6 +114,9 @@ CmdParser::CmdParser(int argc, const char *const argv[]) {
     burn_in = getLastValueOrDefault(burn_in_, 0);
     stepsize = getLastValueOrDefault(stepsize_, 0.01);
     stepsize2 = getLastValueOrDefault(stepsize2_, 0.01);
+    if (stepsize == 0.01)
+      stepsize =
+          stepsize2;  // XXX hack to support two parameters to specify step size
     decay = getLastValueOrDefault(decay_, 0.95);
     reg_param = getLastValueOrDefault(reg_param_, 0.01);
     regularization = getLastValueOrDefault(regularization_, std::string("l2"));
