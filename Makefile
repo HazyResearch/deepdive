@@ -130,13 +130,10 @@ clean:
 .PHONY: clean
 
 # how to test
-test: unit-test end2end-test
-unit-test: $(TEST_PROGRAM)
-	./$(TEST_PROGRAM)
-PATH := $(shell pwd)/test/bats/bin:$(PATH)
-end2end-test: $(PROGRAM) $(TEXT2BIN_PROGRAM)
+test: PATH := $(shell pwd)/test/bats/bin:$(PATH)
+test: $(PROGRAM) $(TEST_PROGRAM) $(TEXT2BIN_PROGRAM)
 	bats test/*.bats
-.PHONY: test unit-test end2end-test
+.PHONY: test
 
 # how to format code
 ifndef CLANG_FORMAT
