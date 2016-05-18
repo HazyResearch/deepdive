@@ -14,7 +14,6 @@ DEEPDIVE_APP=$(find-deepdive-app)
 export DEEPDIVE_APP
 cd "$DEEPDIVE_APP"
 
-. load-db-driver.sh  # XXX necessary for hocon2json to resolve some environment variables, which may be irrelevant once Scala codebase is dropped
 mkdir -p run
 
 # create a fresh working directory for compiling
