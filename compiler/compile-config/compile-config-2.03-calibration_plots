@@ -11,7 +11,7 @@ if .deepdive_.execution.processes | has("process/model/inference") | not then . 
     # calibration plots
     "process/model/calibration": {
         dependencies_: ["data/model/probabilities", "process/model/load_probabilities"],
-        output_: "model/calibration-plots",
+        output_: ["model/calibration-plots"],
         style: "cmd_extractor",
         cmd: "
             d=../../../model/calibration-plots && mkdir -p \"$d\" && cd \"$d\"

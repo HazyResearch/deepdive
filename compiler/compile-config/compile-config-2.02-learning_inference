@@ -11,7 +11,7 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
     # learning weights and doing inference (since we had to load the graph anyway)
     "process/model/learning": {
         dependencies_: ["model/factorgraph"],
-        output_: "model/weights",
+        output_: ["model/weights"],
         style: "cmd_extractor",
         cmd: "mkdir -p ../../../model && cd ../../../model
             mkdir -p weights
@@ -34,7 +34,7 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
     # performing inference
     "process/model/inference": {
         dependencies_: ["model/factorgraph", "model/weights"],
-        output_: "model/probabilities",
+        output_: ["model/probabilities"],
         style: "cmd_extractor",
         cmd: "mkdir -p ../../../model && cd ../../../model
             [ -d factorgraph ] || error \"No factorgraph found\"
@@ -62,7 +62,7 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
     # loading learning/inference results back to database
     "process/model/load_weights": {
         dependencies_: ["model/weights"],
-        output_: "data/model/weights",
+        output_: ["data/model/weights"],
         style: "cmd_extractor",
         cmd: "mkdir -p ../../../model && cd ../../../model
             # load weights to database
@@ -89,7 +89,7 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
     },
     "process/model/load_probabilities": {
         dependencies_: ["model/probabilities"],
-        output_: "data/model/probabilities",
+        output_: ["data/model/probabilities"],
         style: "cmd_extractor",
         cmd: "mkdir -p ../../../model && cd ../../../model
             # load weights to database

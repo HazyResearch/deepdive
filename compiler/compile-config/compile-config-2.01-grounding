@@ -574,7 +574,7 @@ def factorWeightDescriptionSqlExpr:
         ), (
             "process/grounding/global_weight_table"
         )],
-        output_: "model/factorgraph",
+        output_: ["model/factorgraph"],
         style: "cmd_extractor", cmd: (
             ([$deepdive.schema.variables_[] | .variableName | @sh] | join(" ")) as $variableNames |
             ([$deepdive.inference.factors_[] | .factorName  | @sh] | join(" ")) as $factorNames   |
