@@ -16,9 +16,7 @@ $deepdive.execution.processes | to_entries[] |
 (
     select(.input_ | length > 0) |
     [ .input_[]
-    | select(
-        (startswith("data/") and in($process_defining_the_relation)
-        ) | not)
+    | select(in($process_defining_the_relation) | not)
     ] |
     if length == 0 then "\($extractorName) inputs are all output by other processes"
     else error("\($extractorName) depends on inputs not output by any process: \(map("'\(.)'") | join(" "))")
@@ -33,9 +31,10 @@ $deepdive.execution.processes | to_entries[] |
                                                     or ($deepdive.schema.relations | length == 0))
     then
         "\($extractorName) output_relation is defined in schema.json: '\(ltrimstr("data/"))'"
-    elif startswith("model/") or startswith("data/model/") then
+    elif startswith("data/") and (startswith("data/model/") | not) then
+        error("\($extractorName) has output_relation undefined in schema.json: '\(.)'")
+    else
         "\($extractorName) output is not for database: '\(.)'"
-    else error("\($extractorName) has output_relation undefined in schema.json: '\(.)'")
     end
 ),
 
