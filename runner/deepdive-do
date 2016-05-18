@@ -7,6 +7,9 @@ set -euo pipefail
 : ${DEEPDIVE_PLAN_EDIT:=true} ${VISUAL:=${EDITOR:=vi}}
 : ${DEEPDIVE_PROGRESS_FD:=3}  # file descriptor to pass stderr down to our show_progress(1) command
 
+# record present working directory so processes can optionally recover it
+export DEEPDIVE_PWD="$PWD"
+
 targets="$*"
 . resolve-args-to-do.sh
 cd "$DEEPDIVE_APP"
@@ -62,9 +65,13 @@ done
 # prepare the execution plan for given targets
 cd "$DEEPDIVE_APP"/run
 {
+    echo "#!/bin/sh"
     # some metadata
-    echo "# on $HOSTNAME: deepdive do $targets"
-    echo "# run/$runDir/plan.sh"
+    echo "# Host: $HOSTNAME"
+    echo "# App: $DEEPDIVE_APP"
+    echo "# Targets: $targets"
+    echo "# Plan: run/$runDir/plan.sh"
+    echo "export DEEPDIVE_PWD=$(escape4sh "$DEEPDIVE_PWD")"
     # and the plan
     deepdive-plan "$@"
 } |
