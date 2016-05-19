@@ -70,10 +70,10 @@ case $Mode in
             else
                 if .variable_type then
                     .columns
+                    # variable relations have an internal id column
+                    + {id:{type:"BIGINT", index:(.columns|length)}}
                     # variable relations have label column
-                    + {label:{type:"boolean", index:(.columns|length)}}
-                    # and internal id column
-                    + {id:{type:"BIGINT", index:(.columns|length+1)}}
+                    + {label:{type:"BOOLEAN", index:(.columns|length+1)}}
                 else
                     .columns
                 end |
