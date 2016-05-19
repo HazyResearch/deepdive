@@ -90,12 +90,15 @@ if [[ -z "$Columns" && -e "$DEEPDIVE_APP" ]] && app-has-been-compiled; then
     deepdive-done process/init/app ||
     DEEPDIVE_PLAN_EDIT=false deepdive-do process/init/app
     # find the list of columns
-    Columns=$(
-        ! deepdive-relation is-variable "$Relation" ||
-        deepdive-relation columns "$Relation" |
-        tr '\n' ,
-    ) && relationIsntInAppSchema=false
-    Columns=${Columns%,}
+    Columns=
+    if deepdive-relation columns "$Relation" &>/dev/null; then
+        relationIsntInAppSchema=false
+        Columns=$(
+            ! deepdive-relation is-variable "$Relation" ||
+            deepdive-relation columns "$Relation" | tr '\n' ,
+        )
+        Columns=${Columns%,}
+    fi
     # make sure table is created if the relation's schema is known
     $relationIsntInAppSchema ||
     deepdive-create table-if-not-exists "$Relation"
