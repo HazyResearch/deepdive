@@ -69,8 +69,11 @@ case $Mode in
                 empty
             else
                 if .variable_type then
+                    .columns
                     # variable relations have label column
-                    .columns + {label:{type:"boolean", index:(.columns|length)}}
+                    + {label:{type:"boolean", index:(.columns|length)}}
+                    # and internal id column
+                    + {id:{type:"BIGINT", index:(.columns|length+1)}}
                 else
                     .columns
                 end |
