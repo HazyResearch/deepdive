@@ -150,7 +150,10 @@ STEP "Generating files:"
 cat "$compileDir"/code-*.json |
 compile-codegen
 # some postprocessing over generated files
-dot -Tsvg <dataflow.dot >dataflow.svg
+dot -Tpdf -o dataflow.pdf <dataflow.dot
+STEP " run/dataflow.pdf"
+STEP "  (file://$(pwd -P)/dataflow.pdf)"  # XXX a handy file: URL for opening in a browser
+dot -Tsvg -o dataflow.svg <dataflow.dot
 STEP " run/dataflow.svg"
 STEP "  (file://$(pwd -P)/dataflow.svg)"  # XXX a handy file: URL for opening in a browser
 fi
