@@ -73,7 +73,8 @@ case $Mode in
                     # variable relations have an internal id column
                     + {id:{type:"BIGINT", index:(.columns|length)}}
                     # variable relations have label column
-                    + {label:{type:"BOOLEAN", index:(.columns|length+1)}}
+                    + {label:{ type:(if .variable_type == "boolean" then "BOOLEAN" else "INT" end)
+                             , index:(.columns|length+1)}}
                 else
                     .columns
                 end |
