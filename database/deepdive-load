@@ -95,7 +95,10 @@ if [[ -z "$Columns" && -e "$DEEPDIVE_APP" ]] && app-has-been-compiled; then
         relationIsntInAppSchema=false
         Columns=$(
             ! deepdive-relation is-variable "$Relation" ||
-            deepdive-relation columns "$Relation" | tr '\n' ,
+            deepdive-relation columns "$Relation" |
+            # do not expect "id" column to be present by default
+            grep -vxF id |
+            tr '\n' ,
         )
         Columns=${Columns%,}
     fi
