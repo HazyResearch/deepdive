@@ -8,7 +8,6 @@ SingleThreadSampler::SingleThreadSampler(CompiledFactorGraph *_p_fg,
     : p_fg(_p_fg),
       varlen_potential_buffer_(0),
       sample_evidence(sample_evidence),
-      burn_in(burn_in),
       learn_non_evidence(learn_non_evidence) {
   p_rand_seed[0] = rand();
   p_rand_seed[1] = rand();
