@@ -13,6 +13,7 @@ esac
 install__deepdive_build_deps() {
     set -x
     sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test  # for gcc >= 4.8 on Precise (12.04)
+    sudo add-apt-repository -y ppa:openjdk-r/ppa  # for openjdk 8
     sudo apt-get update
     build_deps=(
         build-essential
@@ -25,7 +26,7 @@ install__deepdive_build_deps() {
         libbz2-dev
         xz-utils
         flex
-        default-jdk
+        openjdk-8-jdk
         sed
         mawk
         grep
@@ -47,6 +48,7 @@ install__deepdive_build_deps() {
 install__deepdive_runtime_deps() {
     set -x
     # install all runtime dependencies for DeepDive
+    sudo add-apt-repository -y ppa:openjdk-r/ppa  # for openjdk 8
     sudo apt-get update
     runtime_deps=(
         bash
@@ -59,7 +61,7 @@ install__deepdive_runtime_deps() {
         mawk
         perl
         python-software-properties
-        default-jre-headless
+        openjdk-8-jre-headless
         gnuplot
         libltdl7  # for graphviz
     )
