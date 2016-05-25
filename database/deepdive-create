@@ -39,15 +39,22 @@ case $What in
     table)
         if [[ $# -eq 0 ]]; then
             DEEPDIVE_APP=$(find-deepdive-app)
+            export DEEPDIVE_APP
             app-has-been-compiled
-            sql=$(schema_json_to_sql "$DEEPDIVE_APP"/run/compiled/schema.json "$Table") ||
-                error "$Table: No such table defined in schema"
-            exec db-execute "$sql"
+            cd "$DEEPDIVE_APP"
+            # pick up any driver-specific extra options first for db-create-table e.g., @distributed_by columns
+            eval "$(
+                # XXX this jq can be quite wasteful but reduces the burden on the driver side
+                Relation="$Table" jq '.deepdive_.schema.relations[env.Relation]' run/compiled/config.json |
+                db-create-table-options
+            )"
+            columnTypes=$(deepdive-relation column-types "$Table")
+            exec db-create-table-def "$Table" $columnTypes # TODO escape4sh
         else
             # show warning if the table exists in app schema
             if DEEPDIVE_APP=$(find-deepdive-app) &&
                     app-has-been-compiled &>/dev/null &&
-                    sql=$(schema_json_to_sql "$DEEPDIVE_APP"/run/compiled/schema.json "$Table"); then
+                    columns=$(deepdive-relation columns "$Table"); then
                 warning "$Table: Already defined in schema, overriding its definition"
             fi
             # create table from given definition
