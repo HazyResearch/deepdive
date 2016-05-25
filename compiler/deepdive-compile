@@ -150,12 +150,16 @@ STEP "Generating files:"
 cat "$compileDir"/code-*.json |
 compile-codegen
 # some postprocessing over generated files
+if dot -Tpdf -o /dev/null <<<"digraph {}"; then
 dot -Tpdf -o dataflow.pdf <dataflow.dot
 STEP " run/dataflow.pdf"
 STEP "  (file://$(pwd -P)/dataflow.pdf)"  # XXX a handy file: URL for opening in a browser
+fi
+if dot -Tsvg -o /dev/null <<<"digraph {}"; then
 dot -Tsvg -o dataflow.svg <dataflow.dot
 STEP " run/dataflow.svg"
 STEP "  (file://$(pwd -P)/dataflow.svg)"  # XXX a handy file: URL for opening in a browser
+fi
 fi
 
 # point to the successfully compiled one, leaving the previous one as backup
