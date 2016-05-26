@@ -2,19 +2,28 @@
 # DeepDive Installer
 set -euo pipefail
 
-: ${RELEASE:=v0.8.0}    # the DeepDive release version to install
-: ${PREFIX:=~/local}    # the path to install deepdive
+: ${RELEASE:=v0.8-STABLE}   # the DeepDive release version to install
+: ${BRANCH:=v0.8.x}         # the DeepDive branch to clone, download, and build
+: ${PREFIX:=~/local}        # the path to install deepdive
+: ${GITCLONE:=deepdive}     # the path to clone deepdive's repo
 
-: ${INSTALLER_BRANCH:=${BRANCH:-v0.8.x}}    # the branch from which the installer scripts should be downloaded
+: ${INSTALLER_BRANCH:=master}   # the branch from which the installer scripts should be downloaded
 INSTALLER_HOME_URL=https://github.com/HazyResearch/deepdive/raw/"${INSTALLER_BRANCH}"/util/install
 INSTALLER_HOME_DIR=$(dirname "$0")/install
 
+# see if running from the git repo
+running_from_git=true; [[ -e "$INSTALLER_HOME_DIR"/../../.git ]] || running_from_git=false
+! $running_from_git ||
+    # set GITCLONE to the containing git working copy when running from it
+    case $(declare -p GITCLONE) in "declare --"*) false ;; *) true ;; esac ||
+    GITCLONE="$INSTALLER_HOME_DIR"/../.. INSTALLER_BRANCH=HEAD BRANCH=HEAD
+
+$running_from_git || # unless this is running directly from a git repo
 # run the correct installer directly from GitHub if BRANCH is specified
 [[ -z "${BRANCH:-}" || -n "${INSTALLER_REMOTE_EXEC:-}" ]] ||
     INSTALLER_REMOTE_EXEC=true \
     exec bash <(set -x; curl -fsSL "${INSTALLER_HOME_URL}.sh") "$@"
 
-running_from_git=true; [[ -e "$INSTALLER_HOME_DIR"/../../.git ]] || running_from_git=false
 has() { type "$@"; } &>/dev/null
 error() {
     if [ -t 1 ]; then
@@ -27,6 +36,16 @@ error() {
     fi
     false
 } >&2
+timeout_or_do() {
+    local timeout=${1:?Missing timeout in seconds}; shift
+    local msg=${1:?Missing prompt message}; shift
+    if [[ -t 0 ]]; then
+        local key=
+        if read -p "$msg" -t "$timeout" -n 1 -s key; echo; [[ -n "$key" ]]; then
+            "$@"
+        fi
+    fi
+}
 INSTALLER_TEMP_DIR=
 init_INSTALLER_TEMP_DIR() {
     # makes sure INSTALLER_TEMP_DIR points to a temporary directory
@@ -69,29 +88,60 @@ install__deepdive_runtime_deps() {
 }
 # fetches DeepDive source tree
 install__deepdive_git_repo() {
-    $running_from_git ||
-        git clone --recursive --branch "$INSTALLER_BRANCH" https://github.com/HazyResearch/deepdive.git
+    # $GITCLONE already points to a git clone and the branch can be checked out
+    { [[ -e "$GITCLONE"/.git ]] && (cd "$GITCLONE" && git checkout "$BRANCH"); } ||
+    # or grab a clone with git
+    git clone --recursive --branch "$BRANCH" https://github.com/HazyResearch/deepdive.git "$GITCLONE"
 }
 # installs DeepDive from source by going through the full build
+install_deepdive_from_source_no_dependencies() {
+    # clone git repo if necessary
+    run_installer_for _deepdive_git_repo
+    cd "$GITCLONE"
+    echo "# Installing from DeepDive source at $PWD"
+    # install DeepDive from source
+    make install PREFIX="$PREFIX"
+}
 install_deepdive_from_source() {
     # prepare fetching and building source
     run_installer_for _deepdive_build_deps
-    # install DeepDive from source
-    if $running_from_git; then
-        cd "$INSTALLER_HOME_DIR"/../..
-        echo "# DeepDive source already at $PWD"
-    else
-        run_installer_for _deepdive_git_repo
-        cd deepdive
-        echo "# DeepDive source cloned at $PWD"
-    fi
-    make install PREFIX="$PREFIX"
+    run_installer_for deepdive_from_source_no_dependencies
     # install runtime dependencies
     run_installer_for _deepdive_runtime_deps
 }
+# utilities to allow selecting a different RELEASE interactively
+timeout_or_select_release() {
+    local forWhat=${1:?Missing description of release}; shift
+    "$@"  # show what will happen with the current release
+    timeout_or_do 2 "# Press any key to select a different release or Enter to proceed..." \
+        select_release "$forWhat" "$@"
+}
+select_release() {
+    local forWhat=${1:?Missing description of release}; shift
+    PS3="# Select a release${forWhat:+ $forWhat}: "
+    select release in $(list_deepdive_releases); do
+        case $release in
+            "") break ;;
+            *)
+                RELEASE=$release
+                "$@"  # show what will happen with the selected release
+                break
+        esac
+    done
+}
+list_deepdive_releases() {
+    # find all links to a GitHub tree from the release page
+    curl -fsSL https://github.com/HazyResearch/deepdive/releases/ | sed '
+        \:/.*/tree/:!d
+        s/.*href="//; s/".*$//
+        s:.*/tree/::
+        s:/.*$::
+    '
+}
 # installs DeepDive with a release binary
 install_deepdive_from_release() {
-    # TODO allow overriding RELEASE interactively
+    timeout_or_select_release "to install" \
+        eval 'echo "# Installing DeepDive release $RELEASE..."'
     local os=$(uname)
     local tarball="deepdive-${RELEASE}-${os}.tar.gz"
     local url="https://github.com/HazyResearch/deepdive/releases/download/${RELEASE}/$tarball"
@@ -106,9 +156,9 @@ install_deepdive_from_release() {
     tar xzvf "$tarball" -C "$PREFIX"
     ) || return $?
     echo
-    echo "DeepDive release $RELEASE has been installed at $PREFIX"
-    echo "Please add the following line to your ~/.bash_profile:"
-    echo "  export PATH=\"$PREFIX/bin:\$PATH\""
+    echo "# DeepDive release $RELEASE has been installed at $PREFIX"
+    echo "# Please add the following line to your ~/.bash_profile:"
+    echo "export PATH=\"$PREFIX/bin:\$PATH\""
 }
 # installs DeepDive with a release binary and runtime dependencies
 install_deepdive() {
@@ -117,22 +167,26 @@ install_deepdive() {
 }
 # installs DeepDive examples and tests
 install_deepdive_examples_tests() {
-    download_github_tree "DeepDive examples and tests" \
+    timeout_or_select_release "to download examples and tests from" \
+        eval 'echo "# Downloading examples and tests (from $RELEASE)..."'
+    download_deepdive_github_tree "DeepDive examples and tests" \
         deepdive-${RELEASE#v} \
         examples test {compiler,runner,inference,shell,util{,/build}}/test
 }
 install_spouse_example() {
-    download_github_tree "Spouse example DeepDive app" \
+    timeout_or_select_release "to download spouse example from" \
+        eval 'echo "# Downloading spouse example (from $RELEASE)..."'
+    download_deepdive_github_tree "Spouse example DeepDive app" \
         spouse_example-${RELEASE#v} \
         examples/spouse
 }
-# how to download a subtree of the GitHub repo
-download_github_tree() {
+# how to download a subtree of DeepDive's GitHub repo
+download_deepdive_github_tree() {
     local what=$1; shift
     local dest=$1; shift
     # the rest of the arguments are relative paths to download
     if [[ -s "$dest"/.downloaded ]]; then
-        echo "$what already downloaded at $(cd "$dest" && pwd)"
+        echo "# $what already downloaded at $(cd "$dest" && pwd)"
     else
         local tarballPrefix=deepdive-"${RELEASE#v}"
         local tmpdir="$dest".download
@@ -167,9 +221,9 @@ case $(uname) in
             # Ubuntu/Debian
             os=Ubuntu
         # TODO support other Linux distros
-        #elif [[ -e /etc/redhat-release ]]; then
-        #    # CentOS/RedHat
-        #    os=RedHat
+        elif [[ -e /etc/redhat-release ]]; then
+            # CentOS/RedHat
+            os=RedHat
         else # unrecognized Linux distro
             os=
             # try to grab a Linux distro identifier
@@ -207,13 +261,13 @@ source_script() {
         source "$INSTALLER_HOME_DIR/$script"
     else
         # may be this script is run as a one-liner, get script from GitHub
-        #source <(set -x; curl -fsSL "$INSTALLER_HOME_URL/$script") "$@"
+        #source <(curl -fsSL "$INSTALLER_HOME_URL/$script") "$@"
         # XXX using a workaround since source with process substitution has problem in bash 3 (OS X default)
         # See: https://bugzilla.altlinux.org/show_bug.cgi?id=7475
         init_INSTALLER_TEMP_DIR
         local script_path="$INSTALLER_TEMP_DIR/$script"
         mkdir -p "$(dirname "$script_path")"
-        (set -x; curl -fsSL "$INSTALLER_HOME_URL/$script" >"$script_path")
+        curl -fsSL "$INSTALLER_HOME_URL/$script" >"$script_path"
         source "$script_path" "$@"
     fi
 }
@@ -224,11 +278,21 @@ source_os_script() { source_script install."$os"."$1".sh; }
 list_installer_names() {
     local show_only=${1:-visible}
     # find installer names from all defined install_* functions
-    declare -F | sed 's/^declare -f //; /^install_/!d; s/^install_//' |
+    _list_installer_names() {
+        declare -F | sed 's/^declare -f //; /^install_/!d; s/^install_//'
+    }
     # unless the first argument is 'all', hide installers whose name begins with underscore
-    case ${show_only:-visible} in
-        all) cat ;;
-        *) sed '/^_/d'
+    case $show_only in
+        all)
+            list_installer_names visible
+            list_installer_names hidden
+            ;;
+        hidden)
+            _list_installer_names | sed '/^_/!d'
+            ;;
+        visible)
+            _list_installer_names | sed '/^_/d'
+            ;;
     esac
 }
 run_installer_for() {
@@ -263,15 +327,40 @@ run_installer_for() {
 if [[ $# -eq 0 ]]; then
     if [[ -t 0 ]]; then
         # ask user what to install if input is a tty
-        PS3="# Select what to install (enter for all options, q to quit, or a number)? "
         set +e  # dont abort the select loop on installer error
-        select option in $(list_installer_names); do
-            [[ -n "$option" ]] || break
-            run_installer_for "$option"
-        done
+        interactive_installer() {
+            local show_only=${1:-visible}
+            case $show_only in
+                all)
+                    PS3="# Install what (enter to repeat options, q to quit, or a number)? "
+                    ;;
+                *)
+                    PS3="# Install what (enter to repeat options, a to see all, q to quit, or a number)? "
+                    ;;
+            esac
+            select option in $(list_installer_names $show_only); do
+                if [[ -n "$option" ]]; then
+                    run_installer_for "$option"
+                else
+                    case $REPLY in
+                        ""|q) # quit
+                            break ;;
+                        a) # show all options (including hidden ones)
+                            case $show_only in
+                                all) invalid_choice ;;
+                                *) interactive_installer all; break ;;
+                            esac ;;
+                        *) invalid_choice
+                    esac
+                    continue
+                fi
+            done
+        }
+        invalid_choice() { error "$REPLY: Invalid option"; }
+        interactive_installer
     else
         # otherwise, show options
-        echo "Specify what to install as command-line arguments:"
+        echo "# Specify what to install as command-line arguments:"
         list_installer_names all
         # TODO show what each installer does
         false

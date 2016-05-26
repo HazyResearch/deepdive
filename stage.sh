@@ -94,6 +94,7 @@ stage runner/ps_descendants                                       util/
 stage runner/deepdive-compute                                     util/
 stage runner/load-compute-driver.sh                               util/
 stage runner/compute-driver/local                                 util/compute-driver/
+stage runner/compute-driver/torque                                util/compute-driver/
 stage runner/computers-default.conf                               util/
 stage .build/submodule/runner/mkmimo/mkmimo                       util/
 
@@ -103,6 +104,7 @@ stage database/deepdive-db                                        util/
 stage database/deepdive-initdb                                    util/
 stage database/deepdive-sql                                       util/
 stage database/deepdive-create                                    util/
+stage database/deepdive-relation                                  util/
 stage database/deepdive-load                                      util/
 stage database/deepdive-unload                                    util/
 stage database/load-db-driver.sh                                  util/
@@ -120,29 +122,14 @@ stage ddlib/ddlib                                                 lib/python/
 stage ddlib/deepdive.py                                           lib/python/
 
 # DeepDive inference engine and supporting utilities
-case $(uname) in
-Linux)
-    # copy shared libraries required by the dimmwitted sampler
-    ldd .build/submodule/inference/dimmwitted/dw | grep '=>' |
-    awk '{print $3}' | sort -u | grep -v '^(' |
-    grep -v '^/lib/' |
-    xargs cp -vt "$STAGE_DIR"/lib/
-    stage .build/submodule/inference/dimmwitted/dw                util/sampler-dw.bin
-    stage inference/dimmwitted-wrapper.linux.sh                   util/sampler-dw
-    ;;
-Darwin)
-    # copy shared libraries required by the dimmwitted sampler
-    otool -L .build/submodule/inference/dimmwitted/dw |
-    grep 'dylib' | sed 's/(.*)//' | awk '{print $1}' | sort -u |
-    grep -v '^/usr/lib/' |
-    xargs cp -vt "$STAGE_DIR"/lib/
-    stage .build/submodule/inference/dimmwitted/dw                util/sampler-dw.bin
-    stage inference/dimmwitted-wrapper.mac.sh                     util/sampler-dw
-    ;;
-*)
-    echo >&2 "$(uname): Unsupported OS"; false
-    ;;
-esac
+#  copying shared libraries required by the dimmwitted sampler and generating a wrapper
+PATH="$PWD"/extern/buildkit:"$PATH"
+generate-wrapper-for-libdirs          "$STAGE_DIR"/util/sampler-dw \
+                                      "$STAGE_DIR"/util/sampler-dw.bin \
+                                      "$STAGE_DIR"/lib/dw
+install-shared-libraries-required-by  "$STAGE_DIR"/lib/dw \
+      .build/submodule/inference/dimmwitted/dw
+stage .build/submodule/inference/dimmwitted/dw                	  util/sampler-dw.bin
 stage inference/format_converter                                  util/format_converter
 stage inference/deepdive-model                                    util/
 

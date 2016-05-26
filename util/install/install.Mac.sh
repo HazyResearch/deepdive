@@ -8,10 +8,14 @@ needs_brew() {
 install__deepdive_build_deps() {
     needs_brew
     set -x
-    javac -version
+    # check if java -version >= 1.8
+    javaVersion=$(javac -version 2>&1 | sed -e '1!d; s/^javac //')
+    [[ ! $javaVersion < 1.8 ]] || { echo >&2 "javac -version >= 1.8 required but found: $javaVersion"; false; }
     xcode-select --install || true
+    has make    || make --version
     has git     || brew install git
     # coreutils, etc., GNU
+    has git     || brew install coreutils
     has xz      || brew install xz
     # sampler build dependencies
     has unzip   || brew install unzip
@@ -21,7 +25,10 @@ install__deepdive_build_deps() {
 install__deepdive_runtime_deps() {
     needs_brew
     set -x
-    java -version
+    # check if java -version >= 1.8
+    javaVersion=$(java -version 2>&1 | sed -e '1!d; s/^java version "//; s/"$//')
+    [[ ! $javaVersion < 1.8 ]] || { echo >&2 "java -version >= 1.8 required but found: $javaVersion"; false; }
+    make --version
     has gnuplot || brew install gnuplot
 }
 

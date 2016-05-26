@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+# update-github-release-asset -- Updates tags corresponding to certain branches
+#                           and releases built binaries to GitHub automatically
+#
+# When invoked from Travis CI, it'll rely on TRAVIS_TAG and TRAVIS_BRANCH to
+# first update the tag from a successful build for certain branches, then after
+# confirming a second time for the updated tag build, it'll upload the
+# packages.  When invoked manually, this script will do both at a single run.
+#
+# # Instructions for setting up authentication on Travis:
+# Generate a new token scoped for public_repo and gist from
+# https://github.com/settings/tokens for a dedicated user (e.g.,
+# @deepdiveDeployBot), then set it up in ~/.netrc.  When running on Travis
+# CI, ~/.netrc can be created from an encrypted file in the repo by following
+# instructions at https://docs.travis-ci.com/user/encrypting-files/.
+# The token should be kept in ~/.gist as well and GITHUB_RELEASE_ASSETS_GIST_ID
+# should be set properly to make keep the metadata archived to a Gist.
+#
+#     {
+#         echo "machine github.com"
+#         echo "  login $GITHUB_RELEASE_USER"
+#         echo "  password $GITHUB_RELEASE_OAUTH_TOKEN"
+#     } >.travis.netrc
+#     echo "$GITHUB_RELEASE_OAUTH_TOKEN" >.travis.gist
+#     chmod go= .travis.netrc .travis.gist
+#     travis encrypt-file .travis.netrc
+#     travis encrypt-file .travis.gist
+#     # modify .travis.yml
+#     git add .travis.yml .travis.*.enc
+#     git commit
+#
+##
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2016-02-25
+set -euo pipefail
+shopt -s extglob
+
+: ${GITHUB_REPO:=HazyResearch/deepdive}
+: ${GITHUB_RELEASE_ASSETS_GIST_ID:=https://gist.github.com/1726a55e358e3ae3f2ec}
+: ${ASSET_HISTORY_ROOT:=.github-release-assets/}
+
+: ${TRAVIS_TAG:=} ${TRAVIS_BRANCH:=}
+
+shouldReleaseToGitHub=true releaseName=
+if [[ -n $TRAVIS_TAG ]]; then
+    # don't touch tags when this was a Travis build for a tag
+    releaseName=$TRAVIS_TAG
+else
+    # don't touch tags when this was a Travis build for a tag
+    shouldUpdateTag=true
+    currentBranch=$(git name-rev --name-only HEAD)
+    currentBranch=${currentBranch%^0}
+    currentBranch=${currentBranch##*/}
+    case $currentBranch in
+        master)
+            releaseName=UNSTABLE
+            ;;
+
+        v*.*.x)
+            releaseName="${currentBranch%.x}"-STABLE
+            ;;
+
+        UNSTABLE|v*.*-STABLE)
+            shouldUpdateTag=false releaseName=$currentBranch
+            ;;
+    esac
+    # update tag
+    if $shouldUpdateTag && [[ -n $releaseName ]]; then
+        set -x
+        git tag -f "$releaseName"
+        git push -f https://github.com/"$GITHUB_REPO".git "$releaseName"
+        set +x &>/dev/null
+    fi
+    # don't upload when this is a Travis build since the build for the tag will go over another test and upload
+    [[ -z $TRAVIS_BRANCH ]] || shouldReleaseToGitHub=false releaseName=
+fi
+
+if $shouldReleaseToGitHub && [[ -n $releaseName ]]; then
+    # upload new package to the release
+    set -x
+    make release-"$releaseName" || {
+        exitStatus=$?
+        set +x &>/dev/null
+        case $exitStatus in
+            123) # ignore the upload failure due to missing release on GitHub
+                echo "Release must be first created from https://github.com/"$GITHUB_REPO"/releases/new?tag=$releaseName"
+                ;;
+            *)
+                exit $exitStatus
+        esac
+    }
+    set +x &>/dev/null
+
+    # archive previous .github-release-assets/ metadata
+    set -x
+    type gist || gem install gist
+    cd "$ASSET_HISTORY_ROOT$GITHUB_REPO/$releaseName"
+    set -- !(releaseId)
+    # post any replaced release info to the Gist
+    gist ${GITHUB_RELEASE_ASSETS_GIST_ID:+-u "$GITHUB_RELEASE_ASSETS_GIST_ID"} "$@" ||
+        # or try creating a new Gist
+        gist "$@" ||
+        # or try creating a new Gist anonymously
+        gist -a "$@"
+    set +x &>/dev/null
+else
+    true  # nothing to do
+fi

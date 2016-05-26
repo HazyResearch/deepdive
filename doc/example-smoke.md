@@ -46,7 +46,7 @@ deepdive compile
 Once it has compiled with no error, you can run the following command to see the list of deepdive targets.
 
 ```bash
-deedive do
+deepdive do
 ```
 
 To run the entire pipeline you can run the following command.

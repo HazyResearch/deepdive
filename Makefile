@@ -11,6 +11,18 @@ PACKAGE = $(dir $(STAGE_DIR))deepdive.tar.gz
 
 .DEFAULT_GOAL := build
 
+# On Mac OS X, require GNU coreutils instead of continuing on BSD utilities with uncertainty
+ifeq ($(shell uname),Darwin)
+ifeq ($(shell brew ls coreutils &>/dev/null || echo notfound),)
+    PATH := $(shell brew --prefix coreutils)/libexec/gnubin:$(PATH)
+else
+    $(error Missing GNU coreutils from Homebrew [http://brew.sh]. \
+        It must be installed to ensure correct build. \
+        Please run: `brew install coreutils` \
+    )
+endif
+endif
+
 ### dependency recipes ########################################################
 
 .PHONY: depends
@@ -57,6 +69,14 @@ release-%:
 	    repo=$(GITHUB_REPO) \
 	    tag=$(RELEASE_VERSION)
 	# Released $(RELEASE_PACKAGE) to GitHub
+
+# Encrypted deepdiveDeployBot credentials for Travis
+.travis.tar.enc: .travis.tar
+	travis encrypt-file $< $@
+	git add .travis.tar.enc
+.travis.tar: .travis
+	chmod -R go= .travis
+	tar cvf $@ $^
 
 ### build recipes #############################################################
 

@@ -8,5 +8,5 @@ cd "$(dirname "$0")"
     # gpfdist should be on PATH to say Greenplum is there
     type gpfdist
     # also check database version
-    [[ "$(DBNAME=postgres db-execute "COPY (SELECT VERSION() LIKE '%Greenplum%') TO STDOUT")" == t ]]  # TODO move this check to db-init?
+    [[ "$(DBNAME=postgres timeout 1s db-execute "COPY (SELECT VERSION() LIKE '%Greenplum%') TO STDOUT")" == t ]]  # TODO move this check to db-init?
 } &>/dev/null

@@ -12,25 +12,60 @@ esac
 
 install__deepdive_build_deps() {
     set -x
+    sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test  # for gcc >= 4.8 on Precise (12.04)
+    sudo add-apt-repository -y ppa:openjdk-r/ppa  # for openjdk 8
     sudo apt-get update
-    sudo apt-get install -qq git rsync bzip2 libbz2-dev xz-utils build-essential flex make default-jdk
-    sudo apt-get install -qq ed  # mindbender
-    sudo apt-get install -qq gcc-4.8 libnuma-dev cmake unzip  # sampler
+    build_deps=(
+        build-essential
+        bash
+        coreutils
+        git
+        make
+        rsync
+        bzip2
+        libbz2-dev
+        xz-utils
+        flex
+        openjdk-8-jdk
+        sed
+        mawk
+        grep
+        bc
+        perl
+        python-software-properties
+        # mindbender
+        ed
+        # sampler
+        gcc-4.8
+        g++-4.8
+        cmake
+        unzip
+        libnuma-dev
+    )
+    sudo apt-get install -qy "${build_deps[@]}"
 }
 
 install__deepdive_runtime_deps() {
     set -x
     # install all runtime dependencies for DeepDive
+    sudo add-apt-repository -y ppa:openjdk-r/ppa  # for openjdk 8
     sudo apt-get update
-
-    # Many dependencies are already available in TravisCI
-    if [ -z "${TRAVIS:-}" ]; then
-        # install dependencies for deepdive
-        sudo apt-get install -y python-software-properties default-jre-headless
-    fi
-
-    # install additional packages for deepdive
-    sudo apt-get install -y gnuplot bc
+    runtime_deps=(
+        bash
+        coreutils
+        make
+        rsync
+        bc
+        sed
+        grep
+        mawk
+        perl
+        python-software-properties
+        openjdk-8-jre-headless
+        gnuplot
+        libltdl7  # for graphviz
+    )
+    sudo apt-get install -qy "${runtime_deps[@]}"
 }
 
 install_postgres_xl() {
@@ -40,7 +75,7 @@ install_postgres_xl() {
 install_postgres() {
     set -x
     sudo apt-get update
-    sudo apt-get install -y postgresql
+    sudo apt-get install -qy postgresql
     local pgversion=$(ls -1 /var/lib/postgresql/ | head -n 1)
     if [ -z "${TRAVIS:-}" ]; then
         # add user to postgresql and trust all connections to localhost

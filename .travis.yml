@@ -26,8 +26,8 @@ services:
 
 cache:
   directories:
-    - .build/submodule
-    - extern/.build
+    - .build
+    - .github-release-assets
     - $HOME/.ivy2/cache
 
 env:
@@ -49,6 +49,11 @@ env:
 before_install:
   # Check coding style before performing the build and tests
   - make checkstyle
+  # Decrypt credentials for util/build/update-github-tags and update-github-release-asset
+  - openssl aes-256-cbc -K $encrypted_54046ad4fea4_key -iv $encrypted_54046ad4fea4_iv -in .travis.tar.enc -out .travis.tar -d
+  - tar xpvf .travis.tar
+  - ln -sfnv "$PWD"/.travis/.{netrc,gist} ~/
+  - chmod go= ~/.{netrc,gist}
 
 addons:
   apt:
@@ -77,3 +82,19 @@ script:
   # Check broken links in documentation
   # TODO check only when doc/ has changed
   #- make -C doc/ linkcheck
+
+# update GitHub releases for some select branches (master and v*.*.x)
+deploy:
+  - provider: script
+    script: util/build/update-github-release-asset
+    skip_cleanup: true
+    on:
+      repo: HazyResearch/deepdive
+      all_branches: true
+      # TODO condition: "$TRAVIS_BRANCH = master || $TRAVIS_BRANCH = v*.*.x"
+  - provider: script
+    script: util/build/update-github-release-asset
+    skip_cleanup: true
+    on:
+      repo: HazyResearch/deepdive
+      tag: true

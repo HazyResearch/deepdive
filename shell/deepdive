@@ -45,14 +45,6 @@ if [ -z "${DEEPDIVE_SHELL:-}" ]; then
     PYTHONPATH="$DEEPDIVE_HOME"/lib/python:"${PYTHONPATH:+:$PYTHONPATH}"
     export PYTHONPATH
 
-    # OS specific workarounds via tweaking the environment
-    case $(uname) in
-        Darwin)
-            # XXX mkmimo can reboot Mac unless its use of poll(2) is throttled
-            export THROTTLE_SLEEP_MSEC=1
-            ;;
-    esac
-
     export DEEPDIVE_SHELL=$0
 fi
 

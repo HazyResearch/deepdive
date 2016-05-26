@@ -5,6 +5,11 @@
 
 <strong><big>See [deepdive.stanford.edu](http://deepdive.stanford.edu) or [doc/](doc/index.md) to learn how to install and use DeepDive.</big></strong>
 
+<strong>Or, just start with this one-liner command:</strong>
+```bash
+bash <(curl -fsSL git.io/getdeepdive)
+```
+
 Read the [DeepDive developer's guide](doc/developer.md#readme) to learn more about this source tree and how to contribute.
 
 Licensed under [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt).

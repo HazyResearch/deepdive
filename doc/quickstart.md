@@ -19,7 +19,6 @@ bash <(curl -fsSL git.io/getdeepdive)
 
 ```
 ### DeepDive installer for Mac
-+ curl -fsSL https://github.com/HazyResearch/deepdive/raw/v0.8.x/util/install/install.Mac.sh
 1) deepdive                 5) postgres
 2) deepdive_examples_tests  6) run_deepdive_tests
 3) deepdive_from_release    7) spouse_example
@@ -68,18 +67,18 @@ app.ddlog  db.url  deepdive.conf  input/  labeling/  mindbender/  README.md  udf
 ```
 
 ### 1. Load input
+First, you have to compile the DeepDive application using the following command:
+
+```bash
+deepdive compile
+```
+Once it has compiled with no error, you can run the following ```deepdive``` commands.
 
 You can find some of our sampled datasets under `input/`.
-You can also [download the full corpus][corpus], but let's proceed with the one that has 1000 sampled articles:
-
+You can also [download the full corpus][corpus], but let's proceed with the one that has 1000 sampled articles. Run the following command to load the sampled articles into DeepDive:
 ```bash
-ln -s articles-1000.tsv.bz2 input/articles.tsv.bz2
+deepdive load articles input/articles-1000.tsv.bz2
 ```
-```bash
-deepdive do articles
-```
-
-This will load the input data into the database.
 *Note that everytime you use the `deepdive do` command, it opens a list of commands to be run in your text editor. You have to confirm it by saving and quiting the editor.*
 
 Here are a few lines from an example article in the input corpus that has been loaded.
