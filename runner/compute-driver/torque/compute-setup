@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# torque/compute-setup -- Performs necessary setup tasks before compute-execute can be run
+# $ compute-setup
+#
+##
+set -euo pipefail
+
+# load compute configuration
+eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \
+    num_processes='.num_processes' \
+    ssh_user='.ssh_user' \
+    ssh_host='.ssh_host' \
+    remote_deepdive_app_base='.remote_deepdive_app_base' \
+    remote_deepdive_transient_base='.remote_deepdive_transient_base' \
+    poll_period_secs='.poll_period_secs' \
+    excludes='.excludes | join("\t")' \
+    additional_paths='.additional_paths | join("\t")' \
+    #
+)"
+
+# declare all input arguments
+declare -- "$@"
+
+export SSH_INFO="${ssh_user}@${ssh_host}"
+export LOCAL_USER="$(whoami)"
+export KRB_DIR=${krb_dir:-"/tmp/krb5cc_${ssh_user}_deepdive"}
+
+if ! ssh $SSH_INFO "type deepdive &> /dev/null"; then
+  echo "Installing DeepDive on submission node..."
+  ssh $SSH_INFO "BRANCH=cf24958 bash <(curl -fsSL git.io/getdeepdive) deepdive_from_source_no_dependencies"
+else
+  echo "DeepDive installation found at $ssh_host:$(ssh $SSH_INFO deepdive whereis installed .)"
+fi
+
+if ! ssh $SSH_INFO "klist -s -c $KRB_DIR &> /dev/null"; then
+  echo "Kerberos credentials either expired or not found in remote node."
+  echo "Please reenter password for $SSH_INFO."
+  ssh -t $SSH_INFO "kinit -r 30d -c $KRB_DIR"
+else
+  echo "Kerberos credentials found at $SSH_INFO:$KRB_DIR"
+fi
+
+echo "Setup complete!"
+
