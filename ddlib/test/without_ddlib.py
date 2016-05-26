@@ -48,8 +48,8 @@ for row in sys.stdin:
     features.add("potential_last_name_match")
 
   # TODO: Add more features, look at dependency paths, etc
-  for feature in features:
-    print json.dumps({
+  for feature in sorted(features):
+    print(json.dumps({
       "relation_id": obj["relation_id"],
       "feature": feature
-    })
+    }, sort_keys=True))

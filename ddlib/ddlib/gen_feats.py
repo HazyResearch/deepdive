@@ -10,7 +10,7 @@
 # Matteo, December 2014
 #
 
-from dd import dep_path_between_words, materialize_span, Span, unpack_words
+from .dd import dep_path_between_words, materialize_span, Span, unpack_words
 
 MAX_KW_LENGTH = 3
 

@@ -12,17 +12,17 @@ class TestDDLib(unittest.TestCase):
   def test_materialize_span(self):
     span1 = dd.Span(0, 3)
     materialized_span = dd.materialize_span(self.words, span1)
-    self.assertEqual(materialized_span[:], ["Tanja", "married", "Jake"])
+    self.assertEqual(list(materialized_span), ["Tanja", "married", "Jake"])
 
   def test_tokens_between_spans(self):
     span1 = dd.Span(0, 2)
     span2 = dd.Span(3, 5)
     words_between = dd.tokens_between_spans(self.words, span1, span2)
-    self.assertEqual(words_between[:], (False, ["Jake"]))
+    self.assertEqual([words_between[0], list(words_between[1])], [False, ["Jake"]])
     words_between = dd.tokens_between_spans(self.words, span2, span1)
-    self.assertEqual(words_between[:], (True, ["Jake"]))
+    self.assertEqual([words_between[0], list(words_between[1])], [True, ["Jake"]])
     words_between = dd.tokens_between_spans(self.words, span1, span1)
-    self.assertEqual(words_between[:], (False, []))
+    self.assertEqual([words_between[0], list(words_between[1])], [False, []])
 
 
 if __name__ == '__main__':
