@@ -16,6 +16,14 @@ Table=$1; shift
 [[ $# -gt 0 ]] || usage "$0" "Missing TABLE_DEFINITION_SQL"
 TableDef=$1; shift
 
-[[ -n $CREATE_IF_NOT_EXISTS ]] || db-execute "DROP $DROP_VIEW_TYPE  VIEW  $Table CASCADE" &>/dev/null || true
-[[ -n $CREATE_IF_NOT_EXISTS ]] || db-execute "DROP $DROP_TABLE_TYPE TABLE $Table CASCADE" &>/dev/null || true
-exec db-execute "CREATE $CREATE_TABLE_TYPE TABLE ${CREATE_IF_NOT_EXISTS:+IF NOT EXISTS} $Table $TableDef $CREATE_TABLE_EXTRA_CLAUSES"
+if db-execute '\d '"$Table"; then
+    ! [[ -n $CREATE_IF_NOT_EXISTS ]] ||
+        # exit if table already exists
+        exit 0
+    # unconditionally drop existing table and view
+    db-execute "DROP $DROP_VIEW_TYPE  VIEW  $Table CASCADE" &>/dev/null || true
+    db-execute "DROP $DROP_TABLE_TYPE TABLE $Table CASCADE" &>/dev/null || true
+fi
+
+# unconditionally create a new table
+exec db-execute "CREATE $CREATE_TABLE_TYPE TABLE $Table $TableDef $CREATE_TABLE_EXTRA_CLAUSES"
