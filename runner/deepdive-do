@@ -5,7 +5,7 @@
 set -euo pipefail
 
 : ${DEEPDIVE_PLAN_EDIT:=true} ${VISUAL:=${EDITOR:=vi}}
-: ${DEEPDIVE_PROGRESS_FD:=3}  # file descriptor to pass stderr down to our show_progress(1) command
+: ${DEEPDIVE_PROGRESS_FD:=}  # file descriptor used by our show_progress(1) command, set by any nesting deepdive-do command
 
 # record present working directory so processes can optionally recover it
 export DEEPDIVE_PWD="$PWD"
@@ -111,8 +111,16 @@ DEEPDIVE_APP=$(cd .. && pwd -P)
 APP_HOME=$DEEPDIVE_APP # XXX legacy
 DEEPDIVE_OUTPUT=$(cd "$runDir" && pwd)
 DEEPDIVE_RUN_ID=$runDir
+# dup fd for tty (initially found with stderr) show_progress displays progress
+if [[ -n $DEEPDIVE_PROGRESS_FD ]]; then
+    # use the inherited DEEPDIVE_PROGRESS_FD to look for tty
+    tty_fd=$DEEPDIVE_PROGRESS_FD
+else
+    # use current stderr to find the attached tty and keep it as fd#3
+    DEEPDIVE_PROGRESS_FD=3 tty_fd=2
+fi
 export DEEPDIVE_ERROR_PREFIX DEEPDIVE_PROGRESS_FD DEEPDIVE_APP APP_HOME DEEPDIVE_OUTPUT DEEPDIVE_RUN_ID
-eval 'bash -veu "$runDir"/plan.sh '$DEEPDIVE_PROGRESS_FD'>&2 2>&1' |
+eval 'bash -veu "$runDir"/plan.sh '$DEEPDIVE_PROGRESS_FD'>&'$tty_fd' 2>&1' |
 {
 ln -sfn run.log "$runDir"/log.txt # XXX for backward compatibility with pre-0.7.x, keep a symlink
 # keep a log with timestamps on each line
