@@ -18,7 +18,7 @@ TableDef=$1; shift
 
 if db-execute '\d '"$Table"; then
     ! [[ -n $CREATE_IF_NOT_EXISTS ]] ||
-        # exit if table already exists
+        # exit if view or table with same name already exists
         exit 0
     # unconditionally drop existing table and view
     db-execute "DROP $DROP_VIEW_TYPE  VIEW  $Table CASCADE" &>/dev/null || true
