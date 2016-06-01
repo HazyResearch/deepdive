@@ -13,19 +13,6 @@ namespace dd {
  */
 class SingleNodeSampler {
  public:
-  // factor graph
-  CompiledFactorGraph* const p_fg;
-  // number of threads
-  int nthread;
-  // node id
-  int nodeid;
-
-  bool sample_evidence;
-  int burn_in;
-  bool learn_non_evidence;
-
-  std::vector<std::thread> threads;
-
   /**
    * Constructs a SingleNodeSampler given factor graph, number of threads, and
    * node id.
@@ -62,6 +49,21 @@ class SingleNodeSampler {
    * Waits for sgd worker to finish
    */
   void wait_sgd();
+
+ private:
+  // factor graph
+  CompiledFactorGraph* const p_fg;
+  // number of threads
+  int nthread;
+  // node id
+  int nodeid;
+
+  bool sample_evidence;
+  int burn_in;
+  bool learn_non_evidence;
+
+  std::vector<std::thread> threads;
+
 };
 
 }  // namespace dd
