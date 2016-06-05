@@ -51,9 +51,9 @@ TEST(BinaryParserTest, read_factors) {
   EXPECT_EQ(fg.factors[0].weight_id, 0);
   EXPECT_EQ(fg.factors[0].func_id, FUNC_ISTRUE);
   EXPECT_EQ(fg.factors[0].n_variables, 1);
-  EXPECT_EQ(fg.factors[1].tmp_variables[0].vid, 1);
-  EXPECT_EQ(fg.factors[1].tmp_variables[0].n_position, 0);
-  EXPECT_EQ(fg.factors[1].tmp_variables[0].is_positive, true);
+  EXPECT_EQ(fg.factors[1].tmp_variables->at(0).vid, 1);
+  EXPECT_EQ(fg.factors[1].tmp_variables->at(0).n_position, 0);
+  EXPECT_EQ(fg.factors[1].tmp_variables->at(0).is_positive, true);
 }
 
 // test read_weights

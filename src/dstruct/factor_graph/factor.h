@@ -190,14 +190,19 @@ namespace dd{
 
     long n_start_i_vif;     // start variable id
 
-    std::vector<VariableInFactor> tmp_variables; // variables in the factor
+    // This list is used only during loading time. Allocate and destroy to save space.
+    // Life starts: binary_parser.read_factors (via add_variable_in_factor)
+    // Life ends: FactorGraph::organize_graph_by_edge (via clear_tmp_variables)
+    std::vector<VariableInFactor> *tmp_variables; // variables in the factor
 
     // Variable value dependent weights for sparse multinomial factors
     // Key: radix encoding of var values: (...((((0 * d1 + i1) * d2) + i2) * d3 + i3) * d4 + ...) * dk + ik
     // Value: weight id
     // If a key (i.e., value assignment) is missing, it means this factor is inactive (potential = 0).
     // TODO: handle key overflow...
-    std::unordered_map<long, long> weight_ids;
+    // An empty map takes 48 bytes, so we create it only as needed, i.e., when func_id = FUNC_SPARSE_MULTINOMIAL
+    // Allocated in binary_parser.read_factors. Never deallocated.
+    std::unordered_map<long, long> *weight_ids;
 
     Factor();
 
@@ -208,6 +213,20 @@ namespace dd{
            const WeightIndex & _weight_id,
            const int & _func_id,
            const int & _n_variables);
+
+    inline void add_variable_in_factor(const VariableInFactor &vif) {
+      if (!tmp_variables) {
+        tmp_variables = new std::vector<VariableInFactor>();
+      }
+      tmp_variables->push_back(vif);
+    }
+
+    inline void clear_tmp_variables() {
+      if (tmp_variables) {
+        delete tmp_variables;
+        tmp_variables = NULL;
+      }
+    }
 
   };
 

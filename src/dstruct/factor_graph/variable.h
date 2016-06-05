@@ -42,7 +42,10 @@ namespace dd{
     std::unordered_map<VariableValue, int> *domain_map; // map from value to index in the domain vector
     std::vector<VariableValue> *domain_list; // inverse of domain_map
 
-    std::vector<long> tmp_factor_ids; // factor ids the variable connects to
+    // This list is used only during loading time. Allocate and destroy to save space.
+    // Life starts: binary_parser.read_factors (via add_factor_id)
+    // Life ends: FactorGraph::organize_graph_by_edge (via clear_tmp_factor_ids)
+    std::vector<long> *tmp_factor_ids; // factor ids the variable connects to
 
     bool isactive;
 
@@ -70,6 +73,20 @@ namespace dd{
     // inverse of get_domain_index
     inline int get_domain_value_at(int idx) const {
       return domain_list ? domain_list->at(idx) : idx;
+    }
+
+    inline void add_factor_id(long factor_id) {
+      if (!tmp_factor_ids) {
+        tmp_factor_ids = new std::vector<long>();
+      }
+      tmp_factor_ids->push_back(factor_id);
+    }
+
+    inline void clear_tmp_factor_ids() {
+      if (tmp_factor_ids) {
+        delete tmp_factor_ids;
+        tmp_factor_ids = NULL;
+      }
     }
   };
 

@@ -162,9 +162,9 @@ long long read_factors(string filename, dd::FactorGraph &fg) {
       }
 
       // add variables to factors
-      fg.factors[fg.c_nfactor].tmp_variables.push_back(dd::VariableInFactor(
+      fg.factors[fg.c_nfactor].add_variable_in_factor(dd::VariableInFactor(
           variable_id, position, ispositive, equal_predicate));
-      fg.variables[variable_id].tmp_factor_ids.push_back(fg.c_nfactor);
+      fg.variables[variable_id].add_factor_id(fg.c_nfactor);
     }
 
     switch (type) {
@@ -173,11 +173,13 @@ long long read_factors(string filename, dd::FactorGraph &fg) {
         file.read((char *)&n_weights, 8);
         n_weights = be64toh(n_weights);
 
+        fg.factors[fg.c_nfactor].weight_ids = new std::unordered_map<long, long>();
+
         for (long i = 0; i < n_weights; i++) {
           // calculate radix-based key into weight_ids (see also FactorGraph::get_multinomial_weight_id)
           long key = 0;
           for (long j = 0; j < edge_count; j++) {
-            const dd::Variable &var = fg.variables[fg.factors[fg.c_nfactor].tmp_variables[j].vid];
+            const dd::Variable &var = fg.variables[fg.factors[fg.c_nfactor].tmp_variables->at(j).vid];
             file.read((char *)&value_id, 4);
             value_id = be32toh(value_id);
             key *= var.cardinality;
@@ -185,7 +187,7 @@ long long read_factors(string filename, dd::FactorGraph &fg) {
           }
           file.read((char *)&weightid, 8);
           weightid = be64toh(weightid);
-          fg.factors[fg.c_nfactor].weight_ids[key] = weightid;
+          (*fg.factors[fg.c_nfactor].weight_ids)[key] = weightid;
         }
         break;
       }
@@ -276,9 +278,9 @@ long long read_edges_inc(string filename, dd::FactorGraph &fg) {
     }
 
     // add variables to factors
-    fg.factors[factor_id].tmp_variables.push_back(dd::VariableInFactor(
+    fg.factors[factor_id].add_variable_in_factor(dd::VariableInFactor(
         variable_id, position, ispositive, equal_predicate));
-    fg.variables[variable_id].tmp_factor_ids.push_back(factor_id);
+    fg.variables[variable_id].add_factor_id(factor_id);
   }
   file.close();
   return count;

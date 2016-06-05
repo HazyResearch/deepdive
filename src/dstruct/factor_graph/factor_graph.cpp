@@ -102,8 +102,8 @@ long dd::FactorGraph::get_multinomial_weight_id(
   long weight_id = 0;
   switch (fs.func_id) {
     case FUNC_SPARSE_MULTINOMIAL: {
-      auto iter = factors[fs.id].weight_ids.find(weight_offset);
-      if (iter == factors[fs.id].weight_ids.end()) {
+      auto iter = factors[fs.id].weight_ids->find(weight_offset);
+      if (iter == factors[fs.id].weight_ids->end()) {
         weight_id = -1;
       } else {
         weight_id = iter->second;
@@ -310,9 +310,9 @@ void dd::FactorGraph::load(const CmdParser &cmd, const bool is_quiet, int inc) {
       if (this->variables[var_to_work_on].is_evid) {
         isuseful_for_training = true;
       }
-      for (long long fid : this->variables[var_to_work_on].tmp_factor_ids) {
+      for (long long fid : *(this->variables[var_to_work_on].tmp_factor_ids)) {
         const Factor &factor = this->factors[fid];
-        for (const VariableInFactor &next_var : factor.tmp_variables) {
+        for (const VariableInFactor &next_var : *(factor.tmp_variables)) {
           if (this->variables[next_var.vid].component_id != -1) {
             assert(this->variables[next_var.vid].component_id == component_id);
           } else {
@@ -368,12 +368,13 @@ void dd::FactorGraph::organize_graph_by_edge() {
     Factor &factor = factors[i];
     factor.n_start_i_vif = c_edge;
     // sort variables in factor by position in factor
-    std::sort(factor.tmp_variables.begin(), factor.tmp_variables.end(),
+    std::sort(factor.tmp_variables->begin(), factor.tmp_variables->end(),
               dd::compare_position);
-    for (const VariableInFactor &vif : factor.tmp_variables) {
+    for (const VariableInFactor &vif : *(factor.tmp_variables)) {
       vifs[c_edge] = vif;
       c_edge++;
     }
+    factor.clear_tmp_variables();
   }
 
   c_edge = 0;
@@ -382,14 +383,14 @@ void dd::FactorGraph::organize_graph_by_edge() {
   for (long i = 0; i < n_var; i++) {
     Variable &variable = variables[i];
     variable.n_factors =
-        variable.tmp_factor_ids.size();  // no edge count any more
+        variable.tmp_factor_ids->size();  // no edge count any more
 
     variable.n_start_i_factors = c_edge;
     if (variable.domain_type == DTYPE_MULTINOMIAL) {
       variable.n_start_i_tally = ntallies;
       ntallies += variable.cardinality;
     }
-    for (const long &fid : variable.tmp_factor_ids) {
+    for (const long fid : *(variable.tmp_factor_ids)) {
       factor_ids[c_edge] = fid;
       compact_factors[c_edge].id = factors[fid].id;
       compact_factors[c_edge].func_id = factors[fid].func_id;
@@ -398,6 +399,7 @@ void dd::FactorGraph::organize_graph_by_edge() {
       compact_factors_weightids[c_edge] = factors[fid].weight_id;
       c_edge++;
     }
+    variable.clear_tmp_factor_ids();
   }
 }
 

@@ -78,8 +78,8 @@ void dump_factors(const dd::FactorGraph &fg, const std::string &filename) {
     // FIXME this output is lossy since it drops the f.func_id and
     // f.tmp_variables[*].is_positive
     // variable ids the factor is defined over
-    for (const auto &v : f.tmp_variables) {
-      fout << v.vid;
+    for (long v = 0; v < f.n_variables; ++v) {
+      fout << fg.vifs[f.n_start_i_vif + v].vid;
       fout << field_delim;
     }
     switch (f.func_id) {
@@ -88,15 +88,16 @@ void dump_factors(const dd::FactorGraph &fg, const std::string &filename) {
         // transpose tuples; sort to ensure consistency
         vals.clear();
         weights.clear();
-        vals.reserve(f.n_variables * f.weight_ids.size());
-        weights.reserve(f.weight_ids.size());
-        std::map<long, long> ordered(f.weight_ids.begin(), f.weight_ids.end());
+        vals.reserve(f.n_variables * f.weight_ids->size());
+        weights.reserve(f.weight_ids->size());
+        std::map<long, long> ordered(f.weight_ids->begin(), f.weight_ids->end());
         int w = 0;
         for (auto it = ordered.begin(); it != ordered.end(); it++) {
           long key = it->first;
           long wid = it->second;
           for (int k = f.n_variables - 1; k >= 0; --k) {
-            dd::Variable &var = fg.variables[f.tmp_variables[k].vid];
+            int vid = fg.vifs[f.n_start_i_vif + k].vid;
+            dd::Variable &var = fg.variables[vid];
             int val_idx = key % var.cardinality;
             int val = var.get_domain_value_at(val_idx);
             key = key / var.cardinality;
@@ -106,12 +107,12 @@ void dump_factors(const dd::FactorGraph &fg, const std::string &filename) {
           w++;
         }
         // output num_weights
-        fout << f.weight_ids.size();
+        fout << f.weight_ids->size();
         fout << field_delim;
         // output values per var
         for (long k = 0; k < f.n_variables; k++) {
           fout << "{";
-          for (long j = 0; j < f.weight_ids.size(); j++) {
+          for (long j = 0; j < f.weight_ids->size(); j++) {
             if (j > 0) fout << ",";
             fout << vals[j * f.n_variables + k];
           }
