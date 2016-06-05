@@ -133,6 +133,7 @@ long long read_factors(string filename, dd::FactorGraph &fg) {
   long long count = 0;
   long long variable_id;
   long long weightid;
+  int value_id;
   short type;
   long long edge_count;
   long long equal_predicate;
@@ -171,11 +172,20 @@ long long read_factors(string filename, dd::FactorGraph &fg) {
         long n_weights = 0;
         file.read((char *)&n_weights, 8);
         n_weights = be64toh(n_weights);
-        fg.factors[fg.c_nfactor].weight_ids.reserve(n_weights);
-        for (long j = 0; j < n_weights; j++) {
+
+        for (long i = 0; i < n_weights; i++) {
+          // calculate radix-based key into weight_ids (see also FactorGraph::get_multinomial_weight_id)
+          long key = 0;
+          for (long j = 0; j < edge_count; j++) {
+            const dd::Variable &var = fg.variables[fg.factors[fg.c_nfactor].tmp_variables[j].vid];
+            file.read((char *)&value_id, 4);
+            value_id = be32toh(value_id);
+            key *= var.cardinality;
+            key += var.get_domain_index(value_id);
+          }
           file.read((char *)&weightid, 8);
           weightid = be64toh(weightid);
-          fg.factors[fg.c_nfactor].weight_ids.push_back(weightid);
+          fg.factors[fg.c_nfactor].weight_ids[key] = weightid;
         }
         break;
       }
@@ -291,24 +301,24 @@ void read_domains(std::string filename, dd::FactorGraph &fg) {
     domain_size = be64toh(domain_size);
     assert(variable.cardinality == domain_size);
 
-    std::vector<int> domain(domain_size);
+    variable.domain_list = new std::vector<int>(domain_size);
     variable.domain_map = new std::unordered_map<int, int>();
 
     for (int i = 0; i < domain_size; i++) {
       file.read((char *)&value, 8);
       value = be64toh(value);
-      domain[i] = value;
+      (*variable.domain_list)[i] = value;
     }
 
-    std::sort(domain.begin(), domain.end());
+    std::sort(variable.domain_list->begin(), variable.domain_list->end());
     for (int i = 0; i < domain_size; i++) {
-      (*variable.domain_map)[domain[i]] = i;
+      (*variable.domain_map)[(*variable.domain_list)[i]] = i;
     }
 
     // adjust the initial assignments to a valid one instead of zero for query
     // variables
     if (!variable.is_evid) {
-      variable.assignment_free = variable.assignment_evid = domain[0];
+      variable.assignment_free = variable.assignment_evid = (*variable.domain_list)[0];
     }
   }
 }

@@ -45,11 +45,11 @@ namespace dd{
 
     float * old_weight_values;
 
-    // For each edge, we store the factor, weight id, factor id, and the variable, 
+    // For each edge, we store the factor, weight id, factor id, and the variable,
     // in the same index of seperate arrays. The edges are ordered so that the
-    // edges for a variable is in a continuous region (sequentially). 
+    // edges for a variable is in a continuous region (sequentially).
     // This allows us to access factors given variables, and access variables
-    // given factors faster. 
+    // given factors faster.
     CompactFactor * const compact_factors;
     int * const compact_factors_weightids;
     long * const factor_ids;
@@ -79,17 +79,17 @@ namespace dd{
     void copy_from(const FactorGraph * const p_other_fg);
 
     /*
-     * Given a factor and variable assignment, returns corresponding multinomial 
+     * Given a factor and variable assignment, returns corresponding multinomial
      * factor weight id, using proposal value for the variable with id vid.
-     * For multinomial weights, for each possible assignment, there is a corresponding 
-     * indicator function and weight. 
+     * For multinomial weights, for each possible assignment, there is a corresponding
+     * indicator function and weight.
      */
     long get_multinomial_weight_id(const VariableValue *assignments, const CompactFactor& fs, long vid, long proposal);
 
     /**
-     * Given a variable, updates the weights associated with the factors that 
-     * connect to the variable. 
-     * Used in learning phase, after sampling one variable, 
+     * Given a variable, updates the weights associated with the factors that
+     * connect to the variable.
+     * Used in learning phase, after sampling one variable,
      * update corresponding weights (stochastic gradient descent).
      */
     void update_weight(const Variable & variable);
@@ -98,7 +98,7 @@ namespace dd{
      * Returns potential of the given factor
      *
      * does_change_evid = true, use the free assignment. Otherwise, use the
-     * evid assignement. 
+     * evid assignement.
      */
     template<bool does_change_evid>
     inline double potential(const CompactFactor & factor){
@@ -108,23 +108,23 @@ namespace dd{
         return factor.potential(vifs, infrs->assignments_evid, -1, -1);
       }
     }
-    
+
     template<bool does_change_evid>
     inline void update(Variable & variable, const double & new_value);
 
     inline void update_evid(Variable & variable, const double & new_value);
 
     /**
-     * Returns log-linear weighted potential of the all factors for the given 
+     * Returns log-linear weighted potential of the all factors for the given
      * variable using the propsal value.
      *
      * does_change_evid = true, use the free assignment. Otherwise, use the
-     * evid assignement. 
+     * evid assignement.
      */
     template<bool does_change_evid>
     inline double potential(const Variable & variable, const double & proposal){
       // potential
-      double pot = 0.0;  
+      double pot = 0.0;
       // pointer to the first factor the given variable connects to
       // the factors that the given variable connects to are stored in a continuous
       // region of the array
@@ -151,6 +151,7 @@ namespace dd{
             // assignment
             long wid = get_multinomial_weight_id(assignments, fs[i],
                                                  variable.id, proposal);
+            if (wid == -1) continue;
             pot += infrs->weight_values[wid] *
                    fs[i].potential(vifs, assignments, variable.id, proposal);
           }

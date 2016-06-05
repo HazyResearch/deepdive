@@ -18,6 +18,7 @@ Variable::Variable(const long &_id, const int &_domain_type,
   this->assignment_free = _current_value;
   this->n_factors = _n_factors;
   this->domain_map = NULL;
+  this->domain_list = NULL;
   this->isactive = false;
   this->component_id = -1;
 }

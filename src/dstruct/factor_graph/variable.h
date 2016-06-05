@@ -21,7 +21,7 @@ namespace dd{
   class Variable {
   public:
     long id;                        // variable id
-    int domain_type;                // variable domain type, can be DTYPE_BOOLEAN or 
+    int domain_type;                // variable domain type, can be DTYPE_BOOLEAN or
                                     // DTYPE_MULTINOMIAL
     bool is_evid;                   // whether the variable is evidence
     bool is_observation;            // observed variable (fixed)
@@ -34,12 +34,13 @@ namespace dd{
     long n_start_i_factors;         // id of the first factor
 
     // the values of multinomial variables are stored in an array like this
-    // [v11 v12 ... v1m v21 ... v2n ...] 
+    // [v11 v12 ... v1m v21 ... v2n ...]
     // where v1, v2 are two multinomial variables, with domain 1-m, and 1-n respectively.
     // n_start_i_tally is the start position for the variable values in the array
     long n_start_i_tally;
 
     std::unordered_map<VariableValue, int> *domain_map; // map from value to index in the domain vector
+    std::vector<VariableValue> *domain_list; // inverse of domain_map
 
     std::vector<long> tmp_factor_ids; // factor ids the variable connects to
 
@@ -52,18 +53,23 @@ namespace dd{
     Variable();
 
     /**
-     * Constructs a variable with id, domain type, is evidence, lower bound, 
-     * upper bound, initial value, current value, number of factors 
+     * Constructs a variable with id, domain type, is evidence, lower bound,
+     * upper bound, initial value, current value, number of factors
      */
-    Variable(const long & _id, const int & _domain_type, 
+    Variable(const long & _id, const int & _domain_type,
              const bool & _is_evid, const int & cardinality,
-             const VariableValue & _init_value, 
+             const VariableValue & _init_value,
              const VariableValue & _current_value, const int & _n_factors,
              bool is_observation);
 
     // get the index of the value
     inline int get_domain_index(int v) const {
       return domain_map ? domain_map->at(v) : v;
+    }
+
+    // inverse of get_domain_index
+    inline int get_domain_value_at(int idx) const {
+      return domain_list ? domain_list->at(idx) : idx;
     }
   };
 
@@ -85,7 +91,7 @@ namespace dd{
 
     VariableInFactor();
 
-    VariableInFactor(const long & _vid, const int & _n_position, 
+    VariableInFactor(const long & _vid, const int & _n_position,
                      const bool & _is_positive, const VariableValue & _equal_to);
   };
 }

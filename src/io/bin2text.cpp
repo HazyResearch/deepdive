@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <vector>
+#include <map>
 
 constexpr char field_delim = '\t';  // tsv file delimiter
 
@@ -50,19 +51,13 @@ void dump_domains(const dd::FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
   for (int i = 0; i < fg.n_var; ++i) {
     dd::Variable &v = fg.variables[i];
-    if (v.domain_map) {
+    if (v.domain_list) {
       fout << v.id;
-      fout << field_delim << v.domain_map->size();
-      std::vector<dd::VariableValue> values;
-      values.reserve(v.domain_map->size());
-      for (const auto &entry : *v.domain_map) {
-        values.push_back(entry.first);
-      }
-      std::sort(values.begin(), values.end());
+      fout << field_delim << v.domain_list->size();
       fout << field_delim;
       fout << "{";
       int j = 0;
-      for (const auto &value : values) {
+      for (const auto &value : *v.domain_list) {
         if (j > 0) fout << ",";
         fout << value;
         ++j;
@@ -75,6 +70,9 @@ void dump_domains(const dd::FactorGraph &fg, const std::string &filename) {
 
 void dump_factors(const dd::FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
+  std::vector<int> vals;
+  std::vector<long> weights;
+  string element;
   for (int i = 0; i < fg.n_factor; ++i) {
     dd::Factor &f = fg.factors[i];
     // FIXME this output is lossy since it drops the f.func_id and
@@ -86,12 +84,44 @@ void dump_factors(const dd::FactorGraph &fg, const std::string &filename) {
     }
     switch (f.func_id) {
       case dd::FUNC_SPARSE_MULTINOMIAL: {
-        // followed by a number of weight ids
+        // Format: NUM_WEIGHTS [VAR1 VAL ID] [VAR2 VAL ID] ... [WEIGHT ID]
+        // transpose tuples; sort to ensure consistency
+        vals.clear();
+        weights.clear();
+        vals.reserve(f.n_variables * f.weight_ids.size());
+        weights.reserve(f.weight_ids.size());
+        std::map<long, long> ordered(f.weight_ids.begin(), f.weight_ids.end());
+        int w = 0;
+        for (auto it = ordered.begin(); it != ordered.end(); it++) {
+          long key = it->first;
+          long wid = it->second;
+          for (int k = f.n_variables - 1; k >= 0; --k) {
+            dd::Variable &var = fg.variables[f.tmp_variables[k].vid];
+            int val_idx = key % var.cardinality;
+            int val = var.get_domain_value_at(val_idx);
+            key = key / var.cardinality;
+            vals[w * f.n_variables + k] = val;
+          }
+          weights[w] = wid;
+          w++;
+        }
+        // output num_weights
         fout << f.weight_ids.size();
         fout << field_delim;
+        // output values per var
+        for (long k = 0; k < f.n_variables; k++) {
+          fout << "{";
+          for (long j = 0; j < f.weight_ids.size(); j++) {
+            if (j > 0) fout << ",";
+            fout << vals[j * f.n_variables + k];
+          }
+          fout << "}";
+          fout << field_delim;
+        }
+        // output weights
         fout << "{";
         int j = 0;
-        for (const auto &wid : f.weight_ids) {
+        for (long wid : weights) {
           if (j > 0) fout << ",";
           fout << wid;
           ++j;
