@@ -51,11 +51,12 @@ void dump_domains(const dd::FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
   for (int i = 0; i < fg.n_var; ++i) {
     dd::Variable &v = fg.variables[i];
-    if (v.domain_list) {
+    if (v.domain_map) {
       fout << v.id;
-      fout << field_delim << v.domain_list->size();
+      fout << field_delim << v.domain_map->size();
       fout << field_delim;
       fout << "{";
+      v.get_domain_value_at(0);  // trigger construction of domain_list
       int j = 0;
       for (const auto &value : *v.domain_list) {
         if (j > 0) fout << ",";
@@ -92,9 +93,9 @@ void dump_factors(const dd::FactorGraph &fg, const std::string &filename) {
         weights.reserve(f.weight_ids->size());
         std::map<long, long> ordered(f.weight_ids->begin(), f.weight_ids->end());
         int w = 0;
-        for (auto it = ordered.begin(); it != ordered.end(); it++) {
-          long key = it->first;
-          long wid = it->second;
+        for (const auto &item : ordered) {
+          long key = item.first;
+          long wid = item.second;
           for (int k = f.n_variables - 1; k >= 0; --k) {
             int vid = fg.vifs[f.n_start_i_vif + k].vid;
             dd::Variable &var = fg.variables[vid];
@@ -171,6 +172,7 @@ void dump_meta(const dd::FactorGraph &fg, const std::string &filename) {
 void dump_factorgraph(const dd::FactorGraph &fg,
                       const std::string &output_dir) {
   dump_variables(fg, output_dir + "/variables.tsv");
+  dump_domains(fg, output_dir + "/domains.tsv");
   dump_factors(fg, output_dir + "/factors.tsv");
   dump_weights(fg, output_dir + "/weights.tsv");
   dump_domains(fg, output_dir + "/domains.tsv");

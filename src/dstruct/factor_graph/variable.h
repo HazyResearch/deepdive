@@ -39,8 +39,13 @@ namespace dd{
     // n_start_i_tally is the start position for the variable values in the array
     long n_start_i_tally;
 
-    std::unordered_map<VariableValue, int> *domain_map; // map from value to index in the domain vector
-    std::vector<VariableValue> *domain_list; // inverse of domain_map
+    // map from value to index in the domain vector
+    std::unordered_map<VariableValue, int> *domain_map;
+
+    // inverse of domain_map, constructed on demand by get_domain_value_at (to save RAM)
+    // currently used only by bin2text
+    // TODO: try to remove this pointer altogether
+    std::vector<VariableValue> *domain_list;
 
     // This list is used only during loading time. Allocate and destroy to save space.
     // Life starts: binary_parser.read_factors (via add_factor_id)
@@ -71,7 +76,13 @@ namespace dd{
     }
 
     // inverse of get_domain_index
-    inline int get_domain_value_at(int idx) const {
+    inline int get_domain_value_at(int idx) {
+      if (!domain_list && domain_map) {
+        domain_list = new std::vector<VariableValue>(domain_map->size());
+        for (const auto &item : *domain_map) {
+          domain_list->at(item.second) = item.first;
+        }
+      }
       return domain_list ? domain_list->at(idx) : idx;
     }
 

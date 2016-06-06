@@ -88,6 +88,8 @@ long dd::FactorGraph::get_multinomial_weight_id(
    * (...((((0 * d1 + i1) * d2) + i2) * d3 + i3) * d4 + ...) * dk + ik
    *
    * For FUNC_SPARSE_MULTINOMIAL, we look up the weight_ids map.
+   *
+   * TODO: refactor the above formula into a shared routine. (See also binary_parser.read_factors)
    */
   long weight_offset = 0;
   // for each variable in the factor

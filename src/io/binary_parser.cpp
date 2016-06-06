@@ -177,6 +177,7 @@ long long read_factors(string filename, dd::FactorGraph &fg) {
 
         for (long i = 0; i < n_weights; i++) {
           // calculate radix-based key into weight_ids (see also FactorGraph::get_multinomial_weight_id)
+          // TODO: refactor the above formula into a shared routine. (See also FactorGraph::get_multinomial_weight_id)
           long key = 0;
           for (long j = 0; j < edge_count; j++) {
             const dd::Variable &var = fg.variables[fg.factors[fg.c_nfactor].tmp_variables->at(j).vid];
@@ -303,24 +304,24 @@ void read_domains(std::string filename, dd::FactorGraph &fg) {
     domain_size = be64toh(domain_size);
     assert(variable.cardinality == domain_size);
 
-    variable.domain_list = new std::vector<int>(domain_size);
+    std::vector<int> domain_list(domain_size);
     variable.domain_map = new std::unordered_map<int, int>();
 
     for (int i = 0; i < domain_size; i++) {
       file.read((char *)&value, 8);
       value = be64toh(value);
-      (*variable.domain_list)[i] = value;
+      domain_list[i] = value;
     }
 
-    std::sort(variable.domain_list->begin(), variable.domain_list->end());
+    std::sort(domain_list.begin(), domain_list.end());
     for (int i = 0; i < domain_size; i++) {
-      (*variable.domain_map)[(*variable.domain_list)[i]] = i;
+      (*variable.domain_map)[domain_list[i]] = i;
     }
 
     // adjust the initial assignments to a valid one instead of zero for query
     // variables
     if (!variable.is_evid) {
-      variable.assignment_free = variable.assignment_evid = (*variable.domain_list)[0];
+      variable.assignment_free = variable.assignment_evid = domain_list[0];
     }
   }
 }
