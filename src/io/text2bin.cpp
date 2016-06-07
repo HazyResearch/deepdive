@@ -234,6 +234,7 @@ void load_factor(std::string input_filename, std::string output_filename,
   long predicate = funcid == 5 ? -1 : 1;
   vector<int> positives_vec;
   vector<long> variables;
+  vector<long> vals_and_weights;
 
   funcid = htobe16(funcid);
 
@@ -244,6 +245,7 @@ void load_factor(std::string input_filename, std::string output_filename,
   predicate = htobe64(predicate);
 
   string line;
+  string array_piece;
   while (getline(fin, line)) {
     string field;
     istringstream ss(line);
@@ -282,18 +284,42 @@ void load_factor(std::string input_filename, std::string output_filename,
     // weight ids
     switch (be16toh(funcid)) {
       case dd::FUNC_SPARSE_MULTINOMIAL: {
-        // a list of weight ids
+        vals_and_weights.clear();
+        // IN  Format: NUM_WEIGHTS [VAR1 VAL ID] [VAR2 VAL ID] ... [WEIGHT ID]
+        // OUT Format: NUM_WEIGHTS [[VAR1_VALi, VAR2_VALi, ..., WEIGHTi]]
         // first, the run-length
         getline(ss, field, field_delim);
         long num_weightids = atol(field.c_str());
-        num_weightids = htobe64(num_weightids);
-        fout.write((char *)&num_weightids, 8);
-        // and that many weight ids
-        parse_pgarray_or_die(ss, [&fout](const string &element) {
+        long num_weightids_be = htobe64(num_weightids);
+        fout.write((char *)& num_weightids_be, 8);
+
+        // second, parse var vals for each var
+        // TODO: hard coding cid length (4) for now
+        for (long i = 0; i < nvar; i++) {
+          getline(ss, array_piece, field_delim);
+          istringstream ass(array_piece);
+          parse_pgarray_or_die(ass, [&vals_and_weights](const string &element) {
+            int cid = atoi(element.c_str());
+            cid = htobe32(cid);
+            vals_and_weights.push_back(cid);
+          }, num_weightids);
+        }
+        // third, parse weights
+        parse_pgarray_or_die(ss, [&vals_and_weights](const string &element) {
           long weightid = atol(element.c_str());
           weightid = htobe64(weightid);
+          vals_and_weights.push_back(weightid);
+        }, num_weightids);
+
+        // fourth, transpose into output format
+        for (long i = 0; i < num_weightids; i++) {
+          for (long j = 0; j < nvar; j++) {
+            int cid = (int) vals_and_weights[j * num_weightids + i];
+            fout.write((char *)&cid, 4);
+          }
+          long weightid = vals_and_weights[nvar * num_weightids + i];
           fout.write((char *)&weightid, 8);
-        }, be64toh(num_weightids));
+        }
         break;
       }
 

@@ -133,6 +133,7 @@ long long read_factors(string filename, dd::FactorGraph &fg) {
   long long count = 0;
   long long variable_id;
   long long weightid;
+  int value_id;
   short type;
   long long edge_count;
   long long equal_predicate;
@@ -161,9 +162,9 @@ long long read_factors(string filename, dd::FactorGraph &fg) {
       }
 
       // add variables to factors
-      fg.factors[fg.c_nfactor].tmp_variables.push_back(dd::VariableInFactor(
+      fg.factors[fg.c_nfactor].add_variable_in_factor(dd::VariableInFactor(
           variable_id, position, ispositive, equal_predicate));
-      fg.variables[variable_id].tmp_factor_ids.push_back(fg.c_nfactor);
+      fg.variables[variable_id].add_factor_id(fg.c_nfactor);
     }
 
     switch (type) {
@@ -171,11 +172,23 @@ long long read_factors(string filename, dd::FactorGraph &fg) {
         long n_weights = 0;
         file.read((char *)&n_weights, 8);
         n_weights = be64toh(n_weights);
-        fg.factors[fg.c_nfactor].weight_ids.reserve(n_weights);
-        for (long j = 0; j < n_weights; j++) {
+
+        fg.factors[fg.c_nfactor].weight_ids = new std::unordered_map<long, long>();
+
+        for (long i = 0; i < n_weights; i++) {
+          // calculate radix-based key into weight_ids (see also FactorGraph::get_multinomial_weight_id)
+          // TODO: refactor the above formula into a shared routine. (See also FactorGraph::get_multinomial_weight_id)
+          long key = 0;
+          for (long j = 0; j < edge_count; j++) {
+            const dd::Variable &var = fg.variables[fg.factors[fg.c_nfactor].tmp_variables->at(j).vid];
+            file.read((char *)&value_id, 4);
+            value_id = be32toh(value_id);
+            key *= var.cardinality;
+            key += var.get_domain_index(value_id);
+          }
           file.read((char *)&weightid, 8);
           weightid = be64toh(weightid);
-          fg.factors[fg.c_nfactor].weight_ids.push_back(weightid);
+          (*fg.factors[fg.c_nfactor].weight_ids)[key] = weightid;
         }
         break;
       }
@@ -266,9 +279,9 @@ long long read_edges_inc(string filename, dd::FactorGraph &fg) {
     }
 
     // add variables to factors
-    fg.factors[factor_id].tmp_variables.push_back(dd::VariableInFactor(
+    fg.factors[factor_id].add_variable_in_factor(dd::VariableInFactor(
         variable_id, position, ispositive, equal_predicate));
-    fg.variables[variable_id].tmp_factor_ids.push_back(factor_id);
+    fg.variables[variable_id].add_factor_id(factor_id);
   }
   file.close();
   return count;
@@ -291,24 +304,24 @@ void read_domains(std::string filename, dd::FactorGraph &fg) {
     domain_size = be64toh(domain_size);
     assert(variable.cardinality == domain_size);
 
-    std::vector<int> domain(domain_size);
+    std::vector<int> domain_list(domain_size);
     variable.domain_map = new std::unordered_map<int, int>();
 
     for (int i = 0; i < domain_size; i++) {
       file.read((char *)&value, 8);
       value = be64toh(value);
-      domain[i] = value;
+      domain_list[i] = value;
     }
 
-    std::sort(domain.begin(), domain.end());
+    std::sort(domain_list.begin(), domain_list.end());
     for (int i = 0; i < domain_size; i++) {
-      (*variable.domain_map)[domain[i]] = i;
+      (*variable.domain_map)[domain_list[i]] = i;
     }
 
     // adjust the initial assignments to a valid one instead of zero for query
     // variables
     if (!variable.is_evid) {
-      variable.assignment_free = variable.assignment_evid = domain[0];
+      variable.assignment_free = variable.assignment_evid = domain_list[0];
     }
   }
 }

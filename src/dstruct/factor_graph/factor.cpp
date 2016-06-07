@@ -7,7 +7,10 @@ CompactFactor::CompactFactor() {}
 
 CompactFactor::CompactFactor(const long &_id) { id = _id; }
 
-Factor::Factor() {}
+Factor::Factor() {
+  this->tmp_variables = NULL;
+  this->weight_ids = NULL;
+}
 
 Factor::Factor(const FactorIndex &_id, const WeightIndex &_weight_id,
                const int &_func_id, const int &_n_variables) {
@@ -15,5 +18,7 @@ Factor::Factor(const FactorIndex &_id, const WeightIndex &_weight_id,
   this->weight_id = _weight_id;
   this->func_id = _func_id;
   this->n_variables = _n_variables;
+  this->tmp_variables = NULL;
+  this->weight_ids = NULL;
 }
 }
