@@ -175,7 +175,6 @@ void dump_factorgraph(const dd::FactorGraph &fg,
   dump_domains(fg, output_dir + "/domains.tsv");
   dump_factors(fg, output_dir + "/factors.tsv");
   dump_weights(fg, output_dir + "/weights.tsv");
-  dump_domains(fg, output_dir + "/domains.tsv");
   dump_meta(fg, output_dir + "/graph.meta");
 }
 
