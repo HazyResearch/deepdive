@@ -24,7 +24,6 @@ class NumaAwareComputation : public ConcurrentComputation {
   virtual void wait();
 
  private:
-  
 };
 
 }  // namespace dd

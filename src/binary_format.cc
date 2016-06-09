@@ -152,6 +152,7 @@ void FactorGraph::load_factors(std::string filename) {
   long long count = 0;
   long long variable_id;
   long long weightid;
+  int value_id;
   short type;
   long long edge_count;
   long long equal_predicate;
@@ -178,9 +179,9 @@ void FactorGraph::load_factors(std::string filename) {
       assert(variable_id < n_var && variable_id >= 0);
 
       // add variables to factors
-      factors[c_nfactor].tmp_variables.push_back(
+      factors[c_nfactor].add_variable_in_factor(
           VariableInFactor(variable_id, position, ispositive, equal_predicate));
-      variables[variable_id].tmp_factor_ids.push_back(c_nfactor);
+      variables[variable_id].add_factor_id(c_nfactor);
     }
 
     switch (type) {
@@ -189,11 +190,25 @@ void FactorGraph::load_factors(std::string filename) {
         file.read((char *)&n_weights, 8);
         n_weights = be64toh(n_weights);
 
-        factors[c_nfactor].weight_ids.reserve(n_weights);
-        for (long j = 0; j < n_weights; j++) {
+        factors[c_nfactor].weight_ids =
+            new std::unordered_map<long, long>(n_weights);
+        for (long i = 0; i < n_weights; i++) {
+          // calculate radix-based key into weight_ids (see also
+          // FactorGraph::get_multinomial_weight_id)
+          // TODO: refactor the above formula into a shared routine. (See also
+          // FactorGraph::get_multinomial_weight_id)
+          long key = 0;
+          for (long j = 0; j < edge_count; j++) {
+            const Variable &var =
+                variables[factors[c_nfactor].tmp_variables->at(j).vid];
+            file.read((char *)&value_id, 4);
+            value_id = be32toh(value_id);
+            key *= var.cardinality;
+            key += var.get_domain_index(value_id);
+          }
           file.read((char *)&weightid, 8);
           weightid = be64toh(weightid);
-          factors[c_nfactor].weight_ids.push_back(weightid);
+          (*factors[c_nfactor].weight_ids)[key] = weightid;
         }
         break;
       }
@@ -230,25 +245,24 @@ void FactorGraph::load_domains(std::string filename) {
     domain_size = be64toh(domain_size);
     assert(variable.cardinality == domain_size);
 
-    std::vector<int> domain(domain_size);
-    /* Notice that this is the first time variable.domain_map is initialized */
+    std::vector<int> domain_list(domain_size);
     variable.domain_map = new std::unordered_map<VariableValue, int>();
 
     for (int i = 0; i < domain_size; i++) {
       file.read((char *)&value, 8);
       value = be64toh(value);
-      domain[i] = value;
+      domain_list[i] = value;
     }
 
-    std::sort(domain.begin(), domain.end());
+    std::sort(domain_list.begin(), domain_list.end());
     for (int i = 0; i < domain_size; i++) {
-      (*variable.domain_map)[domain[i]] = i;
+      (*variable.domain_map)[domain_list[i]] = i;
     }
 
     // adjust the initial assignments to a valid one instead of zero for query
     // variables
     if (!variable.is_evid) {
-      variable.assignment_free = variable.assignment_evid = domain[0];
+      variable.assignment_free = variable.assignment_evid = domain_list[0];
     }
   }
 }

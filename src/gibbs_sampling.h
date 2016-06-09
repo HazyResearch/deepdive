@@ -93,7 +93,7 @@ class GibbsSampling {
    */
   void dump_weights(const bool is_quiet);
 
- private:
+  // private: // FIXME not ready yet
   /**
    * Saves the weights snapshot into a binary file.
    *

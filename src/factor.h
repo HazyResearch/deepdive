@@ -2,6 +2,7 @@
 #define DIMMWITTED_FACTOR_H_
 
 #include <iostream>
+#include <unordered_map>
 #include <vector>
 #include <assert.h>
 #include "variable.h"
@@ -235,10 +236,17 @@ class Factor {
 
   long n_start_i_vif;  // start variable id
 
-  // a list of weight for sparse multinomial factor
-  // the weights are ordered by their corresponding variable assignments
-  /* XXX(IVG): Need to learn more about this */
-  std::vector<long> weight_ids;
+  // Variable value dependent weights for sparse multinomial factors
+  // Key: radix encoding of var values: (...((((0 * d1 + i1) * d2) + i2) * d3 +
+  // i3) * d4 + ...) * dk + ik
+  // Value: weight id
+  // If a key (i.e., value assignment) is missing, it means this factor is
+  // inactive (potential = 0).
+  // TODO: handle key overflow...
+  // An empty map takes 48 bytes, so we create it only as needed, i.e., when
+  // func_id = FUNC_SPARSE_MULTINOMIAL
+  // Allocated in binary_parser.read_factors. Never deallocated.
+  std::unordered_map<long, long> *weight_ids;
 
   /**
    * Turns out the no-arg constructor is still required, since we're
@@ -265,20 +273,40 @@ class RawFactor : public Factor {
   /*
    * Populated when loading the factor graph, used when compiling the factor
    * graph, and after that, it's useless.
+   * This list is used only during loading time. Allocate and destroy to save
+   * space.
+   * Life starts: binary_parser.read_factors (via add_variable_in_factor)
+   * Life ends: FactorGraph::organize_graph_by_edge (via clear_tmp_variables)
    */
-  std::vector<VariableInFactor> tmp_variables;
+  std::vector<VariableInFactor> *tmp_variables;  // variables in the factor
 
   /**
    * Need no-arg constructor to create arrays of uninitialized RawFactors.
    */
   RawFactor();
   /**
-   * Construct a factor with given id, weight id, function id, number of
-   * variables
    */
   RawFactor(const FactorIndex _id, const WeightIndex _weight_id,
             const int _func_id, const int _n_variables);
+
+  inline void add_variable_in_factor(const VariableInFactor &vif);
+
+  inline void clear_tmp_variables();
 };
+
+inline void RawFactor::add_variable_in_factor(const VariableInFactor &vif) {
+  if (!tmp_variables) {
+    tmp_variables = new std::vector<VariableInFactor>();
+  }
+  tmp_variables->push_back(vif);
+}
+
+inline void RawFactor::clear_tmp_variables() {
+  if (tmp_variables) {
+    delete tmp_variables;
+    tmp_variables = NULL;
+  }
+}
 
 }  // namespace dd
 

@@ -242,6 +242,7 @@ inline double CompiledFactorGraph::potential(const Variable& variable,
         // assignment
         long wid = get_multinomial_weight_id(assignments, fs[i], variable.id,
                                              proposal);
+        if (wid == -1) continue;
         pot += infrs->weight_values[wid] *
                fs[i].potential(vifs, assignments, variable.id, proposal);
       }

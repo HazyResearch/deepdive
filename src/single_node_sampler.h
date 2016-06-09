@@ -50,7 +50,7 @@ class SingleNodeSampler {
    */
   void wait_sgd();
 
- private:
+  // private: // FIXME not ready yet
   // factor graph
   CompiledFactorGraph* const p_fg;
   // number of threads
@@ -63,7 +63,6 @@ class SingleNodeSampler {
   bool learn_non_evidence;
 
   std::vector<std::thread> threads;
-
 };
 
 }  // namespace dd

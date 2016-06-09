@@ -6,7 +6,7 @@ CompactFactor::CompactFactor() {}
 
 CompactFactor::CompactFactor(const long &_id) { id = _id; }
 
-RawFactor::RawFactor() {}
+RawFactor::RawFactor() : tmp_variables(NULL) {}
 
 RawFactor::RawFactor(const FactorIndex _id, const WeightIndex _weight_id,
                      const int _func_id, const int _n_variables)
@@ -17,9 +17,7 @@ RawFactor::RawFactor(const FactorIndex _id, const WeightIndex _weight_id,
   this->n_variables = _n_variables;
 
   this->n_start_i_vif = 0;
-
-  /* Explicitly clears the weight_ids array */
-  this->weight_ids.clear();
+  this->weight_ids = NULL;
 }
 
 Factor::Factor() {}

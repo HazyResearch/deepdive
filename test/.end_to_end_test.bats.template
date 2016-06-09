@@ -10,7 +10,7 @@ esac
 
 @test "end to end test: $(basename "$BATS_TEST_FILENAME" .bats)" {
     cd "${BATS_TEST_FILENAME%.bats}"
-    
+
     # convert the factor graph from tsv to binary format
     for what in variable domain factor weight; do
         for tsv in "$what"s*.tsv; do

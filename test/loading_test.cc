@@ -69,18 +69,22 @@ TEST_F(LoadingTest, load_factor_graph) {
   // EXPECT_EQ(fg.c_edge, 18);
 }
 
-// test for FactorGraph::compile() function
-TEST_F(LoadingTest, organize_graph_by_edge) {
-  dd::CompiledFactorGraph cfg(18, 18, 1, 18);
-  fg.compile(cfg);
-
-  EXPECT_EQ(cfg.c_nvar, 18);
-  EXPECT_EQ(cfg.n_evid, 9);
-  EXPECT_EQ(cfg.n_query, 9);
-  EXPECT_EQ(cfg.c_nfactor, 18);
-  EXPECT_EQ(cfg.c_nweight, 1);
-  EXPECT_EQ(fg.c_edge, 18);
-}
+// FN(6/5/2016): disabling this test because these steps are covered by
+// fg.load() in SetUp()
+//               and calling them for a second time results in seg fault
+//               (due to dellocation of tmp_variables etc)
+// // test for FactorGraph::compile() function
+// TEST_F(LoadingTest, organize_graph_by_edge) {
+//   dd::CompiledFactorGraph cfg(18, 18, 1, 18);
+//   fg.compile(cfg);
+//
+//   EXPECT_EQ(cfg.c_nvar, 18);
+//   EXPECT_EQ(cfg.n_evid, 9);
+//   EXPECT_EQ(cfg.n_query, 9);
+//   EXPECT_EQ(cfg.c_nfactor, 18);
+//   EXPECT_EQ(cfg.c_nweight, 1);
+//   EXPECT_EQ(fg.c_edge, 18);
+// }
 
 // test for FactorGraph::copy_from function
 TEST_F(LoadingTest, copy_from) {

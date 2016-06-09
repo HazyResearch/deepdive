@@ -49,9 +49,9 @@ void FactorGraph::compile(CompiledFactorGraph &cfg) {
      * within the factor by their position, lay the variables in this factor
      * one after another in the vifs array.
      */
-    std::sort(rf.tmp_variables.begin(), rf.tmp_variables.end(),
+    std::sort(rf.tmp_variables->begin(), rf.tmp_variables->end(),
               compare_position);
-    for (const VariableInFactor &vif : rf.tmp_variables) {
+    for (const VariableInFactor &vif : *rf.tmp_variables) {
       cfg.vifs[i_edge] = vif;
       i_edge++;
     }
@@ -73,7 +73,7 @@ void FactorGraph::compile(CompiledFactorGraph &cfg) {
     RawVariable &rv = variables[i];
     // I guess it's only at this point that we're sure tmp_factor_ids won't
     // change since we've fully loaded the graph.
-    rv.n_factors = rv.tmp_factor_ids.size();
+    rv.n_factors = rv.tmp_factor_ids->size();
     rv.n_start_i_factors = i_edge;
 
     if (rv.domain_type == DTYPE_MULTINOMIAL) {
@@ -81,7 +81,7 @@ void FactorGraph::compile(CompiledFactorGraph &cfg) {
       ntallies += rv.cardinality;
     }
 
-    for (const long &fid : rv.tmp_factor_ids) {
+    for (const long &fid : *rv.tmp_factor_ids) {
       cfg.factor_ids[i_edge] = fid;
 
       cfg.compact_factors[i_edge].id = factors[fid].id;
@@ -191,12 +191,18 @@ long CompiledFactorGraph::get_multinomial_weight_id(
     const VariableValue *assignments, const CompactFactor &fs, long vid,
     long proposal) {
   /**
-   * The weight ids are aligned in a continuous region according
+   * For FUNC_MULTINOMIAL, the weight ids are aligned in a continuous region
+   * according
    * to the numerical order of variable values.
    * For example, for variable assignment indexes i1, ..., ik with cardinality
    * d1, ..., dk
    * The weight index is
    * (...((((0 * d1 + i1) * d2) + i2) * d3 + i3) * d4 + ...) * dk + ik
+   *
+   * For FUNC_SPARSE_MULTINOMIAL, we look up the weight_ids map.
+   *
+   * TODO: refactor the above formula into a shared routine. (See also
+   * binary_parser.read_factors)
    */
   long weight_offset = 0;
   // for each variable in the factor
@@ -210,9 +216,15 @@ long CompiledFactorGraph::get_multinomial_weight_id(
 
   long weight_id = 0;
   switch (fs.func_id) {
-    case FUNC_SPARSE_MULTINOMIAL:
-      weight_id = factors[fs.id].weight_ids[weight_offset];
+    case FUNC_SPARSE_MULTINOMIAL: {
+      auto iter = factors[fs.id].weight_ids->find(weight_offset);
+      if (iter == factors[fs.id].weight_ids->end()) {
+        weight_id = -1;
+      } else {
+        weight_id = iter->second;
+      }
       break;
+    }
     case FUNC_MULTINOMIAL:
       weight_id = *(compact_factors_weightids + (&fs - compact_factors)) +
                   weight_offset;
@@ -257,13 +269,13 @@ void CompiledFactorGraph::update_weight(const Variable &variable,
             get_multinomial_weight_id(infrs->assignments_free, fs[i], -1, -1);
         int equal = (wid1 == wid2);
 
-        if (!infrs->weights_isfixed[wid1]) {
+        if (wid1 >= 0 && !infrs->weights_isfixed[wid1]) {
           infrs->weight_values[wid1] +=
               stepsize * (potential(fs[i], infrs->assignments_evid) -
                           equal * potential(fs[i], infrs->assignments_free));
         }
 
-        if (!infrs->weights_isfixed[wid2]) {
+        if (wid2 >= 0 && !infrs->weights_isfixed[wid2]) {
           infrs->weight_values[wid2] +=
               stepsize * (equal * potential(fs[i], infrs->assignments_evid) -
                           potential(fs[i], infrs->assignments_free));

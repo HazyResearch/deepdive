@@ -35,7 +35,7 @@ class SingleThreadSampler {
    */
   void sample_sgd(const int &i_sharding, const int &n_sharding);
 
- private:
+  // private: FIXME
   // factor graph
   CompiledFactorGraph *const p_fg;
 
