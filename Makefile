@@ -67,7 +67,6 @@ TEST_SOURCES += test/test_main.cc
 TEST_SOURCES += test/factor_test.cc
 TEST_SOURCES += test/binary_format_test.cc
 TEST_SOURCES += test/loading_test.cc
-TEST_SOURCES += test/checkpoint_test.cc
 TEST_SOURCES += test/factor_graph_test.cc
 TEST_SOURCES += test/sampler_test.cc
 TEST_OBJECTS = $(TEST_SOURCES:.cc=.o)

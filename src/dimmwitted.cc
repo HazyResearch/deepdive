@@ -38,21 +38,6 @@ int compute_n_epochs(int n_epoch, int n_numa_node, int n_datacopy) {
   return std::ceil((double)n_epoch / n_valid_node);
 }
 
-void compact(dd::CmdParser &cmd_parser) {
-  // TODO: Implement me!
-  return;
-}
-
-void init_assignments(dd::CmdParser &cmd_parser) {
-  // TODO: Implement me!
-  return;
-}
-
-void init_weights(dd::CmdParser &cmd_parser) {
-  // TODO: Implement me!
-  return;
-}
-
 int gibbs(const dd::CmdParser &args) {
   // number of NUMA nodes
   int n_numa_node = numa_max_node() + 1;
@@ -84,35 +69,29 @@ int gibbs(const dd::CmdParser &args) {
   dd::GibbsSampling gibbs(&args, args.should_sample_evidence, args.burn_in,
                           args.should_learn_non_evidence);
 
-  if (args.should_use_snapshot) {
-    dprintf("Resuming factor graph from checkpoint...\n");
-    gibbs.do_resume(args.should_be_quiet, args.n_datacopy, meta.num_variables,
-                    meta.num_factors, meta.num_weights, meta.num_edges);
-  } else {
-    // Load factor graph
-    dprintf("Initializing factor graph...\n");
-    dd::FactorGraph fg(meta.num_variables, meta.num_factors, meta.num_weights,
-                       meta.num_edges);
+  // Load factor graph
+  dprintf("Initializing factor graph...\n");
+  dd::FactorGraph fg(meta.num_variables, meta.num_factors, meta.num_weights,
+                     meta.num_edges);
 
-    fg.load_variables(args.variable_file);
-    fg.load_weights(args.weight_file);
-    fg.load_domains(args.domain_file);
-    fg.load_factors(args.factor_file);
-    fg.safety_check();
+  fg.load_variables(args.variable_file);
+  fg.load_weights(args.weight_file);
+  fg.load_domains(args.domain_file);
+  fg.load_factors(args.factor_file);
+  fg.safety_check();
 
-    assert(fg.is_usable());
+  assert(fg.is_usable());
 
-    if (!args.should_be_quiet) {
-      std::cout << "Printing FactorGraph statistics:" << std::endl;
-      std::cout << fg << std::endl;
-    }
-
-    dd::CompiledFactorGraph cfg(meta.num_variables, meta.num_factors,
-                                meta.num_weights, meta.num_edges);
-    fg.compile(cfg);
-
-    gibbs.init(&cfg, args.n_datacopy);
+  if (!args.should_be_quiet) {
+    std::cout << "Printing FactorGraph statistics:" << std::endl;
+    std::cout << fg << std::endl;
   }
+
+  dd::CompiledFactorGraph cfg(meta.num_variables, meta.num_factors,
+                              meta.num_weights, meta.num_edges);
+  fg.compile(cfg);
+
+  gibbs.init(&cfg, args.n_datacopy);
 
   // number of learning epochs
   // the factor graph is copied on each NUMA node, so the total epochs =
@@ -136,10 +115,6 @@ int gibbs(const dd::CmdParser &args) {
   // inference
   gibbs.inference(numa_aware_n_epoch, args.should_be_quiet);
   gibbs.aggregate_results_and_dump(args.should_be_quiet);
-
-  if (args.should_use_snapshot) {
-    gibbs.do_checkpoint(args.should_be_quiet);
-  }
 
   return 0;
 }

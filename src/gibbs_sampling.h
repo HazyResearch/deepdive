@@ -52,12 +52,6 @@ class GibbsSampling {
 
   void init(CompiledFactorGraph* const _p_cfg, int n_datacopy);
 
-  void do_resume(bool is_quiet, int n_datacopy, long n_var, long n_factor,
-                 long n_weight, long n_edge);
-
-  /* TODO: Implement checkpoint method */
-  void do_checkpoint(bool is_quiet);
-
   /**
    * Performs learning
    * n_epoch number of epochs. A epoch is one pass over data
@@ -92,26 +86,6 @@ class GibbsSampling {
    * is_quiet whether to compress information display
    */
   void dump_weights(const bool is_quiet);
-
-  // private: // FIXME not ready yet
-  /**
-   * Saves the weights snapshot into a binary file.
-   *
-   * FIXME: This has the same logic as dump_weights() below. Potentially
-   * merge both functions.
-   *
-   * FIXME: This function and its loading counterpart is located in this
-   * class since we have to take into account the weights from all the
-   * nodes.
-   */
-  void save_weights_snapshot(const bool is_quiet);
-
-  /**
-   * Loads the weights snapshot into all copies of the factor graph from the
-   * specified file. Useful in the context of running the sampler on
-   * different non-overlapping partitions of the same factor graph.
-   */
-  void load_weights_snapshot(const bool is_quiet);
 };
 
 }  // namespace dd
