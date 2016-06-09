@@ -80,8 +80,6 @@ int gibbs(const dd::CmdParser &args) {
   fg.load_factors(args.factor_file);
   fg.safety_check();
 
-  assert(fg.is_usable());
-
   if (!args.should_be_quiet) {
     std::cout << "Printing FactorGraph statistics:" << std::endl;
     std::cout << fg << std::endl;

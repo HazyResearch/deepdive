@@ -20,9 +20,7 @@ FactorGraph::FactorGraph(long _n_var, long _n_factor, long _n_weight,
       n_query(0),
       variables(new RawVariable[_n_var]),
       factors(new RawFactor[_n_factor]),
-      weights(new Weight[_n_weight]),
-      sorted(false),
-      safety_check_passed(false) {}
+      weights(new Weight[_n_weight]) {}
 
 void FactorGraph::compile(CompiledFactorGraph &cfg) {
   cfg.c_nvar = c_nvar;
@@ -126,12 +124,6 @@ void FactorGraph::safety_check() {
   for (long i = 0; i < s; i++) {
     assert(this->weights[i].id == i);
   }
-  this->sorted = true;
-  this->safety_check_passed = true;
-}
-
-bool FactorGraph::is_usable() {
-  return this->sorted && this->safety_check_passed;
 }
 
 CompiledFactorGraph::CompiledFactorGraph(long _n_var, long _n_factor,
@@ -152,8 +144,7 @@ CompiledFactorGraph::CompiledFactorGraph(long _n_var, long _n_factor,
       compact_factors_weightids(new int[_n_edge]),
       factor_ids(new long[_n_edge]),
       vifs(new VariableInFactor[_n_edge]),
-      infrs(new InferenceResult(_n_var, _n_weight)),
-      safety_check_passed(false) {}
+      infrs(new InferenceResult(_n_var, _n_weight)) {}
 
 void CompiledFactorGraph::copy_from(
     const CompiledFactorGraph *const p_other_fg) {
@@ -175,9 +166,6 @@ void CompiledFactorGraph::copy_from(
          sizeof(int) * n_edge);
   memcpy(factor_ids, p_other_fg->factor_ids, sizeof(long) * n_edge);
   memcpy(vifs, p_other_fg->vifs, sizeof(VariableInFactor) * n_edge);
-
-  sorted = p_other_fg->sorted;
-  safety_check_passed = p_other_fg->safety_check_passed;
 
   infrs->copy_from(*p_other_fg->infrs);
   infrs->ntallies = p_other_fg->infrs->ntallies;

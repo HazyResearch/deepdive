@@ -48,10 +48,6 @@ class FactorGraph {
   // see sort_by_id() below
   bool sorted;
 
-  // whether safety check has passed
-  // see safety_check() below
-  bool safety_check_passed;
-
   /**
    * Constructs a new factor graph with given number number of variables,
    * factors, weights, and edges
@@ -90,12 +86,6 @@ class FactorGraph {
    * Checks whether the edge-based store is correct
    */
   void safety_check();
-
-  /**
-   * Returns wether the factor graph is usable.
-   * A factor graph is usable when gone through safety_check and sort_by_id()
-   */
-  bool is_usable();
 };
 
 /**
@@ -110,7 +100,7 @@ inline std::ostream& operator<<(std::ostream& out, FactorGraph const& fg) {
 
   out << "n_evid = " << fg.n_evid << ", ";
   out << "n_query = " << fg.n_query << ", ";
-  out << "safety_check_passed = " << fg.safety_check_passed << ")";
+  out << ")";
   return out;
 }
 
@@ -151,12 +141,6 @@ class CompiledFactorGraph {
 
   // pointer to inference result
   InferenceResult* const infrs;
-
-  bool sorted;
-
-  // whether safety check has passed
-  // see safety_check() below
-  bool safety_check_passed;
 
   CompiledFactorGraph();
 
