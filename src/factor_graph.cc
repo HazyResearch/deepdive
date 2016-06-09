@@ -60,7 +60,7 @@ void FactorGraph::compile(CompiledFactorGraph &cfg) {
     Factor f(rf);
     cfg.factors[i] = f;
   }
-  dprintf("i_edge = %ld n_edge = %ld", i_edge, n_edge);
+  dprintf("i_edge = %ld n_edge = %ld\n", i_edge, n_edge);
   assert(i_edge == n_edge);
 
   i_edge = 0;
