@@ -17,10 +17,9 @@ RawFactor::RawFactor(const FactorIndex _id, const WeightIndex _weight_id,
   this->n_variables = _n_variables;
 
   this->n_start_i_vif = 0;
-  this->weight_ids = NULL;
 }
 
-Factor::Factor() {}
+Factor::Factor() : weight_ids(NULL) {}
 
 Factor::Factor(RawFactor &rf)
     : id(rf.id),
