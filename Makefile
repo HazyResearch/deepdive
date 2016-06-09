@@ -8,7 +8,7 @@ LDFLAGS =
 LDLIBS =
 CXXFLAGS += -I./lib/tclap/include/ -I./src
 
-ifeq ($(DEBUG), true)
+ifdef DEBUG
 CXXFLAGS += -g -DDEBUG
 endif
 
@@ -32,7 +32,7 @@ ifeq ($(UNAME), Darwin)
 ifndef CXX
 CXX = clang++
 endif
-ifneq ($(DEBUG), true)
+ifndef DEBUG
 CXXFLAGS += -O3
 endif
 # optimization
