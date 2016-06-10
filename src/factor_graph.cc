@@ -66,7 +66,9 @@ void FactorGraph::compile(CompiledFactorGraph &cfg) {
      * one after another in the vifs array.
      */
     std::sort(rf.tmp_variables->begin(), rf.tmp_variables->end(),
-              compare_position);
+              [](const VariableInFactor &x, const VariableInFactor &y) {
+                return x.n_position < y.n_position;
+              });
     for (const VariableInFactor &vif : *rf.tmp_variables) {
       cfg.vifs[i_edge] = vif;
       i_edge++;
@@ -276,10 +278,6 @@ void CompiledFactorGraph::update_weight(const Variable &variable,
         abort();
     }
   }
-}
-
-bool compare_position(const VariableInFactor &x, const VariableInFactor &y) {
-  return x.n_position < y.n_position;
 }
 
 }  // namespace dd
