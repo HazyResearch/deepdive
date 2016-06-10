@@ -122,7 +122,7 @@ clean:
 
 # how to test
 include test/bats.mk
-test: $(PROGRAM) $(TEST_PROGRAM)
+test-build: $(PROGRAM) $(TEST_PROGRAM)
 
 # how to format code
 ifndef CLANG_FORMAT
