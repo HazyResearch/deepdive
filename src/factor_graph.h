@@ -123,8 +123,6 @@ class CompiledFactorGraph {
   // learning weight update stepsize (learning rate)
   double stepsize;
 
-  bool is_inc;
-
   Variable* const variables;
   Factor* const factors;
 
