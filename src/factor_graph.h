@@ -106,9 +106,6 @@ class FactorGraph {
   void safety_check();
 };
 
-/**
- * Sorry for my noobness; I don't really know where to place this function
- */
 inline std::ostream& operator<<(std::ostream& out, FactorGraph const& fg) {
   out << "FactorGraph(";
   out << fg.size << " / " << fg.capacity;
