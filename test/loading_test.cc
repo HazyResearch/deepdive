@@ -23,16 +23,6 @@ class LoadingTest : public testing::Test {
   LoadingTest() : fg(dd::FactorGraph({18, 18, 1, 18})) {}
 
   virtual void SetUp() {
-    system(
-        "dw text2bin variable test/biased_coin/variables.tsv "
-        "test/biased_coin/graph.variables");
-    system(
-        "dw text2bin factor test/biased_coin/factors.tsv "
-        "test/biased_coin/graph.factors 4 1 0 "
-        "1");
-    system(
-        "dw text2bin weight test/biased_coin/weights.tsv "
-        "test/biased_coin/graph.weights");
     const char *argv[] = {
         "dw",      "gibbs",
         "-w",      "./test/biased_coin/graph.weights",
