@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# db-create-table-def -- Creates a table from column definitions, coping with existing ones
+# $ export CREATE_TABLE_TYPE=... CREATE_TABLE_EXTRA_CLAUSES=...
+# $ export CREATE_IF_NOT_EXISTS=1
+# $ export DROP_VIEW_TYPE=... DROP_TABLE_TYPE=...
+# $ db-create-table-def TABLE [COLUMN:TYPE[:CONSTRAINT]]...
+##
+set -euo pipefail
+: ${CREATE_IF_NOT_EXISTS:=}
+[[ $# -gt 0 ]] || usage "$0" "Missing TABLE name"
+Table=$1; shift
+
+if [ -d "$DEEPDIVE_WORK_DIRECTORY/$DBNAME/tables/$Table" ]; then
+    # table exists
+    if [ -n "$CREATE_IF_NOT_EXISTS" ]; then
+        exit 0
+    else
+        error 'Table ''"'"$Table"'"'' already exists'
+    fi
+fi
+# create the directory for future table data
+mkdir "$DEEPDIVE_WORK_DIRECTORY/$DBNAME/tables/$Table"
+tableDef='SELECT '
+columnIndex=0
+# create table with column definitions
+for columnDef in "$@"; do
+    # parse COLUMN:TYPE[:CONSTRAINT]
+    column=${columnDef%%:*}
+    typeConstraint=${columnDef#$column}
+    typeConstraint=${typeConstraint#:}
+    [[ -n "$typeConstraint" ]] || usage "$0" "$columnDef: Missing :TYPE[:CONSTRAINT]"
+    type=${typeConstraint%%:*}
+    type=${type//text/varchar}
+    array=${type##*\[\]*}
+    if [ -z $array ]; then
+        isArrayType=true
+    else
+        isArrayType=false
+    fi
+    constraint=${typeConstraint#$type}
+    constraint=${constraint#:}
+    #remove leading whitespace
+    constraint="${constraint#"${constraint%%[![:space:]]*%}"}"
+    # constraints not supported in Drill
+    if [ -n "$constraint" ]; then
+        # TODO: make this more severe?
+        echo 'Constraints not supported in Drill'
+    fi
+    if [ "$isArrayType" = true ]; then
+        tableDef+="CONVERT_FROM(columns[$columnIndex], 'JSON') AS "'`'"$column"'`,'
+    else
+        tableDef+="CAST(columns[$columnIndex] AS $type) AS "'`'"$column"'`,'
+    fi
+    (( columnIndex+=1 ))
+done
+tableDef=${tableDef%,}
+tableDef+=" FROM $DEEPDIVE_WORKSPACE."'`'"$DBNAME/tables/$Table"'`'
+
+# for Drill instead of an actual table def we create a VIEW with schema information of the raw text data
+# also create a temporary empty file so Drill doesn't give us an error when creating the VIEW
+tempFilePath=$( mktemp --suffix=.tsv "$DEEPDIVE_WORK_DIRECTORY/$DBNAME/tables/$Table/tmpXXX" )
+db-create-view-as "$Table" "$tableDef"
+rm "$tempFilePath"

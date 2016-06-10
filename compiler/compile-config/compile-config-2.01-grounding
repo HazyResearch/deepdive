@@ -115,7 +115,7 @@ def factorWeightDescriptionSqlExpr:
           else
             # otherwise, randomly select from evidence variables of each variable table
             $deepdive.schema.variables_[] | "
-                INSERT INTO \(deepdiveGlobalHoldoutTable | asSqlIdent) \(
+                \(
                 { SELECT:
                     [ { column: deepdiveVariableIdColumn }
                     ]
@@ -137,7 +137,7 @@ def factorWeightDescriptionSqlExpr:
             $deepdive.calibration.holdout_query
           else empty
           end
-        ] | map("deepdive sql \(@sh)") | join("\n"))
+        ] | map("deepdive insert into \(deepdiveGlobalHoldoutTable | asSqlIdent) \(@sh)") | join("\n"))
         "
     }
 }

@@ -1,0 +1,1 @@
+../postgresql/deepdive_create.bats

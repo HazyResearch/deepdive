@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# db-load -- Loads file to the PostgreSQL database configured for a DeepDive application
+# > db-load TABLE COLUMNS FORMAT [SOURCE...]
+##
+set -eu
+[[ $# -gt 0 ]] || usage "$0" "No TABLE given"
+table=$1; shift
+[[ $# -gt 0 ]] || usage "$0" "No COLUMNS given"
+columns=$1; shift
+[[ $# -gt 0 ]] || usage "$0" "No FORMAT given"
+format=$1; shift
+
+table="$table${columns:+($columns)}"
+
+# load in parallel from multiple sources
+do_load() {
+    local sql=$1; shift
+    local nsources=$#
+    if [[ $nsources -gt 1 ]]; then
+        local i=1
+        for source; do
+            echo MULTIPLESOURCES $source
+            exit 1
+            show_progress input_to "loading $table [$i/$nsources]" -- \
+            #db-execute "$sql" <"$source" &
+            let ++i
+        done
+        wait
+    else
+        source=$1; shift
+        echo SINGLESOURCE $source
+        #head -n 20 "$source"
+        #exit 1
+        #exec show_progress input_to "loading $table" -- \
+        cat "$source" >$( mktemp --suffix=.tsv "$DEEPDIVE_WORK_DIRECTORY/$DBNAME/tables/$table"/data-XXXXXX )
+    fi
+}
+
+case $format in
+    tsv)
+        do_load "\COPY $table FROM PSTDIN" "$@"
+        ;;
+    csv)
+        do_load "\COPY $table FROM PSTDIN CSV" "$@"
+        ;;
+    *) error "$format: unsupported format by Drill driver" ;;
+esac

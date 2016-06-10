@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# db-execute -- Executes a given SQL query against the Drill database configured for a DeepDive application
+# > eval "$(db-parse "$url")"
+# > db-execute SQL
+##
+set -eu
+
+sql=${1:?No SQL given}; shift
+sql=${sql//\"/\`}
+sql="use $DEEPDIVE_WORKSPACE;
+    $sql"
+exec "$DRILL_EXECUTABLE" -f <(echo "$sql")

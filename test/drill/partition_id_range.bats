@@ -1,0 +1,1 @@
+../postgresql/partition_id_range.bats

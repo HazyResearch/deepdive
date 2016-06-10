@@ -110,6 +110,7 @@ stage database/db-driver/postgresql                               util/db-driver
 stage database/db-driver/greenplum                                util/db-driver/
 stage database/db-driver/postgresql-xl                            util/db-driver/
 stage database/db-driver/mysql                                    util/db-driver/
+stage database/db-driver/drill                                    util/db-driver/
 stage database/partition_id_range                                 util/
 stage database/pgtsv_to_json                                      util/
 stage database/tsv2json                                           util/

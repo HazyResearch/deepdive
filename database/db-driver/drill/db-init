@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# db-init -- Initializes Drill database configured for a DeepDive application
+# > eval "$(db-parse "$url")"
+# > db-init
+##
+set -eu
+
+mkdir "$DEEPDIVE_WORK_DIRECTORY/$DBNAME"
+mkdir "$DEEPDIVE_WORK_DIRECTORY/$DBNAME/tables"
+exit 0
+
+if [[ $# -gt 0 ]]; then
+    createdb "$DBNAME" || true >/dev/null
+else
+    {
+    dropdb "$DBNAME" || true
+    createdb "$DBNAME"
+    } >/dev/null
+fi

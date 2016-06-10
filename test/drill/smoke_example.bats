@@ -1,0 +1,1 @@
+../postgresql/smoke_example.bats

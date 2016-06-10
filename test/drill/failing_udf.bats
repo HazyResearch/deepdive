@@ -1,0 +1,1 @@
+../postgresql/failing_udf.bats

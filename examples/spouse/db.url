@@ -1,1 +1,1 @@
-postgresql://localhost/deepdive_spouse_$USER
+drill://localhost/deepdive_spouse_$USER
