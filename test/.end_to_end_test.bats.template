@@ -24,12 +24,12 @@ esac
 
     # run sampler
     dw gibbs \
-        -w <(cat graph.weights*) \
-        -v <(cat graph.variables*) \
-        -f <(cat graph.factors*) \
+        -w <(cat 2>/dev/null graph.weights*) \
+        -v <(cat 2>/dev/null graph.variables*) \
+        -f <(cat 2>/dev/null graph.factors*) \
         -m graph.meta \
         -o . \
-        --domains <(cat graph.domains*) \
+        --domains <(cat 2>/dev/null graph.domains*) \
         --quiet $(cat dw-args)
 
     # check result
