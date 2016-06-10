@@ -12,5 +12,12 @@ esac
     testFileBaseName=$(basename "$BATS_TEST_FILENAME" .bats)
     # convert snake_case to CamelCase
     testClassName=$(perl -ne 's/(?:^|_)(.)/{uc $1}/eg; print' <<<"$testFileBaseName")
+
+    # setup
+    ! [[ -x "${BATS_TEST_FILENAME%.bats}".setup.sh ]] || "${BATS_TEST_FILENAME%.bats}".setup.sh
+
     dw_test --gtest_filter="$testClassName.*"
+
+    # teardown
+    ! [[ -x "${BATS_TEST_FILENAME%.bats}".teardown.sh ]] || "${BATS_TEST_FILENAME%.bats}".teardown.sh
 }
