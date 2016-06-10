@@ -16,8 +16,8 @@
 namespace dd {
 
 // Read meta data file, return Meta struct
-Meta read_meta(std::string meta_file) {
-  Meta meta;
+FactorGraphDescriptor read_meta(std::string meta_file) {
+  FactorGraphDescriptor meta;
   std::ifstream file;
   file.open(meta_file.c_str());
   std::string buf;
@@ -29,21 +29,8 @@ Meta read_meta(std::string meta_file) {
   meta.num_factors = atoll(buf.c_str());
   getline(file, buf, ',');
   meta.num_edges = atoll(buf.c_str());
-  getline(file, meta.weights_file, ',');
-  getline(file, meta.variables_file, ',');
-  getline(file, meta.factors_file, ',');
-  getline(file, meta.edges_file, ',');
   file.close();
   return meta;
-}
-
-std::ostream &operator<<(std::ostream &stream, const Meta &meta) {
-  stream << "################################################" << std::endl;
-  stream << "# nvar               : " << meta.num_variables << std::endl;
-  stream << "# nfac               : " << meta.num_factors << std::endl;
-  stream << "# nweight            : " << meta.num_weights << std::endl;
-  stream << "# nedge              : " << meta.num_edges << std::endl;
-  return stream;
 }
 
 void FactorGraph::load_weights(const std::string filename) {
@@ -68,12 +55,10 @@ void FactorGraph::load_weights(const std::string filename) {
 
     // load into factor graph
     weights[id] = Weight(id, initial_value, isfixed);
-    c_nweight++;
     count++;
   }
+  size.num_weights += count;
   file.close();
-
-  assert(n_weight == c_nweight);
 }
 
 void FactorGraph::load_variables(const std::string filename) {
@@ -134,16 +119,14 @@ void FactorGraph::load_variables(const std::string filename) {
         RawVariable(id, type_const, is_evidence, cardinality, init_value,
                     init_value, edge_count, is_observation);
 
-    c_nvar++;
+    ++size.num_variables;
     if (is_evidence) {
-      n_evid++;
+      ++size.num_variables_evidence;
     } else {
-      n_query++;
+      ++size.num_variables_query;
     }
   }
   file.close();
-
-  assert(n_var == c_nvar);
 }
 
 void FactorGraph::load_factors(std::string filename) {
@@ -168,7 +151,8 @@ void FactorGraph::load_factors(std::string filename) {
 
     count++;
 
-    factors[c_nfactor] = RawFactor(c_nfactor, -1, type, edge_count);
+    factors[size.num_factors] =
+        RawFactor(size.num_factors, -1, type, edge_count);
 
     for (long long position = 0; position < edge_count; position++) {
       file.read((char *)&variable_id, 8);
@@ -176,13 +160,14 @@ void FactorGraph::load_factors(std::string filename) {
       variable_id = be64toh(variable_id);
 
       // check for wrong id
-      assert(variable_id < n_var && variable_id >= 0);
+      assert(variable_id < capacity.num_variables && variable_id >= 0);
 
       // add variables to factors
-      factors[c_nfactor].add_variable_in_factor(
+      factors[size.num_factors].add_variable_in_factor(
           VariableInFactor(variable_id, position, ispositive, equal_predicate));
-      variables[variable_id].add_factor_id(c_nfactor);
+      variables[variable_id].add_factor_id(size.num_factors);
     }
+    size.num_edges += edge_count;
 
     switch (type) {
       case (FUNC_SPARSE_MULTINOMIAL): {
@@ -190,7 +175,7 @@ void FactorGraph::load_factors(std::string filename) {
         file.read((char *)&n_weights, 8);
         n_weights = be64toh(n_weights);
 
-        factors[c_nfactor].weight_ids =
+        factors[size.num_factors].weight_ids =
             new std::unordered_map<long, long>(n_weights);
         for (long i = 0; i < n_weights; i++) {
           // calculate radix-based key into weight_ids (see also
@@ -200,7 +185,7 @@ void FactorGraph::load_factors(std::string filename) {
           long key = 0;
           for (long j = 0; j < edge_count; j++) {
             const Variable &var =
-                variables[factors[c_nfactor].tmp_variables->at(j).vid];
+                variables[factors[size.num_factors].tmp_variables->at(j).vid];
             file.read((char *)&value_id, 4);
             value_id = be32toh(value_id);
             key *= var.cardinality;
@@ -208,7 +193,7 @@ void FactorGraph::load_factors(std::string filename) {
           }
           file.read((char *)&weightid, 8);
           weightid = be64toh(weightid);
-          (*factors[c_nfactor].weight_ids)[key] = weightid;
+          (*factors[size.num_factors].weight_ids)[key] = weightid;
         }
         break;
       }
@@ -216,14 +201,12 @@ void FactorGraph::load_factors(std::string filename) {
       default:
         file.read((char *)&weightid, 8);
         weightid = be64toh(weightid);
-        factors[c_nfactor].weight_id = weightid;
+        factors[size.num_factors].weight_id = weightid;
     }
 
-    c_nfactor++;
+    ++size.num_factors;
   }
   file.close();
-
-  assert(n_factor == c_nfactor);
 }
 
 void FactorGraph::load_domains(std::string filename) {

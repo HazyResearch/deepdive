@@ -56,7 +56,7 @@ int gibbs(const dd::CmdParser &args) {
     std::cout << args << std::endl;
   }
 
-  Meta meta = read_meta(args.fg_file);
+  FactorGraphDescriptor meta = read_meta(args.fg_file);
   if (!args.should_be_quiet) {
     std::cout << meta << std::endl;
   }
@@ -71,8 +71,7 @@ int gibbs(const dd::CmdParser &args) {
 
   // Load factor graph
   dprintf("Initializing factor graph...\n");
-  dd::FactorGraph fg(meta.num_variables, meta.num_factors, meta.num_weights,
-                     meta.num_edges);
+  dd::FactorGraph fg(meta);
 
   fg.load_variables(args.variable_file);
   fg.load_weights(args.weight_file);
@@ -85,8 +84,7 @@ int gibbs(const dd::CmdParser &args) {
     std::cout << fg << std::endl;
   }
 
-  dd::CompiledFactorGraph cfg(meta.num_variables, meta.num_factors,
-                              meta.num_weights, meta.num_edges);
+  dd::CompiledFactorGraph cfg(fg.size);
   fg.compile(cfg);
 
   gibbs.init(&cfg, args.n_datacopy);

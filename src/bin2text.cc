@@ -23,7 +23,7 @@ constexpr char field_delim = '\t';  // tsv file delimiter
 
 void dump_variables(const dd::FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
-  for (int i = 0; i < fg.n_var; ++i) {
+  for (int i = 0; i < fg.size.num_variables; ++i) {
     dd::Variable &v = fg.variables[i];
     // variable id
     fout << v.id;
@@ -52,7 +52,7 @@ void dump_variables(const dd::FactorGraph &fg, const std::string &filename) {
 
 void dump_domains(const dd::FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
-  for (int i = 0; i < fg.n_var; ++i) {
+  for (int i = 0; i < fg.size.num_variables; ++i) {
     dd::Variable &v = fg.variables[i];
     if (v.domain_map) {
       fout << v.id;
@@ -77,7 +77,7 @@ void dump_factors(const dd::FactorGraph &fg, const std::string &filename) {
   std::vector<int> vals;
   std::vector<long> weights;
   std::string element;
-  for (int i = 0; i < fg.n_factor; ++i) {
+  for (int i = 0; i < fg.size.num_factors; ++i) {
     const auto &f = fg.factors[i];
     // FIXME this output is lossy since it drops the f.func_id and
     // f.tmp_variables[*].is_positive
@@ -145,7 +145,7 @@ void dump_factors(const dd::FactorGraph &fg, const std::string &filename) {
 
 void dump_weights(const dd::FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
-  for (int i = 0; i < fg.n_weight; ++i) {
+  for (int i = 0; i < fg.size.num_weights; ++i) {
     dd::Weight &w = fg.weights[i];
     // weight id
     fout << w.id;
@@ -159,10 +159,10 @@ void dump_weights(const dd::FactorGraph &fg, const std::string &filename) {
 
 void dump_meta(const dd::FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
-  fout << fg.n_weight;
-  fout << "," << fg.n_var;
-  fout << "," << fg.n_factor;
-  fout << "," << fg.n_edge;
+  fout << fg.size.num_weights;
+  fout << "," << fg.size.num_variables;
+  fout << "," << fg.size.num_factors;
+  fout << "," << fg.size.num_edges;
   // XXX dummy file names
   fout << ","
        << "graph.weights";
@@ -183,10 +183,9 @@ void dump_factorgraph(const dd::FactorGraph &fg,
 }
 
 int bin2text(const dd::CmdParser &cmd_parser) {
-  Meta meta = read_meta(cmd_parser.fg_file);
+  FactorGraphDescriptor meta = read_meta(cmd_parser.fg_file);
   // load factor graph
-  dd::FactorGraph fg(meta.num_variables, meta.num_factors, meta.num_weights,
-                     meta.num_edges);
+  dd::FactorGraph fg(meta);
   fg.load_variables(cmd_parser.variable_file);
   fg.load_weights(cmd_parser.weight_file);
   fg.load_domains(cmd_parser.domain_file);

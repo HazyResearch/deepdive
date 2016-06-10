@@ -7,28 +7,46 @@
 
 namespace dd {
 
-FactorGraph::FactorGraph(long _n_var, long _n_factor, long _n_weight,
-                         long _n_edge)
-    : n_var(_n_var),
-      n_factor(_n_factor),
-      n_weight(_n_weight),
-      n_edge(_n_edge),
-      c_nvar(0),
-      c_nfactor(0),
-      c_nweight(0),
-      n_evid(0),
-      n_query(0),
-      variables(new RawVariable[_n_var]),
-      factors(new RawFactor[_n_factor]),
-      weights(new Weight[_n_weight]) {}
+FactorGraphDescriptor::FactorGraphDescriptor()
+    : FactorGraphDescriptor(0, 0, 0, 0) {}
+
+FactorGraphDescriptor::FactorGraphDescriptor(size_t n_var, size_t n_fac,
+                                             size_t n_wgt, size_t n_edg)
+    : num_variables(n_var),
+      num_factors(n_fac),
+      num_edges(n_edg),
+      num_weights(n_wgt),
+      num_variables_evidence(0),
+      num_variables_query(0) {}
+
+std::ostream &operator<<(std::ostream &stream,
+                         const FactorGraphDescriptor &size) {
+  stream << "#V=" << size.num_variables;
+  if (size.num_variables_query + size.num_variables_evidence > 0) {
+    stream << "(";
+    stream << "qry=" << size.num_variables_query;
+    stream << ",";
+    stream << "evd=" << size.num_variables_evidence;
+    stream << ")";
+  }
+  stream << ",\t"
+         << "#F=" << size.num_factors;
+  stream << ",\t"
+         << "#W=" << size.num_weights;
+  stream << ",\t"
+         << "#E=" << size.num_edges;
+  return stream;
+}
+
+FactorGraph::FactorGraph(const FactorGraphDescriptor &capacity)
+    : capacity(capacity),
+      size(),
+      variables(new RawVariable[capacity.num_variables]),
+      factors(new RawFactor[capacity.num_factors]),
+      weights(new Weight[capacity.num_weights]) {}
 
 void FactorGraph::compile(CompiledFactorGraph &cfg) {
-  cfg.c_nvar = c_nvar;
-  cfg.c_nfactor = c_nfactor;
-  cfg.c_nweight = c_nweight;
-
-  cfg.n_evid = n_evid;
-  cfg.n_query = n_query;
+  cfg.size = size;
 
   cfg.stepsize = stepsize;
 
@@ -38,7 +56,7 @@ void FactorGraph::compile(CompiledFactorGraph &cfg) {
    * For each factor, put the variables sorted within each factor in an
    * array.
    */
-  for (long i = 0; i < n_factor; i++) {
+  for (long i = 0; i < size.num_factors; ++i) {
     RawFactor &rf = factors[i];
     rf.n_start_i_vif = i_edge;
 
@@ -58,8 +76,7 @@ void FactorGraph::compile(CompiledFactorGraph &cfg) {
     Factor f(rf);
     cfg.factors[i] = f;
   }
-  dprintf("i_edge = %ld n_edge = %ld\n", i_edge, n_edge);
-  assert(i_edge == n_edge);
+  assert(i_edge == size.num_edges);
 
   i_edge = 0;
   long ntallies = 0;
@@ -67,7 +84,7 @@ void FactorGraph::compile(CompiledFactorGraph &cfg) {
   /*
    * For each variable, lay the factors sequentially in an array as well.
    */
-  for (long i = 0; i < n_var; i++) {
+  for (long i = 0; i < size.num_variables; ++i) {
     RawVariable &rv = variables[i];
     // I guess it's only at this point that we're sure tmp_factor_ids won't
     // change since we've fully loaded the graph.
@@ -100,72 +117,56 @@ void FactorGraph::compile(CompiledFactorGraph &cfg) {
   /* Initialize the InferenceResult array in the end of compilation */
   cfg.infrs->init(cfg.variables, weights);
 
-  assert(i_edge == n_edge);
-  /*
-   * XXX: Ideally, we don't care about the factor graph anymore at this
-   * point, but for consistency, I will update the c_edge variable as well.
-   */
-  c_edge = i_edge;
-  cfg.c_edge = i_edge;
+  assert(i_edge == size.num_edges);
+
+  cfg.size.num_edges = i_edge;
 }
 
 void FactorGraph::safety_check() {
+  // check if any space is wasted
+  assert(capacity.num_variables == size.num_variables);
+  assert(capacity.num_factors == size.num_factors);
+  assert(capacity.num_edges == size.num_edges);
+  assert(capacity.num_weights == size.num_weights);
+
   // check whether variables, factors, and weights are stored
   // in the order of their id
-  long s = n_var;
-  for (long i = 0; i < s; i++) {
+  for (long i = 0; i < size.num_variables; ++i) {
     assert(this->variables[i].id == i);
   }
-  s = n_factor;
-  for (long i = 0; i < s; i++) {
+  for (long i = 0; i < size.num_factors; ++i) {
     assert(this->factors[i].id == i);
   }
-  s = n_weight;
-  for (long i = 0; i < s; i++) {
+  for (long i = 0; i < size.num_weights; ++i) {
     assert(this->weights[i].id == i);
   }
 }
 
-CompiledFactorGraph::CompiledFactorGraph(long _n_var, long _n_factor,
-                                         long _n_weight, long _n_edge)
-    : n_var(_n_var),
-      n_factor(_n_factor),
-      n_weight(_n_weight),
-      n_edge(_n_edge),
-      c_nvar(0),
-      c_nfactor(0),
-      c_nweight(0),
-      c_edge(0),
-      n_evid(0),
-      n_query(0),
-      variables(new Variable[_n_var]),
-      factors(new Factor[_n_factor]),
-      compact_factors(new CompactFactor[_n_edge]),
-      compact_factors_weightids(new int[_n_edge]),
-      factor_ids(new long[_n_edge]),
-      vifs(new VariableInFactor[_n_edge]),
-      infrs(new InferenceResult(_n_var, _n_weight)) {}
+CompiledFactorGraph::CompiledFactorGraph(const FactorGraphDescriptor &size)
+    : size(size),
+      variables(new Variable[size.num_variables]),
+      factors(new Factor[size.num_factors]),
+      compact_factors(new CompactFactor[size.num_edges]),
+      compact_factors_weightids(new int[size.num_edges]),
+      factor_ids(new long[size.num_edges]),
+      vifs(new VariableInFactor[size.num_edges]),
+      infrs(new InferenceResult(size.num_variables, size.num_weights)) {}
 
 void CompiledFactorGraph::copy_from(
     const CompiledFactorGraph *const p_other_fg) {
-  c_nvar = p_other_fg->c_nvar;
-  c_nfactor = p_other_fg->c_nfactor;
-  c_nweight = p_other_fg->c_nweight;
-  c_edge = p_other_fg->c_edge;
-
-  n_evid = p_other_fg->n_evid;
-  n_query = p_other_fg->n_query;
+  size = p_other_fg->size;
 
   // copy each member from the given graph
-  memcpy(variables, p_other_fg->variables, sizeof(Variable) * n_var);
-  memcpy(factors, p_other_fg->factors, sizeof(Factor) * n_factor);
+  memcpy(variables, p_other_fg->variables,
+         sizeof(Variable) * size.num_variables);
+  memcpy(factors, p_other_fg->factors, sizeof(Factor) * size.num_factors);
 
   memcpy(compact_factors, p_other_fg->compact_factors,
-         sizeof(CompactFactor) * n_edge);
+         sizeof(CompactFactor) * size.num_edges);
   memcpy(compact_factors_weightids, p_other_fg->compact_factors_weightids,
-         sizeof(int) * n_edge);
-  memcpy(factor_ids, p_other_fg->factor_ids, sizeof(long) * n_edge);
-  memcpy(vifs, p_other_fg->vifs, sizeof(VariableInFactor) * n_edge);
+         sizeof(int) * size.num_edges);
+  memcpy(factor_ids, p_other_fg->factor_ids, sizeof(long) * size.num_edges);
+  memcpy(vifs, p_other_fg->vifs, sizeof(VariableInFactor) * size.num_edges);
 
   infrs->copy_from(*p_other_fg->infrs);
   infrs->ntallies = p_other_fg->infrs->ntallies;

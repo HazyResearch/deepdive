@@ -15,7 +15,7 @@ SingleThreadSampler::SingleThreadSampler(CompiledFactorGraph *_p_fg,
 }
 
 void SingleThreadSampler::sample(const int &i_sharding, const int &n_sharding) {
-  long nvar = p_fg->n_var;
+  long nvar = p_fg->size.num_variables;
   // calculates the start and end id in this partition
   long start = ((long)(nvar / n_sharding) + 1) * i_sharding;
   long end = ((long)(nvar / n_sharding) + 1) * (i_sharding + 1);
@@ -29,7 +29,7 @@ void SingleThreadSampler::sample(const int &i_sharding, const int &n_sharding) {
 
 void SingleThreadSampler::sample_sgd(const int &i_sharding,
                                      const int &n_sharding) {
-  long nvar = p_fg->n_var;
+  long nvar = p_fg->size.num_variables;
   long start = ((long)(nvar / n_sharding) + 1) * i_sharding;
   long end = ((long)(nvar / n_sharding) + 1) * (i_sharding + 1);
   end = end > nvar ? nvar : end;

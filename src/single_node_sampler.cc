@@ -42,7 +42,7 @@ SingleNodeSampler::SingleNodeSampler(CompiledFactorGraph *_p_fg, int _nthread,
       learn_non_evidence(learn_non_evidence) {}
 
 void SingleNodeSampler::clear_variabletally() {
-  for (long i = 0; i < p_fg->n_var; i++) {
+  for (long i = 0; i < p_fg->size.num_variables; i++) {
     p_fg->infrs->agg_means[i] = 0.0;
     p_fg->infrs->agg_nsamples[i] = 0.0;
   }

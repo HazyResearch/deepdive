@@ -20,7 +20,7 @@ class FactorGraphTest : public testing::Test {
  protected:
   dd::CompiledFactorGraph cfg;
 
-  FactorGraphTest() : cfg(dd::CompiledFactorGraph(18, 18, 1, 18)) {}
+  FactorGraphTest() : cfg(dd::CompiledFactorGraph({18, 18, 1, 18})) {}
 
   virtual void SetUp() {
     system(
@@ -47,7 +47,7 @@ class FactorGraphTest : public testing::Test {
     };
     dd::CmdParser cmd_parser(sizeof(argv) / sizeof(*argv), argv);
 
-    dd::FactorGraph fg(18, 18, 1, 18);
+    dd::FactorGraph fg({18, 18, 1, 18});
     fg.load_variables(cmd_parser.variable_file);
     fg.load_weights(cmd_parser.weight_file);
     fg.load_domains(cmd_parser.domain_file);

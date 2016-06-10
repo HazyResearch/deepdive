@@ -16,25 +16,43 @@ namespace dd {
 class FactorGraph;
 class CompiledFactorGraph;
 
+/** Meta data describing the dimension of a factor graph */
+class FactorGraphDescriptor {
+ public:
+  FactorGraphDescriptor();
+
+  FactorGraphDescriptor(size_t num_variables, size_t num_factors,
+                        size_t num_weights, size_t num_edges);
+
+  /** number of all variables */
+  size_t num_variables;
+
+  /** number of factors */
+  size_t num_factors;
+  /** number of edges */
+  size_t num_edges;
+
+  /** number of all weights */
+  size_t num_weights;
+
+  /** number of evidence variables */
+  size_t num_variables_evidence;
+  /** number of query variables */
+  size_t num_variables_query;
+};
+
+std::ostream& operator<<(std::ostream& stream,
+                         const FactorGraphDescriptor& size);
+
 /**
  * Class for a factor graph
  */
 class FactorGraph {
  public:
-  // countings for components of factor graph
-  long n_var;
-  long n_factor;
-  long n_weight;
-  long n_edge;
-
-  long c_nvar;
-  long c_nfactor;
-  long c_nweight;
-  long c_edge;
-
-  // number of evidence variables, query variables
-  long n_evid;
-  long n_query;
+  /** Capacity to allow multi-step loading */
+  FactorGraphDescriptor capacity;
+  /** Actual count of things */
+  FactorGraphDescriptor size;
 
   // learning weight update stepsize (learning rate)
   double stepsize;
@@ -52,7 +70,7 @@ class FactorGraph {
    * Constructs a new factor graph with given number number of variables,
    * factors, weights, and edges
    */
-  FactorGraph(long _n_var, long _n_factor, long _n_weight, long _n_edge);
+  FactorGraph(const FactorGraphDescriptor& capacity);
 
   /**
    * Loads the corresponding array of objects (weights, variables, factors,
@@ -93,33 +111,14 @@ class FactorGraph {
  */
 inline std::ostream& operator<<(std::ostream& out, FactorGraph const& fg) {
   out << "FactorGraph(";
-  out << "n_var = " << fg.n_var << ", ";
-  out << "n_factor = " << fg.n_factor << ", ";
-  out << "n_weight = " << fg.n_weight << ", ";
-  out << "n_edge = " << fg.n_edge << ", ";
-
-  out << "n_evid = " << fg.n_evid << ", ";
-  out << "n_query = " << fg.n_query << ", ";
+  out << fg.size << " / " << fg.capacity;
   out << ")";
   return out;
 }
 
 class CompiledFactorGraph {
  public:
-  // FIXME: Ugh, I'm repeating myself!!
-  long n_var;
-  long n_factor;
-  long n_weight;
-  long n_edge;
-
-  long c_nvar;
-  long c_nfactor;
-  long c_nweight;
-  long c_edge;
-
-  // number of evidence variables, query variables
-  long n_evid;
-  long n_query;
+  FactorGraphDescriptor size;
 
   // learning weight update stepsize (learning rate)
   double stepsize;
@@ -145,8 +144,7 @@ class CompiledFactorGraph {
   CompiledFactorGraph();
 
   /* Produces an empty factor graph to be initialized by resume() */
-  CompiledFactorGraph(long _n_var, long _n_factor, long _n_weight,
-                      long _n_edge);
+  CompiledFactorGraph(const FactorGraphDescriptor& size);
 
   /**
    * Copies a compiled factor graph from the given one

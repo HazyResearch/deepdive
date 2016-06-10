@@ -19,7 +19,7 @@ class SamplerTest : public testing::Test {
   dd::SingleThreadSampler sampler;
 
   SamplerTest()
-      : cfg(dd::CompiledFactorGraph(18, 18, 1, 18)),
+      : cfg(dd::CompiledFactorGraph({18, 18, 1, 18})),
         sampler(dd::SingleThreadSampler(&cfg, false, 0, false)) {}
 
   virtual void SetUp() {
@@ -46,7 +46,7 @@ class SamplerTest : public testing::Test {
         "--alpha", "0.1",
     };
     dd::CmdParser cmd_parser(sizeof(argv) / sizeof(*argv), argv);
-    dd::FactorGraph fg(18, 18, 1, 18);
+    dd::FactorGraph fg({18, 18, 1, 18});
     fg.load_variables(cmd_parser.variable_file);
     fg.load_weights(cmd_parser.weight_file);
     fg.load_domains(cmd_parser.domain_file);

@@ -31,28 +31,12 @@
 
 namespace dd {
 
-// meta data
-typedef struct {
-  long long num_weights;
-  long long num_variables;
-  long long num_factors;
-  long long num_edges;
-
-  /* Seems like the stuff below are unused */
-  std::string weights_file;
-  std::string variables_file;
-  std::string factors_file;
-  std::string edges_file;
-} Meta;
-
-std::ostream &operator<<(std::ostream &stream, const Meta &meta);
-
 /**
  * Reads meta data from the given file.
  * For reference of factor graph file formats, refer to
  * deepdive.stanford.edu
  */
-Meta read_meta(std::string meta_file);
+FactorGraphDescriptor read_meta(std::string meta_file);
 
 /**
  * Loads weights from the given file into the given factor graph

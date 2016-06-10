@@ -20,7 +20,7 @@ class LoadingTest : public testing::Test {
  protected:
   dd::FactorGraph fg;
 
-  LoadingTest() : fg(dd::FactorGraph(18, 18, 1, 18)) {}
+  LoadingTest() : fg(dd::FactorGraph({18, 18, 1, 18})) {}
 
   virtual void SetUp() {
     system(
@@ -56,11 +56,11 @@ class LoadingTest : public testing::Test {
 
 // test for loading a factor graph
 TEST_F(LoadingTest, load_factor_graph) {
-  EXPECT_EQ(fg.c_nvar, 18);
-  EXPECT_EQ(fg.n_evid, 9);
-  EXPECT_EQ(fg.n_query, 9);
-  EXPECT_EQ(fg.c_nfactor, 18);
-  EXPECT_EQ(fg.c_nweight, 1);
+  EXPECT_EQ(fg.size.num_variables, 18);
+  EXPECT_EQ(fg.size.num_variables_evidence, 9);
+  EXPECT_EQ(fg.size.num_variables_query, 9);
+  EXPECT_EQ(fg.size.num_factors, 18);
+  EXPECT_EQ(fg.size.num_weights, 1);
 
   /* Due to how loading works in this new model, the factor graph is not
    * supposed to count the edges during loading. This only happens after
@@ -78,20 +78,20 @@ TEST_F(LoadingTest, load_factor_graph) {
 //   dd::CompiledFactorGraph cfg(18, 18, 1, 18);
 //   fg.compile(cfg);
 //
-//   EXPECT_EQ(cfg.c_nvar, 18);
-//   EXPECT_EQ(cfg.n_evid, 9);
-//   EXPECT_EQ(cfg.n_query, 9);
-//   EXPECT_EQ(cfg.c_nfactor, 18);
-//   EXPECT_EQ(cfg.c_nweight, 1);
+//   EXPECT_EQ(cfg.size.num_variables, 18);
+//   EXPECT_EQ(cfg.size.num_variables_evidence, 9);
+//   EXPECT_EQ(cfg.size.num_variables_query, 9);
+//   EXPECT_EQ(cfg.size.num_factors, 18);
+//   EXPECT_EQ(cfg.size.num_weights, 1);
 //   EXPECT_EQ(fg.c_edge, 18);
 // }
 
 // test for FactorGraph::copy_from function
 TEST_F(LoadingTest, copy_from) {
-  dd::CompiledFactorGraph cfg(18, 18, 1, 18);
+  dd::CompiledFactorGraph cfg({18, 18, 1, 18});
   fg.compile(cfg);
 
-  dd::CompiledFactorGraph cfg2(18, 18, 1, 18);
+  dd::CompiledFactorGraph cfg2({18, 18, 1, 18});
   cfg2.copy_from(&cfg);
 
   EXPECT_TRUE(memcmp(&cfg, &cfg2, sizeof(cfg)));
