@@ -485,6 +485,12 @@ class QueryCompiler(cq : ConjunctiveQuery) {
             case term => s"""R${headAsBody indexOf x}.${term
             } AS "${x.name}.R${headAsBody indexOf x}.${term}\""""
           }) get
+        ) ::: (
+          // project category columns (to pass linking b/w category vals and weights)
+          schemaDeclarationByRelationName get x.name map (_.categoricalColumns map {
+            case term => s"""R${headAsBody indexOf x}.${term
+            } AS "${x.name}.R${headAsBody indexOf x}.${term}\""""
+          }) get
         )
       case _ => List.empty
     }
