@@ -479,15 +479,15 @@ class QueryCompiler(cq : ConjunctiveQuery) {
         // variable id column
         s"""R${headAsBody indexOf x}.${
           deepdiveVariableIdColumn
-        } AS "${x.name}.R${headAsBody indexOf x}.${deepdiveVariableIdColumn}\"""" :: (
+        } AS "${x.name}.R${headAsBody indexOf x}.${deepdiveVariableIdColumn}\"""" ::
+        List( isCategoricalRelation(x.name) match {
+          case true => Some(s"""R${headAsBody indexOf x}.${
+            deepdiveVariableInternalLabelColumn
+          } AS "${x.name}.R${headAsBody indexOf x}.${deepdiveVariableInternalLabelColumn}\"""")
+          case false => None
+        }).flatten ::: (
           // project variable key columns as well (to reduce unnecssary joins)
           schemaDeclarationByRelationName get x.name map (_.keyColumns map {
-            case term => s"""R${headAsBody indexOf x}.${term
-            } AS "${x.name}.R${headAsBody indexOf x}.${term}\""""
-          }) get
-        ) ::: (
-          // project category columns (to pass linking b/w category vals and weights)
-          schemaDeclarationByRelationName get x.name map (_.categoricalColumns map {
             case term => s"""R${headAsBody indexOf x}.${term
             } AS "${x.name}.R${headAsBody indexOf x}.${term}\""""
           }) get
@@ -633,6 +633,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   val deepdiveWeightColumnPrefix = "dd_weight_column_"
   val deepdiveVariableIdColumn = "dd_id"
   val deepdiveVariableLabelColumn = "dd_label"
+  val deepdiveVariableInternalLabelColumn = "dd__label"
   val deepdivePrefixForVariablesIdsTable = "dd_variables_"
 
   // entry point for compilation
