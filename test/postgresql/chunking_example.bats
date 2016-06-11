@@ -42,22 +42,10 @@ run_chunking_example_reusing_weights() {
     [[ $f1score -ge 70 ]]
 }
 
-@test "$DBVARIANT chunking example (dense; DEEPDIVE_GROUNDING_DENSE_MULTINOMIAL=true)" {
-    export DEEPDIVE_GROUNDING_DENSE_MULTINOMIAL=true
+@test "$DBVARIANT chunking example" {
     run_chunking_example
 }
 
-@test "$DBVARIANT chunking example reuse weights (dense; DEEPDIVE_GROUNDING_DENSE_MULTINOMIAL=true)" {
-    export DEEPDIVE_GROUNDING_DENSE_MULTINOMIAL=true
-    run_chunking_example_reusing_weights
-}
-
-@test "$DBVARIANT chunking example (sparse; DEEPDIVE_GROUNDING_DENSE_MULTINOMIAL=false)" {
-    export DEEPDIVE_GROUNDING_DENSE_MULTINOMIAL=false
-    run_chunking_example
-}
-
-@test "$DBVARIANT chunking example reuse weights (sparse; DEEPDIVE_GROUNDING_DENSE_MULTINOMIAL=false)" {
-    export DEEPDIVE_GROUNDING_DENSE_MULTINOMIAL=false
+@test "$DBVARIANT chunking example reuse weights" {
     run_chunking_example_reusing_weights
 }

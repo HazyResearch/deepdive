@@ -32,32 +32,6 @@ def multinomialFactorWeightCategoriesDescriptionSqlExpr:
     ) || ''"
     ;
 
-# generate a SQL CTE for redefining user's variable table names to have id columns with joins
-# necessary for .deepdive.inference.factors.*.input_query as well as .deepdive.calibration.holdout_query
-def withRedefinitionsWithJoinsForIdColumns:
-    if length > 0 then "WITH \(
-        [ .[]
-        | "\(.variablesTable | asSqlIdent) AS (\n\(
-            { SELECT:
-                [ ( .variablesKeyColumns[], deepdiveVariableIdColumn
-                | { alias: ., table: "i", column: . } )
-                # XXX add these back on demand for the cases where inference rule uses them
-                , ( .variablesCategoryColumns[]
-                | { alias: ., table: "v", column: . } )
-                ]
-            , FROM: { alias: "i", table: .variablesIdsTable }
-            , JOIN:
-                [ { INNER: { alias: "v", table: .variablesTable  }
-                  , ON: { and: [ .variablesKeyColumns[]
-                               | { eq: [ { table: "v", column: . }
-                                       , { table: "i", column: . } ]
-                                 } ] }
-                  } ]
-            } | asSql)\n)"
-        ] | join("\n   , "))" | "\n\(.)\n----\n"
-    else "" end
-    ;
-
 .deepdive_ as $deepdive
 
 ###############################################################################
@@ -73,10 +47,11 @@ def withRedefinitionsWithJoinsForIdColumns:
         ],
         style: "cmd_extractor", cmd: "
         : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
-        : ${DEEPDIVE_GROUNDING_DENSE_MULTINOMIAL:=false}
         varPath=\"$DEEPDIVE_GROUNDING_DIR\"/variable/\(.variableName | @sh)
         mkdir -p \"$varPath\"
         cd \"$varPath\"
+
+        deepdive sql \"ANALYZE VERBOSE \(.variablesTable)\"
 
         \(if .variableType == "categorical" then "
         # generate a table holding all distinct categories for categorical variables
@@ -98,15 +73,9 @@ def withRedefinitionsWithJoinsForIdColumns:
             | { column: "_\(.)" }
             | asSqlExpr
             ] | join(", ") | @sh)
-        # TODO look at the count distribution to determine whether this is actually a dense categorical variable
-        # for now, simply relying on a user environment to decide which representation to use for multinomial factors
-        if $DEEPDIVE_GROUNDING_DENSE_MULTINOMIAL; then
-            # mark this variable as dense so the rest of the grounding knows how to proceed
-            touch isDenseCategorical
-        else
-            rm -f isDenseCategorical
-        fi
         " else "" end)
+
+        deepdive sql \"ANALYZE VERBOSE \(.variablesCategoriesTable)\"
 
         # generate a table holding all distinct variables identified by @key columns
         # so a unique id can be assigned to each of them
@@ -137,6 +106,8 @@ def withRedefinitionsWithJoinsForIdColumns:
             end)
         , GROUP_BY: [ .variablesKeyColumns[] | { column: . } ]
         } | asSql | asPrettySqlArg)
+
+        deepdive sql \"ANALYZE VERBOSE \(.variablesIdsTable)\"
         "
     }
 })
@@ -219,9 +190,7 @@ def withRedefinitionsWithJoinsForIdColumns:
             #
         \([ if $deepdive.calibration.holdout_query then
             # run user holdout query if configured
-            "\($deepdive.schema.variables_
-                | withRedefinitionsWithJoinsForIdColumns
-            )\($deepdive.calibration.holdout_query)"
+            "\($deepdive.calibration.holdout_query)"
           else
             # otherwise, randomly select from evidence variables of each variable table
             $deepdive.schema.variables_[] | "
@@ -240,9 +209,7 @@ def withRedefinitionsWithJoinsForIdColumns:
           end
         , if $deepdive.calibration.observation_query then
             # run user holdout query if configured
-            "\($deepdive.schema.variables_
-                | withRedefinitionsWithJoinsForIdColumns
-            )\($deepdive.calibration.holdout_query)"
+            "\($deepdive.calibration.holdout_query)"
           else empty
           end
         ] | map("deepdive sql \(asPrettySqlArg)") | join("\n"))
@@ -352,43 +319,38 @@ def withRedefinitionsWithJoinsForIdColumns:
         export DEEPDIVE_LOAD_FORMAT=tsv
         export DEEPDIVE_UNLOAD_MATERIALIZED=false
 
-        if [[ -e isDenseCategorical ]]; then
-            # dense categorical variables don't need to dump their domains
-            : no-op
-        else
-            # dump the categorical variable domains, joining the categories table for their ids
-            deepdive compute execute \\
-            input_sql=\(
-            # sparse categorical variables have domains files
-            { SELECT:
-                [ { alias: "vid",  table: "i", column: deepdiveVariableIdColumn }
-                , { alias: "cardinality", expr: "COUNT(c.cid)" }
-                , { alias: "cids", expr: "ARRAY_AGG(c.cid ORDER BY c.cid)" }  # TODO move this ORDER BY into FROM? since it sounds like ARRAY_AGG(... ORDER BY ...) is PG 9+
-                ]
-            , FROM: [ { alias: "v", table: .variablesTable } ]
-            , JOIN:
-                # variable ids
-                [ { INNER: { alias: "i", table: .variablesIdsTable }
-                  , ON: { and:  [ .variablesKeyColumns[]
-                                | { eq: [ { table: "i", column: . }
-                                        , { table: "v", column: . }
-                                        ] }
-                                ] } }
-                # category ids are necessary to find the inference result corresponding to the variable
-                , { INNER: { alias: "c", table: .variablesCategoriesTable }
-                  , ON: { and:  [ .variablesCategoryColumns[]
-                                | { eq: [ { table: "c", column: "_\(.)" }
-                                        , { table: "v", column: . }
-                                        ] }
-                                ] } }
-                ]
-            , GROUP_BY: [ { table: "i", column: deepdiveVariableIdColumn } ]
-            } | asSql | asPrettySqlArg) \\
-            command=\("
-                sampler-text2bin domain /dev/stdin >(pbzip2 >domains.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
-            " | @sh) \\
-            output_relation=
-        fi
+        # dump the categorical variable domains, joining the categories table for their ids
+        deepdive compute execute \\
+        input_sql=\(
+        # sparse categorical variables have domains files
+        { SELECT:
+            [ { alias: "vid",  table: "i", column: deepdiveVariableIdColumn }
+            , { alias: "cardinality", expr: "COUNT(c.cid)" }
+            , { alias: "cids", expr: "ARRAY_AGG(c.cid ORDER BY c.cid)" }  # TODO move this ORDER BY into FROM? since it sounds like ARRAY_AGG(... ORDER BY ...) is PG 9+
+            ]
+        , FROM: [ { alias: "v", table: .variablesTable } ]
+        , JOIN:
+            # variable ids
+            [ { INNER: { alias: "i", table: .variablesIdsTable }
+              , ON: { and:  [ .variablesKeyColumns[]
+                            | { eq: [ { table: "i", column: . }
+                                    , { table: "v", column: . }
+                                    ] }
+                            ] } }
+            # category ids are necessary to find the inference result corresponding to the variable
+            , { INNER: { alias: "c", table: .variablesCategoriesTable }
+              , ON: { and:  [ .variablesCategoryColumns[]
+                            | { eq: [ { table: "c", column: "_\(.)" }
+                                    , { table: "v", column: . }
+                                    ] }
+                            ] } }
+            ]
+        , GROUP_BY: [ { table: "i", column: deepdiveVariableIdColumn } ]
+        } | asSql | asPrettySqlArg) \\
+        command=\("
+            sampler-text2bin domain /dev/stdin >(pbzip2 >domains.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
+        " | @sh) \\
+        output_relation=
         "
     }
 
@@ -434,9 +396,7 @@ def withRedefinitionsWithJoinsForIdColumns:
                     ]
                 , DISTINCT: true  # XXX maybe we should assume user is going to be make this true
                 , FROM: [ { alias: "F", sql:
-                    "\($schemaVariablesForThisFactor
-                        | withRedefinitionsWithJoinsForIdColumns
-                    )\(.input_query)" } ]
+                    "\(.input_query)" } ]
                 } | asSql | asPrettySqlArg)
 
             \(( { SELECT:
@@ -456,21 +416,6 @@ def withRedefinitionsWithJoinsForIdColumns:
                 } | asSql | asPrettySqlArg) as $weightsMaterializeSqlArg |
             if .function_.isMultinomial then # factors over categorical variables
             "
-            # use dense representation only if all variables of the factor are dense
-            isDenseMultinomial=true
-            for v in \([ .function_.variables[] | .schema.variableName | @sh ] | unique | join(" ")); do
-                ! [[ -e \"$DEEPDIVE_GROUNDING_DIR/variable/$v/isDenseCategorical\" ]] || continue
-                isDenseMultinomial=false
-                break
-            done
-            if $isDenseMultinomial; then
-                touch isDenseMultinomial
-                # find distinct weight parameters for factors
-                # without considering the exact combinations of category values,
-                # assuming they'll all be useful to put in a dense representation
-                deepdive create table \(.weightGroupsTable | @sh) as \($weightsMaterializeSqlArg)
-            else
-                rm -f isDenseMultinomial
                 # find distinct weight parameters for factors
                 # considering all the exact combintations of category values present in the factors
                 # assuming they'll be sparse
@@ -507,7 +452,6 @@ def withRedefinitionsWithJoinsForIdColumns:
                                         , { table: "i.\($columnIdForThisVar)", column: . } ] } ) ] }
                         ) ]
                     } | asSql | asPrettySqlArg)
-            fi
             " else # factors over boolean variables
             "
             # find distinct weights for the factors into a separate table
@@ -543,16 +487,7 @@ def withRedefinitionsWithJoinsForIdColumns:
             , ( $deepdive.inference.factors_[]
             | if .function_.isMultinomial then
                 "
-                if [[ -e \(.factorName | @sh)/isDenseMultinomial ]]; then
-                    # dense multinomial should use a different step size
-                    numWeightsPerFactor=$(bc <<<\"\(
-                        [ "$\(.function_.variables[].schema.variableName)Cardinality" ] | join(" * ")
-                    )\")
-                    echo $numWeightsPerFactor >\(.factorName | @sh)/numWeightsPerFactor
-                    weightsTablesToConsider+=(\(.weightGroupsTable | @sh):$numWeightsPerFactor)
-                else
-                    weightsTablesToConsider+=(\(.weightsTable | @sh))
-                fi
+                weightsTablesToConsider+=(\(.weightsTable | @sh))
                 "
             else
                 # non-multinomial factors
@@ -604,60 +539,6 @@ def withRedefinitionsWithJoinsForIdColumns:
 
             \( if .function_.isMultinomial then # multinomial factors
             "
-            if [[ -e isDenseMultinomial ]]; then
-                # dense multinomial should assign weight ids with an increment greater than 1
-                # since each factor will have as many weights as the product of cardinalities of all involved variables
-                increment=$(cat numWeightsPerFactor)
-                deepdive db assign_sequential_id \(.weightGroupsTable | @sh) wid $baseId $increment
-
-                # to keep dense multinomial weights in sync with the rest that assumes sparse representation
-                # set up an exploded weights view that cross joins the base weights table with the categories of all involved variables
-                deepdive create view \(.weightsTable | @sh) as \(
-                { SELECT:
-                    # weight parameters
-                    [ ( .weight_.params[]
-                    | { column: ., table: "wg" } )
-                    # include category columns for every categorical variable
-                    , ( .function_.variables[]
-                    | .columnId as $columnIdForThisVar
-                    | .schema.variablesCategoryColumns[]
-                    | { alias: "\($columnIdForThisVar)_\(.)", table: "c.\($columnIdForThisVar)", column: "_\(.)" } )
-                    # weight attributes
-                    , { column: "isfixed"  , table: "wg" }
-                    , { column: "initvalue", table: "wg" }
-                    # derive the individual weight id for every combination of categories
-                    , { alias: "wid", expr: "\"wg\".\"wid\" + (\(
-                            def offsetExpr(i):
-                                if i == 0 then "" # except the very first variable
-                                else # the offset for the previous ones are multiplied by this one's cardinality
-                                    "(\(offsetExpr(i-1))) * (\(
-                                        { SELECT: { expr: "COUNT(*)" }
-                                        , FROM: { table: .[i].schema.variablesCategoriesTable}
-                                        } | asSql)) + "
-                                end
-                                # and current variable's category id is added as the least significant digit
-                                + ({ table: "c.\(.[i].columnId)", column: "cid" } | asSqlExpr)
-                                ;
-                            .function_.variables | offsetExpr(length-1)
-                        ))" }
-                    ]
-                , FROM:
-                    [ { alias: "wg", table: .weightGroupsTable }
-                    # cross join each weight with the categories of all involved categorical variables
-                    , ( .function_.variables[]
-                    | .columnId as $columnIdForThisVar
-                    | { alias: "c.\($columnIdForThisVar)", table: .schema.variablesCategoriesTable } )
-                    ]
-                # NOTE This ordering is unncessary because the wid is robust from ordering, relying on their cids only.
-                #, ORDER_BY:
-                #    # order by category columns for every categorical variable
-                #    [ ( .function_.variables[]
-                #    | .columnId as $columnIdForThisVar
-                #    | .schema.variablesCategoryColumns[]
-                #    | { expr: { column: "\($columnIdForThisVar)_\(.)" } } )
-                #    ]
-                } | asSql | @sh)
-            else
                 # assign weight ids according to the partition as usual
                 deepdive db assign_sequential_id \(.weightsTable | @sh) wid $baseId 1 \(
                     # NOTE We need/want ORDER_BY here because we want the weight ids to be ordered exactly by their category
@@ -670,12 +551,13 @@ def withRedefinitionsWithJoinsForIdColumns:
                     | { column: "\($columnIdForThisVar)_\(.)" } )
                     | asSqlExpr
                     ] | join(", ") | @sh)
-            fi
             " else # boolean factors don't need special care
             "
             # assign weight ids according to the partition
             deepdive db assign_sequential_id \(.weightsTable | @sh) wid $baseId
             " end)
+
+            deepdive sql \"ANALYZE VERBOSE \(.weightsTable)\"
         "
     }
 })
@@ -741,7 +623,7 @@ def withRedefinitionsWithJoinsForIdColumns:
             # named codes used by sampler
             export \(.function_.name)Factor=\(.function_.id)  # factor function id
             \( if .function_.isMultinomial then "
-            [[ -e isDenseMultinomial ]] || \(.function_.name)Factor=\(.function_.idForSparseVariant)  # use sparse variant"
+                \(.function_.name)Factor=\(.function_.idForSparseVariant)  # use sparse variant"
             else ""
             end )
             export numVariablesForFactor=\(.function_.variables | length)
@@ -752,27 +634,6 @@ def withRedefinitionsWithJoinsForIdColumns:
                 input_sql=\(
                 if .function_.isMultinomial then
                 "\"$(
-                if [[ -e isDenseMultinomial ]]; then
-                    # dense multinomial factor needs not join the weight ids,
-                    # since it exploits the fact that all possible weights are materialized, and
-                    # each factor can use the variables' domain values to index into the exact one
-                    echo \(
-                    { SELECT:
-                        [ ( .function_.variables[]
-                        | { table: "f", column: .columnId } )
-                        , { alias: "weight_id", table: "w", column: "wid" }
-                        ]
-                    , FROM:
-                        [ { alias: "f", table: .factorsTable }
-                        , { alias: "w", table: .weightGroupsTable }  # NOTE that we only dump one weight id per group
-                        ]
-                    , WHERE:
-                        [ ( .weight_.params[]
-                        | { eq: [ { table: "w", column: . }
-                                , { table: "f", column: . } ] } )
-                        ]
-                    } | asSql | asPrettySqlArg)
-                else
                     # sparse multinomial factor need to find exact combinations of category values and
                     # weight parameters present in the data, hence a lot of joins! but doesn't waste the weights
                     echo \(
@@ -826,7 +687,6 @@ def withRedefinitionsWithJoinsForIdColumns:
                         | { table: "f", column: .columnId } )
                         ]
                     } | asSql | asPrettySqlArg)
-                fi
                 )\"" else # factors over boolean variables
                     { SELECT:
                         [ ( .function_.variables[]
