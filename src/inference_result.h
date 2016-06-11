@@ -17,18 +17,18 @@ class InferenceResult {
   long nweights;  // number of weights
   long ntallies;
 
-  int *multinomial_tallies;  // this might be slow...
+  std::unique_ptr<int[]> multinomial_tallies;  // this might be slow...
 
   // array of sum of samples for each variable
-  double *agg_means;
+  std::unique_ptr<double[]> agg_means;
   // array of number of samples for each variable
-  double *agg_nsamples;
+  std::unique_ptr<double[]> agg_nsamples;
   // assignment to variables, see variable.h for more detail
-  VariableValue *assignments_free;
-  VariableValue *assignments_evid;
+  std::unique_ptr<VariableValue[]> assignments_free;
+  std::unique_ptr<VariableValue[]> assignments_evid;
 
-  double *weight_values;  // array of weight values
-  bool *weights_isfixed;  // array of whether weight is fixed
+  std::unique_ptr<double[]> weight_values;  // array of weight values
+  std::unique_ptr<bool[]> weights_isfixed;  // array of whether weight is fixed
 
   InferenceResult(const CompiledFactorGraph &fg, Weight *const weights);
 

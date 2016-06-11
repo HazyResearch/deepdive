@@ -54,11 +54,11 @@ void SingleThreadSampler::sample_sgd_single_variable(long vid) {
   // sample the variable with evidence unchanged
   proposal = variable.is_evid
                  ? variable.assignment_evid
-                 : draw_sample(variable, p_fg->infrs->assignments_evid);
+                 : draw_sample(variable, p_fg->infrs->assignments_evid.get());
   p_fg->infrs->assignments_evid[variable.id] = proposal;
 
   // sample the variable regardless of whether it's evidence
-  proposal = draw_sample(variable, p_fg->infrs->assignments_free);
+  proposal = draw_sample(variable, p_fg->infrs->assignments_free.get());
   p_fg->infrs->assignments_free[variable.id] = proposal;
 
   p_fg->update_weight(variable, p_fg->infrs);
@@ -72,7 +72,7 @@ void SingleThreadSampler::sample_single_variable(long vid) {
   if (variable.is_observation) return;
 
   if (!variable.is_evid || sample_evidence) {
-    int proposal = draw_sample(variable, p_fg->infrs->assignments_evid);
+    int proposal = draw_sample(variable, p_fg->infrs->assignments_evid.get());
     p_fg->infrs->assignments_evid[variable.id] = proposal;
 
     // bookkeep aggregates for computing marginals
@@ -93,7 +93,7 @@ void SingleThreadSampler::sample_single_variable(long vid) {
 }
 
 inline int dd::SingleThreadSampler::draw_sample(
-    Variable &variable, VariableValue *const assignments) {
+    Variable &variable, const VariableValue assignments[]) {
   int proposal = 0;
 
   switch (variable.domain_type) {

@@ -151,7 +151,7 @@ class CompiledFactorGraph {
    * corresponding
    * indicator function and weight.
    */
-  long get_multinomial_weight_id(const VariableValue* assignments,
+  long get_multinomial_weight_id(const VariableValue assignments[],
                                  const CompactFactor& fs, long vid,
                                  long proposal);
 
@@ -170,7 +170,7 @@ class CompiledFactorGraph {
    * evid assignement.
    */
   inline double potential(const CompactFactor& factor,
-                          VariableValue* const assignments);
+                          const VariableValue assignments[]);
 
   /**
    * Returns log-linear weighted potential of the all factors for the given
@@ -180,17 +180,17 @@ class CompiledFactorGraph {
    * evid assignement.
    */
   inline double potential(const Variable& variable, const double& proposal,
-                          VariableValue* const assignments);
+                          const VariableValue assignments[]);
 };
 
-inline double CompiledFactorGraph::potential(const CompactFactor& factor,
-                                             VariableValue* const assignments) {
+inline double CompiledFactorGraph::potential(
+    const CompactFactor& factor, const VariableValue assignments[]) {
   return factor.potential(vifs, assignments, -1, -1);
 }
 
-inline double CompiledFactorGraph::potential(const Variable& variable,
-                                             const double& proposal,
-                                             VariableValue* const assignments) {
+inline double CompiledFactorGraph::potential(
+    const Variable& variable, const double& proposal,
+    const VariableValue assignments[]) {
   // potential
   double pot = 0.0;
   // pointer to the first factor the given variable connects to

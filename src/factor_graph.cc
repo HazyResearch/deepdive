@@ -171,7 +171,7 @@ CompiledFactorGraph::CompiledFactorGraph(const CompiledFactorGraph &other)
 }
 
 long CompiledFactorGraph::get_multinomial_weight_id(
-    const VariableValue *assignments, const CompactFactor &fs, long vid,
+    const VariableValue assignments[], const CompactFactor &fs, long vid,
     long proposal) {
   /**
    * For FUNC_MULTINOMIAL, the weight ids are aligned in a continuous region
@@ -235,8 +235,8 @@ void CompiledFactorGraph::update_weight(const Variable &variable,
           // calculated
           // using a sample of the variable.
           infrs->weight_values[ws[i]] +=
-              stepsize * (potential(fs[i], infrs->assignments_evid) -
-                          potential(fs[i], infrs->assignments_free));
+              stepsize * (potential(fs[i], infrs->assignments_evid.get()) -
+                          potential(fs[i], infrs->assignments_free.get()));
         }
         break;
       }
@@ -246,22 +246,24 @@ void CompiledFactorGraph::update_weight(const Variable &variable,
         // sample without evidence unfixed, I1, with corresponding weight w2
         // gradient of wd0 = f(I0) - I(w1==w2)f(I1)
         // gradient of wd1 = I(w1==w2)f(I0) - f(I1)
-        long wid1 =
-            get_multinomial_weight_id(infrs->assignments_evid, fs[i], -1, -1);
-        long wid2 =
-            get_multinomial_weight_id(infrs->assignments_free, fs[i], -1, -1);
+        long wid1 = get_multinomial_weight_id(infrs->assignments_evid.get(),
+                                              fs[i], -1, -1);
+        long wid2 = get_multinomial_weight_id(infrs->assignments_free.get(),
+                                              fs[i], -1, -1);
         int equal = (wid1 == wid2);
 
         if (wid1 >= 0 && !infrs->weights_isfixed[wid1]) {
           infrs->weight_values[wid1] +=
-              stepsize * (potential(fs[i], infrs->assignments_evid) -
-                          equal * potential(fs[i], infrs->assignments_free));
+              stepsize *
+              (potential(fs[i], infrs->assignments_evid.get()) -
+               equal * potential(fs[i], infrs->assignments_free.get()));
         }
 
         if (wid2 >= 0 && !infrs->weights_isfixed[wid2]) {
           infrs->weight_values[wid2] +=
-              stepsize * (equal * potential(fs[i], infrs->assignments_evid) -
-                          potential(fs[i], infrs->assignments_free));
+              stepsize *
+              (equal * potential(fs[i], infrs->assignments_evid.get()) -
+               potential(fs[i], infrs->assignments_free.get()));
         }
         break;
       }

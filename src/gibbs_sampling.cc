@@ -118,10 +118,10 @@ void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
 
   std::cerr << factorgraphs[0]->size << std::endl;
 
-  dprintf("%p %d\n", (factorgraphs[0]->infrs->weight_values), nweight);
+  dprintf("%p %d\n", (factorgraphs[0]->infrs->weight_values.get()), nweight);
   std::unique_ptr<double[]> ori_weights(new double[nweight]);
-  memcpy(ori_weights.get(), factorgraphs[0]->infrs->weight_values,
-         sizeof(double) * nweight);
+  memcpy(ori_weights.get(), factorgraphs[0]->infrs->weight_values.get(),
+         sizeof(*ori_weights.get()) * nweight);
   std::cerr << factorgraphs[0]->size << std::endl;
 
   // learning epochs

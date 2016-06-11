@@ -37,7 +37,7 @@ InferenceResult::InferenceResult(const CompiledFactorGraph &fg,
     weights_isfixed[weight.id] = weight.isfixed;
   }
 
-  multinomial_tallies = new int[ntallies];
+  multinomial_tallies.reset(new int[ntallies]);
   for (long i = 0; i < ntallies; i++) {
     multinomial_tallies[i] = 0;
   }
@@ -45,19 +45,20 @@ InferenceResult::InferenceResult(const CompiledFactorGraph &fg,
 
 InferenceResult::InferenceResult(const InferenceResult &other)
     : InferenceResult(other.nvars, other.nweights) {
-  memcpy(assignments_free, other.assignments_free,
-         sizeof(*assignments_free) * nvars);
-  memcpy(assignments_evid, other.assignments_evid,
-         sizeof(*assignments_evid) * nvars);
-  memcpy(agg_means, other.agg_means, sizeof(*agg_means) * nvars);
-  memcpy(agg_nsamples, other.agg_nsamples, sizeof(*agg_nsamples) * nvars);
+  memcpy(assignments_evid.get(), other.assignments_evid.get(),
+         sizeof(*assignments_evid.get()) * nvars);
+  memcpy(agg_means.get(), other.agg_means.get(),
+         sizeof(*agg_means.get()) * nvars);
+  memcpy(agg_nsamples.get(), other.agg_nsamples.get(),
+         sizeof(*agg_nsamples.get()) * nvars);
 
-  memcpy(weight_values, other.weight_values, sizeof(*weight_values) * nweights);
-  memcpy(weights_isfixed, other.weights_isfixed,
-         sizeof(*weights_isfixed) * nweights);
+  memcpy(weight_values.get(), other.weight_values.get(),
+         sizeof(*weight_values.get()) * nweights);
+  memcpy(weights_isfixed.get(), other.weights_isfixed.get(),
+         sizeof(*weights_isfixed.get()) * nweights);
 
   ntallies = other.ntallies;
-  multinomial_tallies = new int[ntallies];
+  multinomial_tallies.reset(new int[ntallies]);
   for (long i = 0; i < ntallies; i++) {
     multinomial_tallies[i] = other.multinomial_tallies[i];
   }
