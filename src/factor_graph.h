@@ -54,17 +54,10 @@ class FactorGraph {
   /** Actual count of things */
   FactorGraphDescriptor size;
 
-  // learning weight update stepsize (learning rate)
-  double stepsize;
-
   // variables, factors, weights
   std::unique_ptr<RawVariable[]> variables;
   std::unique_ptr<RawFactor[]> factors;
   std::unique_ptr<Weight[]> weights;
-
-  // whether the factor graph loading has been finalized
-  // see sort_by_id() below
-  bool sorted;
 
   /**
    * Constructs a new factor graph with given number number of variables,
@@ -117,9 +110,6 @@ class CompiledFactorGraph {
  public:
   FactorGraphDescriptor size;
 
-  // learning weight update stepsize (learning rate)
-  double stepsize;
-
   std::unique_ptr<Variable[]> variables;
   std::unique_ptr<Factor[]> factors;
 
@@ -161,7 +151,8 @@ class CompiledFactorGraph {
    * Used in learning phase, after sampling one variable,
    * update corresponding weights (stochastic gradient descent).
    */
-  void update_weight(const Variable& variable, InferenceResult& infrs);
+  void update_weight(const Variable& variable, InferenceResult& infrs,
+                     double stepsize);
 
   /**
    * Returns potential of the given factor

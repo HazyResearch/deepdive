@@ -48,8 +48,6 @@ FactorGraph::FactorGraph(const FactorGraphDescriptor &capacity)
 void FactorGraph::compile(CompiledFactorGraph &cfg) {
   cfg.size = size;
 
-  cfg.stepsize = stepsize;
-
   long i_edge = 0;
 
   /*
@@ -220,7 +218,8 @@ long CompiledFactorGraph::get_multinomial_weight_id(
 }
 
 void CompiledFactorGraph::update_weight(const Variable &variable,
-                                        InferenceResult &infrs) {
+                                        InferenceResult &infrs,
+                                        double stepsize) {
   // corresponding factors and weights in a continous region
   CompactFactor *const fs = &compact_factors[variable.n_start_i_factors];
   const int *const ws = &compact_factors_weightids[variable.n_start_i_factors];

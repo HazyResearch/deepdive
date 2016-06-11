@@ -20,7 +20,7 @@ class SamplerTest : public testing::Test {
 
   SamplerTest()
       : cfg(dd::CompiledFactorGraph({18, 18, 1, 18})),
-        sampler(dd::SingleThreadSampler(&cfg, false, 0, false)) {}
+        sampler(dd::SingleThreadSampler(&cfg, 0.1, false, 0, false)) {}
 
   virtual void SetUp() {
     const char *argv[] = {
@@ -51,7 +51,6 @@ class SamplerTest : public testing::Test {
 // the pseudo random number has been precalculated...
 TEST_F(SamplerTest, sample_sgd_single_variable) {
   cfg.infrs->assignments_free[cfg.variables[0].id] = 1;
-  cfg.stepsize = 0.1;
   for (int i = 0; i < 3; i++) {
     sampler.p_rand_seed[i] = 1;
   }

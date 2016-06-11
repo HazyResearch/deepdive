@@ -56,7 +56,7 @@ class SingleNodeSampler {
   /**
    * Performs SGD
    */
-  void sample_sgd();
+  void sample_sgd(double stepsize);
 
   /**
    * Waits for sgd worker to finish

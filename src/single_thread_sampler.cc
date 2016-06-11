@@ -3,9 +3,10 @@
 namespace dd {
 
 SingleThreadSampler::SingleThreadSampler(CompiledFactorGraph *_p_fg,
-                                         bool sample_evidence, bool burn_in,
-                                         bool learn_non_evidence)
+                                         double stepsize, bool sample_evidence,
+                                         bool burn_in, bool learn_non_evidence)
     : p_fg(_p_fg),
+      stepsize(stepsize),
       varlen_potential_buffer_(0),
       sample_evidence(sample_evidence),
       learn_non_evidence(learn_non_evidence) {
@@ -61,7 +62,7 @@ void SingleThreadSampler::sample_sgd_single_variable(long vid) {
   proposal = draw_sample(variable, p_fg->infrs->assignments_free.get());
   p_fg->infrs->assignments_free[variable.id] = proposal;
 
-  p_fg->update_weight(variable, *p_fg->infrs);
+  p_fg->update_weight(variable, *p_fg->infrs, stepsize);
 }
 
 void SingleThreadSampler::sample_single_variable(long vid) {

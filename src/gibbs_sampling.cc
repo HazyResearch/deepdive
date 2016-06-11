@@ -133,14 +133,9 @@ void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
 
     t.restart();
 
-    // set stepsize
-    for (int i = 0; i < nnode; i++) {
-      single_node_samplers[i].p_fg->stepsize = current_stepsize;
-    }
-
     // performs stochastic gradient descent with sampling
     for (int i = 0; i < nnode; i++) {
-      single_node_samplers[i].sample_sgd();
+      single_node_samplers[i].sample_sgd(current_stepsize);
     }
 
     // wait the samplers to finish

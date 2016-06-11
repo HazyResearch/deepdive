@@ -16,8 +16,9 @@ class SingleThreadSampler {
    * Constructs a SingleThreadSampler with given factor graph
    */
   // SingleThreadSampler(CompiledFactorGraph * _p_fg);
-  SingleThreadSampler(CompiledFactorGraph *_p_fg, bool sample_evidence,
-                      bool burn_in, bool learn_non_evidence);
+  SingleThreadSampler(CompiledFactorGraph *_p_fg, double stepsize,
+                      bool sample_evidence, bool burn_in,
+                      bool learn_non_evidence);
 
   /**
    * Samples variables. The variables are divided into n_sharding equal
@@ -41,6 +42,9 @@ class SingleThreadSampler {
 
   // random number
   unsigned short p_rand_seed[3];
+
+  // learning weight update stepsize (learning rate)
+  double stepsize;
 
   // potential for each proposals for multinomial
   std::vector<double> varlen_potential_buffer_;

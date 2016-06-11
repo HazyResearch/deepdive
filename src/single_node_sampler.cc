@@ -6,15 +6,15 @@ void gibbs_single_thread_task(CompiledFactorGraph *const _p_fg, int i_worker,
                               int n_worker, bool _sample_evidence,
                               bool burn_in) {
   SingleThreadSampler sampler =
-      SingleThreadSampler(_p_fg, _sample_evidence, burn_in, false);
+      SingleThreadSampler(_p_fg, 0.0, _sample_evidence, burn_in, false);
   sampler.sample(i_worker, n_worker);
 }
 
 void gibbs_single_thread_sgd_task(CompiledFactorGraph *const _p_fg,
-                                  int i_worker, int n_worker,
+                                  int i_worker, int n_worker, double stepsize,
                                   bool learn_non_evidence) {
   SingleThreadSampler sampler =
-      SingleThreadSampler(_p_fg, false, 0, learn_non_evidence);
+      SingleThreadSampler(_p_fg, stepsize, false, 0, learn_non_evidence);
   sampler.sample_sgd(i_worker, n_worker);
 }
 
@@ -69,14 +69,14 @@ void SingleNodeSampler::wait() {
   }
 }
 
-void SingleNodeSampler::sample_sgd() {
+void SingleNodeSampler::sample_sgd(double stepsize) {
   numa_run_on_node(this->nodeid);
 
   this->threads.clear();
 
   for (int i = 0; i < this->nthread; i++) {
     this->threads.push_back(std::thread(gibbs_single_thread_sgd_task, p_fg, i,
-                                        nthread, learn_non_evidence));
+                                        nthread, stepsize, learn_non_evidence));
   }
 }
 
