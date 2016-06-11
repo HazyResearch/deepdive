@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # put source tree root on PATH
-PATH="${BASH_SOURCE%/test/helpers.bash}:$PATH"
+PATH="${BASH_SOURCE%/test/helpers.bash}:${BASH_SOURCE%/helpers.bash}:$PATH"
 
 compare_binary_with_xxd_text() {
     local expected_xxd_txt=$1
