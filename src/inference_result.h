@@ -30,7 +30,7 @@ class InferenceResult {
   std::unique_ptr<double[]> weight_values;  // array of weight values
   std::unique_ptr<bool[]> weights_isfixed;  // array of whether weight is fixed
 
-  InferenceResult(const CompiledFactorGraph &fg, Weight *const weights);
+  InferenceResult(const CompiledFactorGraph &fg, const Weight weights[]);
 
   // copy constructor
   InferenceResult(const InferenceResult &other);

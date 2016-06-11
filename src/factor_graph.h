@@ -58,9 +58,9 @@ class FactorGraph {
   double stepsize;
 
   // variables, factors, weights
-  RawVariable* const variables;
-  RawFactor* const factors;
-  Weight* const weights;
+  std::unique_ptr<RawVariable[]> variables;
+  std::unique_ptr<RawFactor[]> factors;
+  std::unique_ptr<Weight[]> weights;
 
   // whether the factor graph loading has been finalized
   // see sort_by_id() below

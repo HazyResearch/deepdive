@@ -17,7 +17,7 @@ InferenceResult::InferenceResult(size_t nvars, size_t nweights)
       weights_isfixed(new bool[nweights]) {}
 
 InferenceResult::InferenceResult(const CompiledFactorGraph &fg,
-                                 Weight *const weights)
+                                 const Weight weights[])
     : InferenceResult(fg.size.num_variables, fg.size.num_weights) {
   ntallies = 0;
   for (long t = 0; t < nvars; t++) {

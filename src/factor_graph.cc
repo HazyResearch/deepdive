@@ -117,7 +117,7 @@ void FactorGraph::compile(CompiledFactorGraph &cfg) {
   }
 
   /* Initialize the InferenceResult array in the end of compilation */
-  cfg.infrs.reset(new InferenceResult(cfg, weights));
+  cfg.infrs.reset(new InferenceResult(cfg, weights.get()));
 
   assert(i_edge == size.num_edges);
 
