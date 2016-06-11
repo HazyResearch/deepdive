@@ -15,9 +15,8 @@ class SingleThreadSampler {
   /**
    * Constructs a SingleThreadSampler with given factor graph
    */
-  // SingleThreadSampler(CompiledFactorGraph * _p_fg);
-  SingleThreadSampler(CompiledFactorGraph *_p_fg, double stepsize,
-                      bool sample_evidence, bool burn_in,
+  SingleThreadSampler(CompiledFactorGraph &fg, InferenceResult &infrs,
+                      double stepsize, bool sample_evidence, bool burn_in,
                       bool learn_non_evidence);
 
   /**
@@ -36,9 +35,10 @@ class SingleThreadSampler {
    */
   void sample_sgd(const int &i_sharding, const int &n_sharding);
 
-  // private: FIXME
+ private:
   // factor graph
-  CompiledFactorGraph *const p_fg;
+  CompiledFactorGraph &fg;
+  InferenceResult &infrs;
 
   // random number
   unsigned short p_rand_seed[3];
@@ -63,7 +63,8 @@ class SingleThreadSampler {
   void sample_single_variable(long vid);
 
   // sample a single variable
-  inline int draw_sample(Variable &variable, const VariableValue assignments[]);
+  inline int draw_sample(Variable &variable, const VariableValue assignments[],
+                         const double weight_values[]);
 };
 
 }  // namespace dd

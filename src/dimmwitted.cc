@@ -65,10 +65,6 @@ int gibbs(const dd::CmdParser &args) {
   numa_run_on_node(0);
   numa_set_localalloc();
 
-  // Initialize Gibbs sampling application.
-  dd::GibbsSampling gibbs(&args, args.should_sample_evidence, args.burn_in,
-                          args.should_learn_non_evidence);
-
   // Load factor graph
   dprintf("Initializing factor graph...\n");
   dd::FactorGraph fg(meta);
@@ -84,10 +80,13 @@ int gibbs(const dd::CmdParser &args) {
     std::cout << fg << std::endl;
   }
 
-  dd::CompiledFactorGraph cfg(fg.size);
-  fg.compile(cfg);
+  std::unique_ptr<CompiledFactorGraph> cfg(new CompiledFactorGraph(fg.size));
+  fg.compile(*cfg);
 
-  gibbs.init(std::make_shared<CompiledFactorGraph>(cfg), args.n_datacopy);
+  // Initialize Gibbs sampling application.
+  GibbsSampling gibbs(std::move(cfg), fg.weights.get(), &args,
+                      args.should_sample_evidence, args.burn_in,
+                      args.should_learn_non_evidence, args.n_datacopy);
 
   // number of learning epochs
   // the factor graph is copied on each NUMA node, so the total epochs =

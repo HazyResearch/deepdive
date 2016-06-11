@@ -114,9 +114,6 @@ void FactorGraph::compile(CompiledFactorGraph &cfg) {
     cfg.variables[i] = v;
   }
 
-  /* Initialize the InferenceResult array in the end of compilation */
-  cfg.infrs.reset(new InferenceResult(cfg, weights.get()));
-
   assert(i_edge == size.num_edges);
 
   cfg.size.num_edges = i_edge;
@@ -149,8 +146,7 @@ CompiledFactorGraph::CompiledFactorGraph(const FactorGraphDescriptor &size)
       compact_factors(new CompactFactor[size.num_edges]),
       compact_factors_weightids(new int[size.num_edges]),
       factor_ids(new long[size.num_edges]),
-      vifs(new VariableInFactor[size.num_edges]),
-      infrs() {}
+      vifs(new VariableInFactor[size.num_edges]) {}
 
 CompiledFactorGraph::CompiledFactorGraph(const CompiledFactorGraph &other)
     : CompiledFactorGraph(other.size) {
@@ -167,8 +163,6 @@ CompiledFactorGraph::CompiledFactorGraph(const CompiledFactorGraph &other)
          sizeof(long) * size.num_edges);
   memcpy(vifs.get(), other.vifs.get(),
          sizeof(VariableInFactor) * size.num_edges);
-
-  if (other.infrs.get()) infrs.reset(new InferenceResult(*other.infrs));
 }
 
 long CompiledFactorGraph::get_multinomial_weight_id(

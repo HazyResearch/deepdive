@@ -15,8 +15,7 @@ namespace dd {
  */
 class GibbsSampling {
  public:
-  // factor graph
-  CompiledFactorGraph* p_fg;
+  const Weight* const weights;
 
   // command line parser
   const CmdParser* const p_cmd_parser;
@@ -29,7 +28,7 @@ class GibbsSampling {
   int n_thread_per_numa;
 
   // factor graph copies
-  std::vector<std::shared_ptr<CompiledFactorGraph>> factorgraphs;
+  std::vector<std::unique_ptr<CompiledFactorGraph>> factorgraphs;
 
   // sample evidence in inference
   bool sample_evidence;
@@ -47,10 +46,10 @@ class GibbsSampling {
    * n_datacopy number of factor graph copies. n_datacopy = 1 means only
    * keeping one factor graph.
    */
-  GibbsSampling(const CmdParser* const _p_cmd_parser, bool sample_evidence,
-                int burn_in, bool learn_non_evidence);
-
-  void init(std::shared_ptr<CompiledFactorGraph> p_cfg, int n_datacopy);
+  GibbsSampling(std::unique_ptr<CompiledFactorGraph> p_cfg,
+                const Weight weights[], const CmdParser* p_cmd_parser,
+                bool sample_evidence, int burn_in, bool learn_non_evidence,
+                int n_datacopy);
 
   /**
    * Performs learning

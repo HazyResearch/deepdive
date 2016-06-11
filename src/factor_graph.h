@@ -124,7 +124,7 @@ class CompiledFactorGraph {
   std::unique_ptr<VariableInFactor[]> vifs;
 
   // pointer to inference result
-  std::unique_ptr<InferenceResult> infrs;
+  // std::unique_ptr<InferenceResult> infrs;
 
   CompiledFactorGraph();
 
@@ -171,7 +171,8 @@ class CompiledFactorGraph {
    * evid assignement.
    */
   inline double potential(const Variable& variable, const double& proposal,
-                          const VariableValue assignments[]);
+                          const VariableValue assignments[],
+                          const double weight_values[]);
 };
 
 inline double CompiledFactorGraph::potential(
@@ -179,9 +180,10 @@ inline double CompiledFactorGraph::potential(
   return factor.potential(vifs.get(), assignments, -1, -1);
 }
 
-inline double CompiledFactorGraph::potential(
-    const Variable& variable, const double& proposal,
-    const VariableValue assignments[]) {
+inline double CompiledFactorGraph::potential(const Variable& variable,
+                                             const double& proposal,
+                                             const VariableValue assignments[],
+                                             const double weight_values[]) {
   // potential
   double pot = 0.0;
   // pointer to the first factor the given variable connects to
@@ -197,7 +199,7 @@ inline double CompiledFactorGraph::potential(
       // weighted potential
       for (long i = 0; i < variable.n_factors; ++i) {
         long wid = ws[i];
-        pot += infrs->weight_values[wid] *
+        pot += weight_values[wid] *
                fs[i].potential(vifs.get(), assignments, variable.id, proposal);
       }
       break;
@@ -209,7 +211,7 @@ inline double CompiledFactorGraph::potential(
         long wid = get_multinomial_weight_id(assignments, fs[i], variable.id,
                                              proposal);
         if (wid == -1) continue;
-        pot += infrs->weight_values[wid] *
+        pot += weight_values[wid] *
                fs[i].potential(vifs.get(), assignments, variable.id, proposal);
       }
       break;

@@ -2,52 +2,37 @@
 
 namespace dd {
 
-void gibbs_single_thread_task(CompiledFactorGraph *const _p_fg, int i_worker,
-                              int n_worker, bool _sample_evidence,
-                              bool burn_in) {
-  SingleThreadSampler sampler =
-      SingleThreadSampler(_p_fg, 0.0, _sample_evidence, burn_in, false);
-  sampler.sample(i_worker, n_worker);
-}
+SingleNodeSampler::SingleNodeSampler(CompiledFactorGraph &fg,
+                                     const Weight weights[], int nthread,
+                                     int nodeid)
+    : SingleNodeSampler(fg, weights, nthread, nodeid, false, false) {}
 
-void gibbs_single_thread_sgd_task(CompiledFactorGraph *const _p_fg,
-                                  int i_worker, int n_worker, double stepsize,
-                                  bool learn_non_evidence) {
-  SingleThreadSampler sampler =
-      SingleThreadSampler(_p_fg, stepsize, false, 0, learn_non_evidence);
-  sampler.sample_sgd(i_worker, n_worker);
-}
-
-SingleNodeSampler::SingleNodeSampler(CompiledFactorGraph *_p_fg, int _nthread,
-                                     int _nodeid)
-    : p_fg(_p_fg), nthread(_nthread), nodeid(_nodeid) {}
-
-SingleNodeSampler::SingleNodeSampler(CompiledFactorGraph *_p_fg, int _nthread,
-                                     int _nodeid, bool sample_evidence,
+SingleNodeSampler::SingleNodeSampler(CompiledFactorGraph &fg,
+                                     const Weight weights[], int nthread,
+                                     int nodeid, bool sample_evidence,
                                      int burn_in)
-    : p_fg(_p_fg),
-      nthread(_nthread),
-      nodeid(_nodeid),
-      sample_evidence(sample_evidence),
-      burn_in(burn_in) {}
+    : SingleNodeSampler(fg, weights, nthread, nodeid, sample_evidence, burn_in,
+                        false) {}
 
-SingleNodeSampler::SingleNodeSampler(CompiledFactorGraph *_p_fg, int _nthread,
-                                     int _nodeid, bool sample_evidence,
+SingleNodeSampler::SingleNodeSampler(CompiledFactorGraph &fg,
+                                     const Weight weights[], int nthread,
+                                     int nodeid, bool sample_evidence,
                                      int burn_in, bool learn_non_evidence)
-    : p_fg(_p_fg),
-      nthread(_nthread),
-      nodeid(_nodeid),
+    : fg(fg),
+      infrs(fg, weights),
+      nthread(nthread),
+      nodeid(nodeid),
       sample_evidence(sample_evidence),
       burn_in(burn_in),
       learn_non_evidence(learn_non_evidence) {}
 
 void SingleNodeSampler::clear_variabletally() {
-  for (long i = 0; i < p_fg->size.num_variables; i++) {
-    p_fg->infrs->agg_means[i] = 0.0;
-    p_fg->infrs->agg_nsamples[i] = 0.0;
+  for (long i = 0; i < fg.size.num_variables; i++) {
+    infrs.agg_means[i] = 0.0;
+    infrs.agg_nsamples[i] = 0.0;
   }
-  for (long i = 0; i < p_fg->infrs->ntallies; i++) {
-    p_fg->infrs->multinomial_tallies[i] = 0;
+  for (long i = 0; i < infrs.ntallies; i++) {
+    infrs.multinomial_tallies[i] = 0;
   }
 }
 
@@ -58,8 +43,11 @@ void SingleNodeSampler::sample(int i_epoch) {
   bool is_burn_in = i_epoch < burn_in;
 
   for (int i = 0; i < this->nthread; i++) {
-    this->threads.push_back(std::thread(gibbs_single_thread_task, p_fg, i,
-                                        nthread, sample_evidence, is_burn_in));
+    this->threads.push_back(std::thread([&]() {
+      SingleThreadSampler sampler =
+          SingleThreadSampler(fg, infrs, 0.0, sample_evidence, burn_in, false);
+      sampler.sample(i, nthread);
+    }));
   }
 }
 
@@ -75,8 +63,11 @@ void SingleNodeSampler::sample_sgd(double stepsize) {
   this->threads.clear();
 
   for (int i = 0; i < this->nthread; i++) {
-    this->threads.push_back(std::thread(gibbs_single_thread_sgd_task, p_fg, i,
-                                        nthread, stepsize, learn_non_evidence));
+    this->threads.push_back(std::thread([&]() {
+      SingleThreadSampler sampler = SingleThreadSampler(
+          fg, infrs, stepsize, false, 0, learn_non_evidence);
+      sampler.sample_sgd(i, nthread);
+    }));
   }
 }
 

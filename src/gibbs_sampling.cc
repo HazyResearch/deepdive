@@ -9,17 +9,16 @@
 
 namespace dd {
 
-GibbsSampling::GibbsSampling(const CmdParser *const _p_cmd_parser,
+GibbsSampling::GibbsSampling(std::unique_ptr<CompiledFactorGraph> p_cfg,
+                             const Weight weights[],
+                             const CmdParser *const p_cmd_parser,
                              bool sample_evidence, int burn_in,
-                             bool learn_non_evidence)
-    : p_fg(NULL),
-      p_cmd_parser(_p_cmd_parser),
+                             bool learn_non_evidence, int n_datacopy)
+    : weights(weights),
+      p_cmd_parser(p_cmd_parser),
       sample_evidence(sample_evidence),
       burn_in(burn_in),
-      learn_non_evidence(learn_non_evidence) {}
-
-void GibbsSampling::init(std::shared_ptr<CompiledFactorGraph> p_cfg,
-                         int n_datacopy) {
+      learn_non_evidence(learn_non_evidence) {
   // the highest node number available
   n_numa_nodes = numa_max_node();
 
@@ -32,7 +31,7 @@ void GibbsSampling::init(std::shared_ptr<CompiledFactorGraph> p_cfg,
   n_thread_per_numa = (sysconf(_SC_NPROCESSORS_CONF)) / (n_numa_nodes + 1);
   // n_thread_per_numa = 1;
 
-  factorgraphs.push_back(p_cfg);
+  factorgraphs[0] = std::move(p_cfg);
 
   // copy factor graphs
   for (int i = 1; i <= n_numa_nodes; i++) {
@@ -40,8 +39,7 @@ void GibbsSampling::init(std::shared_ptr<CompiledFactorGraph> p_cfg,
     numa_set_localalloc();
 
     std::cout << "CREATE CFG ON NODE ..." << i << std::endl;
-    factorgraphs.push_back(std::make_shared<CompiledFactorGraph>(
-        *new CompiledFactorGraph(*p_cfg)));
+    factorgraphs[i].reset(new CompiledFactorGraph(*p_cfg));
   }
 };
 
@@ -55,8 +53,9 @@ void GibbsSampling::inference(const int &n_epoch, const bool is_quiet) {
   // single node samplers
   std::vector<SingleNodeSampler> single_node_samplers;
   for (int i = 0; i <= n_numa_nodes; i++) {
-    single_node_samplers.push_back(SingleNodeSampler(
-        factorgraphs[i].get(), n_thread_per_numa, i, sample_evidence, burn_in));
+    single_node_samplers.push_back(SingleNodeSampler(*factorgraphs[i], weights,
+                                                     n_thread_per_numa, i,
+                                                     sample_evidence, burn_in));
   }
 
   for (int i = 0; i <= n_numa_nodes; i++) {
@@ -112,8 +111,8 @@ void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
   std::vector<SingleNodeSampler> single_node_samplers;
   for (int i = 0; i <= n_numa_nodes; i++) {
     single_node_samplers.push_back(
-        SingleNodeSampler(factorgraphs[i].get(), n_thread_per_numa, i, false, 0,
-                          learn_non_evidence));
+        SingleNodeSampler(*factorgraphs[i], weights, n_thread_per_numa, i,
+                          false, 0, learn_non_evidence));
   }
 
   std::cerr << factorgraphs[0]->size << std::endl;

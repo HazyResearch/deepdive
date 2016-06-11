@@ -14,7 +14,8 @@ namespace dd {
 class SingleNodeSampler {
  public:
   // factor graph
-  CompiledFactorGraph* const p_fg;
+  CompiledFactorGraph& fg;
+  InferenceResult infrs;
   // number of threads
   int nthread;
   // node id
@@ -30,11 +31,13 @@ class SingleNodeSampler {
    * Constructs a SingleNodeSampler given factor graph, number of threads, and
    * node id.
    */
-  SingleNodeSampler(CompiledFactorGraph* _p_fg, int _nthread, int _nodeid);
-  SingleNodeSampler(CompiledFactorGraph* _p_fg, int _nthread, int _nodeid,
-                    bool sample_evidence, int burn_in);
-  SingleNodeSampler(CompiledFactorGraph* _p_fg, int _nthread, int _nodeid,
-                    bool sample_evidence, int burn_in, bool learn_non_evidence);
+  SingleNodeSampler(CompiledFactorGraph& fg, const Weight weights[],
+                    int nthread, int nodeid);
+  SingleNodeSampler(CompiledFactorGraph& fg, const Weight weights[],
+                    int nthread, int nodeid, bool sample_evidence, int burn_in);
+  SingleNodeSampler(CompiledFactorGraph& fg, const Weight weights[],
+                    int nthread, int nodeid, bool sample_evidence, int burn_in,
+                    bool learn_non_evidence);
 
   /**
    * Clears the inference results in this sampler
