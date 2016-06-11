@@ -87,7 +87,7 @@ int gibbs(const dd::CmdParser &args) {
   dd::CompiledFactorGraph cfg(fg.size);
   fg.compile(cfg);
 
-  gibbs.init(&cfg, args.n_datacopy);
+  gibbs.init(std::make_shared<CompiledFactorGraph>(cfg), args.n_datacopy);
 
   // number of learning epochs
   // the factor graph is copied on each NUMA node, so the total epochs =

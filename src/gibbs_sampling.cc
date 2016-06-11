@@ -18,7 +18,8 @@ GibbsSampling::GibbsSampling(const CmdParser *const _p_cmd_parser,
       burn_in(burn_in),
       learn_non_evidence(learn_non_evidence) {}
 
-void GibbsSampling::init(CompiledFactorGraph *const p_cfg, int n_datacopy) {
+void GibbsSampling::init(std::shared_ptr<CompiledFactorGraph> p_cfg,
+                         int n_datacopy) {
   // the highest node number available
   n_numa_nodes = numa_max_node();
 
@@ -31,7 +32,7 @@ void GibbsSampling::init(CompiledFactorGraph *const p_cfg, int n_datacopy) {
   n_thread_per_numa = (sysconf(_SC_NPROCESSORS_CONF)) / (n_numa_nodes + 1);
   // n_thread_per_numa = 1;
 
-  this->factorgraphs.push_back(*p_cfg);
+  factorgraphs.push_back(p_cfg);
 
   // copy factor graphs
   for (int i = 1; i <= n_numa_nodes; i++) {
@@ -39,11 +40,8 @@ void GibbsSampling::init(CompiledFactorGraph *const p_cfg, int n_datacopy) {
     numa_set_localalloc();
 
     std::cout << "CREATE CFG ON NODE ..." << i << std::endl;
-    CompiledFactorGraph cfg(p_cfg->size);
-
-    cfg.copy_from(p_cfg);
-
-    this->factorgraphs.push_back(cfg);
+    factorgraphs.push_back(std::make_shared<CompiledFactorGraph>(
+        *new CompiledFactorGraph(*p_cfg)));
   }
 };
 
@@ -51,15 +49,14 @@ void GibbsSampling::inference(const int &n_epoch, const bool is_quiet) {
   Timer t_total;
 
   Timer t;
-  int nvar = this->factorgraphs[0].size.num_variables;
+  int nvar = factorgraphs[0]->size.num_variables;
   int nnode = n_numa_nodes + 1;
 
   // single node samplers
   std::vector<SingleNodeSampler> single_node_samplers;
   for (int i = 0; i <= n_numa_nodes; i++) {
-    single_node_samplers.push_back(SingleNodeSampler(&this->factorgraphs[i],
-                                                     n_thread_per_numa, i,
-                                                     sample_evidence, burn_in));
+    single_node_samplers.push_back(SingleNodeSampler(
+        factorgraphs[i].get(), n_thread_per_numa, i, sample_evidence, burn_in));
   }
 
   for (int i = 0; i <= n_numa_nodes; i++) {
@@ -104,28 +101,28 @@ void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
   Timer t_total;
 
   double current_stepsize = stepsize;
-  std::cerr << this->factorgraphs[0].size << std::endl;
+  std::cerr << factorgraphs[0]->size << std::endl;
 
   Timer t;
-  int nvar = this->factorgraphs[0].size.num_variables;
+  int nvar = factorgraphs[0]->size.num_variables;
   int nnode = n_numa_nodes + 1;
-  int nweight = this->factorgraphs[0].size.num_weights;
+  int nweight = factorgraphs[0]->size.num_weights;
 
   // single node samplers
   std::vector<SingleNodeSampler> single_node_samplers;
   for (int i = 0; i <= n_numa_nodes; i++) {
     single_node_samplers.push_back(
-        SingleNodeSampler(&this->factorgraphs[i], n_thread_per_numa, i, false,
-                          0, learn_non_evidence));
+        SingleNodeSampler(factorgraphs[i].get(), n_thread_per_numa, i, false, 0,
+                          learn_non_evidence));
   }
 
-  std::cerr << this->factorgraphs[0].size << std::endl;
+  std::cerr << factorgraphs[0]->size << std::endl;
 
-  dprintf("%p %d\n", (this->factorgraphs[0].infrs->weight_values), nweight);
+  dprintf("%p %d\n", (factorgraphs[0]->infrs->weight_values), nweight);
   std::unique_ptr<double[]> ori_weights(new double[nweight]);
-  memcpy(ori_weights.get(), this->factorgraphs[0].infrs->weight_values,
+  memcpy(ori_weights.get(), factorgraphs[0]->infrs->weight_values,
          sizeof(double) * nweight);
-  std::cerr << this->factorgraphs[0].size << std::endl;
+  std::cerr << factorgraphs[0]->size << std::endl;
 
   // learning epochs
   for (int i_epoch = 0; i_epoch < n_epoch; i_epoch++) {
@@ -151,12 +148,12 @@ void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
       single_node_samplers[i].wait_sgd();
     }
 
-    CompiledFactorGraph &cfg = this->factorgraphs[0];
+    auto &cfg = *factorgraphs[0];
 
     // sum the weights and store in the first factor graph
     // the average weights will be calculated and assigned to all factor graphs
     for (int i = 1; i <= n_numa_nodes; i++) {
-      CompiledFactorGraph &cfg_other = this->factorgraphs[i];
+      auto &cfg_other = *factorgraphs[i];
       for (int j = 0; j < nweight; j++) {
         cfg.infrs->weight_values[j] += cfg_other.infrs->weight_values[j];
       }
@@ -178,7 +175,7 @@ void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
     // set weights for other factor graph to be the same as the first factor
     // graph
     for (int i = 1; i <= n_numa_nodes; i++) {
-      CompiledFactorGraph &cfg_other = this->factorgraphs[i];
+      auto &cfg_other = *factorgraphs[i];
       for (int j = 0; j < nweight; j++) {
         if (!cfg.infrs->weights_isfixed[j]) {
           cfg_other.infrs->weight_values[j] = cfg.infrs->weight_values[j];
@@ -217,7 +214,7 @@ void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
 
 void GibbsSampling::dump_weights(const bool is_quiet) {
   // learning weights snippets
-  CompiledFactorGraph const &cfg = this->factorgraphs[0];
+  CompiledFactorGraph const &cfg = *factorgraphs[0];
   if (!is_quiet) {
     std::cout << "LEARNING SNIPPETS (QUERY WEIGHTS):" << std::endl;
     int ct = 0;
@@ -249,31 +246,31 @@ void GibbsSampling::dump_weights(const bool is_quiet) {
 void GibbsSampling::aggregate_results_and_dump(const bool is_quiet) {
   // sum of variable assignments
   std::unique_ptr<double[]> agg_means(
-      new double[factorgraphs[0].size.num_variables]);
+      new double[factorgraphs[0]->size.num_variables]);
   // number of samples
   std::unique_ptr<double[]> agg_nsamples(
-      new double[factorgraphs[0].size.num_variables]);
+      new double[factorgraphs[0]->size.num_variables]);
   std::unique_ptr<int[]> multinomial_tallies(
-      new int[factorgraphs[0].infrs->ntallies]);
+      new int[factorgraphs[0]->infrs->ntallies]);
 
-  for (long i = 0; i < factorgraphs[0].size.num_variables; i++) {
+  for (long i = 0; i < factorgraphs[0]->size.num_variables; i++) {
     agg_means[i] = 0;
     agg_nsamples[i] = 0;
   }
 
-  for (long i = 0; i < factorgraphs[0].infrs->ntallies; i++) {
+  for (long i = 0; i < factorgraphs[0]->infrs->ntallies; i++) {
     multinomial_tallies[i] = 0;
   }
 
   // sum variable assignments over all NUMA nodes
   for (int i = 0; i <= n_numa_nodes; i++) {
-    const CompiledFactorGraph &cfg = factorgraphs[i];
-    for (long i = 0; i < factorgraphs[0].size.num_variables; i++) {
-      const Variable &variable = factorgraphs[0].variables[i];
+    const CompiledFactorGraph &cfg = *factorgraphs[i];
+    for (long i = 0; i < factorgraphs[0]->size.num_variables; i++) {
+      const Variable &variable = factorgraphs[0]->variables[i];
       agg_means[variable.id] += cfg.infrs->agg_means[variable.id];
       agg_nsamples[variable.id] += cfg.infrs->agg_nsamples[variable.id];
     }
-    for (long i = 0; i < factorgraphs[0].infrs->ntallies; i++) {
+    for (long i = 0; i < factorgraphs[0]->infrs->ntallies; i++) {
       multinomial_tallies[i] += cfg.infrs->multinomial_tallies[i];
     }
   }
@@ -282,8 +279,8 @@ void GibbsSampling::aggregate_results_and_dump(const bool is_quiet) {
   if (!is_quiet) {
     std::cout << "INFERENCE SNIPPETS (QUERY VARIABLES):" << std::endl;
     int ct = 0;
-    for (long i = 0; i < factorgraphs[0].size.num_variables; i++) {
-      const Variable &variable = factorgraphs[0].variables[i];
+    for (long i = 0; i < factorgraphs[0]->size.num_variables; i++) {
+      const Variable &variable = factorgraphs[0]->variables[i];
       if (!variable.is_evid || sample_evidence) {
         ct++;
         std::cout << "   " << variable.id
@@ -333,8 +330,8 @@ void GibbsSampling::aggregate_results_and_dump(const bool is_quiet) {
 
   std::cout << "DUMPING... TEXT    : " << filename_text << std::endl;
   std::ofstream fout_text(filename_text.c_str());
-  for (long i = 0; i < factorgraphs[0].size.num_variables; i++) {
-    const Variable &variable = factorgraphs[0].variables[i];
+  for (long i = 0; i < factorgraphs[0]->size.num_variables; i++) {
+    const Variable &variable = factorgraphs[0]->variables[i];
     if (variable.is_evid && !sample_evidence) {
       continue;
     }
@@ -381,8 +378,8 @@ void GibbsSampling::aggregate_results_and_dump(const bool is_quiet) {
       abc.push_back(0);
     }
     int bad = 0;
-    for (long i = 0; i < factorgraphs[0].size.num_variables; i++) {
-      const Variable &variable = factorgraphs[0].variables[i];
+    for (long i = 0; i < factorgraphs[0]->size.num_variables; i++) {
+      const Variable &variable = factorgraphs[0]->variables[i];
       if (variable.is_evid && !sample_evidence) {
         continue;
       }

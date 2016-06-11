@@ -5,6 +5,9 @@
 #include "weight.h"
 
 namespace dd {
+
+class CompiledFactorGraph;
+
 /**
  * Encapsulates inference result statistics
  */
@@ -17,24 +20,23 @@ class InferenceResult {
   int *multinomial_tallies;  // this might be slow...
 
   // array of sum of samples for each variable
-  double *const agg_means;
+  double *agg_means;
   // array of number of samples for each variable
-  double *const agg_nsamples;
+  double *agg_nsamples;
   // assignment to variables, see variable.h for more detail
-  VariableValue *const assignments_free;
-  VariableValue *const assignments_evid;
+  VariableValue *assignments_free;
+  VariableValue *assignments_evid;
 
-  double *const weight_values;  // array of weight values
-  bool *const weights_isfixed;  // array of whether weight is fixed
+  double *weight_values;  // array of weight values
+  bool *weights_isfixed;  // array of whether weight is fixed
 
-  InferenceResult(long _nvars, long _nweights);
+  InferenceResult(const CompiledFactorGraph &fg, Weight *const weights);
 
-  /**
-   * Initialize the class with given variables and weights
-   */
-  void init(Variable *variables, Weight *const weights);
+  // copy constructor
+  InferenceResult(const InferenceResult &other);
 
-  void copy_from(InferenceResult &infrs);
+ private:
+  InferenceResult(size_t nvars, size_t nweights);
 };
 
 }  // namespace dd

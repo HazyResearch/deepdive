@@ -81,8 +81,7 @@ TEST_F(LoadingTest, copy_from) {
   dd::CompiledFactorGraph cfg({18, 18, 1, 18});
   fg.compile(cfg);
 
-  dd::CompiledFactorGraph cfg2({18, 18, 1, 18});
-  cfg2.copy_from(&cfg);
+  dd::CompiledFactorGraph cfg2 = cfg;
 
   EXPECT_TRUE(memcmp(&cfg, &cfg2, sizeof(cfg)));
 }

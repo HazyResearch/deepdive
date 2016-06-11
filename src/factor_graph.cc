@@ -117,7 +117,7 @@ void FactorGraph::compile(CompiledFactorGraph &cfg) {
   }
 
   /* Initialize the InferenceResult array in the end of compilation */
-  cfg.infrs->init(cfg.variables, weights);
+  cfg.infrs = new InferenceResult(cfg, weights);
 
   assert(i_edge == size.num_edges);
 
@@ -152,30 +152,22 @@ CompiledFactorGraph::CompiledFactorGraph(const FactorGraphDescriptor &size)
       compact_factors_weightids(new int[size.num_edges]),
       factor_ids(new long[size.num_edges]),
       vifs(new VariableInFactor[size.num_edges]),
-      infrs(new InferenceResult(size.num_variables, size.num_weights)) {}
+      infrs(NULL) {}
 
-void CompiledFactorGraph::copy_from(
-    const CompiledFactorGraph *const p_other_fg) {
-  size = p_other_fg->size;
-
+CompiledFactorGraph::CompiledFactorGraph(const CompiledFactorGraph &other)
+    : CompiledFactorGraph(other.size) {
   // copy each member from the given graph
-  memcpy(variables, p_other_fg->variables,
-         sizeof(Variable) * size.num_variables);
-  memcpy(factors, p_other_fg->factors, sizeof(Factor) * size.num_factors);
+  memcpy(variables, other.variables, sizeof(Variable) * size.num_variables);
+  memcpy(factors, other.factors, sizeof(Factor) * size.num_factors);
 
-  memcpy(compact_factors, p_other_fg->compact_factors,
+  memcpy(compact_factors, other.compact_factors,
          sizeof(CompactFactor) * size.num_edges);
-  memcpy(compact_factors_weightids, p_other_fg->compact_factors_weightids,
+  memcpy(compact_factors_weightids, other.compact_factors_weightids,
          sizeof(int) * size.num_edges);
-  memcpy(factor_ids, p_other_fg->factor_ids, sizeof(long) * size.num_edges);
-  memcpy(vifs, p_other_fg->vifs, sizeof(VariableInFactor) * size.num_edges);
+  memcpy(factor_ids, other.factor_ids, sizeof(long) * size.num_edges);
+  memcpy(vifs, other.vifs, sizeof(VariableInFactor) * size.num_edges);
 
-  infrs->copy_from(*p_other_fg->infrs);
-  infrs->ntallies = p_other_fg->infrs->ntallies;
-  infrs->multinomial_tallies = new int[p_other_fg->infrs->ntallies];
-  for (long i = 0; i < infrs->ntallies; i++) {
-    infrs->multinomial_tallies[i] = p_other_fg->infrs->multinomial_tallies[i];
-  }
+  if (other.infrs) infrs = new InferenceResult(*other.infrs);
 }
 
 long CompiledFactorGraph::get_multinomial_weight_id(

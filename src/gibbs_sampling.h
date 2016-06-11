@@ -29,7 +29,7 @@ class GibbsSampling {
   int n_thread_per_numa;
 
   // factor graph copies
-  std::vector<CompiledFactorGraph> factorgraphs;
+  std::vector<std::shared_ptr<CompiledFactorGraph>> factorgraphs;
 
   // sample evidence in inference
   bool sample_evidence;
@@ -50,7 +50,7 @@ class GibbsSampling {
   GibbsSampling(const CmdParser* const _p_cmd_parser, bool sample_evidence,
                 int burn_in, bool learn_non_evidence);
 
-  void init(CompiledFactorGraph* const _p_cfg, int n_datacopy);
+  void init(std::shared_ptr<CompiledFactorGraph> p_cfg, int n_datacopy);
 
   /**
    * Performs learning

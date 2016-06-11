@@ -120,31 +120,29 @@ class CompiledFactorGraph {
   // learning weight update stepsize (learning rate)
   double stepsize;
 
-  Variable* const variables;
-  Factor* const factors;
+  Variable* variables;
+  Factor* factors;
 
   // For each edge, we store the factor, weight id, factor id, and the variable,
   // in the same index of seperate arrays. The edges are ordered so that the
   // edges for a variable is in a continuous region (sequentially).
   // This allows us to access factors given variables, and access variables
   // given factors faster.
-  CompactFactor* const compact_factors;
-  int* const compact_factors_weightids;
-  long* const factor_ids;
-  VariableInFactor* const vifs;
+  CompactFactor* compact_factors;
+  int* compact_factors_weightids;
+  long* factor_ids;
+  VariableInFactor* vifs;
 
   // pointer to inference result
-  InferenceResult* const infrs;
+  InferenceResult* infrs;
 
   CompiledFactorGraph();
 
   /* Produces an empty factor graph to be initialized by resume() */
   CompiledFactorGraph(const FactorGraphDescriptor& size);
 
-  /**
-   * Copies a compiled factor graph from the given one
-   */
-  void copy_from(const CompiledFactorGraph* const p_other_fg);
+  // copy constructor
+  CompiledFactorGraph(const CompiledFactorGraph& other);
 
   /*
    * Given a factor and variable assignment, returns corresponding multinomial
