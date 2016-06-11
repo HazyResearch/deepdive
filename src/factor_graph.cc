@@ -117,7 +117,7 @@ void FactorGraph::compile(CompiledFactorGraph &cfg) {
   }
 
   /* Initialize the InferenceResult array in the end of compilation */
-  cfg.infrs = new InferenceResult(cfg, weights);
+  cfg.infrs.reset(new InferenceResult(cfg, weights));
 
   assert(i_edge == size.num_edges);
 
@@ -152,22 +152,25 @@ CompiledFactorGraph::CompiledFactorGraph(const FactorGraphDescriptor &size)
       compact_factors_weightids(new int[size.num_edges]),
       factor_ids(new long[size.num_edges]),
       vifs(new VariableInFactor[size.num_edges]),
-      infrs(NULL) {}
+      infrs() {}
 
 CompiledFactorGraph::CompiledFactorGraph(const CompiledFactorGraph &other)
     : CompiledFactorGraph(other.size) {
   // copy each member from the given graph
-  memcpy(variables, other.variables, sizeof(Variable) * size.num_variables);
-  memcpy(factors, other.factors, sizeof(Factor) * size.num_factors);
+  memcpy(variables.get(), other.variables.get(),
+         sizeof(Variable) * size.num_variables);
+  memcpy(factors.get(), other.factors.get(), sizeof(Factor) * size.num_factors);
 
-  memcpy(compact_factors, other.compact_factors,
+  memcpy(compact_factors.get(), other.compact_factors.get(),
          sizeof(CompactFactor) * size.num_edges);
-  memcpy(compact_factors_weightids, other.compact_factors_weightids,
+  memcpy(compact_factors_weightids.get(), other.compact_factors_weightids.get(),
          sizeof(int) * size.num_edges);
-  memcpy(factor_ids, other.factor_ids, sizeof(long) * size.num_edges);
-  memcpy(vifs, other.vifs, sizeof(VariableInFactor) * size.num_edges);
+  memcpy(factor_ids.get(), other.factor_ids.get(),
+         sizeof(long) * size.num_edges);
+  memcpy(vifs.get(), other.vifs.get(),
+         sizeof(VariableInFactor) * size.num_edges);
 
-  if (other.infrs) infrs = new InferenceResult(*other.infrs);
+  if (other.infrs.get()) infrs.reset(new InferenceResult(*other.infrs));
 }
 
 long CompiledFactorGraph::get_multinomial_weight_id(
@@ -209,34 +212,34 @@ long CompiledFactorGraph::get_multinomial_weight_id(
       break;
     }
     case FUNC_MULTINOMIAL:
-      weight_id = *(compact_factors_weightids + (&fs - compact_factors)) +
-                  weight_offset;
+      weight_id =
+          compact_factors_weightids[&fs - &compact_factors[0]] + weight_offset;
       break;
   }
   return weight_id;
 }
 
 void CompiledFactorGraph::update_weight(const Variable &variable,
-                                        InferenceResult *const infrs) {
+                                        InferenceResult &infrs) {
   // corresponding factors and weights in a continous region
-  CompactFactor *const fs = compact_factors + variable.n_start_i_factors;
-  const int *const ws = compact_factors_weightids + variable.n_start_i_factors;
+  CompactFactor *const fs = &compact_factors[variable.n_start_i_factors];
+  const int *const ws = &compact_factors_weightids[variable.n_start_i_factors];
   // for each factor
   for (long i = 0; i < variable.n_factors; i++) {
     // boolean variable
     switch (variable.domain_type) {
       case DTYPE_BOOLEAN: {
         // only update weight when it is not fixed
-        if (!infrs->weights_isfixed[ws[i]]) {
+        if (!infrs.weights_isfixed[ws[i]]) {
           // stochastic gradient ascent
           // increment weight with stepsize * gradient of weight
           // gradient of weight = E[f|D] - E[f], where D is evidence variables,
           // f is the factor function, E[] is expectation. Expectation is
           // calculated
           // using a sample of the variable.
-          infrs->weight_values[ws[i]] +=
-              stepsize * (potential(fs[i], infrs->assignments_evid.get()) -
-                          potential(fs[i], infrs->assignments_free.get()));
+          infrs.weight_values[ws[i]] +=
+              stepsize * (potential(fs[i], infrs.assignments_evid.get()) -
+                          potential(fs[i], infrs.assignments_free.get()));
         }
         break;
       }
@@ -246,24 +249,24 @@ void CompiledFactorGraph::update_weight(const Variable &variable,
         // sample without evidence unfixed, I1, with corresponding weight w2
         // gradient of wd0 = f(I0) - I(w1==w2)f(I1)
         // gradient of wd1 = I(w1==w2)f(I0) - f(I1)
-        long wid1 = get_multinomial_weight_id(infrs->assignments_evid.get(),
+        long wid1 = get_multinomial_weight_id(infrs.assignments_evid.get(),
                                               fs[i], -1, -1);
-        long wid2 = get_multinomial_weight_id(infrs->assignments_free.get(),
+        long wid2 = get_multinomial_weight_id(infrs.assignments_free.get(),
                                               fs[i], -1, -1);
         int equal = (wid1 == wid2);
 
-        if (wid1 >= 0 && !infrs->weights_isfixed[wid1]) {
-          infrs->weight_values[wid1] +=
+        if (wid1 >= 0 && !infrs.weights_isfixed[wid1]) {
+          infrs.weight_values[wid1] +=
               stepsize *
-              (potential(fs[i], infrs->assignments_evid.get()) -
-               equal * potential(fs[i], infrs->assignments_free.get()));
+              (potential(fs[i], infrs.assignments_evid.get()) -
+               equal * potential(fs[i], infrs.assignments_free.get()));
         }
 
-        if (wid2 >= 0 && !infrs->weights_isfixed[wid2]) {
-          infrs->weight_values[wid2] +=
+        if (wid2 >= 0 && !infrs.weights_isfixed[wid2]) {
+          infrs.weight_values[wid2] +=
               stepsize *
-              (equal * potential(fs[i], infrs->assignments_evid.get()) -
-               potential(fs[i], infrs->assignments_free.get()));
+              (equal * potential(fs[i], infrs.assignments_evid.get()) -
+               potential(fs[i], infrs.assignments_free.get()));
         }
         break;
       }

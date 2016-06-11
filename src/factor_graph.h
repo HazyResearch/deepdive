@@ -120,21 +120,21 @@ class CompiledFactorGraph {
   // learning weight update stepsize (learning rate)
   double stepsize;
 
-  Variable* variables;
-  Factor* factors;
+  std::unique_ptr<Variable[]> variables;
+  std::unique_ptr<Factor[]> factors;
 
   // For each edge, we store the factor, weight id, factor id, and the variable,
   // in the same index of seperate arrays. The edges are ordered so that the
   // edges for a variable is in a continuous region (sequentially).
   // This allows us to access factors given variables, and access variables
   // given factors faster.
-  CompactFactor* compact_factors;
-  int* compact_factors_weightids;
-  long* factor_ids;
-  VariableInFactor* vifs;
+  std::unique_ptr<CompactFactor[]> compact_factors;
+  std::unique_ptr<int[]> compact_factors_weightids;
+  std::unique_ptr<long[]> factor_ids;
+  std::unique_ptr<VariableInFactor[]> vifs;
 
   // pointer to inference result
-  InferenceResult* infrs;
+  std::unique_ptr<InferenceResult> infrs;
 
   CompiledFactorGraph();
 
@@ -161,7 +161,7 @@ class CompiledFactorGraph {
    * Used in learning phase, after sampling one variable,
    * update corresponding weights (stochastic gradient descent).
    */
-  void update_weight(const Variable& variable, InferenceResult* const infrs);
+  void update_weight(const Variable& variable, InferenceResult& infrs);
 
   /**
    * Returns potential of the given factor
@@ -185,7 +185,7 @@ class CompiledFactorGraph {
 
 inline double CompiledFactorGraph::potential(
     const CompactFactor& factor, const VariableValue assignments[]) {
-  return factor.potential(vifs, assignments, -1, -1);
+  return factor.potential(vifs.get(), assignments, -1, -1);
 }
 
 inline double CompiledFactorGraph::potential(
@@ -207,7 +207,7 @@ inline double CompiledFactorGraph::potential(
       for (long i = 0; i < variable.n_factors; ++i) {
         long wid = ws[i];
         pot += infrs->weight_values[wid] *
-               fs[i].potential(vifs, assignments, variable.id, proposal);
+               fs[i].potential(vifs.get(), assignments, variable.id, proposal);
       }
       break;
     }
@@ -219,7 +219,7 @@ inline double CompiledFactorGraph::potential(
                                              proposal);
         if (wid == -1) continue;
         pot += infrs->weight_values[wid] *
-               fs[i].potential(vifs, assignments, variable.id, proposal);
+               fs[i].potential(vifs.get(), assignments, variable.id, proposal);
       }
       break;
     }
