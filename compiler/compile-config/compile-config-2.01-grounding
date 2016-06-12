@@ -21,16 +21,6 @@ def factorWeightDescriptionSqlExpr:
       )
     ] | join(" ||\("-" | asSqlLiteral)|| ")
     ;
-def multinomialFactorWeightCategoriesDescriptionSqlExpr:
-    # to serialize category values describing an individual multinomial weight
-    "\(
-    [ ( .function_.variables[]
-    | .columnId as $columnIdForThisVar
-    | ( .schema.variablesCategoryColumns[]
-    | "\($columnIdForThisVar)_\(.)" | asSqlIdent )
-    ) ] | join(" ||'\t'|| ")
-    ) || ''"
-    ;
 
 .deepdive_ as $deepdive
 
@@ -73,9 +63,10 @@ def multinomialFactorWeightCategoriesDescriptionSqlExpr:
             | { column: "_\(.)" }
             | asSqlExpr
             ] | join(", ") | @sh)
-        " else "" end)
 
         deepdive sql \"ANALYZE VERBOSE \(.variablesCategoriesTable)\"
+
+        " else "" end)
 
         # generate a table holding all distinct variables identified by @key columns
         # so a unique id can be assigned to each of them
@@ -284,11 +275,6 @@ def multinomialFactorWeightCategoriesDescriptionSqlExpr:
                     , { LEFT_OUTER: { alias: "observation", table: deepdiveGlobalObservationTable }
                       , ON: { eq: [ { table: "i"  , column: deepdiveVariableIdColumn }
                                   , { table: "observation", column: "variable_id" } ] } }
-                    , ( if .variableType != "categorical" then empty else
-                      { LEFT_OUTER: { alias: "categories" , table: .variablesCategoriesTable }
-                      , ON: { eq: [ { table: "i"  , column: deepdiveVariableIdColumn }
-                                  , { table: "observation", column: "variable_id" } ] } }
-                      end)
                     ]
                 } }
             } | asSql | asPrettySqlArg) \\
@@ -392,6 +378,9 @@ def multinomialFactorWeightCategoriesDescriptionSqlExpr:
                 # allow .input_query to refer to the assigned variable ids by redefining the variable table names with SQL CTE
                 { SELECT:
                     [ ( .function_.variables[] | { table: "F", column: .columnId } )
+                    # TODO XXXX: assuming so-called "multinomial" factors' heads have categorical vars only
+                    , ( .function_ | select(.isMultinomial) | .variables[] |
+                        { table: "F", column: "\(.columnPrefix)\(deepdiveVariableInternalLabelColumn)" } )
                     , ( .weight_.params[]      | { table: "F", column: . } )
                     ]
                 , DISTINCT: true  # XXX maybe we should assume user is going to be make this true
@@ -414,49 +403,10 @@ def multinomialFactorWeightCategoriesDescriptionSqlExpr:
                     | { alias: "f", table: .factorsTable }
                     ]
                 } | asSql | asPrettySqlArg) as $weightsMaterializeSqlArg |
-            if .function_.isMultinomial then # factors over categorical variables
-            "
-                # find distinct weight parameters for factors
-                # considering all the exact combintations of category values present in the factors
-                # assuming they'll be sparse
-                deepdive create table \(.weightsTable | @sh) as \(
-                    { SELECT:
-                        # weight parameters
-                        [ ( .weight_.params[] | { column: . } )
-                        # include category columns for every categorical variable
-                        , ( .function_.variables[]
-                        | .columnId as $columnIdForThisVar
-                        | .schema.variablesCategoryColumns[]
-                        | { alias: "\($columnIdForThisVar)_\(.)", table: "v.\($columnIdForThisVar)", column: . } )
-                        # weight attributes
-                        , { alias: "isfixed"  , expr: .weight_.is_fixed      }
-                        , { alias: "initvalue", expr: .weight_.init_value    }
-                        , { alias: "wid"      , expr: "CAST(NULL AS BIGINT)" } # to be assigned later by the assign_weight_id process
-                        ]
-                    , DISTINCT: true  # XXX this is inevitable
-                    # weights are exploded for the factor's variables' category values
-                    , FROM: [ { alias: "f", table: .factorsTable } ]
-                    # FIXME joins below can go away if DDlog could project them as well in the .input_query
-                    # or we could inject those pushed-down projections if it at least compiled into a sql.jq object
-# XXX this join prevents us from defining a partial weight distribution
-                    , JOIN:
-                        [ ( .function_.variables[]
-                        | .columnId as $columnIdForThisVar
-                        | { INNER: { alias: "i.\($columnIdForThisVar)", table: .schema.variablesIdsTable }
-                          , ON: { eq: [ { table: "f"                          , column: $columnIdForThisVar }
-                                      , { table: "i.\($columnIdForThisVar)", column: deepdiveVariableIdColumn } ] }
-                          }
-                        , { INNER: { alias: "v.\($columnIdForThisVar)", table: .schema.variablesTable }
-                          , ON: [ ( .schema.variablesKeyColumns[]
-                                | { eq: [ { table: "v.\($columnIdForThisVar)", column: . }
-                                        , { table: "i.\($columnIdForThisVar)", column: . } ] } ) ] }
-                        ) ]
-                    } | asSql | asPrettySqlArg)
-            " else # factors over boolean variables
             "
             # find distinct weights for the factors into a separate table
             deepdive create table \(.weightsTable | @sh) as \($weightsMaterializeSqlArg)
-            " end)
+            ")
         "
     }
 })
@@ -474,33 +424,7 @@ def multinomialFactorWeightCategoriesDescriptionSqlExpr:
         : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
         cd \"$DEEPDIVE_GROUNDING_DIR\"/factor
 
-        \(if [ $deepdive.inference.factors_[].function_.isMultinomial ] | any then
-            # there are multinomial factors in the model, need to check if each
-            # will use dense representation to determine whether to use a step
-            # size larger than 1 when partitioning the weight ids
-            [ ( [ $deepdive.inference.factors_[].function_.variables[].schema ] | unique[]
-            | "\(.variableName)Cardinality=$(deepdive sql eval \(
-                { SELECT: { expr: "COUNT(*)" }
-                , FROM: { table: .variablesCategoriesTable }
-                } | asSql | asPrettySqlArg))" )
-            , "weightsTablesToConsider=()"
-            , ( $deepdive.inference.factors_[]
-            | if .function_.isMultinomial then
-                "
-                weightsTablesToConsider+=(\(.weightsTable | @sh))
-                "
-            else
-                # non-multinomial factors
-                "
-                weightsTablesToConsider+=(\(.weightsTable | @sh))
-                "
-            end)
-            , "set -- \"${weightsTablesToConsider[@]}\""
-            ] | join("\n")
-        else
-            # no multinomial factors
-            [ "set --", "\($deepdive.inference.factors_[].weightsTable | @sh)", "#" ] | join(" \\\n    ")
-        end)
+        \([ "set --", "\($deepdive.inference.factors_[].weightsTable | @sh)", "#" ] | join(" \\\n    "))
 
         # partition the id range for weights
         RANGE_BEGIN=0 RANGE_STEP=1 \\
@@ -537,25 +461,8 @@ def multinomialFactorWeightCategoriesDescriptionSqlExpr:
             cd \"$DEEPDIVE_GROUNDING_DIR\"/factor/\(.factorName | @sh)
             baseId=$(cat weights_id_begin)
 
-            \( if .function_.isMultinomial then # multinomial factors
-            "
-                # assign weight ids according to the partition as usual
-                deepdive db assign_sequential_id \(.weightsTable | @sh) wid $baseId 1 \(
-                    # NOTE We need/want ORDER_BY here because we want the weight ids to be ordered exactly by their category
-                    # values, so we can avoid global ordering of the entire join of factor and weight later when dumping the
-                    # factors to produce a well ordered list of weight ids.
-                    # order by category columns for every categorical variable
-                    [ ( .function_.variables[]
-                    | .columnId as $columnIdForThisVar
-                    | .schema.variablesCategoryColumns[]
-                    | { column: "\($columnIdForThisVar)_\(.)" } )
-                    | asSqlExpr
-                    ] | join(", ") | @sh)
-            " else # boolean factors don't need special care
-            "
             # assign weight ids according to the partition
             deepdive db assign_sequential_id \(.weightsTable | @sh) wid $baseId
-            " end)
 
             deepdive sql \"ANALYZE VERBOSE \(.weightsTable)\"
         "
@@ -568,11 +475,7 @@ def multinomialFactorWeightCategoriesDescriptionSqlExpr:
     "process/grounding/global_weight_table": {
         dependencies_: [
             $deepdive.inference.factors_[] |
-            if .function_.isMultinomial then
-                "process/grounding/factor/\(.factorName)/assign_weight_id"
-            else
                 "process/grounding/factor/\(.factorName)/materialize"
-            end
         ],
         style: "cmd_extractor", cmd: "
         : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
@@ -585,11 +488,8 @@ def multinomialFactorWeightCategoriesDescriptionSqlExpr:
                     , { column: "isfixed" }
                     , { column: "initvalue" }
                     , { alias: "description", expr: factorWeightDescriptionSqlExpr }
-                    , if .function_.isMultinomial then
-                        { alias: "categories", expr: multinomialFactorWeightCategoriesDescriptionSqlExpr }
-                    else
-                        { alias: "categories", expr: "NULL || ''" }
-                    end
+                    # TODO XXXX remove this useless column (weights are orthogonal to categories)
+                    , { alias: "categories", expr: "NULL || ''" }
                     ]
                 , FROM:
                     [ { table: .weightsTable }
@@ -636,52 +536,32 @@ def multinomialFactorWeightCategoriesDescriptionSqlExpr:
                 "\"$(
                     # sparse multinomial factor need to find exact combinations of category values and
                     # weight parameters present in the data, hence a lot of joins! but doesn't waste the weights
+                    # FIXME XXXXX: Assuming all var tables are categorical; TODO: Support mixed head.
                     echo \(
+                        # Order for parallel ARRAY_AGG expressions
+                        ( [ .function_.variables[] |
+                        "\(.columnPrefix)\(deepdiveVariableInternalLabelColumn)" | asSqlIdent
+                        ] | join(", ")) as $valueOrder
+                    |
                     { SELECT:
                         [ ( .function_.variables[]
                         | { table: "f", column: .columnId } )
                         , { alias: "num_weights", expr: "COUNT(w.wid)" }
-                        , { alias: "weight_ids" , expr: "ARRAY_AGG(w.wid ORDER BY w.wid)" }
+                        , ( .function_.variables[]
+                        | { alias: "c\(.ordinal)_ids",
+                            table: "f",
+                            expr: "ARRAY_AGG(\"\(.columnPrefix)\(deepdiveVariableInternalLabelColumn)\" ORDER BY \($valueOrder))" } )
+                        , { alias: "weight_ids" , expr: "ARRAY_AGG(w.wid ORDER BY \($valueOrder))" }
                         ]
                     , FROM:
                         [ { alias: "w", table: .weightsTable }
                         , { alias: "f", table: .factorsTable }
                         ]
-                    , JOIN:
-                        # FIXME joins below can go away if .factorsTable just duplicate these columns all from the "/materialize" process
-                        [ ( .function_.variables[]
-                        | .columnId as $columnIdForThisVar
-                        | { INNER: { alias: "i.\($columnIdForThisVar)", table: .schema.variablesIdsTable }
-                          , ON: [ { eq: [ { table: "f"                          , column: $columnIdForThisVar }
-                                        , { table: "i.\($columnIdForThisVar)", column: deepdiveVariableIdColumn } ] }
-                                ] }
-                        , { INNER: { alias: "v.\($columnIdForThisVar)", table: .schema.variablesTable }
-                          , ON: [ ( .schema.variablesKeyColumns[]
-                                | { eq: [ { table: "v.\($columnIdForThisVar)", column: . }
-                                        , { table: "i.\($columnIdForThisVar)", column: . } ] } )
-                                ] } )
-                        ]
                     , WHERE:
                         [ ( .weight_.params[]
                         | { eq: [ { table: "w", column: . }
                                 , { table: "f", column: . } ] } )
-                        , ( .function_.variables[]
-                        | .columnId as $columnIdForThisVar
-                        | ( .schema.variablesCategoryColumns[]
-                        | { eq: [ { table: "v.\($columnIdForThisVar)", column: . }
-                                , { table: "w", column: "\($columnIdForThisVar)_\(.)" } ] } ) )
                         ]
-                    # XXX Putting this ORDER_BY here (as a subquery for the GROUP_BY) is ludicruous since this is basically
-                    # exploding the data and then sorting it just to make the weight id ARRAYs be ordered in a particular way.
-                    # Keeping the weight ids ordered and relying on ARRAY_AGG(w.wid ORDER BY w.wid) is better.
-                    #, ORDER_BY:
-                    #    [ ( .function_.variables[]
-                    #    | { table: "f", column: .columnId } )
-                    #    [ ( .function_.variables[]
-                    #    | .columnId as $columnIdForThisVar
-                    #    | ( .schema.variablesCategoryColumns[]
-                    #    | { expr: { column: "\($columnIdForThisVar)_\(.)" } } ) )
-                    #    ]
                     , GROUP_BY:
                         [ ( .function_.variables[]
                         | { table: "f", column: .columnId } )
@@ -753,17 +633,9 @@ def multinomialFactorWeightCategoriesDescriptionSqlExpr:
                         ]
                     , FROM: [ { alias: "w", table: .weightsTable } ]
                     , JOIN: { LEFT_OUTER: { alias: "reuse", table: deepdiveReuseWeightsTable }
-                            , ON: { and: [ { eq: [ { table: "reuse", column: "description" }
-                                                 , { expr: factorWeightDescriptionSqlExpr }
-                                                 ] }
-                                         , if .function_.isMultinomial then
-                                           { or: [ { isNull: { table: "reuse", column: "categories" } }
-                                                   , { eq: [ { table: "reuse", column: "categories" }
-                                                           , { expr: multinomialFactorWeightCategoriesDescriptionSqlExpr }
-                                                           ] }
-                                                 ] }
-                                           else empty end
-                                         ] }
+                            , ON: { eq: [ { table: "reuse", column: "description" }
+                                        , { expr: factorWeightDescriptionSqlExpr }
+                                        ] }
                             }
                     } | asSql | asPrettySqlArg)
                 else
