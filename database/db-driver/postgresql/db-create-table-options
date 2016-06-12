@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# db-create-table-options -- Print PostgreSQL specific options for db-create-table
+# $ eval "$(db-create-table-options TABLE)"
+# $ db-create-table ...
+##
+set -eu
+
+exit # nothing actually to override for PostgreSQL
+echo '
+: ${CREATE_TABLE_TYPE:=}          ; export CREATE_TABLE_TYPE
+: ${CREATE_TABLE_EXTRA_CLAUSES:=} ; export CREATE_TABLE_EXTRA_CLAUSES
+: ${DROP_VIEW_TYPE:=}             ; export DROP_VIEW_TYPE
+: ${DROP_TABLE_TYPE:=}            ; export DROP_TABLE_TYPE
+'
