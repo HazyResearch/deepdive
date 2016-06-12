@@ -312,14 +312,17 @@ void dd::FactorGraph::load(const CmdParser &cmd, const bool is_quiet, int inc) {
       if (this->variables[var_to_work_on].is_evid) {
         isuseful_for_training = true;
       }
-      for (long long fid : *(this->variables[var_to_work_on].tmp_factor_ids)) {
-        const Factor &factor = this->factors[fid];
-        for (const VariableInFactor &next_var : *(factor.tmp_variables)) {
-          if (this->variables[next_var.vid].component_id != -1) {
-            assert(this->variables[next_var.vid].component_id == component_id);
-          } else {
-            this->variables[next_var.vid].component_id = component_id;
-            vars_to_work_on.push_back(next_var.vid);
+      // Skip vars not involved in any factors
+      if (this->variables[var_to_work_on].tmp_factor_ids) {
+        for (long long fid : *(this->variables[var_to_work_on].tmp_factor_ids)) {
+          const Factor &factor = this->factors[fid];
+          for (const VariableInFactor &next_var : *(factor.tmp_variables)) {
+            if (this->variables[next_var.vid].component_id != -1) {
+              assert(this->variables[next_var.vid].component_id == component_id);
+            } else {
+              this->variables[next_var.vid].component_id = component_id;
+              vars_to_work_on.push_back(next_var.vid);
+            }
           }
         }
       }
@@ -384,24 +387,25 @@ void dd::FactorGraph::organize_graph_by_edge() {
   // for each variable, put the factors into factor_dups
   for (long i = 0; i < n_var; i++) {
     Variable &variable = variables[i];
-    variable.n_factors =
-        variable.tmp_factor_ids->size();  // no edge count any more
+    variable.n_factors = variable.tmp_factor_ids ? variable.tmp_factor_ids->size() : 0;
 
     variable.n_start_i_factors = c_edge;
     if (variable.domain_type == DTYPE_MULTINOMIAL) {
       variable.n_start_i_tally = ntallies;
       ntallies += variable.cardinality;
     }
-    for (const long fid : *(variable.tmp_factor_ids)) {
-      factor_ids[c_edge] = fid;
-      compact_factors[c_edge].id = factors[fid].id;
-      compact_factors[c_edge].func_id = factors[fid].func_id;
-      compact_factors[c_edge].n_variables = factors[fid].n_variables;
-      compact_factors[c_edge].n_start_i_vif = factors[fid].n_start_i_vif;
-      compact_factors_weightids[c_edge] = factors[fid].weight_id;
-      c_edge++;
+    if (variable.tmp_factor_ids) {
+      for (const long fid : *(variable.tmp_factor_ids)) {
+        factor_ids[c_edge] = fid;
+        compact_factors[c_edge].id = factors[fid].id;
+        compact_factors[c_edge].func_id = factors[fid].func_id;
+        compact_factors[c_edge].n_variables = factors[fid].n_variables;
+        compact_factors[c_edge].n_start_i_vif = factors[fid].n_start_i_vif;
+        compact_factors_weightids[c_edge] = factors[fid].weight_id;
+        c_edge++;
+      }
+      variable.clear_tmp_factor_ids();
     }
-    variable.clear_tmp_factor_ids();
   }
 }
 
