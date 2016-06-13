@@ -4,14 +4,12 @@ namespace dd {
 
 SingleThreadSampler::SingleThreadSampler(CompiledFactorGraph &fg,
                                          InferenceResult &infrs,
-                                         double stepsize, bool sample_evidence,
-                                         bool burn_in, bool learn_non_evidence)
+                                         const CmdParser &opts)
     : fg(fg),
       infrs(infrs),
-      stepsize(stepsize),
       varlen_potential_buffer_(0),
-      sample_evidence(sample_evidence),
-      learn_non_evidence(learn_non_evidence) {
+      sample_evidence(opts.should_sample_evidence),
+      learn_non_evidence(opts.should_learn_non_evidence) {
   p_rand_seed[0] = rand();
   p_rand_seed[1] = rand();
   p_rand_seed[2] = rand();
@@ -31,17 +29,18 @@ void SingleThreadSampler::sample(const int &i_sharding, const int &n_sharding) {
 }
 
 void SingleThreadSampler::sample_sgd(const int &i_sharding,
-                                     const int &n_sharding) {
+                                     const int &n_sharding, double stepsize) {
   long nvar = fg.size.num_variables;
   long start = ((long)(nvar / n_sharding) + 1) * i_sharding;
   long end = ((long)(nvar / n_sharding) + 1) * (i_sharding + 1);
   end = end > nvar ? nvar : end;
   for (long i = start; i < end; i++) {
-    this->sample_sgd_single_variable(i);
+    this->sample_sgd_single_variable(i, stepsize);
   }
 }
 
-void SingleThreadSampler::sample_sgd_single_variable(long vid) {
+void SingleThreadSampler::sample_sgd_single_variable(long vid,
+                                                     double stepsize) {
   // stochastic gradient ascent
   // gradient of weight = E[f|D] - E[f], where D is evidence variables,
   // f is the factor function, E[] is expectation. Expectation is calculated

@@ -43,7 +43,7 @@ class SamplerTest : public testing::Test {
     cfg.reset(new CompiledFactorGraph(fg.size));
     fg.compile(*cfg);
     infrs.reset(new InferenceResult(*cfg, fg.weights.get()));
-    sampler.reset(new SingleThreadSampler(*cfg, *infrs, 0.1, false, 0, false));
+    sampler.reset(new SingleThreadSampler(*cfg, *infrs, cmd_parser));
   }
 };
 
@@ -55,13 +55,13 @@ TEST_F(SamplerTest, sample_sgd_single_variable) {
     sampler->p_rand_seed[i] = 1;
   }
 
-  sampler->sample_sgd_single_variable(0);
+  sampler->sample_sgd_single_variable(0, 0.1);
   EXPECT_EQ(infrs->weight_values[0], 0.1);
 
-  sampler->sample_sgd_single_variable(0);
+  sampler->sample_sgd_single_variable(0, 0.1);
   EXPECT_EQ(infrs->weight_values[0], 0.1);
 
-  sampler->sample_sgd_single_variable(0);
+  sampler->sample_sgd_single_variable(0, 0.1);
   EXPECT_EQ(infrs->weight_values[0], 0.1);
 }
 

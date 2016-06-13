@@ -16,8 +16,7 @@ class SingleThreadSampler {
    * Constructs a SingleThreadSampler with given factor graph
    */
   SingleThreadSampler(CompiledFactorGraph &fg, InferenceResult &infrs,
-                      double stepsize, bool sample_evidence, bool burn_in,
-                      bool learn_non_evidence);
+                      const CmdParser &opts);
 
   /**
    * Samples variables. The variables are divided into n_sharding equal
@@ -33,7 +32,8 @@ class SingleThreadSampler {
    * variables
    * in the i_sharding-th partition.
    */
-  void sample_sgd(const int &i_sharding, const int &n_sharding);
+  void sample_sgd(const int &i_sharding, const int &n_sharding,
+                  double stepsize);
 
   // factor graph
   CompiledFactorGraph &fg;
@@ -41,9 +41,6 @@ class SingleThreadSampler {
 
   // random number
   unsigned short p_rand_seed[3];
-
-  // learning weight update stepsize (learning rate)
-  double stepsize;
 
   // potential for each proposals for multinomial
   std::vector<double> varlen_potential_buffer_;
@@ -54,7 +51,7 @@ class SingleThreadSampler {
   /**
    * Performs SGD by sampling a single variable with id vid
    */
-  void sample_sgd_single_variable(long vid);
+  void sample_sgd_single_variable(long vid, double stepsize);
 
   /**
    * Samples a single variable with id vid

@@ -10,21 +10,14 @@
 namespace dd {
 
 GibbsSampling::GibbsSampling(std::unique_ptr<CompiledFactorGraph> p_cfg,
-                             const Weight weights[],
-                             const CmdParser *const p_cmd_parser,
-                             bool sample_evidence, int burn_in,
-                             bool learn_non_evidence, int n_datacopy)
-    : weights(weights),
-      p_cmd_parser(p_cmd_parser),
-      sample_evidence(sample_evidence),
-      burn_in(burn_in),
-      learn_non_evidence(learn_non_evidence) {
+                             const Weight weights[], const CmdParser &opts)
+    : weights(weights), opts(opts) {
   // the highest node number available
   n_numa_nodes = numa_max_node();
 
   // if n_datacopy is valid, use it, otherwise, use numa_max_node
-  if (n_datacopy >= 1 && n_datacopy <= n_numa_nodes + 1) {
-    n_numa_nodes = n_datacopy - 1;
+  if (opts.n_datacopy >= 1 && opts.n_datacopy <= n_numa_nodes + 1) {
+    n_numa_nodes = opts.n_datacopy - 1;
   }
 
   // max possible threads per NUMA node
@@ -40,8 +33,7 @@ GibbsSampling::GibbsSampling(std::unique_ptr<CompiledFactorGraph> p_cfg,
     sampler.push_back(SingleNodeSampler(
         std::unique_ptr<CompiledFactorGraph>(
             i == 0 ? p_cfg.release() : new CompiledFactorGraph(*p_cfg)),
-        weights, n_thread_per_numa, i, sample_evidence, burn_in,
-        learn_non_evidence));
+        weights, n_thread_per_numa /* TODO fold this into opts */, i, opts));
   }
 };
 
@@ -205,8 +197,7 @@ void GibbsSampling::dump_weights(const bool is_quiet) {
 
   // dump learned weights
   std::string filename_text;
-  filename_text =
-      p_cmd_parser->output_folder + "/inference_result.out.weights.text";
+  filename_text = opts.output_folder + "/inference_result.out.weights.text";
 
   std::cout << "DUMPING... TEXT    : " << filename_text << std::endl;
 
@@ -255,7 +246,7 @@ void GibbsSampling::aggregate_results_and_dump(const bool is_quiet) {
     int ct = 0;
     for (long i = 0; i < sampler[0].fg.size.num_variables; i++) {
       const Variable &variable = sampler[0].fg.variables[i];
-      if (!variable.is_evid || sample_evidence) {
+      if (!variable.is_evid || opts.should_sample_evidence) {
         ct++;
         std::cout << "   " << variable.id
                   << "  NSAMPLE=" << agg_nsamples[variable.id] << std::endl;
@@ -300,13 +291,13 @@ void GibbsSampling::aggregate_results_and_dump(const bool is_quiet) {
 
   // dump inference results
   std::string filename_text;
-  filename_text = p_cmd_parser->output_folder + "/inference_result.out.text";
+  filename_text = opts.output_folder + "/inference_result.out.text";
 
   std::cout << "DUMPING... TEXT    : " << filename_text << std::endl;
   std::ofstream fout_text(filename_text.c_str());
   for (long i = 0; i < sampler[0].fg.size.num_variables; i++) {
     const Variable &variable = sampler[0].fg.variables[i];
-    if (variable.is_evid && !sample_evidence) {
+    if (variable.is_evid && !opts.should_sample_evidence) {
       continue;
     }
 
@@ -354,7 +345,7 @@ void GibbsSampling::aggregate_results_and_dump(const bool is_quiet) {
     int bad = 0;
     for (long i = 0; i < sampler[0].fg.size.num_variables; i++) {
       const Variable &variable = sampler[0].fg.variables[i];
-      if (variable.is_evid && !sample_evidence) {
+      if (variable.is_evid && !opts.should_sample_evidence) {
         continue;
       }
       int bin = (int)(agg_means[variable.id] / agg_nsamples[variable.id] * 10);

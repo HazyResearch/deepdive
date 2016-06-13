@@ -16,10 +16,10 @@ namespace dd {
  */
 class GibbsSampling {
  public:
-  const Weight* const weights;
+  const Weight* const weights;  // TODO clarify ownership
 
   // command line parser
-  const CmdParser* const p_cmd_parser;
+  const CmdParser& opts;  // TODO clarify ownership
 
   // the highest node number available
   // actually, number of NUMA nodes = n_numa_nodes + 1
@@ -31,15 +31,6 @@ class GibbsSampling {
   // factor graph copies per NUMA node
   std::vector<SingleNodeSampler> sampler;
 
-  // sample evidence in inference
-  bool sample_evidence;
-
-  // burn-in period
-  int burn_in;
-
-  // whether sample non-evidence during learning
-  bool learn_non_evidence;
-
   /**
    * Constructs GibbsSampling class with given factor graph, command line
    * parser,
@@ -48,9 +39,7 @@ class GibbsSampling {
    * keeping one factor graph.
    */
   GibbsSampling(std::unique_ptr<CompiledFactorGraph> p_cfg,
-                const Weight weights[], const CmdParser* p_cmd_parser,
-                bool sample_evidence, int burn_in, bool learn_non_evidence,
-                int n_datacopy);
+                const Weight weights[], const CmdParser& opts);
 
   /**
    * Performs learning

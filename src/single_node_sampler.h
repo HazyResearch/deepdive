@@ -15,6 +15,7 @@ class SingleNodeSampler {
  private:
   std::unique_ptr<CompiledFactorGraph> pfg;
   std::vector<std::thread> threads;
+  const CmdParser& opts;
 
  public:
   // factor graph
@@ -25,17 +26,13 @@ class SingleNodeSampler {
   // node id
   int nodeid;
 
-  bool sample_evidence;
-  int burn_in;
-  bool learn_non_evidence;
-
   /**
    * Constructs a SingleNodeSampler given factor graph, number of threads, and
    * node id.
    */
   SingleNodeSampler(std::unique_ptr<CompiledFactorGraph> pfg,
                     const Weight weights[], int nthread, int nodeid,
-                    bool sample_evidence, int burn_in, bool learn_non_evidence);
+                    const CmdParser& opts);
 
   /**
    * Performs sample
