@@ -43,8 +43,6 @@ class SingleNodeSampler {
    */
   void sample(int i_epoch);
 
-  void sample_inc();
-
   /**
    * Waits for sample worker to finish
    */

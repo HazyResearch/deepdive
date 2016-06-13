@@ -19,7 +19,6 @@ void SingleNodeSampler::sample(int i_epoch) {
   numa_run_on_node(this->nodeid);
 
   this->threads.clear();
-  bool is_burn_in = i_epoch < burn_in;
 
   for (int i = 0; i < this->nthread; i++) {
     this->threads.push_back(std::thread([this, i]() {
