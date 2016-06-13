@@ -27,7 +27,7 @@ class GibbsSampling {
   // number of threads per NUMA node
   int n_thread_per_numa;
 
-  // factor graph copies
+  // factor graph copies per NUMA node
   std::vector<std::unique_ptr<CompiledFactorGraph>> factorgraphs;
 
   // sample evidence in inference
@@ -85,6 +85,10 @@ class GibbsSampling {
    * is_quiet whether to compress information display
    */
   void dump_weights(const bool is_quiet);
+
+ private:
+  // shorthand to the first factor graph
+  CompiledFactorGraph& cfg;
 };
 
 }  // namespace dd
