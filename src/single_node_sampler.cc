@@ -2,39 +2,18 @@
 
 namespace dd {
 
-SingleNodeSampler::SingleNodeSampler(CompiledFactorGraph &fg,
-                                     const Weight weights[], int nthread,
-                                     int nodeid)
-    : SingleNodeSampler(fg, weights, nthread, nodeid, false, false) {}
-
-SingleNodeSampler::SingleNodeSampler(CompiledFactorGraph &fg,
-                                     const Weight weights[], int nthread,
-                                     int nodeid, bool sample_evidence,
-                                     int burn_in)
-    : SingleNodeSampler(fg, weights, nthread, nodeid, sample_evidence, burn_in,
-                        false) {}
-
-SingleNodeSampler::SingleNodeSampler(CompiledFactorGraph &fg,
+SingleNodeSampler::SingleNodeSampler(std::unique_ptr<CompiledFactorGraph> pfg_,
                                      const Weight weights[], int nthread,
                                      int nodeid, bool sample_evidence,
                                      int burn_in, bool learn_non_evidence)
-    : fg(fg),
+    : pfg(std::move(pfg_)),
+      fg(*pfg),
       infrs(fg, weights),
       nthread(nthread),
       nodeid(nodeid),
       sample_evidence(sample_evidence),
       burn_in(burn_in),
       learn_non_evidence(learn_non_evidence) {}
-
-void SingleNodeSampler::clear_variabletally() {
-  for (long i = 0; i < fg.size.num_variables; i++) {
-    infrs.agg_means[i] = 0.0;
-    infrs.agg_nsamples[i] = 0.0;
-  }
-  for (long i = 0; i < infrs.ntallies; i++) {
-    infrs.multinomial_tallies[i] = 0;
-  }
-}
 
 void SingleNodeSampler::sample(int i_epoch) {
   numa_run_on_node(this->nodeid);
@@ -43,9 +22,9 @@ void SingleNodeSampler::sample(int i_epoch) {
   bool is_burn_in = i_epoch < burn_in;
 
   for (int i = 0; i < this->nthread; i++) {
-    this->threads.push_back(std::thread([&]() {
-      SingleThreadSampler sampler =
-          SingleThreadSampler(fg, infrs, 0.0, sample_evidence, burn_in, false);
+    this->threads.push_back(std::thread([this, i]() {
+      SingleThreadSampler sampler(fg, infrs, 0.0, sample_evidence, burn_in,
+                                  false);
       sampler.sample(i, nthread);
     }));
   }
@@ -63,9 +42,9 @@ void SingleNodeSampler::sample_sgd(double stepsize) {
   this->threads.clear();
 
   for (int i = 0; i < this->nthread; i++) {
-    this->threads.push_back(std::thread([&]() {
-      SingleThreadSampler sampler = SingleThreadSampler(
-          fg, infrs, stepsize, false, 0, learn_non_evidence);
+    this->threads.push_back(std::thread([this, i, stepsize]() {
+      SingleThreadSampler sampler(fg, infrs, stepsize, false, 0,
+                                  learn_non_evidence);
       sampler.sample_sgd(i, nthread);
     }));
   }

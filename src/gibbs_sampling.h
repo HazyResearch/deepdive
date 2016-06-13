@@ -3,6 +3,7 @@
 
 #include "cmd_parser.h"
 #include "factor_graph.h"
+#include "single_node_sampler.h"
 #include <iostream>
 
 namespace dd {
@@ -28,7 +29,7 @@ class GibbsSampling {
   int n_thread_per_numa;
 
   // factor graph copies per NUMA node
-  std::vector<std::unique_ptr<CompiledFactorGraph>> factorgraphs;
+  std::vector<SingleNodeSampler> sampler;
 
   // sample evidence in inference
   bool sample_evidence;
@@ -85,10 +86,6 @@ class GibbsSampling {
    * is_quiet whether to compress information display
    */
   void dump_weights(const bool is_quiet);
-
- private:
-  // shorthand to the first factor graph
-  CompiledFactorGraph& cfg;
 };
 
 }  // namespace dd

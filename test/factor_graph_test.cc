@@ -18,9 +18,8 @@ namespace dd {
 // positive and id 8 negative.
 class FactorGraphTest : public testing::Test {
  protected:
-  dd::CompiledFactorGraph cfg;
-
-  FactorGraphTest() : cfg(dd::CompiledFactorGraph({18, 18, 1, 18})) {}
+  std::unique_ptr<dd::CompiledFactorGraph> cfg;
+  std::unique_ptr<dd::InferenceResult> infrs;
 
   virtual void SetUp() {
     const char* argv[] = {
@@ -44,24 +43,25 @@ class FactorGraphTest : public testing::Test {
     fg.load_factors(cmd_parser.factor_file);
     fg.safety_check();
 
-    fg.compile(cfg);
+    cfg.reset(new CompiledFactorGraph(fg.size));
+    fg.compile(*cfg);
+    infrs.reset(new InferenceResult(*cfg, fg.weights.get()));
   }
 };
 
 // test update_weight function
 TEST_F(FactorGraphTest, update_weight) {
-  cfg.infrs->assignments_free[cfg.variables[0].id] = 0;
+  infrs->assignments_free[cfg->variables[0].id] = 0;
 
-  cfg.update_weight(cfg.variables[0], *cfg.infrs, 0.1);
-  std::cout << "The weight value is: " << cfg.infrs->weight_values[0]
-            << std::endl;
-  EXPECT_EQ(cfg.infrs->weight_values[0], 0.1);
+  cfg->update_weight(cfg->variables[0], *infrs, 0.1);
+  std::cout << "The weight value is: " << infrs->weight_values[0] << std::endl;
+  EXPECT_EQ(infrs->weight_values[0], 0.1);
 
-  cfg.update_weight(cfg.variables[10], *cfg.infrs, 0.1);
-  EXPECT_EQ(cfg.infrs->weight_values[0], 0.1);
+  cfg->update_weight(cfg->variables[10], *infrs, 0.1);
+  EXPECT_EQ(infrs->weight_values[0], 0.1);
 
-  cfg.update_weight(cfg.variables[10], *cfg.infrs, 0.1);
-  EXPECT_EQ(cfg.infrs->weight_values[0], 0.1);
+  cfg->update_weight(cfg->variables[10], *infrs, 0.1);
+  EXPECT_EQ(infrs->weight_values[0], 0.1);
 }
 
 }  // namespace dd

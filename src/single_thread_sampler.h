@@ -35,7 +35,6 @@ class SingleThreadSampler {
    */
   void sample_sgd(const int &i_sharding, const int &n_sharding);
 
- private:
   // factor graph
   CompiledFactorGraph &fg;
   InferenceResult &infrs;

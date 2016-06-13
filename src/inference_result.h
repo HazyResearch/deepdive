@@ -35,6 +35,8 @@ class InferenceResult {
   // copy constructor
   InferenceResult(const InferenceResult &other);
 
+  void clear_variabletally();
+
  private:
   InferenceResult(size_t nvars, size_t nweights);
 };

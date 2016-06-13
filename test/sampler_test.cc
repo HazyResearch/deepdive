@@ -15,12 +15,9 @@ namespace dd {
 // test fixture
 class SamplerTest : public testing::Test {
  protected:
-  dd::CompiledFactorGraph cfg;
-  dd::SingleThreadSampler sampler;
-
-  SamplerTest()
-      : cfg(dd::CompiledFactorGraph({18, 18, 1, 18})),
-        sampler(dd::SingleThreadSampler(&cfg, 0.1, false, 0, false)) {}
+  std::unique_ptr<dd::CompiledFactorGraph> cfg;
+  std::unique_ptr<dd::InferenceResult> infrs;
+  std::unique_ptr<dd::SingleThreadSampler> sampler;
 
   virtual void SetUp() {
     const char *argv[] = {
@@ -43,48 +40,51 @@ class SamplerTest : public testing::Test {
     fg.load_factors(cmd_parser.factor_file);
     fg.safety_check();
 
-    fg.compile(cfg);
+    cfg.reset(new CompiledFactorGraph(fg.size));
+    fg.compile(*cfg);
+    infrs.reset(new InferenceResult(*cfg, fg.weights.get()));
+    sampler.reset(new SingleThreadSampler(*cfg, *infrs, 0.1, false, 0, false));
   }
 };
 
 // test for sample_sgd_single_variable
 // the pseudo random number has been precalculated...
 TEST_F(SamplerTest, sample_sgd_single_variable) {
-  cfg.infrs->assignments_free[cfg.variables[0].id] = 1;
+  infrs->assignments_free[cfg->variables[0].id] = 1;
   for (int i = 0; i < 3; i++) {
-    sampler.p_rand_seed[i] = 1;
+    sampler->p_rand_seed[i] = 1;
   }
 
-  sampler.sample_sgd_single_variable(0);
-  EXPECT_EQ(cfg.infrs->weight_values[0], 0.1);
+  sampler->sample_sgd_single_variable(0);
+  EXPECT_EQ(infrs->weight_values[0], 0.1);
 
-  sampler.sample_sgd_single_variable(0);
-  EXPECT_EQ(cfg.infrs->weight_values[0], 0.1);
+  sampler->sample_sgd_single_variable(0);
+  EXPECT_EQ(infrs->weight_values[0], 0.1);
 
-  sampler.sample_sgd_single_variable(0);
-  EXPECT_EQ(cfg.infrs->weight_values[0], 0.1);
+  sampler->sample_sgd_single_variable(0);
+  EXPECT_EQ(infrs->weight_values[0], 0.1);
 }
 
 // test for sample_single_variable
 TEST_F(SamplerTest, sample_single_variable) {
-  cfg.infrs->assignments_free[cfg.variables[0].id] = 1;
+  infrs->assignments_free[cfg->variables[0].id] = 1;
   for (int i = 0; i < 3; i++) {
-    sampler.p_rand_seed[i] = 1;
+    sampler->p_rand_seed[i] = 1;
   }
-  cfg.infrs->weight_values[0] = 2;
+  infrs->weight_values[0] = 2;
 
-  sampler.sample_single_variable(0);
-  EXPECT_EQ(cfg.infrs->assignments_evid[0], 1);
+  sampler->sample_single_variable(0);
+  EXPECT_EQ(infrs->assignments_evid[0], 1);
 
-  sampler.sample_single_variable(10);
-  EXPECT_EQ(cfg.infrs->assignments_evid[10], 1);
+  sampler->sample_single_variable(10);
+  EXPECT_EQ(infrs->assignments_evid[10], 1);
 
-  cfg.infrs->weight_values[0] = 20;
-  sampler.sample_single_variable(11);
-  EXPECT_EQ(cfg.infrs->assignments_evid[11], 1);
+  infrs->weight_values[0] = 20;
+  sampler->sample_single_variable(11);
+  EXPECT_EQ(infrs->assignments_evid[11], 1);
 
-  sampler.sample_single_variable(12);
-  EXPECT_EQ(cfg.infrs->assignments_evid[12], 1);
+  sampler->sample_single_variable(12);
+  EXPECT_EQ(infrs->assignments_evid[12], 1);
 }
 
 }  // namespace dd

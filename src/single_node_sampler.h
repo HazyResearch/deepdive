@@ -12,9 +12,12 @@ namespace dd {
  * Class for a single NUMA node sampler
  */
 class SingleNodeSampler {
+ private:
+  std::unique_ptr<CompiledFactorGraph> pfg;
+
  public:
   // factor graph
-  CompiledFactorGraph& fg;
+  CompiledFactorGraph& fg;  // TODO replace fg.* with fg->*
   InferenceResult infrs;
   // number of threads
   int nthread;
@@ -31,18 +34,9 @@ class SingleNodeSampler {
    * Constructs a SingleNodeSampler given factor graph, number of threads, and
    * node id.
    */
-  SingleNodeSampler(CompiledFactorGraph& fg, const Weight weights[],
-                    int nthread, int nodeid);
-  SingleNodeSampler(CompiledFactorGraph& fg, const Weight weights[],
-                    int nthread, int nodeid, bool sample_evidence, int burn_in);
-  SingleNodeSampler(CompiledFactorGraph& fg, const Weight weights[],
-                    int nthread, int nodeid, bool sample_evidence, int burn_in,
-                    bool learn_non_evidence);
-
-  /**
-   * Clears the inference results in this sampler
-   */
-  void clear_variabletally();
+  SingleNodeSampler(std::unique_ptr<CompiledFactorGraph> pfg,
+                    const Weight weights[], int nthread, int nodeid,
+                    bool sample_evidence, int burn_in, bool learn_non_evidence);
 
   /**
    * Performs sample
