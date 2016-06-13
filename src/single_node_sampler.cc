@@ -16,12 +16,10 @@ SingleNodeSampler::SingleNodeSampler(std::unique_ptr<CompiledFactorGraph> pfg_,
       learn_non_evidence(learn_non_evidence) {}
 
 void SingleNodeSampler::sample(int i_epoch) {
-  numa_run_on_node(this->nodeid);
-
-  this->threads.clear();
-
-  for (int i = 0; i < this->nthread; i++) {
-    this->threads.push_back(std::thread([this, i]() {
+  numa_run_on_node(nodeid);
+  threads.clear();
+  for (int i = 0; i < nthread; ++i) {
+    threads.push_back(std::thread([this, i]() {
       SingleThreadSampler sampler(fg, infrs, 0.0, sample_evidence, burn_in,
                                   false);
       sampler.sample(i, nthread);
@@ -30,18 +28,14 @@ void SingleNodeSampler::sample(int i_epoch) {
 }
 
 void SingleNodeSampler::wait() {
-  for (int i = 0; i < this->nthread; i++) {
-    this->threads[i].join();
-  }
+  for (auto &t : threads) t.join();
 }
 
 void SingleNodeSampler::sample_sgd(double stepsize) {
-  numa_run_on_node(this->nodeid);
-
-  this->threads.clear();
-
-  for (int i = 0; i < this->nthread; i++) {
-    this->threads.push_back(std::thread([this, i, stepsize]() {
+  numa_run_on_node(nodeid);
+  threads.clear();
+  for (int i = 0; i < nthread; ++i) {
+    threads.push_back(std::thread([this, i, stepsize]() {
       SingleThreadSampler sampler(fg, infrs, stepsize, false, 0,
                                   learn_non_evidence);
       sampler.sample_sgd(i, nthread);
@@ -50,9 +44,7 @@ void SingleNodeSampler::sample_sgd(double stepsize) {
 }
 
 void SingleNodeSampler::wait_sgd() {
-  for (int i = 0; i < this->nthread; i++) {
-    this->threads[i].join();
-  }
+  for (auto &t : threads) t.join();
 }
 
 }  // namespace dd

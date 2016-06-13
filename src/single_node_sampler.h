@@ -14,6 +14,7 @@ namespace dd {
 class SingleNodeSampler {
  private:
   std::unique_ptr<CompiledFactorGraph> pfg;
+  std::vector<std::thread> threads;
 
  public:
   // factor graph
@@ -27,8 +28,6 @@ class SingleNodeSampler {
   bool sample_evidence;
   int burn_in;
   bool learn_non_evidence;
-
-  std::vector<std::thread> threads;
 
   /**
    * Constructs a SingleNodeSampler given factor graph, number of threads, and
