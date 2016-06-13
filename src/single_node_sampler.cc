@@ -17,8 +17,9 @@ void SingleNodeSampler::sample(int i_epoch) {
   threads.clear();
   for (int i = 0; i < nthread; ++i) {
     threads.push_back(std::thread([this, i]() {
-      SingleThreadSampler sampler(fg, infrs, opts);
-      sampler.sample(i, nthread);
+      // TODO try to share instances across epochs
+      SingleThreadSampler sampler(fg, infrs, i, nthread, opts);
+      sampler.sample();
     }));
   }
 }
@@ -32,8 +33,9 @@ void SingleNodeSampler::sample_sgd(double stepsize) {
   threads.clear();
   for (int i = 0; i < nthread; ++i) {
     threads.push_back(std::thread([this, i, stepsize]() {
-      SingleThreadSampler sampler(fg, infrs, opts);
-      sampler.sample_sgd(i, nthread, stepsize);
+      // TODO try to share instances across epochs
+      SingleThreadSampler sampler(fg, infrs, i, nthread, opts);
+      sampler.sample_sgd(stepsize);
     }));
   }
 }

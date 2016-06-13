@@ -43,7 +43,7 @@ class SamplerTest : public testing::Test {
     cfg.reset(new CompiledFactorGraph(fg.size));
     fg.compile(*cfg);
     infrs.reset(new InferenceResult(*cfg, fg.weights.get()));
-    sampler.reset(new SingleThreadSampler(*cfg, *infrs, cmd_parser));
+    sampler.reset(new SingleThreadSampler(*cfg, *infrs, 0, 1, cmd_parser));
   }
 };
 
@@ -51,9 +51,7 @@ class SamplerTest : public testing::Test {
 // the pseudo random number has been precalculated...
 TEST_F(SamplerTest, sample_sgd_single_variable) {
   infrs->assignments_free[cfg->variables[0].id] = 1;
-  for (int i = 0; i < 3; i++) {
-    sampler->p_rand_seed[i] = 1;
-  }
+  sampler->set_random_seed(1, 1, 1);
 
   sampler->sample_sgd_single_variable(0, 0.1);
   EXPECT_EQ(infrs->weight_values[0], 0.1);
@@ -68,9 +66,7 @@ TEST_F(SamplerTest, sample_sgd_single_variable) {
 // test for sample_single_variable
 TEST_F(SamplerTest, sample_single_variable) {
   infrs->assignments_free[cfg->variables[0].id] = 1;
-  for (int i = 0; i < 3; i++) {
-    sampler->p_rand_seed[i] = 1;
-  }
+  sampler->set_random_seed(1, 1, 1);
   infrs->weight_values[0] = 2;
 
   sampler->sample_single_variable(0);
