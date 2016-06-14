@@ -1,5 +1,5 @@
-#ifndef DIMMWITTED_SINGLE_NODE_SAMPLER_H_
-#define DIMMWITTED_SINGLE_NODE_SAMPLER_H_
+#ifndef DIMMWITTED_GIBBS_SAMPLER_H_
+#define DIMMWITTED_GIBBS_SAMPLER_H_
 
 #include "single_thread_sampler.h"
 #include <stdlib.h>
@@ -11,7 +11,7 @@ namespace dd {
 /**
  * Class for a single NUMA node sampler
  */
-class SingleNodeSampler {
+class GibbsSampler {
  private:
   std::unique_ptr<CompiledFactorGraph> pfg;
   std::vector<std::thread> threads;
@@ -27,12 +27,11 @@ class SingleNodeSampler {
   int nodeid;
 
   /**
-   * Constructs a SingleNodeSampler given factor graph, number of threads, and
+   * Constructs a GibbsSampler given factor graph, number of threads, and
    * node id.
    */
-  SingleNodeSampler(std::unique_ptr<CompiledFactorGraph> pfg,
-                    const Weight weights[], int nthread, int nodeid,
-                    const CmdParser& opts);
+  GibbsSampler(std::unique_ptr<CompiledFactorGraph> pfg, const Weight weights[],
+               int nthread, int nodeid, const CmdParser& opts);
 
   /**
    * Performs sample
@@ -52,4 +51,4 @@ class SingleNodeSampler {
 
 }  // namespace dd
 
-#endif  // DIMMWITTED_SINGLE_NODE_SAMPLER_H_
+#endif  // DIMMWITTED_GIBBS_SAMPLER_H_

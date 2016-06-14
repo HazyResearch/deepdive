@@ -1,10 +1,10 @@
-#include "single_node_sampler.h"
+#include "gibbs_sampler.h"
 
 namespace dd {
 
-SingleNodeSampler::SingleNodeSampler(std::unique_ptr<CompiledFactorGraph> pfg_,
-                                     const Weight weights[], int nthread,
-                                     int nodeid, const CmdParser &opts)
+GibbsSampler::GibbsSampler(std::unique_ptr<CompiledFactorGraph> pfg_,
+                           const Weight weights[], int nthread, int nodeid,
+                           const CmdParser &opts)
     : pfg(std::move(pfg_)),
       opts(opts),
       fg(*pfg),
@@ -12,7 +12,7 @@ SingleNodeSampler::SingleNodeSampler(std::unique_ptr<CompiledFactorGraph> pfg_,
       nthread(nthread),
       nodeid(nodeid) {}
 
-void SingleNodeSampler::sample(int i_epoch) {
+void GibbsSampler::sample(int i_epoch) {
   numa_run_on_node(nodeid);
   for (int i = 0; i < nthread; ++i) {
     threads.push_back(std::thread([this, i]() {
@@ -22,7 +22,7 @@ void SingleNodeSampler::sample(int i_epoch) {
   }
 }
 
-void SingleNodeSampler::sample_sgd(double stepsize) {
+void GibbsSampler::sample_sgd(double stepsize) {
   numa_run_on_node(nodeid);
   for (int i = 0; i < nthread; ++i) {
     threads.push_back(std::thread([this, i, stepsize]() {
@@ -32,7 +32,7 @@ void SingleNodeSampler::sample_sgd(double stepsize) {
   }
 }
 
-void SingleNodeSampler::wait() {
+void GibbsSampler::wait() {
   for (auto &t : threads) t.join();
   threads.clear();
 }

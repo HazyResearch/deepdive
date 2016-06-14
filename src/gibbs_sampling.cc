@@ -1,5 +1,5 @@
 #include "gibbs_sampling.h"
-#include "single_node_sampler.h"
+#include "gibbs_sampler.h"
 #include "binary_format.h"
 #include "common.h"
 #include "timer.h"
@@ -27,7 +27,7 @@ GibbsSampling::GibbsSampling(std::unique_ptr<CompiledFactorGraph> p_cfg,
     numa_set_localalloc();
 
     std::cout << "CREATE CFG ON NODE ..." << i << std::endl;
-    sampler.push_back(SingleNodeSampler(
+    sampler.push_back(GibbsSampler(
         std::unique_ptr<CompiledFactorGraph>(
             i == 0 ? p_cfg.release() : new CompiledFactorGraph(*p_cfg)),
         weights, n_thread_per_numa /* TODO fold this into opts */, i, opts));

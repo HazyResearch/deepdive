@@ -54,7 +54,7 @@ SOURCES += src/factor_graph.cc
 SOURCES += src/inference_result.cc
 SOURCES += src/gibbs_sampling.cc
 SOURCES += src/single_thread_sampler.cc
-SOURCES += src/single_node_sampler.cc
+SOURCES += src/gibbs_sampler.cc
 SOURCES += src/timer.cc
 OBJECTS = $(SOURCES:.cc=.o)
 PROGRAM = dw

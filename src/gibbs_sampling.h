@@ -3,7 +3,7 @@
 
 #include "cmd_parser.h"
 #include "factor_graph.h"
-#include "single_node_sampler.h"
+#include "gibbs_sampler.h"
 #include <iostream>
 
 namespace dd {
@@ -29,7 +29,7 @@ class GibbsSampling {
   int n_thread_per_numa;
 
   // factor graph copies per NUMA node
-  std::vector<SingleNodeSampler> sampler;
+  std::vector<GibbsSampler> sampler;
 
   /**
    * Constructs GibbsSampling class with given factor graph, command line
