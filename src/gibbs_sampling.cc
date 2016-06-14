@@ -36,10 +36,8 @@ GibbsSampling::GibbsSampling(std::unique_ptr<CompiledFactorGraph> p_cfg,
 
 void GibbsSampling::inference(int n_epoch, bool is_quiet) {
   n_epoch = compute_n_epochs(n_epoch);
-  Timer t_total;
-
-  Timer t;
   int nvar = sampler[0].fg.size.num_variables;
+  Timer t_total, t;
 
   for (auto &s : sampler) s.infrs.clear_variabletally();
 
@@ -76,23 +74,17 @@ void GibbsSampling::learn(int n_epoch, int n_sample_per_epoch, double stepsize,
                           double decay, double reg_param, bool is_quiet,
                           regularization reg) {
   n_epoch = compute_n_epochs(n_epoch);
-  Timer t_total;
 
-  double current_stepsize = stepsize;
-  std::cerr << sampler[0].fg.size << std::endl;
-
-  Timer t;
   int nvar = sampler[0].fg.size.num_variables;
   int nweight = sampler[0].fg.size.num_weights;
-
-  std::cerr << sampler[0].fg.size << std::endl;
-
   InferenceResult &infrs = sampler[0].infrs;
 
+  Timer t_total, t;
+
+  double current_stepsize = stepsize;
   std::unique_ptr<double[]> ori_weights(new double[nweight]);
   memcpy(ori_weights.get(), infrs.weight_values.get(),
          sizeof(*ori_weights.get()) * nweight);
-  std::cerr << sampler[0].fg.size << std::endl;
 
   // learning epochs
   for (int i_epoch = 0; i_epoch < n_epoch; ++i_epoch) {
