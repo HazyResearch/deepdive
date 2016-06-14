@@ -122,7 +122,7 @@ void InferenceResult::aggregate_marginals_from(const InferenceResult &other) {
   }
 }
 
-void InferenceResult::show_marginal_snippet(std::ostream &output) {
+void InferenceResult::show_marginal_snippet(std::ostream &output) const {
   output << "INFERENCE SNIPPETS (QUERY VARIABLES):" << std::endl;
   int ct = 0;
   for (long j = 0; j < fg.size.num_variables; ++j) {
@@ -169,7 +169,7 @@ void InferenceResult::show_marginal_snippet(std::ostream &output) {
   output << "   ..." << std::endl;
 }
 
-void InferenceResult::show_marginal_histogram(std::ostream &output) {
+void InferenceResult::show_marginal_histogram(std::ostream &output) const {
   // show a histogram of inference results
   output << "INFERENCE CALIBRATION (QUERY BINS):" << std::endl;
   std::vector<int> abc;
@@ -196,7 +196,7 @@ void InferenceResult::show_marginal_histogram(std::ostream &output) {
   }
 }
 
-void InferenceResult::dump_marginals(std::ostream &text_output) {
+void InferenceResult::dump_marginals(std::ostream &text_output) const {
   for (long j = 0; j < nvars; ++j) {
     const Variable &variable = fg.variables[j];
     if (variable.is_evid && !opts.should_sample_evidence) {
