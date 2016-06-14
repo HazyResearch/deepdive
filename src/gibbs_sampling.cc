@@ -75,9 +75,9 @@ void GibbsSampling::learn(int n_epoch, int n_sample_per_epoch, double stepsize,
                           regularization reg) {
   n_epoch = compute_n_epochs(n_epoch);
 
-  int nvar = sampler[0].fg.size.num_variables;
-  int nweight = sampler[0].fg.size.num_weights;
   InferenceResult &infrs = sampler[0].infrs;
+  int nvar = infrs.nvars;
+  int nweight = infrs.nweights;
 
   Timer t_total, t;
 
