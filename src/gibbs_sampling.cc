@@ -44,6 +44,9 @@ void GibbsSampling::inference(const int &n_epoch, const bool is_quiet) {
   int nvar = sampler[0].fg.size.num_variables;
   int nnode = n_numa_nodes + 1;
 
+  for (auto &s : sampler)
+      s.infrs.clear_variabletally();
+
   // inference epochs
   for (int i_epoch = 0; i_epoch < n_epoch; i_epoch++) {
     if (!is_quiet) {
@@ -91,8 +94,10 @@ void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
 
   std::cerr << sampler[0].fg.size << std::endl;
 
+  InferenceResult &infrs = sampler[0].infrs;
+
   std::unique_ptr<double[]> ori_weights(new double[nweight]);
-  memcpy(ori_weights.get(), sampler[0].infrs.weight_values.get(),
+  memcpy(ori_weights.get(), infrs.weight_values.get(),
          sizeof(*ori_weights.get()) * nweight);
   std::cerr << sampler[0].fg.size << std::endl;
 
@@ -120,21 +125,21 @@ void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
     for (int i = 1; i <= n_numa_nodes; i++) {
       auto &sampler_other = sampler[i];
       for (int j = 0; j < nweight; j++) {
-        sampler[0].infrs.weight_values[j] +=
+        infrs.weight_values[j] +=
             sampler_other.infrs.weight_values[j];
       }
     }
 
     // calculate average weights and regularize weights
     for (int j = 0; j < nweight; j++) {
-      sampler[0].infrs.weight_values[j] /= nnode;
-      if (!sampler[0].infrs.weights_isfixed[j]) {
+      infrs.weight_values[j] /= nnode;
+      if (!infrs.weights_isfixed[j]) {
         if (reg == REG_L2)
-          sampler[0].infrs.weight_values[j] *=
+          infrs.weight_values[j] *=
               (1.0 / (1.0 + reg_param * current_stepsize));
         else  // l1
-          sampler[0].infrs.weight_values[j] +=
-              reg_param * (sampler[0].infrs.weight_values[j] < 0);
+          infrs.weight_values[j] +=
+              reg_param * (infrs.weight_values[j] < 0);
       }
     }
 
@@ -143,9 +148,9 @@ void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
     for (int i = 1; i <= n_numa_nodes; i++) {
       auto &sampler_other = sampler[i];
       for (int j = 0; j < nweight; j++) {
-        if (!sampler[0].infrs.weights_isfixed[j]) {
+        if (!infrs.weights_isfixed[j]) {
           sampler_other.infrs.weight_values[j] =
-              sampler[0].infrs.weight_values[j];
+              infrs.weight_values[j];
         }
       }
     }
@@ -155,8 +160,8 @@ void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
     double lmax = -1000000;
     double l2 = 0.0;
     for (int i = 0; i < nweight; i++) {
-      double diff = fabs(ori_weights[i] - sampler[0].infrs.weight_values[i]);
-      ori_weights[i] = sampler[0].infrs.weight_values[i];
+      double diff = fabs(ori_weights[i] - infrs.weight_values[i]);
+      ori_weights[i] = infrs.weight_values[i];
       l2 += diff * diff;
       if (lmax < diff) {
         lmax = diff;
@@ -181,12 +186,14 @@ void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
 
 void GibbsSampling::dump_weights(const bool is_quiet) {
   // learning weights snippets
+  InferenceResult &infrs = sampler[0].infrs;
+
   if (!is_quiet) {
     std::cout << "LEARNING SNIPPETS (QUERY WEIGHTS):" << std::endl;
     int ct = 0;
-    for (long i = 0; i < sampler[0].infrs.nweights; i++) {
+    for (long i = 0; i < infrs.nweights; i++) {
       ct++;
-      std::cout << "   " << i << " " << sampler[0].infrs.weight_values[i]
+      std::cout << "   " << i << " " << infrs.weight_values[i]
                 << std::endl;
       if (ct % 10 == 0) {
         break;
@@ -202,41 +209,42 @@ void GibbsSampling::dump_weights(const bool is_quiet) {
   std::cout << "DUMPING... TEXT    : " << filename_text << std::endl;
 
   std::ofstream fout_text(filename_text.c_str());
-  for (long i = 0; i < sampler[0].infrs.nweights; i++) {
-    fout_text << i << " " << sampler[0].infrs.weight_values[i] << std::endl;
+  for (long i = 0; i < infrs.nweights; i++) {
+    fout_text << i << " " << infrs.weight_values[i] << std::endl;
   }
   fout_text.close();
 }
 
 void GibbsSampling::aggregate_results_and_dump(const bool is_quiet) {
+InferenceResult &infrs = sampler[0].infrs;
   // sum of variable assignments
   std::unique_ptr<double[]> agg_means(
-      new double[sampler[0].fg.size.num_variables]);
+      new double[infrs.nvars]);
   // number of samples
   std::unique_ptr<double[]> agg_nsamples(
-      new double[sampler[0].fg.size.num_variables]);
+      new double[infrs.nvars]);
   std::unique_ptr<int[]> multinomial_tallies(
-      new int[sampler[0].infrs.ntallies]);
+      new int[infrs.ntallies]);
 
-  for (long i = 0; i < sampler[0].fg.size.num_variables; i++) {
+  for (long i = 0; i < infrs.nvars; i++) {
     agg_means[i] = 0;
     agg_nsamples[i] = 0;
   }
 
-  for (long i = 0; i < sampler[0].infrs.ntallies; i++) {
+  for (long i = 0; i < infrs.ntallies; i++) {
     multinomial_tallies[i] = 0;
   }
 
   // sum variable assignments over all NUMA nodes
   for (int i = 0; i <= n_numa_nodes; i++) {
-    const InferenceResult &infrs = sampler[i].infrs;
-    for (long j = 0; j < sampler[i].fg.size.num_variables; ++j) {
+    const InferenceResult &infrs_i = sampler[i].infrs;
+    for (long j = 0; j < infrs_i.nvars; ++j) {
       const Variable &variable = sampler[i].fg.variables[j];
-      agg_means[variable.id] += infrs.agg_means[variable.id];
-      agg_nsamples[variable.id] += infrs.agg_nsamples[variable.id];
+      agg_means[variable.id] += infrs_i.agg_means[variable.id];
+      agg_nsamples[variable.id] += infrs_i.agg_nsamples[variable.id];
     }
-    for (long j = 0; j < infrs.ntallies; ++j) {
-      multinomial_tallies[j] += infrs.multinomial_tallies[j];
+    for (long j = 0; j < infrs_i.ntallies; ++j) {
+      multinomial_tallies[j] += infrs_i.multinomial_tallies[j];
     }
   }
 
@@ -244,7 +252,7 @@ void GibbsSampling::aggregate_results_and_dump(const bool is_quiet) {
   if (!is_quiet) {
     std::cout << "INFERENCE SNIPPETS (QUERY VARIABLES):" << std::endl;
     int ct = 0;
-    for (long i = 0; i < sampler[0].fg.size.num_variables; i++) {
+    for (long i = 0; i < infrs.nvars; i++) {
       const Variable &variable = sampler[0].fg.variables[i];
       if (!variable.is_evid || opts.should_sample_evidence) {
         ct++;
