@@ -123,11 +123,6 @@ class CompiledFactorGraph {
   std::unique_ptr<long[]> factor_ids;
   std::unique_ptr<VariableInFactor[]> vifs;
 
-  // pointer to inference result
-  // std::unique_ptr<InferenceResult> infrs;
-
-  CompiledFactorGraph();
-
   /* Produces an empty factor graph to be initialized by resume() */
   CompiledFactorGraph(const FactorGraphDescriptor& size);
 
