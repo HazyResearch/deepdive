@@ -312,7 +312,7 @@ def factorWeightDescriptionSqlExpr:
         { SELECT:
             [ { alias: "vid",  table: "i", column: deepdiveVariableIdColumn }
             , { alias: "cardinality", expr: "COUNT(c.cid)" }
-            , { alias: "cids", expr: "ARRAY_AGG(c.cid ORDER BY c.cid)" }  # TODO move this ORDER BY into FROM? since it sounds like ARRAY_AGG(... ORDER BY ...) is PG 9+
+            , { alias: "cids", expr: "ARRAY_AGG(c.cid ORDER BY c.cid)" }
             ]
         , FROM: [ { alias: "v", table: .variablesTable } ]
         , JOIN:
@@ -375,17 +375,27 @@ def factorWeightDescriptionSqlExpr:
 
             # materialize factors using user input_query that pulls in assigned ids to involved variables
             deepdive create table \(.factorsTable | @sh) as \(
-                # allow .input_query to refer to the assigned variable ids by redefining the variable table names with SQL CTE
+                # Not using DISTINCT: User decides if they want to have duplicate factors
                 { SELECT:
                     [ ( .function_.variables[] | { table: "F", column: .columnId } )
                     # TODO XXXX: assuming so-called "multinomial" factors' heads have categorical vars only
                     , ( .function_ | select(.isMultinomial) | .variables[] |
-                        { table: "F", column: "\(.columnPrefix)\(deepdiveVariableInternalLabelColumn)" } )
+                        { table: "C\(.ordinal)", column: "cid", alias: "\(.columnPrefix)\(deepdiveVariableInternalLabelColumn)" } )
                     , ( .weight_.params[]      | { table: "F", column: . } )
                     ]
-                , DISTINCT: true  # XXX maybe we should assume user is going to be make this true
-                , FROM: [ { alias: "F", sql:
-                    "\(.input_query)" } ]
+                , FROM: [
+                    { alias: "F", sql: "\(.input_query)" }
+                    ]
+                , JOIN: [(.function_ | select(.isMultinomial) | .variables[]
+                    | "C\(.ordinal)" as $ctable
+                    | .columnPrefix as $prefix
+                    | { INNER: { alias: $ctable, table: .schema.variablesCategoriesTable }
+                      , ON: { and: [ .schema.variablesCategoryColumns[]
+                             | { eq: [ { table: $ctable, column: "_\(.)" }
+                                     , { table: "F", column: "\($prefix)\(.)" }
+                                     ] }
+                             ] } }
+                    )]
                 } | asSql | asPrettySqlArg)
 
             \(( { SELECT:
