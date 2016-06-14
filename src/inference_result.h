@@ -43,9 +43,9 @@ class InferenceResult {
 
   void clear_variabletally();
 
+  void aggregate_marginals_from(const InferenceResult &other);
   void show_marginal_snippet(std::ostream &output);
   void show_marginal_histogram(std::ostream &output);
-
   void dump_marginals(std::ostream &text_output);
 
  private:

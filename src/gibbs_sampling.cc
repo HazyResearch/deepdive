@@ -195,35 +195,11 @@ void GibbsSampling::dump_weights(bool is_quiet) {
 
 void GibbsSampling::aggregate_results_and_dump(bool is_quiet) {
   InferenceResult &infrs = sampler[0].infrs;
-  // sum of variable assignments
-  std::unique_ptr<double[]> agg_means(new double[infrs.nvars]);
-  // number of samples
-  std::unique_ptr<double[]> agg_nsamples(new double[infrs.nvars]);
-  std::unique_ptr<int[]> multinomial_tallies(new int[infrs.ntallies]);
 
-  for (long j = 0; j < infrs.nvars; ++j) {
-    agg_means[j] = 0;
-    agg_nsamples[j] = 0;
-  }
+  // aggregate assignments across all possible worlds
+  for (int i = 1; i < n_numa_nodes; ++i)
+    infrs.aggregate_marginals_from(sampler[i].infrs);
 
-  for (long j = 0; j < infrs.ntallies; ++j) {
-    multinomial_tallies[j] = 0;
-  }
-
-  // sum variable assignments over all NUMA nodes
-  for (int i = 0; i < n_numa_nodes; ++i) {
-    const InferenceResult &infrs_i = sampler[i].infrs;
-    for (long j = 0; j < infrs_i.nvars; ++j) {
-      const Variable &variable = sampler[i].fg.variables[j];
-      agg_means[variable.id] += infrs_i.agg_means[variable.id];
-      agg_nsamples[variable.id] += infrs_i.agg_nsamples[variable.id];
-    }
-    for (long j = 0; j < infrs_i.ntallies; ++j) {
-      multinomial_tallies[j] += infrs_i.multinomial_tallies[j];
-    }
-  }
-
-  // inference snippets
   if (!is_quiet) infrs.show_marginal_snippet(std::cout);
 
   // dump inference results

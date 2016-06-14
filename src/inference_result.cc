@@ -74,6 +74,20 @@ void InferenceResult::clear_variabletally() {
   }
 }
 
+void InferenceResult::aggregate_marginals_from(const InferenceResult &other) {
+  // TODO maybe make this an operator+ after separating marginals from weights
+  assert(nvars == other.nvars);
+  assert(nweights == other.nweights);
+  for (long j = 0; j < other.nvars; ++j) {
+    const Variable &variable = other.fg.variables[j];
+    agg_means[variable.id] += other.agg_means[variable.id];
+    agg_nsamples[variable.id] += other.agg_nsamples[variable.id];
+  }
+  for (long j = 0; j < other.ntallies; ++j) {
+    multinomial_tallies[j] += other.multinomial_tallies[j];
+  }
+}
+
 void InferenceResult::show_marginal_snippet(std::ostream &output) {
   output << "INFERENCE SNIPPETS (QUERY VARIABLES):" << std::endl;
   int ct = 0;
