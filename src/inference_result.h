@@ -43,7 +43,8 @@ class InferenceResult {
 
   void clear_variabletally();
 
-  void show_histogram(std::ostream &output);
+  void show_marginal_snippet(std::ostream &output);
+  void show_marginal_histogram(std::ostream &output);
 
   void dump_marginals(std::ostream &text_output);
 

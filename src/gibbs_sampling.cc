@@ -224,53 +224,7 @@ void GibbsSampling::aggregate_results_and_dump(bool is_quiet) {
   }
 
   // inference snippets
-  if (!is_quiet) {
-    std::cout << "INFERENCE SNIPPETS (QUERY VARIABLES):" << std::endl;
-    int ct = 0;
-    for (long j = 0; j < sampler[0].fg.size.num_variables; ++j) {
-      const Variable &variable = sampler[0].fg.variables[j];
-      if (!variable.is_evid || opts.should_sample_evidence) {
-        ++ct;
-        std::cout << "   " << variable.id
-                  << "  NSAMPLE=" << agg_nsamples[variable.id] << std::endl;
-        switch (variable.domain_type) {
-          case DTYPE_BOOLEAN:
-            std::cout << "        @ 1 -> EXP="
-                      << agg_means[variable.id] / agg_nsamples[variable.id]
-                      << std::endl;
-            break;
-
-          case DTYPE_MULTINOMIAL: {
-            const auto &print_snippet = [&multinomial_tallies, &agg_nsamples,
-                                         variable](int domain_value,
-                                                   int domain_index) {
-              std::cout << "        @ " << domain_value << " -> EXP="
-                        << 1.0 * multinomial_tallies[variable.n_start_i_tally +
-                                                     domain_index] /
-                               agg_nsamples[variable.id]
-                        << std::endl;
-            };
-            if (variable.domain_map) {  // sparse
-              for (const auto &entry : *variable.domain_map)
-                print_snippet(entry.first, entry.second);
-            } else {  // dense case
-              for (size_t j = 0; j < variable.cardinality; ++j)
-                print_snippet(j, j);
-            }
-            break;
-          }
-
-          default:
-            abort();
-        }
-
-        if (ct % 10 == 0) {
-          break;
-        }
-      }
-    }
-    std::cout << "   ..." << std::endl;
-  }
+  if (!is_quiet) infrs.show_marginal_snippet(std::cout);
 
   // dump inference results
   std::string filename_text(opts.output_folder + "/inference_result.out.text");
@@ -279,7 +233,7 @@ void GibbsSampling::aggregate_results_and_dump(bool is_quiet) {
   infrs.dump_marginals(fout_text);
   fout_text.close();
 
-  if (!is_quiet) infrs.show_histogram(std::cout);
+  if (!is_quiet) infrs.show_marginal_histogram(std::cout);
 }
 
 // compute number of NUMA-aware epochs for learning or inference

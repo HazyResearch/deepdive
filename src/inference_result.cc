@@ -74,9 +74,56 @@ void InferenceResult::clear_variabletally() {
   }
 }
 
-void InferenceResult::show_histogram(std::ostream &os) {
+void InferenceResult::show_marginal_snippet(std::ostream &output) {
+  output << "INFERENCE SNIPPETS (QUERY VARIABLES):" << std::endl;
+  int ct = 0;
+  for (long j = 0; j < fg.size.num_variables; ++j) {
+    const Variable &variable = fg.variables[j];
+    if (!variable.is_evid || opts.should_sample_evidence) {
+      ++ct;
+      output << "   " << variable.id
+             << "  NSAMPLE=" << agg_nsamples[variable.id] << std::endl;
+      switch (variable.domain_type) {
+        case DTYPE_BOOLEAN:
+          output << "        @ 1 -> EXP="
+                 << agg_means[variable.id] / agg_nsamples[variable.id]
+                 << std::endl;
+          break;
+
+        case DTYPE_MULTINOMIAL: {
+          const auto &print_snippet = [this, &output, variable](
+              int domain_value, int domain_index) {
+            output << "        @ " << domain_value << " -> EXP="
+                   << 1.0 * multinomial_tallies[variable.n_start_i_tally +
+                                                domain_index] /
+                          agg_nsamples[variable.id]
+                   << std::endl;
+          };
+          if (variable.domain_map) {  // sparse
+            for (const auto &entry : *variable.domain_map)
+              print_snippet(entry.first, entry.second);
+          } else {  // dense case
+            for (size_t j = 0; j < variable.cardinality; ++j)
+              print_snippet(j, j);
+          }
+          break;
+        }
+
+        default:
+          abort();
+      }
+
+      if (ct % 10 == 0) {
+        break;
+      }
+    }
+  }
+  output << "   ..." << std::endl;
+}
+
+void InferenceResult::show_marginal_histogram(std::ostream &output) {
   // show a histogram of inference results
-  os << "INFERENCE CALIBRATION (QUERY BINS):" << std::endl;
+  output << "INFERENCE CALIBRATION (QUERY BINS):" << std::endl;
   std::vector<int> abc;
   for (int i = 0; i <= 10; ++i) {
     abc.push_back(0);
@@ -96,8 +143,8 @@ void InferenceResult::show_histogram(std::ostream &os) {
   }
   abc[9] += abc[10];
   for (int i = 0; i < 10; ++i) {
-    os << "PROB BIN 0." << i << "~0." << (i + 1) << "  -->  # " << abc[i]
-       << std::endl;
+    output << "PROB BIN 0." << i << "~0." << (i + 1) << "  -->  # " << abc[i]
+           << std::endl;
   }
 }
 
