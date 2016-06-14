@@ -98,6 +98,25 @@ void InferenceResult::copy_weights_to(InferenceResult &other) const {
     if (!weights_isfixed[j]) other.weight_values[j] = weight_values[j];
 }
 
+void InferenceResult::show_weights_snippet(std::ostream &output) const {
+  output << "LEARNING SNIPPETS (QUERY WEIGHTS):" << std::endl;
+  int ct = 0;
+  for (long j = 0; j < nweights; ++j) {
+    ++ct;
+    output << "   " << j << " " << weight_values[j] << std::endl;
+    if (ct % 10 == 0) {
+      break;
+    }
+  }
+  output << "   ..." << std::endl;
+}
+
+void InferenceResult::dump_weights_in_text(std::ostream &text_output) const {
+  for (long j = 0; j < nweights; ++j) {
+    text_output << j << " " << weight_values[j] << std::endl;
+  }
+}
+
 void InferenceResult::clear_variabletally() {
   for (long i = 0; i < nvars; i++) {
     agg_means[i] = 0.0;
@@ -196,7 +215,7 @@ void InferenceResult::show_marginal_histogram(std::ostream &output) const {
   }
 }
 
-void InferenceResult::dump_marginals(std::ostream &text_output) const {
+void InferenceResult::dump_marginals_in_text(std::ostream &text_output) const {
   for (long j = 0; j < nvars; ++j) {
     const Variable &variable = fg.variables[j];
     if (variable.is_evid && !opts.should_sample_evidence) {

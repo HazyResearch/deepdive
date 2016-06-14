@@ -45,12 +45,14 @@ class InferenceResult {
   void merge_weights_from(const InferenceResult &other);
   void average_regularize_weights(double current_stepsize);
   void copy_weights_to(InferenceResult &other) const;
+  void show_weights_snippet(std::ostream &output) const;
+  void dump_weights_in_text(std::ostream &text_output) const;
 
   void clear_variabletally();
   void aggregate_marginals_from(const InferenceResult &other);
   void show_marginal_snippet(std::ostream &output) const;
   void show_marginal_histogram(std::ostream &output) const;
-  void dump_marginals(std::ostream &text_output) const;
+  void dump_marginals_in_text(std::ostream &text_output) const;
 
  private:
   InferenceResult(const CompiledFactorGraph &fg, const CmdParser &opts);

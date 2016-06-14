@@ -141,29 +141,14 @@ void GibbsSampling::dump_weights() {
   // learning weights snippets
   const InferenceResult &infrs = sampler[0].infrs;
 
-  if (!opts.should_be_quiet) {
-    std::cout << "LEARNING SNIPPETS (QUERY WEIGHTS):" << std::endl;
-    int ct = 0;
-    for (long j = 0; j < infrs.nweights; ++j) {
-      ++ct;
-      std::cout << "   " << j << " " << infrs.weight_values[j] << std::endl;
-      if (ct % 10 == 0) {
-        break;
-      }
-    }
-    std::cout << "   ..." << std::endl;
-  }
+  if (!opts.should_be_quiet) infrs.show_weights_snippet(std::cout);
 
   // dump learned weights
-  std::string filename_text;
-  filename_text = opts.output_folder + "/inference_result.out.weights.text";
-
+  std::string filename_text(opts.output_folder +
+                            "/inference_result.out.weights.text");
   std::cout << "DUMPING... TEXT    : " << filename_text << std::endl;
-
-  std::ofstream fout_text(filename_text.c_str());
-  for (long j = 0; j < infrs.nweights; ++j) {
-    fout_text << j << " " << infrs.weight_values[j] << std::endl;
-  }
+  std::ofstream fout_text(filename_text);
+  infrs.dump_weights_in_text(fout_text);
   fout_text.close();
 }
 
@@ -180,7 +165,7 @@ void GibbsSampling::aggregate_results_and_dump() {
   std::string filename_text(opts.output_folder + "/inference_result.out.text");
   std::cout << "DUMPING... TEXT    : " << filename_text << std::endl;
   std::ofstream fout_text(filename_text);
-  infrs.dump_marginals(fout_text);
+  infrs.dump_marginals_in_text(fout_text);
   fout_text.close();
 
   if (!opts.should_be_quiet) infrs.show_marginal_histogram(std::cout);
