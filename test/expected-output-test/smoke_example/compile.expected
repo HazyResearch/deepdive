@@ -36,15 +36,19 @@ materialize: false
 
 deepdive.inference.factors.inf_imply_smoke_cancer {
 input_query: """
-SELECT R0.dd_id AS "smoke.R0.dd_id"
+SELECT R_0.dd_id AS "smoke.R0.dd_id"
      , R0.person_id AS "smoke.R0.person_id"
-     , R1.dd_id AS "cancer.R1.dd_id"
+     , R_1.dd_id AS "cancer.R1.dd_id"
      , R1.person_id AS "cancer.R1.person_id"
-FROM dd_variables_smoke R0
-   , dd_variables_cancer R1
+FROM smoke R0
+   , cancer R1
    , person_smokes R2
+   , dd_variables_smoke AS R_0
+   , dd_variables_cancer AS R_1
 WHERE R1.person_id = R0.person_id
   AND R2.person_id = R0.person_id
+  AND R0.person_id = R_0.person_id
+  AND R1.person_id = R_1.person_id
 """
 function: """Imply(smoke.R0.dd_label, cancer.R1.dd_label)"""
 weight: """0.5"""
@@ -58,15 +62,19 @@ input_relations: [
 
 deepdive.inference.factors.inf_imply_smoke_smoke {
 input_query: """
-SELECT R0.dd_id AS "smoke.R0.dd_id"
+SELECT R_0.dd_id AS "smoke.R0.dd_id"
      , R0.person_id AS "smoke.R0.person_id"
-     , R1.dd_id AS "smoke.R1.dd_id"
+     , R_1.dd_id AS "smoke.R1.dd_id"
      , R1.person_id AS "smoke.R1.person_id"
-FROM dd_variables_smoke R0
-   , dd_variables_smoke R1
+FROM smoke R0
+   , smoke R1
    , friends R2
+   , dd_variables_smoke AS R_0
+   , dd_variables_smoke AS R_1
 WHERE R2.person_id = R0.person_id
   AND R2.friend_id = R1.person_id
+  AND R0.person_id = R_0.person_id
+  AND R1.person_id = R_1.person_id
 """
 function: """Imply(smoke.R0.dd_label, smoke.R1.dd_label)"""
 weight: """0.4"""
