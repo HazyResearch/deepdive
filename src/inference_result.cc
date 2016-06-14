@@ -4,11 +4,12 @@
 
 namespace dd {
 
-InferenceResult::InferenceResult(size_t nvars, size_t nweights,
+InferenceResult::InferenceResult(const CompiledFactorGraph &fg,
                                  const CmdParser &opts)
-    : opts(opts),
-      nvars(nvars),
-      nweights(nweights),
+    : fg(fg),
+      opts(opts),
+      nvars(fg.size.num_variables),
+      nweights(fg.size.num_weights),
       ntallies(0),
       multinomial_tallies(NULL),
       agg_means(new double[nvars]),
@@ -20,7 +21,7 @@ InferenceResult::InferenceResult(size_t nvars, size_t nweights,
 
 InferenceResult::InferenceResult(const CompiledFactorGraph &fg,
                                  const Weight weights[], const CmdParser &opts)
-    : InferenceResult(fg.size.num_variables, fg.size.num_weights, opts) {
+    : InferenceResult(fg, opts) {
   for (long t = 0; t < nweights; t++) {
     const Weight &weight = weights[t];
     weight_values[weight.id] = weight.weight;
@@ -43,7 +44,7 @@ InferenceResult::InferenceResult(const CompiledFactorGraph &fg,
 }
 
 InferenceResult::InferenceResult(const InferenceResult &other)
-    : InferenceResult(other.nvars, other.nweights, other.opts) {
+    : InferenceResult(other.fg, other.opts) {
   memcpy(assignments_evid.get(), other.assignments_evid.get(),
          sizeof(*assignments_evid.get()) * nvars);
   memcpy(agg_means.get(), other.agg_means.get(),
@@ -73,8 +74,7 @@ void InferenceResult::clear_variabletally() {
   }
 }
 
-void InferenceResult::show_histogram(std::ostream &os,
-                                     const Variable variables[]) {
+void InferenceResult::show_histogram(std::ostream &os) {
   // show a histogram of inference results
   os << "INFERENCE CALIBRATION (QUERY BINS):" << std::endl;
   std::vector<int> abc;
@@ -83,7 +83,7 @@ void InferenceResult::show_histogram(std::ostream &os,
   }
   int bad = 0;
   for (long j = 0; j < nvars; ++j) {
-    const Variable &variable = variables[j];
+    const Variable &variable = fg.variables[j];
     if (!opts.should_sample_evidence && variable.is_evid) {
       continue;
     }

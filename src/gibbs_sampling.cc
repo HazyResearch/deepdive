@@ -318,7 +318,7 @@ void GibbsSampling::aggregate_results_and_dump(bool is_quiet) {
   }
   fout_text.close();
 
-  if (!is_quiet) infrs.show_histogram(std::cout, sampler[0].fg.variables.get());
+  if (!is_quiet) infrs.show_histogram(std::cout);
 }
 
 // compute number of NUMA-aware epochs for learning or inference

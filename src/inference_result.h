@@ -14,6 +14,7 @@ class CompiledFactorGraph;
  */
 class InferenceResult {
  private:
+  const CompiledFactorGraph &fg;
   const CmdParser &opts;
 
  public:
@@ -42,10 +43,10 @@ class InferenceResult {
 
   void clear_variabletally();
 
-  void show_histogram(std::ostream &output, const Variable variables[]);
+  void show_histogram(std::ostream &output);
 
  private:
-  InferenceResult(size_t nvars, size_t nweights, const CmdParser &opts);
+  InferenceResult(const CompiledFactorGraph &fg, const CmdParser &opts);
 };
 
 }  // namespace dd
