@@ -44,7 +44,7 @@ class FactorGraphTest : public testing::Test {
     fg.safety_check();
 
     cfg.reset(new CompiledFactorGraph(fg));
-    infrs.reset(new InferenceResult(*cfg, fg.weights.get()));
+    infrs.reset(new InferenceResult(*cfg, fg.weights.get(), cmd_parser));
   }
 };
 

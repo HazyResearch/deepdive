@@ -8,7 +8,7 @@ SingleNodeSampler::SingleNodeSampler(std::unique_ptr<CompiledFactorGraph> pfg_,
     : pfg(std::move(pfg_)),
       opts(opts),
       fg(*pfg),
-      infrs(fg, weights),
+      infrs(fg, weights, opts),
       nthread(nthread),
       nodeid(nodeid) {}
 

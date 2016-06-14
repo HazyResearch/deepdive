@@ -318,32 +318,7 @@ void GibbsSampling::aggregate_results_and_dump(bool is_quiet) {
   }
   fout_text.close();
 
-  if (!is_quiet) {
-    // show a histogram of inference results
-    std::cout << "INFERENCE CALIBRATION (QUERY BINS):" << std::endl;
-    std::vector<int> abc;
-    for (int i = 0; i <= 10; ++i) {
-      abc.push_back(0);
-    }
-    int bad = 0;
-    for (long j = 0; j < sampler[0].fg.size.num_variables; ++j) {
-      const Variable &variable = sampler[0].fg.variables[j];
-      if (variable.is_evid && !opts.should_sample_evidence) {
-        continue;
-      }
-      int bin = (int)(agg_means[variable.id] / agg_nsamples[variable.id] * 10);
-      if (bin >= 0 && bin <= 10) {
-        ++abc[bin];
-      } else {
-        ++bad;
-      }
-    }
-    abc[9] += abc[10];
-    for (int i = 0; i < 10; ++i) {
-      std::cout << "PROB BIN 0." << i << "~0." << (i + 1) << "  -->  # "
-                << abc[i] << std::endl;
-    }
-  }
+  if (!is_quiet) infrs.show_histogram(std::cout, sampler[0].fg.variables.get());
 }
 
 // compute number of NUMA-aware epochs for learning or inference

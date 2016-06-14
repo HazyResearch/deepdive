@@ -4,8 +4,10 @@
 
 namespace dd {
 
-InferenceResult::InferenceResult(size_t nvars, size_t nweights)
-    : nvars(nvars),
+InferenceResult::InferenceResult(size_t nvars, size_t nweights,
+                                 const CmdParser &opts)
+    : opts(opts),
+      nvars(nvars),
       nweights(nweights),
       ntallies(0),
       multinomial_tallies(NULL),
@@ -17,8 +19,8 @@ InferenceResult::InferenceResult(size_t nvars, size_t nweights)
       weights_isfixed(new bool[nweights]) {}
 
 InferenceResult::InferenceResult(const CompiledFactorGraph &fg,
-                                 const Weight weights[])
-    : InferenceResult(fg.size.num_variables, fg.size.num_weights) {
+                                 const Weight weights[], const CmdParser &opts)
+    : InferenceResult(fg.size.num_variables, fg.size.num_weights, opts) {
   for (long t = 0; t < nweights; t++) {
     const Weight &weight = weights[t];
     weight_values[weight.id] = weight.weight;
@@ -41,7 +43,7 @@ InferenceResult::InferenceResult(const CompiledFactorGraph &fg,
 }
 
 InferenceResult::InferenceResult(const InferenceResult &other)
-    : InferenceResult(other.nvars, other.nweights) {
+    : InferenceResult(other.nvars, other.nweights, other.opts) {
   memcpy(assignments_evid.get(), other.assignments_evid.get(),
          sizeof(*assignments_evid.get()) * nvars);
   memcpy(agg_means.get(), other.agg_means.get(),
@@ -68,6 +70,34 @@ void InferenceResult::clear_variabletally() {
   }
   for (long i = 0; i < ntallies; i++) {
     multinomial_tallies[i] = 0;
+  }
+}
+
+void InferenceResult::show_histogram(std::ostream &os,
+                                     const Variable variables[]) {
+  // show a histogram of inference results
+  os << "INFERENCE CALIBRATION (QUERY BINS):" << std::endl;
+  std::vector<int> abc;
+  for (int i = 0; i <= 10; ++i) {
+    abc.push_back(0);
+  }
+  int bad = 0;
+  for (long j = 0; j < nvars; ++j) {
+    const Variable &variable = variables[j];
+    if (!opts.should_sample_evidence && variable.is_evid) {
+      continue;
+    }
+    int bin = (int)(agg_means[variable.id] / agg_nsamples[variable.id] * 10);
+    if (bin >= 0 && bin <= 10) {
+      ++abc[bin];
+    } else {
+      ++bad;
+    }
+  }
+  abc[9] += abc[10];
+  for (int i = 0; i < 10; ++i) {
+    os << "PROB BIN 0." << i << "~0." << (i + 1) << "  -->  # " << abc[i]
+       << std::endl;
   }
 }
 

@@ -3,6 +3,7 @@
 
 #include "variable.h"
 #include "weight.h"
+#include "cmd_parser.h"
 
 namespace dd {
 
@@ -12,6 +13,9 @@ class CompiledFactorGraph;
  * Encapsulates inference result statistics
  */
 class InferenceResult {
+ private:
+  const CmdParser &opts;
+
  public:
   long nvars;     // number of variables
   long nweights;  // number of weights
@@ -30,15 +34,18 @@ class InferenceResult {
   std::unique_ptr<double[]> weight_values;  // array of weight values
   std::unique_ptr<bool[]> weights_isfixed;  // array of whether weight is fixed
 
-  InferenceResult(const CompiledFactorGraph &fg, const Weight weights[]);
+  InferenceResult(const CompiledFactorGraph &fg, const Weight weights[],
+                  const CmdParser &opts);
 
   // copy constructor
   InferenceResult(const InferenceResult &other);
 
   void clear_variabletally();
 
+  void show_histogram(std::ostream &output, const Variable variables[]);
+
  private:
-  InferenceResult(size_t nvars, size_t nweights);
+  InferenceResult(size_t nvars, size_t nweights, const CmdParser &opts);
 };
 
 }  // namespace dd
