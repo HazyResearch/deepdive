@@ -4,7 +4,7 @@
  * Author: Feiran Wang
  */
 
-#include "single_thread_sampler.h"
+#include "gibbs_sampler.h"
 #include "factor_graph.h"
 #include "dimmwitted.h"
 #include <gtest/gtest.h>
