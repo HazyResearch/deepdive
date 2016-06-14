@@ -89,6 +89,7 @@ inline void SingleThreadSampler::sample_sgd_single_variable(long vid,
                  ? variable.assignment_evid
                  : draw_sample(variable, infrs.assignments_evid.get(),
                                infrs.weight_values.get());
+
   infrs.assignments_evid[variable.id] = proposal;
 
   // sample the variable regardless of whether it's evidence

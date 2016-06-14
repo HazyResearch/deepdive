@@ -14,34 +14,27 @@ SingleNodeSampler::SingleNodeSampler(std::unique_ptr<CompiledFactorGraph> pfg_,
 
 void SingleNodeSampler::sample(int i_epoch) {
   numa_run_on_node(nodeid);
-  threads.clear();
   for (int i = 0; i < nthread; ++i) {
     threads.push_back(std::thread([this, i]() {
       // TODO try to share instances across epochs
-      SingleThreadSampler sampler(fg, infrs, i, nthread, opts);
-      sampler.sample();
+      SingleThreadSampler(fg, infrs, i, nthread, opts).sample();
+    }));
+  }
+}
+
+void SingleNodeSampler::sample_sgd(double stepsize) {
+  numa_run_on_node(nodeid);
+  for (int i = 0; i < nthread; ++i) {
+    threads.push_back(std::thread([this, i, stepsize]() {
+      // TODO try to share instances across epochs
+      SingleThreadSampler(fg, infrs, i, nthread, opts).sample_sgd(stepsize);
     }));
   }
 }
 
 void SingleNodeSampler::wait() {
   for (auto &t : threads) t.join();
-}
-
-void SingleNodeSampler::sample_sgd(double stepsize) {
-  numa_run_on_node(nodeid);
   threads.clear();
-  for (int i = 0; i < nthread; ++i) {
-    threads.push_back(std::thread([this, i, stepsize]() {
-      // TODO try to share instances across epochs
-      SingleThreadSampler sampler(fg, infrs, i, nthread, opts);
-      sampler.sample_sgd(stepsize);
-    }));
-  }
-}
-
-void SingleNodeSampler::wait_sgd() {
-  for (auto &t : threads) t.join();
 }
 
 }  // namespace dd

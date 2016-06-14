@@ -100,7 +100,7 @@ void GibbsSampling::learn() {
     for (auto &s : sampler) s.sample_sgd(current_stepsize);
 
     // wait the samplers to finish
-    for (auto &s : sampler) s.wait_sgd();
+    for (auto &s : sampler) s.wait();
 
     // sum the weights and store in the first factor graph
     // the average weights will be calculated and assigned to all factor graphs

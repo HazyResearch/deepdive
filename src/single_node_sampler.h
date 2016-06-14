@@ -40,19 +40,14 @@ class SingleNodeSampler {
   void sample(int i_epoch);
 
   /**
-   * Waits for sample worker to finish
-   */
-  void wait();
-
-  /**
    * Performs SGD
    */
   void sample_sgd(double stepsize);
 
   /**
-   * Waits for sgd worker to finish
+   * Waits for sample worker to finish
    */
-  void wait_sgd();
+  void wait();
 };
 
 }  // namespace dd
