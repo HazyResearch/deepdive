@@ -2,6 +2,7 @@
 #define DIMMWITTED_CMD_PARSER_H_
 
 #include "factor.h"
+#include "common.h"
 
 #include <algorithm>
 #include <assert.h>
@@ -42,7 +43,7 @@ class CmdParser {
   double stepsize2;
   double decay;
   double reg_param;
-  std::string regularization;
+  regularization regularization;
 
   bool should_use_snapshot;
   bool should_be_quiet;

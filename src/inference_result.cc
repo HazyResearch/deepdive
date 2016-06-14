@@ -8,6 +8,7 @@ InferenceResult::InferenceResult(const CompiledFactorGraph &fg,
                                  const CmdParser &opts)
     : fg(fg),
       opts(opts),
+      weight_values_normalizer(1),
       nvars(fg.size.num_variables),
       nweights(fg.size.num_weights),
       ntallies(0),
@@ -64,6 +65,39 @@ InferenceResult::InferenceResult(const InferenceResult &other)
   }
 }
 
+void InferenceResult::merge_weights_from(const InferenceResult &other) {
+  assert(nweights == other.nweights);
+  for (int j = 0; j < nweights; ++j) weight_values[j] += other.weight_values[j];
+  ++weight_values_normalizer;
+}
+
+void InferenceResult::average_regularize_weights(double current_stepsize) {
+  for (int j = 0; j < nweights; ++j) {
+    weight_values[j] /= weight_values_normalizer;
+    if (!weights_isfixed[j]) {
+      switch (opts.regularization) {
+        case REG_L2: {
+          weight_values[j] *= (1.0 / (1.0 + opts.reg_param * current_stepsize));
+          break;
+        }
+        case REG_L1: {
+          weight_values[j] += opts.reg_param * (weight_values[j] < 0);
+          break;
+        }
+        default:
+          abort();
+      }
+    }
+  }
+  weight_values_normalizer = 1;
+}
+
+void InferenceResult::copy_weights_to(InferenceResult &other) const {
+  assert(nweights == other.nweights);
+  for (int j = 0; j < nweights; ++j)
+    if (!weights_isfixed[j]) other.weight_values[j] = weight_values[j];
+}
+
 void InferenceResult::clear_variabletally() {
   for (long i = 0; i < nvars; i++) {
     agg_means[i] = 0.0;
@@ -77,7 +111,7 @@ void InferenceResult::clear_variabletally() {
 void InferenceResult::aggregate_marginals_from(const InferenceResult &other) {
   // TODO maybe make this an operator+ after separating marginals from weights
   assert(nvars == other.nvars);
-  assert(nweights == other.nweights);
+  assert(ntallies == other.ntallies);
   for (long j = 0; j < other.nvars; ++j) {
     const Variable &variable = other.fg.variables[j];
     agg_means[variable.id] += other.agg_means[variable.id];

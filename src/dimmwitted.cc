@@ -7,7 +7,6 @@
 #include <cmath>
 #include <map>
 #include "assert.h"
-#include "common.h"
 #include "unistd.h"
 
 namespace dd {
@@ -77,10 +76,8 @@ int gibbs(const dd::CmdParser &args) {
       fg.weights.get(), args);
 
   // learning
-  regularization reg = args.regularization == "l1" ? REG_L1 : REG_L2;
   gibbs.learn(args.n_learning_epoch, args.n_samples_per_learning_epoch,
-              args.stepsize, args.decay, args.reg_param, args.should_be_quiet,
-              reg);
+              args.stepsize, args.decay, args.reg_param, args.should_be_quiet);
 
   // dump weights
   gibbs.dump_weights(args.should_be_quiet);

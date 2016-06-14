@@ -121,7 +121,10 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
           stepsize2;  // XXX hack to support two parameters to specify step size
     decay = getLastValueOrDefault(decay_, 0.95);
     reg_param = getLastValueOrDefault(reg_param_, 0.01);
-    regularization = getLastValueOrDefault(regularization_, std::string("l2"));
+    regularization =
+        getLastValueOrDefault(regularization_, std::string("l2")) == "l1"
+            ? REG_L1
+            : REG_L2;
 
     should_use_snapshot = use_snapshot_->getValue() > 0;
     should_be_quiet = quiet_->getValue() > 0;

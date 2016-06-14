@@ -52,7 +52,7 @@ class GibbsSampling {
    * is_quiet whether to compress information display
    */
   void learn(int n_epoch, int n_sample_per_epoch, double stepsize, double decay,
-             double reg_param, bool is_quiet, regularization reg);
+             double reg_param, bool is_quiet);
 
   /**
    * Performs inference

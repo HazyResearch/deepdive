@@ -71,8 +71,7 @@ void GibbsSampling::inference(int n_epoch, bool is_quiet) {
 }
 
 void GibbsSampling::learn(int n_epoch, int n_sample_per_epoch, double stepsize,
-                          double decay, double reg_param, bool is_quiet,
-                          regularization reg) {
+                          double decay, double reg_param, bool is_quiet) {
   n_epoch = compute_n_epochs(n_epoch);
 
   InferenceResult &infrs = sampler[0].infrs;
@@ -104,35 +103,11 @@ void GibbsSampling::learn(int n_epoch, int n_sample_per_epoch, double stepsize,
 
     // sum the weights and store in the first factor graph
     // the average weights will be calculated and assigned to all factor graphs
-    for (int i = 1; i < n_numa_nodes; ++i) {
-      auto &sampler_other = sampler[i];
-      for (int j = 0; j < nweight; ++j) {
-        infrs.weight_values[j] += sampler_other.infrs.weight_values[j];
-      }
-    }
-
-    // calculate average weights and regularize weights
-    for (int j = 0; j < nweight; ++j) {
-      infrs.weight_values[j] /= n_numa_nodes;
-      if (!infrs.weights_isfixed[j]) {
-        if (reg == REG_L2)
-          infrs.weight_values[j] *=
-              (1.0 / (1.0 + reg_param * current_stepsize));
-        else  // l1
-          infrs.weight_values[j] += reg_param * (infrs.weight_values[j] < 0);
-      }
-    }
-
-    // set weights for other factor graph to be the same as the first factor
-    // graph
-    for (int i = 1; i < n_numa_nodes; ++i) {
-      auto &sampler_other = sampler[i];
-      for (int j = 0; j < nweight; ++j) {
-        if (!infrs.weights_isfixed[j]) {
-          sampler_other.infrs.weight_values[j] = infrs.weight_values[j];
-        }
-      }
-    }
+    for (int i = 1; i < n_numa_nodes; ++i)
+      infrs.merge_weights_from(sampler[i].infrs);
+    infrs.average_regularize_weights(current_stepsize);
+    for (int i = 1; i < n_numa_nodes; ++i)
+      infrs.copy_weights_to(sampler[i].infrs);
 
     // calculate the norms of the difference of weights from the current epoch
     // and last epoch

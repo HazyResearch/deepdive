@@ -16,6 +16,7 @@ class InferenceResult {
  private:
   const CompiledFactorGraph &fg;
   const CmdParser &opts;
+  int weight_values_normalizer;
 
  public:
   long nvars;     // number of variables
@@ -41,8 +42,11 @@ class InferenceResult {
   // copy constructor
   InferenceResult(const InferenceResult &other);
 
-  void clear_variabletally();
+  void merge_weights_from(const InferenceResult &other);
+  void average_regularize_weights(double current_stepsize);
+  void copy_weights_to(InferenceResult &other) const;
 
+  void clear_variabletally();
   void aggregate_marginals_from(const InferenceResult &other);
   void show_marginal_snippet(std::ostream &output);
   void show_marginal_histogram(std::ostream &output);
