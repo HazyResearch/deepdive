@@ -1,1 +1,0 @@
-../postgresql/deepdive_unload.bats
