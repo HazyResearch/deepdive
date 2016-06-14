@@ -43,8 +43,7 @@ class FactorGraphTest : public testing::Test {
     fg.load_factors(cmd_parser.factor_file);
     fg.safety_check();
 
-    cfg.reset(new CompiledFactorGraph(fg.size));
-    fg.compile(*cfg);
+    cfg.reset(new CompiledFactorGraph(fg));
     infrs.reset(new InferenceResult(*cfg, fg.weights.get()));
   }
 };

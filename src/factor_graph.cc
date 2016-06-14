@@ -45,18 +45,15 @@ FactorGraph::FactorGraph(const FactorGraphDescriptor &capacity)
       factors(new RawFactor[capacity.num_factors]),
       weights(new Weight[capacity.num_weights]) {}
 
-void FactorGraph::compile(CompiledFactorGraph &cfg) {
-  cfg.size = size;
-
+CompiledFactorGraph::CompiledFactorGraph(const FactorGraph &fg)
+    : CompiledFactorGraph(fg.size) {
   long i_edge = 0;
 
-  /*
-   * For each factor, put the variables sorted within each factor in an
-   * array.
-   */
-  for (long i = 0; i < size.num_factors; ++i) {
-    RawFactor &rf = factors[i];
-    rf.n_start_i_vif = i_edge;
+  // For each factor, put the variables sorted within each factor in an array.
+  for (long i = 0; i < fg.size.num_factors; ++i) {
+    const RawFactor &rf = fg.factors[i];
+    factors[i] = rf;
+    factors[i].n_start_i_vif = i_edge;
 
     /*
      * Each factor knows how many variables it has. After sorting the variables
@@ -68,55 +65,44 @@ void FactorGraph::compile(CompiledFactorGraph &cfg) {
                 return x.n_position < y.n_position;
               });
     for (const VariableInFactor &vif : *rf.tmp_variables) {
-      cfg.vifs[i_edge] = vif;
-      i_edge++;
+      vifs[i_edge] = vif;
+      ++i_edge;
     }
-
-    /* Also copy the clean factor without the temp crap */
-    Factor f(rf);
-    cfg.factors[i] = f;
   }
-  assert(i_edge == size.num_edges);
+  assert(i_edge == fg.size.num_edges);
 
+  // For each variable, lay the factors sequentially in an array as well.
   i_edge = 0;
   long ntallies = 0;
-
-  /*
-   * For each variable, lay the factors sequentially in an array as well.
-   */
-  for (long i = 0; i < size.num_variables; ++i) {
-    RawVariable &rv = variables[i];
-    // I guess it's only at this point that we're sure tmp_factor_ids won't
-    // change since we've fully loaded the graph.
-    rv.n_factors = rv.tmp_factor_ids->size();
-    rv.n_start_i_factors = i_edge;
+  for (long i = 0; i < fg.size.num_variables; ++i) {
+    const RawVariable &rv = fg.variables[i];
+    variables[i] = rv;
+    variables[i].n_factors = rv.tmp_factor_ids->size();
+    variables[i].n_start_i_factors = i_edge;
 
     if (rv.domain_type == DTYPE_MULTINOMIAL) {
-      rv.n_start_i_tally = ntallies;
-      ntallies += rv.cardinality;
+      variables[i].n_start_i_tally = ntallies;
+      ntallies += variables[i].cardinality;
     }
 
     for (const long &fid : *rv.tmp_factor_ids) {
-      cfg.factor_ids[i_edge] = fid;
+      factor_ids[i_edge] = fid;
 
-      cfg.compact_factors[i_edge].id = factors[fid].id;
-      cfg.compact_factors[i_edge].func_id = factors[fid].func_id;
-      cfg.compact_factors[i_edge].n_variables = factors[fid].n_variables;
-      cfg.compact_factors[i_edge].n_start_i_vif = factors[fid].n_start_i_vif;
+      auto &cf = compact_factors[i_edge];
+      const auto &f = factors[fid];
+      cf.id = f.id;
+      cf.func_id = f.func_id;
+      cf.n_variables = f.n_variables;
+      cf.n_start_i_vif = f.n_start_i_vif;
 
-      cfg.compact_factors_weightids[i_edge] = factors[fid].weight_id;
+      compact_factors_weightids[i_edge] = f.weight_id;
 
-      i_edge++;
+      ++i_edge;
     }
-
-    /* Also remember to copy the clean variable without the temp crap */
-    Variable v(rv);
-    cfg.variables[i] = v;
   }
+  assert(i_edge == fg.size.num_edges);
 
-  assert(i_edge == size.num_edges);
-
-  cfg.size.num_edges = i_edge;
+  size.num_edges = i_edge;
 }
 
 void FactorGraph::safety_check() {

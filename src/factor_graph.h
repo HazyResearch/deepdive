@@ -84,16 +84,6 @@ class FactorGraph {
   void load_domains(const std::string filename);
 
   /**
-   * Compiles the factor graph into a format that's more appropriate for
-   * inference and learning.
-   *
-   * Since the original factor graph initializes the new factor graph,
-   * it also has to transfer the variable, factor, and weight counts,
-   * and other statistics as well.
-   */
-  void compile(CompiledFactorGraph& cfg);
-
-  /**
    * Checks whether the edge-based store is correct
    */
   void safety_check();
@@ -122,6 +112,17 @@ class CompiledFactorGraph {
   std::unique_ptr<int[]> compact_factors_weightids;
   std::unique_ptr<long[]> factor_ids;
   std::unique_ptr<VariableInFactor[]> vifs;
+
+  /**
+   * Compiles given factor graph into a compact format that's more appropriate
+   * for
+   * inference and learning.
+   *
+   * Since the original factor graph initializes the new factor graph,
+   * it also has to transfer the variable, factor, and weight counts,
+   * and other statistics as well.
+   */
+  CompiledFactorGraph(const FactorGraph& fg);
 
   /* Produces an empty factor graph to be initialized by resume() */
   CompiledFactorGraph(const FactorGraphDescriptor& size);

@@ -78,8 +78,7 @@ TEST_F(LoadingTest, load_factor_graph) {
 
 // test for FactorGraph::copy_from function
 TEST_F(LoadingTest, copy_from) {
-  dd::CompiledFactorGraph cfg({18, 18, 1, 18});
-  fg.compile(cfg);
+  dd::CompiledFactorGraph cfg(fg);
 
   dd::CompiledFactorGraph cfg2 = cfg;
 

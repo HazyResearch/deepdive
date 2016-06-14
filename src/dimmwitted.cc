@@ -80,11 +80,10 @@ int gibbs(const dd::CmdParser &args) {
     std::cout << fg << std::endl;
   }
 
-  std::unique_ptr<CompiledFactorGraph> cfg(new CompiledFactorGraph(fg.size));
-  fg.compile(*cfg);
-
   // Initialize Gibbs sampling application.
-  GibbsSampling gibbs(std::move(cfg), fg.weights.get(), args);
+  GibbsSampling gibbs(
+      std::unique_ptr<CompiledFactorGraph>(new CompiledFactorGraph(fg)),
+      fg.weights.get(), args);
 
   // number of learning epochs
   // the factor graph is copied on each NUMA node, so the total epochs =
