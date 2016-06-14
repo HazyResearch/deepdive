@@ -12,20 +12,17 @@ namespace dd {
 GibbsSampling::GibbsSampling(std::unique_ptr<CompiledFactorGraph> p_cfg,
                              const Weight weights[], const CmdParser &opts)
     : weights(weights), opts(opts) {
-  // the highest node number available
-  n_numa_nodes = numa_max_node();
-
-  // if n_datacopy is valid, use it, otherwise, use numa_max_node
-  if (opts.n_datacopy >= 1 && opts.n_datacopy <= n_numa_nodes + 1) {
+  n_numa_nodes = numa_max_node() + 1;
+  if (opts.n_datacopy > 0 && opts.n_datacopy < n_numa_nodes) {
     n_numa_nodes = opts.n_datacopy - 1;
   }
 
   // max possible threads per NUMA node
-  n_thread_per_numa = (sysconf(_SC_NPROCESSORS_CONF)) / (n_numa_nodes + 1);
+  n_thread_per_numa = (sysconf(_SC_NPROCESSORS_CONF)) / n_numa_nodes;
   // n_thread_per_numa = 1;
 
   // copy factor graphs
-  for (int i = 0; i <= n_numa_nodes; ++i) {
+  for (int i = 0; i < n_numa_nodes; ++i) {
     numa_run_on_node(i);
     numa_set_localalloc();
 
@@ -35,37 +32,39 @@ GibbsSampling::GibbsSampling(std::unique_ptr<CompiledFactorGraph> p_cfg,
             i == 0 ? p_cfg.release() : new CompiledFactorGraph(*p_cfg)),
         weights, n_thread_per_numa /* TODO fold this into opts */, i, opts));
   }
-};
+}
 
-void GibbsSampling::inference(const int &n_epoch, const bool is_quiet) {
+void GibbsSampling::inference(int n_epoch, bool is_quiet) {
+  n_epoch = compute_n_epochs(n_epoch);
   Timer t_total;
 
   Timer t;
   int nvar = sampler[0].fg.size.num_variables;
-  int nnode = n_numa_nodes + 1;
 
   for (auto &s : sampler) s.infrs.clear_variabletally();
 
   // inference epochs
   for (int i_epoch = 0; i_epoch < n_epoch; ++i_epoch) {
     if (!is_quiet) {
-      std::cout << std::setprecision(2) << "INFERENCE EPOCH " << i_epoch * nnode
-                << "~" << ((i_epoch + 1) * nnode) << "...." << std::flush;
+      std::cout << std::setprecision(2) << "INFERENCE EPOCH "
+                << i_epoch * n_numa_nodes << "~"
+                << ((i_epoch + 1) * n_numa_nodes) << "...." << std::flush;
     }
 
     // restart timer
     t.restart();
 
     // sample
-    for (auto &s: sampler) s.sample(i_epoch);
+    for (auto &s : sampler) s.sample(i_epoch);
 
     // wait for samplers to finish
-    for (auto &s: sampler) s.wait();
+    for (auto &s : sampler) s.wait();
 
     double elapsed = t.elapsed();
     if (!is_quiet) {
       std::cout << "" << elapsed << " sec.";
-      std::cout << "," << (nvar * nnode) / elapsed << " vars/sec" << std::endl;
+      std::cout << "," << (nvar * n_numa_nodes) / elapsed << " vars/sec"
+                << std::endl;
     }
   }
 
@@ -73,10 +72,10 @@ void GibbsSampling::inference(const int &n_epoch, const bool is_quiet) {
   std::cout << "TOTAL INFERENCE TIME: " << elapsed << " sec." << std::endl;
 }
 
-void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
-                          const double &stepsize, const double &decay,
-                          const double reg_param, const bool is_quiet,
-                          const regularization reg) {
+void GibbsSampling::learn(int n_epoch, int n_sample_per_epoch, double stepsize,
+                          double decay, double reg_param, bool is_quiet,
+                          regularization reg) {
+  n_epoch = compute_n_epochs(n_epoch);
   Timer t_total;
 
   double current_stepsize = stepsize;
@@ -84,7 +83,6 @@ void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
 
   Timer t;
   int nvar = sampler[0].fg.size.num_variables;
-  int nnode = n_numa_nodes + 1;
   int nweight = sampler[0].fg.size.num_weights;
 
   std::cerr << sampler[0].fg.size << std::endl;
@@ -99,8 +97,9 @@ void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
   // learning epochs
   for (int i_epoch = 0; i_epoch < n_epoch; ++i_epoch) {
     if (!is_quiet) {
-      std::cout << std::setprecision(2) << "LEARNING EPOCH " << i_epoch * nnode
-                << "~" << ((i_epoch + 1) * nnode) << "...." << std::flush;
+      std::cout << std::setprecision(2) << "LEARNING EPOCH "
+                << i_epoch * n_numa_nodes << "~"
+                << ((i_epoch + 1) * n_numa_nodes) << "...." << std::flush;
     }
 
     t.restart();
@@ -113,7 +112,7 @@ void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
 
     // sum the weights and store in the first factor graph
     // the average weights will be calculated and assigned to all factor graphs
-    for (int i = 1; i <= n_numa_nodes; ++i) {
+    for (int i = 1; i < n_numa_nodes; ++i) {
       auto &sampler_other = sampler[i];
       for (int j = 0; j < nweight; ++j) {
         infrs.weight_values[j] += sampler_other.infrs.weight_values[j];
@@ -122,7 +121,7 @@ void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
 
     // calculate average weights and regularize weights
     for (int j = 0; j < nweight; ++j) {
-      infrs.weight_values[j] /= nnode;
+      infrs.weight_values[j] /= n_numa_nodes;
       if (!infrs.weights_isfixed[j]) {
         if (reg == REG_L2)
           infrs.weight_values[j] *=
@@ -134,7 +133,7 @@ void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
 
     // set weights for other factor graph to be the same as the first factor
     // graph
-    for (int i = 1; i <= n_numa_nodes; ++i) {
+    for (int i = 1; i < n_numa_nodes; ++i) {
       auto &sampler_other = sampler[i];
       for (int j = 0; j < nweight; ++j) {
         if (!infrs.weights_isfixed[j]) {
@@ -160,7 +159,7 @@ void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
     double elapsed = t.elapsed();
     if (!is_quiet) {
       std::cout << "" << elapsed << " sec.";
-      std::cout << "," << (nvar * nnode) / elapsed << " vars/sec."
+      std::cout << "," << (nvar * n_numa_nodes) / elapsed << " vars/sec."
                 << ",stepsize=" << current_stepsize << ",lmax=" << lmax
                 << ",l2=" << sqrt(l2) / current_stepsize << std::endl;
     }
@@ -172,7 +171,7 @@ void GibbsSampling::learn(const int &n_epoch, const int &n_sample_per_epoch,
   std::cout << "TOTAL LEARNING TIME: " << elapsed << " sec." << std::endl;
 }
 
-void GibbsSampling::dump_weights(const bool is_quiet) {
+void GibbsSampling::dump_weights(bool is_quiet) {
   // learning weights snippets
   InferenceResult &infrs = sampler[0].infrs;
 
@@ -202,7 +201,7 @@ void GibbsSampling::dump_weights(const bool is_quiet) {
   fout_text.close();
 }
 
-void GibbsSampling::aggregate_results_and_dump(const bool is_quiet) {
+void GibbsSampling::aggregate_results_and_dump(bool is_quiet) {
   InferenceResult &infrs = sampler[0].infrs;
   // sum of variable assignments
   std::unique_ptr<double[]> agg_means(new double[infrs.nvars]);
@@ -220,7 +219,7 @@ void GibbsSampling::aggregate_results_and_dump(const bool is_quiet) {
   }
 
   // sum variable assignments over all NUMA nodes
-  for (int i = 0; i <= n_numa_nodes; ++i) {
+  for (int i = 0; i < n_numa_nodes; ++i) {
     const InferenceResult &infrs_i = sampler[i].infrs;
     for (long j = 0; j < infrs_i.nvars; ++j) {
       const Variable &variable = sampler[i].fg.variables[j];
@@ -353,6 +352,11 @@ void GibbsSampling::aggregate_results_and_dump(const bool is_quiet) {
                 << abc[i] << std::endl;
     }
   }
+}
+
+// compute number of NUMA-aware epochs for learning or inference
+int GibbsSampling::compute_n_epochs(int n_epoch) {
+  return std::ceil((double)n_epoch / n_numa_nodes);
 }
 
 }  // namespace dd

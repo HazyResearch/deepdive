@@ -51,30 +51,31 @@ class GibbsSampling {
    * reg_param regularization parameter
    * is_quiet whether to compress information display
    */
-  void learn(const int& n_epoch, const int& n_sample_per_epoch,
-             const double& stepsize, const double& decay,
-             const double reg_param, const bool is_quiet,
-             const regularization reg);
+  void learn(int n_epoch, int n_sample_per_epoch, double stepsize, double decay,
+             double reg_param, bool is_quiet, regularization reg);
 
   /**
    * Performs inference
    * n_epoch number of epochs. A epoch is one pass over data
    * is_quiet whether to compress information display
    */
-  void inference(const int& n_epoch, const bool is_quiet);
+  void inference(int n_epoch, bool is_quiet);
 
   /**
    * Aggregates results from different NUMA nodes
    * Dumps the inference result for variables
    * is_quiet whether to compress information display
    */
-  void aggregate_results_and_dump(const bool is_quiet);
+  void aggregate_results_and_dump(bool is_quiet);
 
   /**
    * Dumps the learned weights
    * is_quiet whether to compress information display
    */
-  void dump_weights(const bool is_quiet);
+  void dump_weights(bool is_quiet);
+
+ private:
+  int compute_n_epochs(int n_epoch);
 };
 
 }  // namespace dd
