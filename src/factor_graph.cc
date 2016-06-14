@@ -77,7 +77,7 @@ CompiledFactorGraph::CompiledFactorGraph(const FactorGraph &fg)
   for (long i = 0; i < fg.size.num_variables; ++i) {
     const RawVariable &rv = fg.variables[i];
     variables[i] = rv;
-    variables[i].n_factors = rv.tmp_factor_ids->size();
+    variables[i].n_factors = rv.tmp_factor_ids ? rv.tmp_factor_ids->size() : 0;
     variables[i].n_start_i_factors = i_edge;
 
     if (rv.domain_type == DTYPE_MULTINOMIAL) {
@@ -85,19 +85,21 @@ CompiledFactorGraph::CompiledFactorGraph(const FactorGraph &fg)
       ntallies += variables[i].cardinality;
     }
 
-    for (const long &fid : *rv.tmp_factor_ids) {
-      factor_ids[i_edge] = fid;
+    if (rv.tmp_factor_ids) {
+      for (const long &fid : *rv.tmp_factor_ids) {
+        factor_ids[i_edge] = fid;
 
-      auto &cf = compact_factors[i_edge];
-      const auto &f = factors[fid];
-      cf.id = f.id;
-      cf.func_id = f.func_id;
-      cf.n_variables = f.n_variables;
-      cf.n_start_i_vif = f.n_start_i_vif;
+        auto &cf = compact_factors[i_edge];
+        const auto &f = factors[fid];
+        cf.id = f.id;
+        cf.func_id = f.func_id;
+        cf.n_variables = f.n_variables;
+        cf.n_start_i_vif = f.n_start_i_vif;
 
-      compact_factors_weightids[i_edge] = f.weight_id;
+        compact_factors_weightids[i_edge] = f.weight_id;
 
-      ++i_edge;
+        ++i_edge;
+      }
     }
   }
   assert(i_edge == fg.size.num_edges);
