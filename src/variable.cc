@@ -21,8 +21,6 @@ RawVariable::RawVariable(const long _id, const int _domain_type,
   this->domain_map = NULL;
   this->domain_list = NULL;
   this->tmp_factor_ids = NULL;
-  this->isactive = false;
-  this->component_id = -1;
 }
 
 Variable::Variable() : domain_map(NULL), domain_list(NULL) {}
@@ -39,9 +37,7 @@ Variable::Variable(RawVariable &rv)
       n_start_i_factors(rv.n_start_i_factors),
       n_start_i_tally(rv.n_start_i_tally),
       domain_map(rv.domain_map),
-      domain_list(NULL),
-      isactive(rv.isactive),
-      component_id(rv.component_id) {}
+      domain_list(NULL) {}
 
 bool VariableInFactor::satisfiedUsing(int value) const {
   return is_positive ? equal_to == value : !(equal_to == value);

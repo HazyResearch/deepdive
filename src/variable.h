@@ -58,12 +58,6 @@ class Variable {
   // TODO: try to remove this pointer altogether
   std::vector<VariableValue>* domain_list;
 
-  bool isactive;
-
-  long long component_id;
-
-  int next_sample;
-
   Variable();
 
   /**
