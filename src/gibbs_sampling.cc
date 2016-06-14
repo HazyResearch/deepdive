@@ -34,16 +34,17 @@ GibbsSampling::GibbsSampling(std::unique_ptr<CompiledFactorGraph> p_cfg,
   }
 }
 
-void GibbsSampling::inference(int n_epoch, bool is_quiet) {
-  n_epoch = compute_n_epochs(n_epoch);
-  int nvar = sampler[0].fg.size.num_variables;
+void GibbsSampling::inference() {
+  const int n_epoch = compute_n_epochs(opts.n_inference_epoch);
+  const int nvar = sampler[0].fg.size.num_variables;
+  const bool should_show_progress = !opts.should_be_quiet;
   Timer t_total, t;
 
   for (auto &s : sampler) s.infrs.clear_variabletally();
 
   // inference epochs
   for (int i_epoch = 0; i_epoch < n_epoch; ++i_epoch) {
-    if (!is_quiet) {
+    if (should_show_progress) {
       std::cout << std::setprecision(2) << "INFERENCE EPOCH "
                 << i_epoch * n_numa_nodes << "~"
                 << ((i_epoch + 1) * n_numa_nodes) << "...." << std::flush;
@@ -59,7 +60,7 @@ void GibbsSampling::inference(int n_epoch, bool is_quiet) {
     for (auto &s : sampler) s.wait();
 
     double elapsed = t.elapsed();
-    if (!is_quiet) {
+    if (should_show_progress) {
       std::cout << "" << elapsed << " sec.";
       std::cout << "," << (nvar * n_numa_nodes) / elapsed << " vars/sec"
                 << std::endl;
@@ -70,24 +71,24 @@ void GibbsSampling::inference(int n_epoch, bool is_quiet) {
   std::cout << "TOTAL INFERENCE TIME: " << elapsed << " sec." << std::endl;
 }
 
-void GibbsSampling::learn(int n_epoch, int n_sample_per_epoch, double stepsize,
-                          double decay, double reg_param, bool is_quiet) {
-  n_epoch = compute_n_epochs(n_epoch);
-
+void GibbsSampling::learn() {
   InferenceResult &infrs = sampler[0].infrs;
-  int nvar = infrs.nvars;
-  int nweight = infrs.nweights;
 
+  const int n_epoch = compute_n_epochs(opts.n_learning_epoch);
+  const int nvar = infrs.nvars;
+  const int nweight = infrs.nweights;
+  const double decay = opts.decay;
+  const bool should_show_progress = !opts.should_be_quiet;
   Timer t_total, t;
 
-  double current_stepsize = stepsize;
-  std::unique_ptr<double[]> ori_weights(new double[nweight]);
-  memcpy(ori_weights.get(), infrs.weight_values.get(),
-         sizeof(*ori_weights.get()) * nweight);
+  double current_stepsize = opts.stepsize;
+  const std::unique_ptr<double[]> prev_weights(new double[nweight]);
+  memcpy(prev_weights.get(), infrs.weight_values.get(),
+         sizeof(*prev_weights.get()) * nweight);
 
   // learning epochs
   for (int i_epoch = 0; i_epoch < n_epoch; ++i_epoch) {
-    if (!is_quiet) {
+    if (should_show_progress) {
       std::cout << std::setprecision(2) << "LEARNING EPOCH "
                 << i_epoch * n_numa_nodes << "~"
                 << ((i_epoch + 1) * n_numa_nodes) << "...." << std::flush;
@@ -111,38 +112,36 @@ void GibbsSampling::learn(int n_epoch, int n_sample_per_epoch, double stepsize,
 
     // calculate the norms of the difference of weights from the current epoch
     // and last epoch
-    double lmax = -1000000;
+    double lmax = -INFINITY;
     double l2 = 0.0;
     for (int j = 0; j < nweight; ++j) {
-      double diff = fabs(ori_weights[j] - infrs.weight_values[j]);
-      ori_weights[j] = infrs.weight_values[j];
+      double diff = fabs(prev_weights[j] - infrs.weight_values[j]);
+      prev_weights[j] = infrs.weight_values[j];
       l2 += diff * diff;
-      if (lmax < diff) {
-        lmax = diff;
-      }
+      if (lmax < diff) lmax = diff;
     }
-    lmax = lmax / current_stepsize;
+    lmax /= current_stepsize;
 
     double elapsed = t.elapsed();
-    if (!is_quiet) {
+    if (should_show_progress) {
       std::cout << "" << elapsed << " sec.";
       std::cout << "," << (nvar * n_numa_nodes) / elapsed << " vars/sec."
                 << ",stepsize=" << current_stepsize << ",lmax=" << lmax
                 << ",l2=" << sqrt(l2) / current_stepsize << std::endl;
     }
 
-    current_stepsize = current_stepsize * decay;
+    current_stepsize *= decay;
   }
 
   double elapsed = t_total.elapsed();
   std::cout << "TOTAL LEARNING TIME: " << elapsed << " sec." << std::endl;
 }
 
-void GibbsSampling::dump_weights(bool is_quiet) {
+void GibbsSampling::dump_weights() {
   // learning weights snippets
-  InferenceResult &infrs = sampler[0].infrs;
+  const InferenceResult &infrs = sampler[0].infrs;
 
-  if (!is_quiet) {
+  if (!opts.should_be_quiet) {
     std::cout << "LEARNING SNIPPETS (QUERY WEIGHTS):" << std::endl;
     int ct = 0;
     for (long j = 0; j < infrs.nweights; ++j) {
@@ -168,14 +167,14 @@ void GibbsSampling::dump_weights(bool is_quiet) {
   fout_text.close();
 }
 
-void GibbsSampling::aggregate_results_and_dump(bool is_quiet) {
+void GibbsSampling::aggregate_results_and_dump() {
   InferenceResult &infrs = sampler[0].infrs;
 
   // aggregate assignments across all possible worlds
   for (int i = 1; i < n_numa_nodes; ++i)
     infrs.aggregate_marginals_from(sampler[i].infrs);
 
-  if (!is_quiet) infrs.show_marginal_snippet(std::cout);
+  if (!opts.should_be_quiet) infrs.show_marginal_snippet(std::cout);
 
   // dump inference results
   std::string filename_text(opts.output_folder + "/inference_result.out.text");
@@ -184,7 +183,7 @@ void GibbsSampling::aggregate_results_and_dump(bool is_quiet) {
   infrs.dump_marginals(fout_text);
   fout_text.close();
 
-  if (!is_quiet) infrs.show_marginal_histogram(std::cout);
+  if (!opts.should_be_quiet) infrs.show_marginal_histogram(std::cout);
 }
 
 // compute number of NUMA-aware epochs for learning or inference

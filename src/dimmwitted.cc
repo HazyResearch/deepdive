@@ -76,15 +76,14 @@ int gibbs(const dd::CmdParser &args) {
       fg.weights.get(), args);
 
   // learning
-  gibbs.learn(args.n_learning_epoch, args.n_samples_per_learning_epoch,
-              args.stepsize, args.decay, args.reg_param, args.should_be_quiet);
+  gibbs.learn();
 
   // dump weights
-  gibbs.dump_weights(args.should_be_quiet);
+  gibbs.dump_weights();
 
   // inference
-  gibbs.inference(args.n_inference_epoch, args.should_be_quiet);
-  gibbs.aggregate_results_and_dump(args.should_be_quiet);
+  gibbs.inference();
+  gibbs.aggregate_results_and_dump();
 
   return 0;
 }
