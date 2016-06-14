@@ -17,7 +17,7 @@ void GibbsSampler::sample(int i_epoch) {
   for (int i = 0; i < nthread; ++i) {
     threads.push_back(std::thread([this, i]() {
       // TODO try to share instances across epochs
-      SingleThreadSampler(fg, infrs, i, nthread, opts).sample();
+      GibbsSamplerThread(fg, infrs, i, nthread, opts).sample();
     }));
   }
 }
@@ -27,7 +27,7 @@ void GibbsSampler::sample_sgd(double stepsize) {
   for (int i = 0; i < nthread; ++i) {
     threads.push_back(std::thread([this, i, stepsize]() {
       // TODO try to share instances across epochs
-      SingleThreadSampler(fg, infrs, i, nthread, opts).sample_sgd(stepsize);
+      GibbsSamplerThread(fg, infrs, i, nthread, opts).sample_sgd(stepsize);
     }));
   }
 }

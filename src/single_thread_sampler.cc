@@ -2,7 +2,7 @@
 
 namespace dd {
 
-SingleThreadSampler::SingleThreadSampler(CompiledFactorGraph &fg,
+GibbsSamplerThread::GibbsSamplerThread(CompiledFactorGraph &fg,
                                          InferenceResult &infrs, int ith_shard,
                                          int n_shards, const CmdParser &opts)
     : varlen_potential_buffer_(0),
@@ -18,7 +18,7 @@ SingleThreadSampler::SingleThreadSampler(CompiledFactorGraph &fg,
   end = end > nvar ? nvar : end;
 }
 
-void SingleThreadSampler::set_random_seed(unsigned short seed0,
+void GibbsSamplerThread::set_random_seed(unsigned short seed0,
                                           unsigned short seed1,
                                           unsigned short seed2) {
   p_rand_seed[0] = seed0;
@@ -26,12 +26,12 @@ void SingleThreadSampler::set_random_seed(unsigned short seed0,
   p_rand_seed[2] = seed2;
 }
 
-void SingleThreadSampler::sample() {
+void GibbsSamplerThread::sample() {
   // sample each variable in the partition
   for (long i = start; i < end; ++i) sample_single_variable(i);
 }
 
-void SingleThreadSampler::sample_sgd(double stepsize) {
+void GibbsSamplerThread::sample_sgd(double stepsize) {
   for (long i = start; i < end; ++i) sample_sgd_single_variable(i, stepsize);
 }
 

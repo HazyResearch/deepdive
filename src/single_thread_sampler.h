@@ -10,7 +10,7 @@ namespace dd {
 /**
  * Class for single thread sampler
  */
-class SingleThreadSampler {
+class GibbsSamplerThread {
  private:
   // shard and variable id range assigned to this one
   size_t start, end;
@@ -29,9 +29,9 @@ class SingleThreadSampler {
 
  public:
   /**
-   * Constructs a SingleThreadSampler with given factor graph
+   * Constructs a GibbsSamplerThread with given factor graph
    */
-  SingleThreadSampler(CompiledFactorGraph &fg, InferenceResult &infrs,
+  GibbsSamplerThread(CompiledFactorGraph &fg, InferenceResult &infrs,
                       int i_sharding, int n_sharding, const CmdParser &opts);
 
   /**
@@ -70,7 +70,7 @@ class SingleThreadSampler {
   void set_random_seed(unsigned short s0, unsigned short s1, unsigned short s2);
 };
 
-inline void SingleThreadSampler::sample_sgd_single_variable(long vid,
+inline void GibbsSamplerThread::sample_sgd_single_variable(long vid,
                                                             double stepsize) {
   // stochastic gradient ascent
   // gradient of weight = E[f|D] - E[f], where D is evidence variables,
@@ -100,7 +100,7 @@ inline void SingleThreadSampler::sample_sgd_single_variable(long vid,
   fg.update_weight(variable, infrs, stepsize);
 }
 
-inline void SingleThreadSampler::sample_single_variable(long vid) {
+inline void GibbsSamplerThread::sample_single_variable(long vid) {
   // this function uses the same sampling technique as in
   // sample_sgd_single_variable
 
@@ -128,7 +128,7 @@ inline void SingleThreadSampler::sample_single_variable(long vid) {
   }
 }
 
-inline int dd::SingleThreadSampler::draw_sample(
+inline int dd::GibbsSamplerThread::draw_sample(
     Variable &variable, const VariableValue assignments[],
     const double weight_values[]) {
   int proposal = 0;

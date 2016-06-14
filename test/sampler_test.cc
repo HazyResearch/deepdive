@@ -17,7 +17,7 @@ class SamplerTest : public testing::Test {
  protected:
   std::unique_ptr<dd::CompiledFactorGraph> cfg;
   std::unique_ptr<dd::InferenceResult> infrs;
-  std::unique_ptr<dd::SingleThreadSampler> sampler;
+  std::unique_ptr<dd::GibbsSamplerThread> sampler;
 
   virtual void SetUp() {
     const char *argv[] = {
@@ -42,7 +42,7 @@ class SamplerTest : public testing::Test {
 
     cfg.reset(new CompiledFactorGraph(fg));
     infrs.reset(new InferenceResult(*cfg, fg.weights.get(), cmd_parser));
-    sampler.reset(new SingleThreadSampler(*cfg, *infrs, 0, 1, cmd_parser));
+    sampler.reset(new GibbsSamplerThread(*cfg, *infrs, 0, 1, cmd_parser));
   }
 };
 
