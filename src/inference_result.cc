@@ -101,4 +101,44 @@ void InferenceResult::show_histogram(std::ostream &os) {
   }
 }
 
+void InferenceResult::dump_marginals(std::ostream &text_output) {
+  for (long j = 0; j < nvars; ++j) {
+    const Variable &variable = fg.variables[j];
+    if (variable.is_evid && !opts.should_sample_evidence) {
+      continue;
+    }
+
+    switch (variable.domain_type) {
+      case DTYPE_BOOLEAN: {
+        text_output << variable.id << " " << 1 << " "
+                    << (agg_means[variable.id] / agg_nsamples[variable.id])
+                    << std::endl;
+        break;
+      }
+
+      case DTYPE_MULTINOMIAL: {
+        const auto &print_result = [this, &text_output, variable](
+            int domain_value, int domain_index) {
+          text_output
+              << variable.id << " " << domain_value << " "
+              << (1.0 *
+                  multinomial_tallies[variable.n_start_i_tally + domain_index] /
+                  agg_nsamples[variable.id])
+              << std::endl;
+        };
+        if (variable.domain_map) {  // sparse
+          for (const auto &entry : *variable.domain_map)
+            print_result(entry.first, entry.second);
+        } else {  // dense
+          for (size_t k = 0; k < variable.cardinality; ++k) print_result(k, k);
+        }
+        break;
+      }
+
+      default:
+        abort();
+    }
+  }
+}
+
 }  // namespace dd

@@ -273,49 +273,10 @@ void GibbsSampling::aggregate_results_and_dump(bool is_quiet) {
   }
 
   // dump inference results
-  std::string filename_text;
-  filename_text = opts.output_folder + "/inference_result.out.text";
-
+  std::string filename_text(opts.output_folder + "/inference_result.out.text");
   std::cout << "DUMPING... TEXT    : " << filename_text << std::endl;
-  std::ofstream fout_text(filename_text.c_str());
-  for (long j = 0; j < sampler[0].fg.size.num_variables; ++j) {
-    const Variable &variable = sampler[0].fg.variables[j];
-    if (variable.is_evid && !opts.should_sample_evidence) {
-      continue;
-    }
-
-    switch (variable.domain_type) {
-      case DTYPE_BOOLEAN: {
-        fout_text << variable.id << " " << 1 << " "
-                  << (agg_means[variable.id] / agg_nsamples[variable.id])
-                  << std::endl;
-        break;
-      }
-
-      case DTYPE_MULTINOMIAL: {
-        const auto &print_result = [&fout_text, &multinomial_tallies,
-                                    &agg_nsamples, variable](int domain_value,
-                                                             int domain_index) {
-          fout_text
-              << variable.id << " " << domain_value << " "
-              << (1.0 *
-                  multinomial_tallies[variable.n_start_i_tally + domain_index] /
-                  agg_nsamples[variable.id])
-              << std::endl;
-        };
-        if (variable.domain_map) {  // sparse
-          for (const auto &entry : *variable.domain_map)
-            print_result(entry.first, entry.second);
-        } else {  // dense
-          for (size_t k = 0; k < variable.cardinality; ++k) print_result(k, k);
-        }
-        break;
-      }
-
-      default:
-        abort();
-    }
-  }
+  std::ofstream fout_text(filename_text);
+  infrs.dump_marginals(fout_text);
   fout_text.close();
 
   if (!is_quiet) infrs.show_histogram(std::cout);

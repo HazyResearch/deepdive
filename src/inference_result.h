@@ -45,6 +45,8 @@ class InferenceResult {
 
   void show_histogram(std::ostream &output);
 
+  void dump_marginals(std::ostream &text_output);
+
  private:
   InferenceResult(const CompiledFactorGraph &fg, const CmdParser &opts);
 };
