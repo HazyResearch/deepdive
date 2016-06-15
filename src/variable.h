@@ -4,15 +4,14 @@
 #include <vector>
 #include <unordered_map>
 
+namespace dd {
+
 #define DTYPE_BOOLEAN 0x00
 #define DTYPE_REAL 0x01
 #define DTYPE_MULTINOMIAL 0x04
 
-namespace dd {
-
-typedef int VariableValue;
-typedef long VariableIndex;
-typedef long FactorIndex;
+typedef size_t VariableValue;
+typedef size_t VariableIndex;
 
 class Variable;
 class RawVariable;

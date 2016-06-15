@@ -1,20 +1,23 @@
 #ifndef DIMMWITTED_WEIGHT_H_
 #define DIMMWITTED_WEIGHT_H_
 
+#include <cstdlib>
+
 namespace dd {
 
-typedef long WeightIndex;
+typedef size_t WeightIndex;
+typedef double weight_value_t;
 
 /**
  * Encapsulates a weight for factors.
  */
 class Weight {
  public:
-  long id;        // weight id
-  double weight;  // weight value
-  bool isfixed;   // whether the weight is fixed
+  WeightIndex id;         // weight id
+  weight_value_t weight;  // weight value
+  bool isfixed;           // whether the weight is fixed
 
-  Weight(const long& _id, const double& _weight, const bool& _isfixed);
+  Weight(const WeightIndex id, const weight_value_t weight, const bool isfixed);
 
   Weight();
 };

@@ -78,10 +78,10 @@ class FactorGraph {
    * Where Step 3 seems to be obsolete, since we're reading in variables and
    * weights that are in order.
    */
-  void load_weights(const std::string filename);
-  void load_variables(const std::string filename);
-  void load_factors(const std::string filename);
-  void load_domains(const std::string filename);
+  void load_weights(const std::string& filename);
+  void load_variables(const std::string& filename);
+  void load_factors(const std::string& filename);
+  void load_domains(const std::string& filename);
 
   /**
    * Checks whether the edge-based store is correct
@@ -109,8 +109,8 @@ class CompactFactorGraph {
   // This allows us to access factors given variables, and access variables
   // given factors faster.
   std::unique_ptr<CompactFactor[]> compact_factors;
-  std::unique_ptr<int[]> compact_factors_weightids;
-  std::unique_ptr<long[]> factor_ids;
+  std::unique_ptr<WeightIndex[]> compact_factors_weightids;
+  std::unique_ptr<FactorIndex[]> factor_ids;
   std::unique_ptr<VariableInFactor[]> vifs;
 
   /**
@@ -137,9 +137,10 @@ class CompactFactorGraph {
    * corresponding
    * indicator function and weight.
    */
-  long get_multinomial_weight_id(const VariableValue assignments[],
-                                 const CompactFactor& fs, long vid,
-                                 long proposal);
+  WeightIndex get_multinomial_weight_id(const VariableValue assignments[],
+                                        const CompactFactor& fs,
+                                        VariableIndex vid,
+                                        VariableValue proposal);
 
   /**
    * Given a variable, updates the weights associated with the factors that
@@ -166,9 +167,10 @@ class CompactFactorGraph {
    * does_change_evid = true, use the free assignment. Otherwise, use the
    * evid assignement.
    */
-  inline double potential(const Variable& variable, const double& proposal,
+  inline double potential(const Variable& variable,
+                          const VariableValue proposal,
                           const VariableValue assignments[],
-                          const double weight_values[]);
+                          const weight_value_t weight_values[]);
 };
 
 inline double CompactFactorGraph::potential(const CompactFactor& factor,
@@ -176,10 +178,9 @@ inline double CompactFactorGraph::potential(const CompactFactor& factor,
   return factor.potential(vifs.get(), assignments, -1, -1);
 }
 
-inline double CompactFactorGraph::potential(const Variable& variable,
-                                            const double& proposal,
-                                            const VariableValue assignments[],
-                                            const double weight_values[]) {
+inline double CompactFactorGraph::potential(
+    const Variable& variable, VariableValue proposal,
+    const VariableValue assignments[], const weight_value_t weight_values[]) {
   // potential
   double pot = 0.0;
   // pointer to the first factor the given variable connects to
@@ -189,23 +190,23 @@ inline double CompactFactorGraph::potential(const Variable& variable,
   switch (variable.domain_type) {
     case DTYPE_BOOLEAN: {
       // the weights, corresponding to the factor with the same index
-      const int* const ws =
+      const WeightIndex* const ws =
           &compact_factors_weightids[variable.n_start_i_factors];
       // for all factors that the variable connects to, calculate the
       // weighted potential
-      for (long i = 0; i < variable.n_factors; ++i) {
-        long wid = ws[i];
+      for (FactorIndex i = 0; i < variable.n_factors; ++i) {
+        WeightIndex wid = ws[i];
         pot += weight_values[wid] *
                fs[i].potential(vifs.get(), assignments, variable.id, proposal);
       }
       break;
     }
     case DTYPE_MULTINOMIAL: {
-      for (long i = 0; i < variable.n_factors; ++i) {
+      for (FactorIndex i = 0; i < variable.n_factors; ++i) {
         // get weight id associated with this factor and variable
         // assignment
-        long wid = get_multinomial_weight_id(assignments, fs[i], variable.id,
-                                             proposal);
+        WeightIndex wid = get_multinomial_weight_id(assignments, fs[i],
+                                                    variable.id, proposal);
         if (wid == -1) continue;
         pot += weight_values[wid] *
                fs[i].potential(vifs.get(), assignments, variable.id, proposal);

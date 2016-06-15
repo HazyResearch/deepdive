@@ -2,7 +2,8 @@
 #define DIMMWITTED_BINARY_FORMAT_H_
 
 #include "factor_graph.h"
-#include <stdlib.h>
+
+#include <cstdlib>
 
 // Following gives be64toh() and htobe64() for 64-bit big <-> host endian
 // conversions.
@@ -36,37 +37,37 @@ namespace dd {
  * For reference of factor graph file formats, refer to
  * deepdive.stanford.edu
  */
-FactorGraphDescriptor read_meta(std::string meta_file);
+FactorGraphDescriptor read_meta(const std::string& meta_file);
 
 /**
  * Loads weights from the given file into the given factor graph
  */
-long long read_weights(std::string filename, dd::FactorGraph &);
+size_t read_weights(const std::string& filename, dd::FactorGraph&);
 
 /**
  * Loads variables from the given file into the given factor graph
  */
-long long read_variables(std::string filename, dd::FactorGraph &);
+size_t read_variables(const std::string& filename, dd::FactorGraph&);
 
 /**
  * Loads factors from the given file into the given factor graph (original mode)
  */
-long long read_factors(std::string filename, dd::FactorGraph &);
+size_t read_factors(const std::string& filename, dd::FactorGraph&);
 
 /**
  * Loads factors from the given file into the given factor graph (incremental
  * mode)
  */
-long long read_factors_inc(std::string filename, dd::FactorGraph &);
+size_t read_factors_inc(const std::string& filename, dd::FactorGraph&);
 
 /**
  * Loads edges from the given file into the given factor graph (incremental
  * mode)
  */
-long long read_edges_inc(std::string filename, dd::FactorGraph &);
+size_t read_edges_inc(const std::string& filename, dd::FactorGraph&);
 
 // Loads domains for multinomial variables
-void read_domains(std::string filename, dd::FactorGraph &fg);
+void read_domains(const std::string& filename, dd::FactorGraph& fg);
 
 /**
  * Resumes the computation state from the last checkpoint. It is critical
@@ -78,7 +79,7 @@ void read_domains(std::string filename, dd::FactorGraph &fg);
  * @param i Indicates the NUMA node to which the factor graph should be loaded
  * @param[out] cfg The compiled factor graph to which the state is resumed
  */
-void resume(std::string filename, int i, dd::CompactFactorGraph &cfg);
+void resume(const std::string& filename, int i, dd::CompactFactorGraph& cfg);
 
 /**
  * Checkpoints all copies of the compiled factor graph to various files.
@@ -88,8 +89,8 @@ void resume(std::string filename, int i, dd::CompactFactorGraph &cfg);
  *   parameter to generate the full checkpoint filename.
  * @param cfgs A list of CompiledFactorGraphs to write to file.
  */
-void checkpoint(std::string filename,
-                std::vector<dd::CompactFactorGraph> &cfgs);
+void checkpoint(const std::string& filename,
+                std::vector<dd::CompactFactorGraph>& cfgs);
 
 }  // namespace dd
 

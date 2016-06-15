@@ -34,11 +34,11 @@ class CmdParser {
   std::string graph_snapshot_file;
   std::string weights_snapshot_file;
 
-  int n_learning_epoch;
-  int n_samples_per_learning_epoch;
-  int n_inference_epoch;
-  int n_datacopy;
-  int burn_in;
+  size_t n_learning_epoch;
+  size_t n_samples_per_learning_epoch;
+  size_t n_inference_epoch;
+  size_t n_datacopy;
+  size_t burn_in;
   double stepsize;
   double stepsize2;
   double decay;
@@ -55,7 +55,7 @@ class CmdParser {
   std::string text2bin_input;
   std::string text2bin_output;
   FACTOR_FUCNTION_TYPE text2bin_factor_func_id;
-  int text2bin_factor_arity;
+  size_t text2bin_factor_arity;
   std::vector<bool> text2bin_factor_positives_or_not;
 
   CmdParser(int argc, const char *const argv[]);

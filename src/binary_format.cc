@@ -11,12 +11,12 @@
 #include "variable.h"
 #include <fstream>
 #include <iostream>
-#include <stdint.h>
+#include <cstdint>
 
 namespace dd {
 
 // Read meta data file, return Meta struct
-FactorGraphDescriptor read_meta(std::string meta_file) {
+FactorGraphDescriptor read_meta(const std::string &meta_file) {
   FactorGraphDescriptor meta;
   std::ifstream file;
   file.open(meta_file.c_str());
@@ -33,7 +33,7 @@ FactorGraphDescriptor read_meta(std::string meta_file) {
   return meta;
 }
 
-void FactorGraph::load_weights(const std::string filename) {
+void FactorGraph::load_weights(const std::string &filename) {
   std::ifstream file;
   file.open(filename, std::ios::in | std::ios::binary);
 
@@ -61,7 +61,7 @@ void FactorGraph::load_weights(const std::string filename) {
   file.close();
 }
 
-void FactorGraph::load_variables(const std::string filename) {
+void FactorGraph::load_variables(const std::string &filename) {
   std::ifstream file;
   file.open(filename, std::ios::in | std::ios::binary);
 
@@ -129,7 +129,7 @@ void FactorGraph::load_variables(const std::string filename) {
   file.close();
 }
 
-void FactorGraph::load_factors(std::string filename) {
+void FactorGraph::load_factors(const std::string &filename) {
   std::ifstream file;
   file.open(filename.c_str(), std::ios::in | std::ios::binary);
   long long count = 0;
@@ -151,8 +151,8 @@ void FactorGraph::load_factors(std::string filename) {
 
     count++;
 
-    factors[size.num_factors] =
-        RawFactor(size.num_factors, -1, type, edge_count);
+    factors[size.num_factors] = RawFactor(
+        size.num_factors, -1, (factor_function_type_t)type, edge_count);
 
     for (long long position = 0; position < edge_count; position++) {
       file.read((char *)&variable_id, 8);
@@ -171,19 +171,19 @@ void FactorGraph::load_factors(std::string filename) {
 
     switch (type) {
       case (FUNC_SPARSE_MULTINOMIAL): {
-        long n_weights = 0;
+        WeightIndex n_weights = 0;
         file.read((char *)&n_weights, 8);
         n_weights = be64toh(n_weights);
 
         factors[size.num_factors].weight_ids =
-            new std::unordered_map<long, long>(n_weights);
-        for (long i = 0; i < n_weights; i++) {
+            new std::unordered_map<VariableValue, WeightIndex>(n_weights);
+        for (WeightIndex i = 0; i < n_weights; i++) {
           // calculate radix-based key into weight_ids (see also
           // FactorGraph::get_multinomial_weight_id)
           // TODO: refactor the above formula into a shared routine. (See also
           // FactorGraph::get_multinomial_weight_id)
-          long key = 0;
-          for (long j = 0; j < edge_count; j++) {
+          size_t key = 0;
+          for (size_t j = 0; j < edge_count; j++) {
             const Variable &var =
                 variables[factors[size.num_factors].tmp_variables->at(j).vid];
             file.read((char *)&value_id, 4);
@@ -209,7 +209,7 @@ void FactorGraph::load_factors(std::string filename) {
   file.close();
 }
 
-void FactorGraph::load_domains(std::string filename) {
+void FactorGraph::load_domains(const std::string &filename) {
   std::ifstream file;
   file.open(filename.c_str(), std::ios::in | std::ios::binary);
   long id, value;

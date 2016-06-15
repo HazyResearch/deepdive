@@ -252,7 +252,7 @@ void DimmWitted::aggregate_results_and_dump() {
 }
 
 // compute number of NUMA-aware epochs for learning or inference
-int DimmWitted::compute_n_epochs(int n_epoch) {
+size_t DimmWitted::compute_n_epochs(size_t n_epoch) {
   return std::ceil((double)n_epoch / n_numa_nodes);
 }
 

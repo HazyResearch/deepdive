@@ -3,8 +3,8 @@
 namespace dd {
 
 GibbsSampler::GibbsSampler(std::unique_ptr<CompactFactorGraph> pfg_,
-                           const Weight weights[], int nthread, int nodeid,
-                           const CmdParser &opts)
+                           const Weight weights[], size_t nthread,
+                           size_t nodeid, const CmdParser &opts)
     : pfg(std::move(pfg_)),
       opts(opts),
       fg(*pfg),
@@ -12,9 +12,9 @@ GibbsSampler::GibbsSampler(std::unique_ptr<CompactFactorGraph> pfg_,
       nthread(nthread),
       nodeid(nodeid) {}
 
-void GibbsSampler::sample(int i_epoch) {
+void GibbsSampler::sample(size_t i_epoch) {
   numa_run_on_node(nodeid);
-  for (int i = 0; i < nthread; ++i) {
+  for (size_t i = 0; i < nthread; ++i) {
     threads.push_back(std::thread([this, i]() {
       // TODO try to share instances across epochs
       GibbsSamplerThread(fg, infrs, i, nthread, opts).sample();
@@ -24,7 +24,7 @@ void GibbsSampler::sample(int i_epoch) {
 
 void GibbsSampler::sample_sgd(double stepsize) {
   numa_run_on_node(nodeid);
-  for (int i = 0; i < nthread; ++i) {
+  for (size_t i = 0; i < nthread; ++i) {
     threads.push_back(std::thread([this, i, stepsize]() {
       // TODO try to share instances across epochs
       GibbsSamplerThread(fg, infrs, i, nthread, opts).sample_sgd(stepsize);
@@ -38,8 +38,8 @@ void GibbsSampler::wait() {
 }
 
 GibbsSamplerThread::GibbsSamplerThread(CompactFactorGraph &fg,
-                                       InferenceResult &infrs, int ith_shard,
-                                       int n_shards, const CmdParser &opts)
+                                       InferenceResult &infrs, size_t ith_shard,
+                                       size_t n_shards, const CmdParser &opts)
     : varlen_potential_buffer_(0),
       fg(fg),
       infrs(infrs),

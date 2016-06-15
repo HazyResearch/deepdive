@@ -1,24 +1,21 @@
 #ifndef DIMMWITTED_FACTOR_H_
 #define DIMMWITTED_FACTOR_H_
 
+#include "variable.h"
+#include "weight.h"
+
 #include <iostream>
 #include <unordered_map>
 #include <vector>
-#include <assert.h>
-#include "variable.h"
-#include "weight.h"
-#include <math.h>
-#include <stdio.h>
-#include <string.h>
+#include <cassert>
+#include <cmath>
 
 namespace dd {
 
-class CompactFactor;
-class Factor;
-class RawFactor;
+typedef size_t FactorIndex;
 
 // enumeration for factor function types
-enum FACTOR_FUCNTION_TYPE {
+typedef enum FACTOR_FUCNTION_TYPE {
   FUNC_IMPLY_MLN = 0,
   FUNC_IMPLY_neg1_1 = 11,
   FUNC_OR = 1,
@@ -33,7 +30,11 @@ enum FACTOR_FUCNTION_TYPE {
   FUNC_SQLSELECT = 10,
   FUNC_SPARSE_MULTINOMIAL = 12,
   FUNC_ContLR = 20
-};
+} factor_function_type_t;
+
+class CompactFactor;
+class Factor;
+class RawFactor;
 
 /**
  * Encapsulates a factor function in the factor graph.
@@ -43,13 +44,13 @@ enum FACTOR_FUCNTION_TYPE {
  */
 class CompactFactor {
  public:
-  FactorIndex id;      // factor id
-  int func_id;         // function type id
-  int n_variables;     // number of variables in the factor
-  long n_start_i_vif;  // the id of the first variable.  the variables of a
-                       // factor
-                       // have sequential ids starting from n_start_i_vif to
-                       // n_start_i_vif+num_variables-1
+  FactorIndex id;                  // factor id
+  factor_function_type_t func_id;  // function type id
+  size_t n_variables;              // number of variables in the factor
+  size_t n_start_i_vif;  // the id of the first variable.  the variables of a
+                         // factor
+                         // have sequential ids starting from n_start_i_vif to
+                         // n_start_i_vif+num_variables-1
 
   /**
    * Default constructor
@@ -59,7 +60,7 @@ class CompactFactor {
   /**
    * Constructs a CompactFactor with given factor id
    */
-  CompactFactor(const FactorIndex &_id);
+  CompactFactor(const FactorIndex _id);
 
   /**
    * Returns the potential of continousLR factor function. See factor.hxx for
@@ -229,12 +230,12 @@ class CompactFactor {
  */
 class Factor {
  public:
-  FactorIndex id;         // factor id
-  WeightIndex weight_id;  // weight id
-  int func_id;            // factor function id
-  int n_variables;        // number of variables
+  FactorIndex id;                  // factor id
+  WeightIndex weight_id;           // weight id
+  factor_function_type_t func_id;  // factor function id
+  size_t n_variables;              // number of variables
 
-  long n_start_i_vif;  // start variable id
+  size_t n_start_i_vif;  // start variable id
 
   // Variable value dependent weights for sparse multinomial factors
   // Key: radix encoding of var values: (...((((0 * d1 + i1) * d2) + i2) * d3 +
@@ -246,7 +247,7 @@ class Factor {
   // An empty map takes 48 bytes, so we create it only as needed, i.e., when
   // func_id = FUNC_SPARSE_MULTINOMIAL
   // Allocated in binary_parser.read_factors. Never deallocated.
-  std::unordered_map<long, long> *weight_ids;
+  std::unordered_map<VariableValue, WeightIndex> *weight_ids;
 
   /**
    * Turns out the no-arg constructor is still required, since we're
@@ -287,7 +288,7 @@ class RawFactor : public Factor {
   /**
    */
   RawFactor(const FactorIndex _id, const WeightIndex _weight_id,
-            const int _func_id, const int _n_variables);
+            const factor_function_type_t func_id, const size_t n_variables);
 
   inline void add_variable_in_factor(const VariableInFactor &vif);
 

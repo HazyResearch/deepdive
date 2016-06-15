@@ -2,8 +2,9 @@
 
 namespace dd {
 
-dd::Weight::Weight(const long &_id, const double &_weight, const bool &_isfixed)
-    : id(_id), weight(_weight), isfixed(_isfixed) {}
+dd::Weight::Weight(const WeightIndex id, const weight_value_t weight,
+                   const bool isfixed)
+    : id(id), weight(weight), isfixed(isfixed) {}
 
 dd::Weight::Weight() {}
 

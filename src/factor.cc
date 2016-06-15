@@ -4,12 +4,13 @@ namespace dd {
 
 CompactFactor::CompactFactor() {}
 
-CompactFactor::CompactFactor(const long &_id) { id = _id; }
+CompactFactor::CompactFactor(const FactorIndex id) : id(id) {}
 
 RawFactor::RawFactor() : tmp_variables(NULL) {}
 
 RawFactor::RawFactor(const FactorIndex _id, const WeightIndex _weight_id,
-                     const int _func_id, const int _n_variables)
+                     const factor_function_type_t _func_id,
+                     const size_t _n_variables)
     : Factor() {
   this->id = _id;
   this->weight_id = _weight_id;

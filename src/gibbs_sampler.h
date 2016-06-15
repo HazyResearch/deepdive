@@ -23,21 +23,21 @@ class GibbsSampler {
   CompactFactorGraph &fg;  // TODO replace fg.* with fg->*
   InferenceResult infrs;
   // number of threads
-  int nthread;
+  size_t nthread;
   // node id
-  int nodeid;
+  size_t nodeid;
 
   /**
    * Constructs a GibbsSampler given factor graph, number of threads, and
    * node id.
    */
   GibbsSampler(std::unique_ptr<CompactFactorGraph> pfg, const Weight weights[],
-               int nthread, int nodeid, const CmdParser &opts);
+               size_t nthread, size_t nodeid, const CmdParser &opts);
 
   /**
    * Performs sample
    */
-  void sample(int i_epoch);
+  void sample(size_t i_epoch);
 
   /**
    * Performs SGD
@@ -75,7 +75,8 @@ class GibbsSamplerThread {
    * Constructs a GibbsSamplerThread with given factor graph
    */
   GibbsSamplerThread(CompactFactorGraph &fg, InferenceResult &infrs,
-                     int i_sharding, int n_sharding, const CmdParser &opts);
+                     size_t i_sharding, size_t n_sharding,
+                     const CmdParser &opts);
 
   /**
    * Samples variables. The variables are divided into n_sharding equal
@@ -96,16 +97,17 @@ class GibbsSamplerThread {
   /**
    * Performs SGD by sampling a single variable with id vid
    */
-  inline void sample_sgd_single_variable(long vid, double stepsize);
+  inline void sample_sgd_single_variable(VariableIndex vid, double stepsize);
 
   /**
    * Samples a single variable with id vid
    */
-  inline void sample_single_variable(long vid);
+  inline void sample_single_variable(VariableIndex vid);
 
   // sample a single variable
-  inline int draw_sample(Variable &variable, const VariableValue assignments[],
-                         const double weight_values[]);
+  inline VariableValue draw_sample(Variable &variable,
+                                   const VariableValue assignments[],
+                                   const double weight_values[]);
 
   /**
     * Resets RNG seed to given values
@@ -113,7 +115,7 @@ class GibbsSamplerThread {
   void set_random_seed(unsigned short s0, unsigned short s1, unsigned short s2);
 };
 
-inline void GibbsSamplerThread::sample_sgd_single_variable(long vid,
+inline void GibbsSamplerThread::sample_sgd_single_variable(VariableIndex vid,
                                                            double stepsize) {
   // stochastic gradient ascent
   // gradient of weight = E[f|D] - E[f], where D is evidence variables,
@@ -125,7 +127,7 @@ inline void GibbsSamplerThread::sample_sgd_single_variable(long vid,
 
   if (!learn_non_evidence && !variable.is_evid) return;
 
-  int proposal = 0;
+  VariableValue proposal = 0;
 
   // sample the variable with evidence unchanged
   proposal = variable.is_evid
@@ -143,7 +145,7 @@ inline void GibbsSamplerThread::sample_sgd_single_variable(long vid,
   fg.update_weight(variable, infrs, stepsize);
 }
 
-inline void GibbsSamplerThread::sample_single_variable(long vid) {
+inline void GibbsSamplerThread::sample_single_variable(VariableIndex vid) {
   // this function uses the same sampling technique as in
   // sample_sgd_single_variable
 
@@ -151,8 +153,8 @@ inline void GibbsSamplerThread::sample_single_variable(long vid) {
   if (variable.is_observation) return;
 
   if (!variable.is_evid || sample_evidence) {
-    int proposal = draw_sample(variable, infrs.assignments_evid.get(),
-                               infrs.weight_values.get());
+    VariableValue proposal = draw_sample(variable, infrs.assignments_evid.get(),
+                                         infrs.weight_values.get());
     infrs.assignments_evid[variable.id] = proposal;
 
     // bookkeep aggregates for computing marginals
@@ -162,8 +164,8 @@ inline void GibbsSamplerThread::sample_single_variable(long vid) {
         infrs.agg_means[variable.id] += proposal;
         break;
       case DTYPE_MULTINOMIAL:
-        infrs.multinomial_tallies[variable.n_start_i_tally +
-                                  variable.get_domain_index((int)proposal)]++;
+        ++infrs.multinomial_tallies[variable.n_start_i_tally +
+                                    variable.get_domain_index(proposal)];
         break;
       default:
         abort();
@@ -171,10 +173,10 @@ inline void GibbsSamplerThread::sample_single_variable(long vid) {
   }
 }
 
-inline int dd::GibbsSamplerThread::draw_sample(
+inline VariableValue dd::GibbsSamplerThread::draw_sample(
     Variable &variable, const VariableValue assignments[],
     const double weight_values[]) {
-  int proposal = 0;
+  VariableValue proposal = 0;
 
   switch (variable.domain_type) {
     case DTYPE_BOOLEAN: {

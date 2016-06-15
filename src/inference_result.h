@@ -17,24 +17,24 @@ class InferenceResult {
  private:
   const CompactFactorGraph &fg;
   const CmdParser &opts;
-  int weight_values_normalizer;
+  size_t weight_values_normalizer;
 
  public:
-  long nvars;     // number of variables
-  long nweights;  // number of weights
-  long ntallies;
+  VariableIndex nvars;   // number of variables
+  WeightIndex nweights;  // number of weights
+  size_t ntallies;
 
-  std::unique_ptr<int[]> multinomial_tallies;  // this might be slow...
+  std::unique_ptr<size_t[]> multinomial_tallies;  // this might be slow...
 
   // array of sum of samples for each variable
-  std::unique_ptr<double[]> agg_means;
+  std::unique_ptr<VariableValue[]> agg_means;
   // array of number of samples for each variable
-  std::unique_ptr<double[]> agg_nsamples;
+  std::unique_ptr<size_t[]> agg_nsamples;
   // assignment to variables, see variable.h for more detail
   std::unique_ptr<VariableValue[]> assignments_free;
   std::unique_ptr<VariableValue[]> assignments_evid;
 
-  std::unique_ptr<double[]> weight_values;  // array of weight values
+  std::unique_ptr<weight_value_t[]> weight_values;  // array of weight values
   std::unique_ptr<bool[]> weights_isfixed;  // array of whether weight is fixed
 
   InferenceResult(const CompactFactorGraph &fg, const Weight weights[],

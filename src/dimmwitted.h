@@ -33,10 +33,10 @@ class DimmWitted {
 
   // the highest node number available
   // actually, number of NUMA nodes = n_numa_nodes + 1
-  int n_numa_nodes;
+  size_t n_numa_nodes;
 
   // number of threads per NUMA node
-  int n_thread_per_numa;
+  size_t n_thread_per_numa;
 
   // factor graph copies per NUMA node
   std::vector<GibbsSampler> sampler;
@@ -84,7 +84,7 @@ class DimmWitted {
   void dump_weights();
 
  private:
-  int compute_n_epochs(int n_epoch);
+  size_t compute_n_epochs(size_t n_epoch);
 };
 
 }  // namespace dd
