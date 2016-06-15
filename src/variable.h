@@ -67,7 +67,7 @@ class Variable {
    * Constructs a variable with only the important information from a
    * temporary variable
    */
-  Variable(RawVariable& raw_variable);
+  Variable(const Variable& variable);
 
   // get the index of the value
   inline size_t get_domain_index(VariableValue v) const {

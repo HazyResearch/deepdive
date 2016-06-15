@@ -13,16 +13,7 @@ RawVariable::RawVariable(VariableIndex id, variable_domain_type_t domain_type,
       tmp_factor_ids(NULL) {}
 
 Variable::Variable()
-    : id(INVALID_ID),
-      domain_type(DTYPE_BOOLEAN),
-      is_evid(false),
-      is_observation(false),
-      cardinality(2),
-      assignment_evid(0),
-      assignment_free(0),
-      n_factors(0),
-      domain_map(NULL),
-      domain_list(NULL) {}
+    : Variable(INVALID_ID, DTYPE_BOOLEAN, false, 2, 0, 0, 0, false) {}
 
 Variable::Variable(VariableIndex id, variable_domain_type_t domain_type,
                    bool is_evidence, VariableValue cardinality,
@@ -39,7 +30,7 @@ Variable::Variable(VariableIndex id, variable_domain_type_t domain_type,
       domain_map(NULL),
       domain_list(NULL) {}
 
-Variable::Variable(RawVariable &rv)
+Variable::Variable(const Variable &rv)
     : id(rv.id),
       domain_type(rv.domain_type),
       is_evid(rv.is_evid),
@@ -58,10 +49,8 @@ bool VariableInFactor::satisfiedUsing(VariableValue value) const {
 }
 
 VariableInFactor::VariableInFactor()
-    : vid(Variable::INVALID_ID),
-      n_position(-1),
-      is_positive(true),
-      equal_to(Variable::INVALID_VALUE) {}
+    : VariableInFactor(Variable::INVALID_ID, -1, true,
+                       Variable::INVALID_VALUE) {}
 
 VariableInFactor::VariableInFactor(VariableIndex vid, size_t n_position,
                                    bool is_positive, VariableValue equal_to)
