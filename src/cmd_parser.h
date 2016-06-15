@@ -43,7 +43,7 @@ class CmdParser {
   double stepsize2;
   double decay;
   double reg_param;
-  regularization regularization;
+  enum regularization regularization;
 
   bool should_use_snapshot;
   bool should_be_quiet;

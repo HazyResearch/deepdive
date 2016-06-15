@@ -4,6 +4,7 @@
 #include "variable.h"
 #include "weight.h"
 #include "cmd_parser.h"
+#include <memory>
 
 namespace dd {
 

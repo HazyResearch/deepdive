@@ -72,7 +72,7 @@ TEST_PROGRAM = $(PROGRAM)_test
 # test files need gtest
 $(TEST_OBJECTS): CXXFLAGS += -I./lib/gtest-1.7.0/include/
 $(TEST_PROGRAM): LDFLAGS += -L./lib/gtest/
-$(TEST_PROGRAM): LDLIBS += -lgtest
+$(TEST_PROGRAM): LDLIBS += -lgtest -lpthread
 
 all: $(PROGRAM)
 .PHONY: all
