@@ -41,7 +41,7 @@ def factorWeightDescriptionSqlExpr:
         mkdir -p \"$varPath\"
         cd \"$varPath\"
 
-        deepdive sql \"ANALYZE VERBOSE \(.variablesTable)\"
+        deepdive db analyze \(.variablesTable | @sh)
 
         \(if .variableType == "categorical" then "
         # generate a table holding all distinct categories for categorical variables
@@ -64,7 +64,7 @@ def factorWeightDescriptionSqlExpr:
             | asSqlExpr
             ] | join(", ") | @sh)
 
-        deepdive sql \"ANALYZE VERBOSE \(.variablesCategoriesTable)\"
+        deepdive db analyze \(.variablesCategoriesTable | @sh)
 
         " else "" end)
 
@@ -98,7 +98,7 @@ def factorWeightDescriptionSqlExpr:
         , GROUP_BY: [ .variablesKeyColumns[] | { column: . } ]
         } | asSql | asPrettySqlArg)
 
-        deepdive sql \"ANALYZE VERBOSE \(.variablesIdsTable)\"
+        deepdive db analyze \(.variablesIdsTable | @sh)
         "
     }
 })
@@ -398,7 +398,9 @@ def factorWeightDescriptionSqlExpr:
                     )]
                 } | asSql | asPrettySqlArg)
 
-            \(( { SELECT:
+            # find distinct weights for the factors into a separate table
+            deepdive create table \(.weightsTable | @sh) as \(
+                { SELECT:
                     # weight parameters
                     [ ( .weight_.params[] | { column: . } )
                     # weight attributes
@@ -412,11 +414,7 @@ def factorWeightDescriptionSqlExpr:
                     # when weight is parameterized, find all distinct ones
                     | { alias: "f", table: .factorsTable }
                     ]
-                } | asSql | asPrettySqlArg) as $weightsMaterializeSqlArg |
-            "
-            # find distinct weights for the factors into a separate table
-            deepdive create table \(.weightsTable | @sh) as \($weightsMaterializeSqlArg)
-            ")
+                } | asSql | asPrettySqlArg)
         "
     }
 })
@@ -474,7 +472,7 @@ def factorWeightDescriptionSqlExpr:
             # assign weight ids according to the partition
             deepdive db assign_sequential_id \(.weightsTable | @sh) wid $baseId
 
-            deepdive sql \"ANALYZE VERBOSE \(.weightsTable)\"
+            deepdive db analyze \(.weightsTable | @sh)
         "
     }
 })
@@ -557,6 +555,7 @@ def factorWeightDescriptionSqlExpr:
                         [ ( .function_.variables[]
                         | { table: "f", column: .columnId } )
                         , { alias: "num_weights", expr: "COUNT(w.wid)" }
+                        # arrays below are parallel (ensured by $valueOrder)
                         , ( .function_.variables[]
                         | { alias: "c\(.ordinal)_ids",
                             table: "f",
