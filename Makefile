@@ -3,7 +3,7 @@
 .DEFAULT_GOAL := all
 
 # common compiler flags
-CXXFLAGS += -std=c++0x -Wall -fno-strict-aliasing
+CXXFLAGS += -std=c++0x -Wall -Werror -fno-strict-aliasing
 LDFLAGS =
 LDLIBS =
 CXXFLAGS += -I./lib/tclap/include/ -I./src
