@@ -66,7 +66,9 @@ typedef enum FACTOR_FUCNTION_TYPE {
   FUNC_LOGICAL = 9,
   FUNC_SQLSELECT = 10,
   FUNC_SPARSE_MULTINOMIAL = 12,
-  FUNC_ContLR = 20
+  FUNC_ContLR = 20,
+
+  FUNC_UNDEFINED = -1,
 } factor_function_type_t;
 
 typedef size_t FactorIndex;

@@ -2,6 +2,16 @@
 
 namespace dd {
 
+RawVariable::RawVariable() : Variable() {}
+
+RawVariable::RawVariable(VariableIndex id, variable_domain_type_t domain_type,
+                         bool is_evidence, VariableValue cardinality,
+                         VariableValue init_value, VariableValue current_value,
+                         size_t n_factors, bool is_observation)
+    : Variable(id, domain_type, is_evidence, cardinality, init_value,
+               current_value, n_factors, is_observation),
+      tmp_factor_ids(NULL) {}
+
 Variable::Variable()
     : id(INVALID_ID),
       domain_type(DTYPE_BOOLEAN),
@@ -42,16 +52,6 @@ Variable::Variable(RawVariable &rv)
       n_start_i_tally(rv.n_start_i_tally),
       domain_map(rv.domain_map),
       domain_list(NULL) {}
-
-RawVariable::RawVariable() : Variable() {}
-
-RawVariable::RawVariable(VariableIndex id, variable_domain_type_t domain_type,
-                         bool is_evidence, VariableValue cardinality,
-                         VariableValue init_value, VariableValue current_value,
-                         size_t n_factors, bool is_observation)
-    : Variable(id, domain_type, is_evidence, cardinality, init_value,
-               current_value, n_factors, is_observation),
-      tmp_factor_ids(NULL) {}
 
 bool VariableInFactor::satisfiedUsing(VariableValue value) const {
   return is_positive ? equal_to == value : !(equal_to == value);

@@ -41,7 +41,7 @@ class CompactFactor {
   /**
    * Constructs a CompactFactor with given factor id
    */
-  CompactFactor(const FactorIndex _id);
+  CompactFactor(FactorIndex id);
 
   /**
    * Returns the potential of continousLR factor function. See factor.hxx for
@@ -218,6 +218,9 @@ class Factor {
 
   size_t n_start_i_vif;  // start variable id
 
+  static constexpr FactorIndex INVALID_ID = -1;
+  static constexpr factor_function_type_t INVALID_FUNC_ID = FUNC_UNDEFINED;
+
   // Variable value dependent weights for sparse multinomial factors
   // Key: radix encoding of var values: (...((((0 * d1 + i1) * d2) + i2) * d3 +
   // i3) * d4 + ...) * dk + ik
@@ -237,6 +240,9 @@ class Factor {
    */
   Factor();
 
+  Factor(FactorIndex id, WeightIndex weight_id, factor_function_type_t func_id,
+         size_t n_variables);
+
   /**
    * Copy constructor from a RawFactor.
    *
@@ -244,7 +250,7 @@ class Factor {
    * parameters such as id, weight_id, etc. since we expect Factors to be
    * constructed from RawFactors during factor graph compilation.
    */
-  Factor(RawFactor &rf);
+  Factor(const Factor &rf);
 };
 
 /**
@@ -263,13 +269,14 @@ class RawFactor : public Factor {
   std::vector<VariableInFactor> *tmp_variables;  // variables in the factor
 
   /**
-   * Need no-arg constructor to create arrays of uninitialized RawFactors.
+   * Need default constructor to create arrays of uninitialized RawFactors.
    */
   RawFactor();
+
   /**
    */
-  RawFactor(const FactorIndex _id, const WeightIndex _weight_id,
-            const factor_function_type_t func_id, const size_t n_variables);
+  RawFactor(FactorIndex id, WeightIndex weight_id,
+            factor_function_type_t func_id, size_t n_variables);
 
   inline void add_variable_in_factor(const VariableInFactor &vif);
 

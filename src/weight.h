@@ -16,7 +16,7 @@ class Weight {
   weight_value_t weight;  // weight value
   bool isfixed;           // whether the weight is fixed
 
-  Weight(const WeightIndex id, const weight_value_t weight, const bool isfixed);
+  Weight(WeightIndex id, weight_value_t weight, bool isfixed);
 
   Weight();
 
