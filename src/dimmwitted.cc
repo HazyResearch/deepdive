@@ -32,9 +32,9 @@ int dw(int argc, const char *const argv[]) {
 
 int gibbs(const dd::CmdParser &args) {
   // number of NUMA nodes
-  int n_numa_node = numa_max_node() + 1;
+  size_t n_numa_node = numa_max_node() + 1;
   // number of max threads per NUMA node
-  int n_thread_per_numa = (sysconf(_SC_NPROCESSORS_CONF)) / (n_numa_node);
+  size_t n_thread_per_numa = (sysconf(_SC_NPROCESSORS_CONF)) / (n_numa_node);
 
   if (!args.should_be_quiet) {
     std::cout << std::endl;
@@ -102,7 +102,7 @@ DimmWitted::DimmWitted(std::unique_ptr<CompactFactorGraph> p_cfg,
   // n_thread_per_numa = 1;
 
   // copy factor graphs
-  for (int i = 0; i < n_numa_nodes; ++i) {
+  for (size_t i = 0; i < n_numa_nodes; ++i) {
     numa_run_on_node(i);
     numa_set_localalloc();
 
@@ -115,15 +115,15 @@ DimmWitted::DimmWitted(std::unique_ptr<CompactFactorGraph> p_cfg,
 }
 
 void DimmWitted::inference() {
-  const int n_epoch = compute_n_epochs(opts.n_inference_epoch);
-  const int nvar = sampler[0].fg.size.num_variables;
+  const size_t n_epoch = compute_n_epochs(opts.n_inference_epoch);
+  const VariableIndex nvar = sampler[0].fg.size.num_variables;
   const bool should_show_progress = !opts.should_be_quiet;
   Timer t_total, t;
 
   for (auto &s : sampler) s.infrs.clear_variabletally();
 
   // inference epochs
-  for (int i_epoch = 0; i_epoch < n_epoch; ++i_epoch) {
+  for (size_t i_epoch = 0; i_epoch < n_epoch; ++i_epoch) {
     if (should_show_progress) {
       std::cout << std::setprecision(2) << "INFERENCE EPOCH "
                 << i_epoch * n_numa_nodes << "~"
@@ -154,9 +154,9 @@ void DimmWitted::inference() {
 void DimmWitted::learn() {
   InferenceResult &infrs = sampler[0].infrs;
 
-  const int n_epoch = compute_n_epochs(opts.n_learning_epoch);
-  const int nvar = infrs.nvars;
-  const int nweight = infrs.nweights;
+  const size_t n_epoch = compute_n_epochs(opts.n_learning_epoch);
+  const VariableIndex nvar = infrs.nvars;
+  const WeightIndex nweight = infrs.nweights;
   const double decay = opts.decay;
   const bool should_show_progress = !opts.should_be_quiet;
   Timer t_total, t;
@@ -167,7 +167,7 @@ void DimmWitted::learn() {
          sizeof(*prev_weights.get()) * nweight);
 
   // learning epochs
-  for (int i_epoch = 0; i_epoch < n_epoch; ++i_epoch) {
+  for (size_t i_epoch = 0; i_epoch < n_epoch; ++i_epoch) {
     if (should_show_progress) {
       std::cout << std::setprecision(2) << "LEARNING EPOCH "
                 << i_epoch * n_numa_nodes << "~"
@@ -184,17 +184,17 @@ void DimmWitted::learn() {
 
     // sum the weights and store in the first factor graph
     // the average weights will be calculated and assigned to all factor graphs
-    for (int i = 1; i < n_numa_nodes; ++i)
+    for (size_t i = 1; i < n_numa_nodes; ++i)
       infrs.merge_weights_from(sampler[i].infrs);
     infrs.average_regularize_weights(current_stepsize);
-    for (int i = 1; i < n_numa_nodes; ++i)
+    for (size_t i = 1; i < n_numa_nodes; ++i)
       infrs.copy_weights_to(sampler[i].infrs);
 
     // calculate the norms of the difference of weights from the current epoch
     // and last epoch
     double lmax = -INFINITY;
     double l2 = 0.0;
-    for (int j = 0; j < nweight; ++j) {
+    for (WeightIndex j = 0; j < nweight; ++j) {
       double diff = fabs(prev_weights[j] - infrs.weight_values[j]);
       prev_weights[j] = infrs.weight_values[j];
       l2 += diff * diff;
@@ -236,7 +236,7 @@ void DimmWitted::aggregate_results_and_dump() {
   InferenceResult &infrs = sampler[0].infrs;
 
   // aggregate assignments across all possible worlds
-  for (int i = 1; i < n_numa_nodes; ++i)
+  for (size_t i = 1; i < n_numa_nodes; ++i)
     infrs.aggregate_marginals_from(sampler[i].infrs);
 
   if (!opts.should_be_quiet) infrs.show_marginal_snippet(std::cout);

@@ -65,12 +65,13 @@ TEST(BinaryFormatTest, read_domains) {
   dd::FactorGraph fg({num_variables, 1, 1, 1});
 
   // add variables
-  for (int i = 0; i < num_variables; i++) {
-    fg.variables[i] = dd::RawVariable(i, 0, 0, domain_sizes[i], 0, 0, 0, 0);
+  for (VariableIndex i = 0; i < num_variables; ++i) {
+    fg.variables[i] =
+        dd::RawVariable(i, DTYPE_BOOLEAN, 0, domain_sizes[i], 0, 0, 0, 0);
   }
   fg.load_domains("./test/domains/graph.domains");
 
-  for (int i = 0; i < num_variables; i++) {
+  for (VariableIndex i = 0; i < num_variables; i++) {
     EXPECT_EQ(fg.variables[i].domain_map->size(), domain_sizes[i]);
   }
 

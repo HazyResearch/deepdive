@@ -2,28 +2,32 @@
 
 namespace dd {
 
-RawVariable::RawVariable() {}
+Variable::Variable()
+    : id(INVALID_ID),
+      domain_type(DTYPE_BOOLEAN),
+      is_evid(false),
+      is_observation(false),
+      cardinality(2),
+      assignment_evid(0),
+      assignment_free(0),
+      n_factors(0),
+      domain_map(NULL),
+      domain_list(NULL) {}
 
-RawVariable::RawVariable(const long _id, const int _domain_type,
-                         const bool _is_evid, const int _cardinality,
-                         const VariableValue _init_value,
-                         const VariableValue _current_value,
-                         const int _n_factors, bool _is_observation) {
-  this->id = _id;
-  this->domain_type = _domain_type;
-  this->is_evid = _is_evid;
-  this->is_observation = _is_observation;
-  this->cardinality = _cardinality;
-  this->assignment_evid = _init_value;
-  this->assignment_free = _current_value;
-  this->n_factors = _n_factors;
-
-  this->domain_map = NULL;
-  this->domain_list = NULL;
-  this->tmp_factor_ids = NULL;
-}
-
-Variable::Variable() : domain_map(NULL), domain_list(NULL) {}
+Variable::Variable(VariableIndex id, variable_domain_type_t domain_type,
+                   bool is_evidence, VariableValue cardinality,
+                   VariableValue init_value, VariableValue current_value,
+                   size_t n_factors, bool is_observation)
+    : id(id),
+      domain_type(domain_type),
+      is_evid(is_evidence),
+      is_observation(is_observation),
+      cardinality(cardinality),
+      assignment_evid(init_value),
+      assignment_free(current_value),
+      n_factors(n_factors),
+      domain_map(NULL),
+      domain_list(NULL) {}
 
 Variable::Variable(RawVariable &rv)
     : id(rv.id),
@@ -39,19 +43,31 @@ Variable::Variable(RawVariable &rv)
       domain_map(rv.domain_map),
       domain_list(NULL) {}
 
-bool VariableInFactor::satisfiedUsing(int value) const {
+RawVariable::RawVariable() : Variable() {}
+
+RawVariable::RawVariable(VariableIndex id, variable_domain_type_t domain_type,
+                         bool is_evidence, VariableValue cardinality,
+                         VariableValue init_value, VariableValue current_value,
+                         size_t n_factors, bool is_observation)
+    : Variable(id, domain_type, is_evidence, cardinality, init_value,
+               current_value, n_factors, is_observation),
+      tmp_factor_ids(NULL) {}
+
+bool VariableInFactor::satisfiedUsing(VariableValue value) const {
   return is_positive ? equal_to == value : !(equal_to == value);
 }
 
-VariableInFactor::VariableInFactor() {}
+VariableInFactor::VariableInFactor()
+    : vid(Variable::INVALID_ID),
+      n_position(-1),
+      is_positive(true),
+      equal_to(Variable::INVALID_VALUE) {}
 
-VariableInFactor::VariableInFactor(const long &_vid, const int &_n_position,
-                                   const bool &_is_positive,
-                                   const VariableValue &_equal_to) {
-  this->vid = _vid;
-  this->n_position = _n_position;
-  this->is_positive = _is_positive;
-  this->equal_to = _equal_to;
-}
+VariableInFactor::VariableInFactor(VariableIndex vid, size_t n_position,
+                                   bool is_positive, VariableValue equal_to)
+    : vid(vid),
+      n_position(n_position),
+      is_positive(is_positive),
+      equal_to(equal_to) {}
 
 }  // namespace dd

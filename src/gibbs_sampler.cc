@@ -63,10 +63,11 @@ void GibbsSamplerThread::set_random_seed(unsigned short seed0,
 
 void GibbsSamplerThread::sample() {
   // sample each variable in the partition
-  for (long i = start; i < end; ++i) sample_single_variable(i);
+  for (size_t i = start; i < end; ++i) sample_single_variable(i);
 }
 
 void GibbsSamplerThread::sample_sgd(double stepsize) {
-  for (long i = start; i < end; ++i) sample_sgd_single_variable(i, stepsize);
+  for (size_t i = start; i < end; ++i) sample_sgd_single_variable(i, stepsize);
 }
+
 }  // namespace dd

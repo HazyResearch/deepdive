@@ -1,17 +1,12 @@
 #ifndef DIMMWITTED_VARIABLE_H_
 #define DIMMWITTED_VARIABLE_H_
 
+#include "common.h"
+
 #include <vector>
 #include <unordered_map>
 
 namespace dd {
-
-#define DTYPE_BOOLEAN 0x00
-#define DTYPE_REAL 0x01
-#define DTYPE_MULTINOMIAL 0x04
-
-typedef size_t VariableValue;
-typedef size_t VariableIndex;
 
 class Variable;
 class RawVariable;
@@ -21,19 +16,20 @@ class RawVariable;
  */
 class Variable {
  public:
-  long id;              // variable id
-  int domain_type;      // variable domain type, can be DTYPE_BOOLEAN or
+  VariableIndex id;  // variable id
+  variable_domain_type_t
+      domain_type;      // variable domain type, can be DTYPE_BOOLEAN or
                         // DTYPE_MULTINOMIAL
   bool is_evid;         // whether the variable is evidence
   bool is_observation;  // observed variable (fixed)
-  int cardinality;      // cardinality
+  size_t cardinality;   // cardinality
 
   VariableValue assignment_evid;  // assignment, while keeping evidence
                                   // variables unchanged
   VariableValue assignment_free;  // assignment, free to change any variable
 
-  int n_factors;           // number of factors the variable connects to
-  long n_start_i_factors;  // id of the first factor
+  size_t n_factors;          // number of factors the variable connects to
+  size_t n_start_i_factors;  // id of the first factor
 
   /*
    * The values of multinomial variables are stored in an array that looks
@@ -46,10 +42,10 @@ class Variable {
    */
 
   // n_start_i_tally is the start position for the variable values in the array
-  long n_start_i_tally;
+  size_t n_start_i_tally;
 
   // map from value to index in the domain vector
-  std::unordered_map<VariableValue, int>* domain_map;
+  std::unordered_map<VariableValue, size_t>* domain_map;
 
   // inverse of domain_map, constructed on demand by get_domain_value_at (to
   // save RAM)
@@ -57,7 +53,15 @@ class Variable {
   // TODO: try to remove this pointer altogether
   std::vector<VariableValue>* domain_list;
 
-  Variable();
+  static constexpr VariableIndex INVALID_ID = (VariableIndex)-1;
+  static constexpr VariableValue INVALID_VALUE = (VariableValue)-1;
+
+  Variable();  // default constructor, necessary for
+               // CompactFactorGraph::variables
+
+  Variable(VariableIndex id, variable_domain_type_t domain_type,
+           bool is_evidence, size_t cardinality, VariableValue init_value,
+           VariableValue current_value, size_t n_factors, bool is_observation);
 
   /**
    * Constructs a variable with only the important information from a
@@ -66,12 +70,12 @@ class Variable {
   Variable(RawVariable& raw_variable);
 
   // get the index of the value
-  inline int get_domain_index(int v) const {
+  inline size_t get_domain_index(VariableValue v) const {
     return domain_map ? domain_map->at(v) : v;
   }
 
   // inverse of get_domain_index
-  inline int get_domain_value_at(int idx) {
+  inline VariableValue get_domain_value_at(size_t idx) {
     if (!domain_list && domain_map) {
       domain_list = new std::vector<VariableValue>(domain_map->size());
       for (const auto& item : *domain_map) {
@@ -95,18 +99,19 @@ class RawVariable : public Variable {
   // space.
   // Life starts: binary_parser.read_factors (via add_factor_id)
   // Life ends: FactorGraph::organize_graph_by_edge (via clear_tmp_factor_ids)
-  std::vector<long>* tmp_factor_ids;  // factor ids the variable connects to
+  std::vector<FactorIndex>*
+      tmp_factor_ids;  // factor ids the variable connects to
 
-  RawVariable();
+  RawVariable();  // default constructor, necessary for FactorGraph::variables
 
-  RawVariable(const long _id, const int _domain_type, const bool _is_evid,
-              const int _cardinality, const VariableValue _init_value,
-              const VariableValue _current_value, const int _n_factors,
-              bool _is_observation);
+  RawVariable(VariableIndex id, variable_domain_type_t domain_type,
+              bool is_evidence, size_t cardinality, VariableValue init_value,
+              VariableValue current_value, size_t n_factors,
+              bool is_observation);
 
-  inline void add_factor_id(long factor_id) {
+  inline void add_factor_id(FactorIndex factor_id) {
     if (!tmp_factor_ids) {
-      tmp_factor_ids = new std::vector<long>();
+      tmp_factor_ids = new std::vector<FactorIndex>();
     }
     tmp_factor_ids->push_back(factor_id);
   }
@@ -124,9 +129,9 @@ class RawVariable : public Variable {
  */
 class VariableInFactor {
  public:
-  long vid;          // variable id
-  int n_position;    // position of the variable inside factor
-  bool is_positive;  // whether the variable is positive or negated
+  VariableIndex vid;  // variable id
+  size_t n_position;  // position of the variable inside factor
+  bool is_positive;   // whether the variable is positive or negated
   // the variable's predicate value. A variable is "satisfied" if its value
   // equals equal_to
   VariableValue equal_to;
@@ -134,12 +139,12 @@ class VariableInFactor {
   /**
    * Returns whether the variable's predicate is satisfied using the given value
    */
-  bool satisfiedUsing(int value) const;
+  bool satisfiedUsing(VariableValue value) const;
 
   VariableInFactor();
 
-  VariableInFactor(const long& _vid, const int& _n_position,
-                   const bool& _is_positive, const VariableValue& _equal_to);
+  VariableInFactor(VariableIndex vid, size_t n_position, bool is_positive,
+                   VariableValue equal_to);
 };
 
 }  // namespace dd

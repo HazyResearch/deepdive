@@ -96,7 +96,7 @@ void FactorGraph::load_variables(const std::string &filename) {
 
     count++;
 
-    int type_const;
+    variable_domain_type_t type_const;
     switch (type) {
       case 0:
         type_const = DTYPE_BOOLEAN;
@@ -132,13 +132,13 @@ void FactorGraph::load_variables(const std::string &filename) {
 void FactorGraph::load_factors(const std::string &filename) {
   std::ifstream file;
   file.open(filename.c_str(), std::ios::in | std::ios::binary);
-  long long count = 0;
-  long long variable_id;
-  long long weightid;
-  int value_id;
+  size_t count = 0;
+  VariableIndex variable_id;
+  WeightIndex weightid;
+  VariableValue value_id;
   short type;
-  long long edge_count;
-  long long equal_predicate;
+  size_t edge_count;
+  VariableValue equal_predicate;
   bool ispositive;
   while (file.good()) {
     file.read((char *)&type, 2);
@@ -154,7 +154,7 @@ void FactorGraph::load_factors(const std::string &filename) {
     factors[size.num_factors] = RawFactor(
         size.num_factors, -1, (factor_function_type_t)type, edge_count);
 
-    for (long long position = 0; position < edge_count; position++) {
+    for (size_t position = 0; position < edge_count; ++position) {
       file.read((char *)&variable_id, 8);
       file.read((char *)&ispositive, 1);
       variable_id = be64toh(variable_id);
@@ -223,22 +223,22 @@ void FactorGraph::load_domains(const std::string &filename) {
     id = be64toh(id);
     RawVariable &variable = variables[id];
 
-    long domain_size;
+    size_t domain_size;
     file.read((char *)&domain_size, 8);
     domain_size = be64toh(domain_size);
     assert(variable.cardinality == domain_size);
 
     std::vector<int> domain_list(domain_size);
-    variable.domain_map = new std::unordered_map<VariableValue, int>();
+    variable.domain_map = new std::unordered_map<VariableValue, size_t>();
 
-    for (int i = 0; i < domain_size; i++) {
+    for (size_t i = 0; i < domain_size; ++i) {
       file.read((char *)&value, 8);
       value = be64toh(value);
       domain_list[i] = value;
     }
 
     std::sort(domain_list.begin(), domain_list.end());
-    for (int i = 0; i < domain_size; i++) {
+    for (size_t i = 0; i < domain_size; i++) {
       (*variable.domain_map)[domain_list[i]] = i;
     }
 

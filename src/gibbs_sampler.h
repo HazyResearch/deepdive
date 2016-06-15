@@ -202,7 +202,7 @@ inline VariableValue dd::GibbsSamplerThread::draw_sample(
       varlen_potential_buffer_.reserve(variable.cardinality);
       double sum = -100000.0;
 
-      proposal = -1;
+      proposal = Variable::INVALID_VALUE;
 
 // calculate potential for each proposal given a way to iterate the domain
 #define COMPUTE_PROPOSAL(EACH_DOMAIN_VALUE, DOMAIN_VALUE, DOMAIN_INDEX)       \
@@ -231,7 +231,7 @@ inline VariableValue dd::GibbsSamplerThread::draw_sample(
         COMPUTE_PROPOSAL((size_t i = 0; i < variable.cardinality; ++i), i, i);
       }
 
-      assert(proposal != -1);
+      assert(proposal != Variable::INVALID_VALUE);
       break;
     }
 

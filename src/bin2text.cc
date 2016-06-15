@@ -23,7 +23,7 @@ constexpr char field_delim = '\t';  // tsv file delimiter
 
 void dump_variables(const dd::FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
-  for (int i = 0; i < fg.size.num_variables; ++i) {
+  for (size_t i = 0; i < fg.size.num_variables; ++i) {
     dd::Variable &v = fg.variables[i];
     // variable id
     fout << v.id;
@@ -52,7 +52,7 @@ void dump_variables(const dd::FactorGraph &fg, const std::string &filename) {
 
 void dump_domains(const dd::FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
-  for (int i = 0; i < fg.size.num_variables; ++i) {
+  for (size_t i = 0; i < fg.size.num_variables; ++i) {
     dd::Variable &v = fg.variables[i];
     if (v.domain_map) {
       fout << v.id;
@@ -60,7 +60,7 @@ void dump_domains(const dd::FactorGraph &fg, const std::string &filename) {
       fout << field_delim;
       fout << "{";
       v.get_domain_value_at(0);  // trigger construction of domain_list
-      int j = 0;
+      VariableValue j = 0;
       for (const auto &value : *v.domain_list) {
         if (j > 0) fout << ",";
         fout << value;
@@ -74,10 +74,10 @@ void dump_domains(const dd::FactorGraph &fg, const std::string &filename) {
 
 void dump_factors(const dd::FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
-  std::vector<int> vals;
-  std::vector<long> weights;
+  std::vector<VariableValue> vals;
+  std::vector<WeightIndex> weights;
   std::string element;
-  for (int i = 0; i < fg.size.num_factors; ++i) {
+  for (FactorIndex i = 0; i < fg.size.num_factors; ++i) {
     const auto &f = fg.factors[i];
     // FIXME this output is lossy since it drops the f.func_id and
     // f.tmp_variables[*].is_positive
@@ -94,30 +94,30 @@ void dump_factors(const dd::FactorGraph &fg, const std::string &filename) {
         weights.clear();
         vals.reserve(f.n_variables * f.weight_ids->size());
         weights.reserve(f.weight_ids->size());
-        std::map<long, long> ordered(f.weight_ids->begin(),
-                                     f.weight_ids->end());
-        int w = 0;
+        std::map<size_t, WeightIndex> ordered(f.weight_ids->begin(),
+                                              f.weight_ids->end());
+        size_t w = 0;
         for (const auto &item : ordered) {
-          long key = item.first;
-          long wid = item.second;
-          for (int k = f.n_variables - 1; k >= 0; --k) {
-            int vid = (*f.tmp_variables)[k].vid;
+          size_t key = item.first;
+          WeightIndex wid = item.second;
+          for (size_t k = f.n_variables - 1; k >= 0; --k) {
+            VariableIndex vid = (*f.tmp_variables)[k].vid;
             dd::Variable &var = fg.variables[vid];
-            int val_idx = key % var.cardinality;
-            int val = var.get_domain_value_at(val_idx);
+            size_t val_idx = key % var.cardinality;
+            VariableValue val = var.get_domain_value_at(val_idx);
             key = key / var.cardinality;
             vals[w * f.n_variables + k] = val;
           }
           weights[w] = wid;
-          w++;
+          ++w;
         }
         // output num_weights
         fout << f.weight_ids->size();
         fout << field_delim;
         // output values per var
-        for (long k = 0; k < f.n_variables; k++) {
+        for (size_t k = 0; k < f.n_variables; k++) {
           fout << "{";
-          for (long j = 0; j < f.weight_ids->size(); j++) {
+          for (VariableValue j = 0; j < f.weight_ids->size(); j++) {
             if (j > 0) fout << ",";
             fout << vals[j * f.n_variables + k];
           }
@@ -126,8 +126,8 @@ void dump_factors(const dd::FactorGraph &fg, const std::string &filename) {
         }
         // output weights
         fout << "{";
-        int j = 0;
-        for (long wid : weights) {
+        size_t j = 0;
+        for (WeightIndex wid : weights) {
           if (j > 0) fout << ",";
           fout << wid;
           ++j;
@@ -145,7 +145,7 @@ void dump_factors(const dd::FactorGraph &fg, const std::string &filename) {
 
 void dump_weights(const dd::FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
-  for (int i = 0; i < fg.size.num_weights; ++i) {
+  for (WeightIndex i = 0; i < fg.size.num_weights; ++i) {
     dd::Weight &w = fg.weights[i];
     // weight id
     fout << w.id;

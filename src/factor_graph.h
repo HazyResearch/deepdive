@@ -207,7 +207,7 @@ inline double CompactFactorGraph::potential(
         // assignment
         WeightIndex wid = get_multinomial_weight_id(assignments, fs[i],
                                                     variable.id, proposal);
-        if (wid == -1) continue;
+        if (wid == Weight::INVALID_ID) continue;
         pot += weight_values[wid] *
                fs[i].potential(vifs.get(), assignments, variable.id, proposal);
       }

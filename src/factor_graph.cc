@@ -192,7 +192,7 @@ WeightIndex CompactFactorGraph::get_multinomial_weight_id(
     default:
       abort();
   }
-  return -1;
+  return Weight::INVALID_ID;
 }
 
 void CompactFactorGraph::update_weight(const Variable &variable,
@@ -233,14 +233,14 @@ void CompactFactorGraph::update_weight(const Variable &variable,
             infrs.assignments_free.get(), fs[i], -1, -1);
         bool equal = (wid1 == wid2);
 
-        if (wid1 != -1 && !infrs.weights_isfixed[wid1]) {
+        if (wid1 != Weight::INVALID_ID && !infrs.weights_isfixed[wid1]) {
           infrs.weight_values[wid1] +=
               stepsize *
               (potential(fs[i], infrs.assignments_evid.get()) -
                equal * potential(fs[i], infrs.assignments_free.get()));
         }
 
-        if (wid2 != -1 && !infrs.weights_isfixed[wid2]) {
+        if (wid2 != Weight::INVALID_ID && !infrs.weights_isfixed[wid2]) {
           infrs.weight_values[wid2] +=
               stepsize *
               (equal * potential(fs[i], infrs.assignments_evid.get()) -

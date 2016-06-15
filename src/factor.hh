@@ -23,8 +23,8 @@ inline double CompactFactor::_potential_equal(
   const bool firstsat = is_variable_satisfied(vif, vid, var_values, proposal);
 
   /* Iterate over the factor variables */
-  for (long i_vif = n_start_i_vif; (i_vif < n_start_i_vif + n_variables);
-       i_vif++) {
+  for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables;
+       ++i_vif) {
     const VariableInFactor &vif = vifs[i_vif];
     const bool satisfied =
         is_variable_satisfied(vif, vid, var_values, proposal);
@@ -43,8 +43,8 @@ inline double CompactFactor::_potential_and(
     const VariableInFactor *const vifs, const VariableValue *const var_values,
     const VariableIndex &vid, const VariableValue &proposal) const {
   /* Iterate over the factor variables */
-  for (long i_vif = n_start_i_vif; (i_vif < n_start_i_vif + n_variables);
-       i_vif++) {
+  for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables;
+       ++i_vif) {
     const VariableInFactor &vif = vifs[i_vif];
     const bool satisfied =
         is_variable_satisfied(vif, vid, var_values, proposal);
@@ -63,8 +63,8 @@ inline double CompactFactor::_potential_or(
     const VariableInFactor *const vifs, const VariableValue *const var_values,
     const VariableIndex &vid, const VariableValue &proposal) const {
   /* Iterate over the factor variables */
-  for (long i_vif = n_start_i_vif; (i_vif < n_start_i_vif + n_variables);
-       i_vif++) {
+  for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables;
+       ++i_vif) {
     const VariableInFactor &vif = vifs[i_vif];
     const bool satisfied =
         is_variable_satisfied(vif, vid, var_values, proposal);
@@ -91,8 +91,8 @@ inline double CompactFactor::_potential_imply_mln(
     const VariableIndex &vid, const VariableValue &proposal) const {
   /* Compute the value of the body of the rule */
   bool bBody = true;
-  for (long i_vif = n_start_i_vif; (i_vif < n_start_i_vif + n_variables - 1);
-       i_vif++) {
+  for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables - 1;
+       ++i_vif) {
     const VariableInFactor &vif = vifs[i_vif];
     // If it is the proposal variable, we use the truth value of the proposal
     bBody &= is_variable_satisfied(vif, vid, var_values, proposal);
@@ -128,8 +128,8 @@ inline double CompactFactor::_potential_imply(
     const VariableIndex &vid, const VariableValue &proposal) const {
   /* Compute the value of the body of the rule */
   bool bBody = true;
-  for (long i_vif = n_start_i_vif; (i_vif < n_start_i_vif + n_variables - 1);
-       i_vif++) {
+  for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables;
+       ++i_vif) {
     const VariableInFactor &vif = vifs[i_vif];
     // If it is the proposal variable, we use the truth value of the proposal
     bBody &= is_variable_satisfied(vif, vid, var_values, proposal);
@@ -165,8 +165,8 @@ inline double CompactFactor::_potential_oneistrue(
     const VariableIndex &vid, const VariableValue &proposal) const {
   bool found = false;
   /* Iterate over the factor variables */
-  for (long i_vif = n_start_i_vif; (i_vif < n_start_i_vif + n_variables);
-       i_vif++) {
+  for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables;
+       ++i_vif) {
     const VariableInFactor &vif = vifs[i_vif];
     const bool satisfied =
         is_variable_satisfied(vif, vid, var_values, proposal);
@@ -192,8 +192,8 @@ inline double CompactFactor::_potential_linear(
   bool bHead = is_variable_satisfied(vifs[n_start_i_vif + n_variables - 1], vid,
                                      var_values, proposal);
   /* Compute the value of the body of the rule */
-  for (long i_vif = n_start_i_vif; (i_vif < n_start_i_vif + n_variables - 1);
-       i_vif++) {
+  for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables - 1;
+       ++i_vif) {
     const VariableInFactor &vif = vifs[i_vif];
     const bool satisfied =
         is_variable_satisfied(vif, vid, var_values, proposal);
@@ -213,8 +213,8 @@ inline double CompactFactor::_potential_ratio(
   bool bHead = is_variable_satisfied(vifs[n_start_i_vif + n_variables - 1], vid,
                                      var_values, proposal);
   /* Compute the value of the body of the rule */
-  for (long i_vif = n_start_i_vif; (i_vif < n_start_i_vif + n_variables - 1);
-       i_vif++) {
+  for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables - 1;
+       ++i_vif) {
     const VariableInFactor &vif = vifs[i_vif];
     const bool satisfied =
         is_variable_satisfied(vif, vid, var_values, proposal);
@@ -232,8 +232,8 @@ inline double CompactFactor::_potential_logical(
   bool bHead = is_variable_satisfied(vifs[n_start_i_vif + n_variables - 1], vid,
                                      var_values, proposal);
   /* Compute the value of the body of the rule */
-  for (long i_vif = n_start_i_vif; (i_vif < n_start_i_vif + n_variables - 1);
-       i_vif++) {
+  for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables - 1;
+       ++i_vif) {
     const VariableInFactor &vif = vifs[i_vif];
     const bool satisfied =
         is_variable_satisfied(vif, vid, var_values, proposal);

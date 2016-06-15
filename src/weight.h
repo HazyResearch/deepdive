@@ -1,12 +1,11 @@
 #ifndef DIMMWITTED_WEIGHT_H_
 #define DIMMWITTED_WEIGHT_H_
 
+#include "common.h"
+
 #include <cstdlib>
 
 namespace dd {
-
-typedef size_t WeightIndex;
-typedef double weight_value_t;
 
 /**
  * Encapsulates a weight for factors.
@@ -20,6 +19,8 @@ class Weight {
   Weight(const WeightIndex id, const weight_value_t weight, const bool isfixed);
 
   Weight();
+
+  static constexpr WeightIndex INVALID_ID = (WeightIndex)-1;
 };
 
 }  // namespace dd

@@ -11,7 +11,7 @@ namespace dd {
 TEST(FactorTest, ONE_VAR_FACTORS) {
   VariableInFactor vifs[1];
   VariableValue values[1];
-  long vid;
+  VariableIndex vid;
   VariableValue propose;
 
   vifs[0].vid = 0;
@@ -49,7 +49,7 @@ TEST(FactorTest, ONE_VAR_FACTORS) {
 TEST(FactorTest, TWO_VAR_FACTORS) {
   VariableInFactor vifs[2];
   VariableValue values[2];
-  long vid;
+  VariableIndex vid;
   VariableValue propose;
 
   vifs[0].vid = 0;
@@ -120,7 +120,7 @@ TEST(FactorTest, TWO_VAR_FACTORS) {
 TEST(FactorTest, THREE_VAR_IMPLY) {
   VariableInFactor vifs[3];
   VariableValue values[3];
-  long vid;
+  VariableIndex vid;
   VariableValue propose;
 
   // first test case: True /\ x => True, x propose to False, Expect 0

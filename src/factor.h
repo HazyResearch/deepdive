@@ -1,6 +1,7 @@
 #ifndef DIMMWITTED_FACTOR_H_
 #define DIMMWITTED_FACTOR_H_
 
+#include "common.h"
 #include "variable.h"
 #include "weight.h"
 
@@ -11,26 +12,6 @@
 #include <cmath>
 
 namespace dd {
-
-typedef size_t FactorIndex;
-
-// enumeration for factor function types
-typedef enum FACTOR_FUCNTION_TYPE {
-  FUNC_IMPLY_MLN = 0,
-  FUNC_IMPLY_neg1_1 = 11,
-  FUNC_OR = 1,
-  FUNC_AND = 2,
-  FUNC_EQUAL = 3,
-  FUNC_ISTRUE = 4,
-  FUNC_MULTINOMIAL = 5,
-  FUNC_ONEISTRUE = 6,
-  FUNC_LINEAR = 7,
-  FUNC_RATIO = 8,
-  FUNC_LOGICAL = 9,
-  FUNC_SQLSELECT = 10,
-  FUNC_SPARSE_MULTINOMIAL = 12,
-  FUNC_ContLR = 20
-} factor_function_type_t;
 
 class CompactFactor;
 class Factor;

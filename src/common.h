@@ -42,6 +42,38 @@
 
 namespace dd {
 
+typedef enum {
+  DTYPE_BOOLEAN = 0x00,
+  DTYPE_REAL = 0x01,
+  DTYPE_MULTINOMIAL = 0x04,
+} variable_domain_type_t;
+
+typedef size_t VariableValue;
+typedef size_t VariableIndex;
+
+// enumeration for factor function types
+typedef enum FACTOR_FUCNTION_TYPE {
+  FUNC_IMPLY_MLN = 0,
+  FUNC_IMPLY_neg1_1 = 11,
+  FUNC_OR = 1,
+  FUNC_AND = 2,
+  FUNC_EQUAL = 3,
+  FUNC_ISTRUE = 4,
+  FUNC_MULTINOMIAL = 5,
+  FUNC_ONEISTRUE = 6,
+  FUNC_LINEAR = 7,
+  FUNC_RATIO = 8,
+  FUNC_LOGICAL = 9,
+  FUNC_SQLSELECT = 10,
+  FUNC_SPARSE_MULTINOMIAL = 12,
+  FUNC_ContLR = 20
+} factor_function_type_t;
+
+typedef size_t FactorIndex;
+
+typedef size_t WeightIndex;
+typedef double weight_value_t;
+
 /**
  * Explicitly say things are unused if they are actually unused.
  */
