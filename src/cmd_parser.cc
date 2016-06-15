@@ -68,9 +68,11 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
         "int", *cmd_);
     burn_in_ = new TCLAP::MultiArg<int>("", "burn_in", "Burn-in period", false,
                                         "int", *cmd_);
-    n_datacopy_ = new TCLAP::MultiArg<int>("c", "n_datacopy",
-                                           "Number of factor graph copies",
-                                           false, "int", *cmd_);
+    n_datacopy_ =
+        new TCLAP::MultiArg<int>("c", "n_datacopy",
+                                 "Number of factor graph copies. Use 0 for all "
+                                 "available NUMA nodes (default)",
+                                 false, "int", *cmd_);
     stepsize_ = new TCLAP::MultiArg<double>("a", "alpha", "Stepsize", false,
                                             "double", *cmd_);
     stepsize2_ = new TCLAP::MultiArg<double>("p", "stepsize", "Stepsize", false,
