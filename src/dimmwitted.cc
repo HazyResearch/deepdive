@@ -94,7 +94,7 @@ DimmWitted::DimmWitted(std::unique_ptr<CompactFactorGraph> p_cfg,
     : weights(weights), opts(opts) {
   n_numa_nodes = numa_max_node() + 1;
   if (opts.n_datacopy > 0 && opts.n_datacopy < n_numa_nodes) {
-    n_numa_nodes = opts.n_datacopy - 1;
+    n_numa_nodes = opts.n_datacopy;
   }
 
   // max possible threads per NUMA node
