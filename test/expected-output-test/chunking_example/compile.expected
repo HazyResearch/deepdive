@@ -80,7 +80,7 @@ WHERE R1.sent_id = R0.sent_id
 
 deepdive.inference.factors.inf_istrue_chunk {
 input_query: """
-SELECT R_0.dd_id AS "chunk.R0.dd_id"
+SELECT dd_id_0.dd_id AS "chunk.R0.dd_id"
      , R0.sent_id AS "chunk.R0.sent_id"
      , R0.word_id AS "chunk.R0.word_id"
      , R0.tag AS "chunk.R0.tag"
@@ -90,14 +90,14 @@ FROM chunk R0
    , words R1
    , tags R2
    , word_features R3
-   , dd_variables_chunk AS R_0
+   , dd_variables_chunk AS dd_id_0
 WHERE R1.sent_id = R0.sent_id
   AND R1.word_id = R0.word_id
   AND R2.tag = R0.tag
   AND R3.sent_id = R0.sent_id
   AND R3.word_id = R0.word_id
-  AND R0.sent_id = R_0.sent_id
-  AND R0.word_id = R_0.word_id
+  AND R0.sent_id = dd_id_0.sent_id
+  AND R0.word_id = dd_id_0.word_id
 """
 function: """Multinomial(chunk.R0.dd_label)"""
 weight: """?(dd_weight_column_0, dd_weight_column_1)"""
@@ -112,11 +112,11 @@ input_relations: [
 
 deepdive.inference.factors.inf_and_chunk_chunk {
 input_query: """
-SELECT R_0.dd_id AS "chunk.R0.dd_id"
+SELECT dd_id_0.dd_id AS "chunk.R0.dd_id"
      , R0.sent_id AS "chunk.R0.sent_id"
      , R0.word_id AS "chunk.R0.word_id"
      , R0.tag AS "chunk.R0.tag"
-     , R_1.dd_id AS "chunk.R1.dd_id"
+     , dd_id_1.dd_id AS "chunk.R1.dd_id"
      , R1.sent_id AS "chunk.R1.sent_id"
      , R1.word_id AS "chunk.R1.word_id"
      , R1.tag AS "chunk.R1.tag"
@@ -128,8 +128,8 @@ FROM chunk R0
    , words R3
    , tags R4
    , tags R5
-   , dd_variables_chunk AS R_0
-   , dd_variables_chunk AS R_1
+   , dd_variables_chunk AS dd_id_0
+   , dd_variables_chunk AS dd_id_1
 WHERE R1.sent_id = R0.sent_id
   AND R2.sent_id = R0.sent_id
   AND R2.word_id = R0.word_id
@@ -138,10 +138,10 @@ WHERE R1.sent_id = R0.sent_id
   AND R4.tag = R0.tag
   AND R5.tag = R1.tag
   AND R1.word_id = (R0.word_id + 1)
-  AND R0.sent_id = R_0.sent_id
-  AND R0.word_id = R_0.word_id
-  AND R1.sent_id = R_1.sent_id
-  AND R1.word_id = R_1.word_id
+  AND R0.sent_id = dd_id_0.sent_id
+  AND R0.word_id = dd_id_0.word_id
+  AND R1.sent_id = dd_id_1.sent_id
+  AND R1.word_id = dd_id_1.word_id
 """
 function: """Multinomial(chunk.R0.dd_label, chunk.R1.dd_label)"""
 weight: """?(dd_weight_column_0, dd_weight_column_1)"""
@@ -155,11 +155,11 @@ input_relations: [
 
 deepdive.inference.factors.inf1_and_chunk_chunk {
 input_query: """
-SELECT R_0.dd_id AS "chunk.R0.dd_id"
+SELECT dd_id_0.dd_id AS "chunk.R0.dd_id"
      , R0.sent_id AS "chunk.R0.sent_id"
      , R0.word_id AS "chunk.R0.word_id"
      , R0.tag AS "chunk.R0.tag"
-     , R_1.dd_id AS "chunk.R1.dd_id"
+     , dd_id_1.dd_id AS "chunk.R1.dd_id"
      , R1.sent_id AS "chunk.R1.sent_id"
      , R1.word_id AS "chunk.R1.word_id"
      , R1.tag AS "chunk.R1.tag"
@@ -171,8 +171,8 @@ FROM chunk R0
    , words R3
    , tags R4
    , tags R5
-   , dd_variables_chunk AS R_0
-   , dd_variables_chunk AS R_1
+   , dd_variables_chunk AS dd_id_0
+   , dd_variables_chunk AS dd_id_1
 WHERE R1.sent_id = R0.sent_id
   AND R2.sent_id = R0.sent_id
   AND R2.word_id = R0.word_id
@@ -182,10 +182,10 @@ WHERE R1.sent_id = R0.sent_id
   AND R5.tag = R1.tag
   AND R2.tag IS NOT NULL
   AND R0.word_id < R1.word_id
-  AND R0.sent_id = R_0.sent_id
-  AND R0.word_id = R_0.word_id
-  AND R1.sent_id = R_1.sent_id
-  AND R1.word_id = R_1.word_id
+  AND R0.sent_id = dd_id_0.sent_id
+  AND R0.word_id = dd_id_0.word_id
+  AND R1.sent_id = dd_id_1.sent_id
+  AND R1.word_id = dd_id_1.word_id
 """
 function: """Multinomial(chunk.R0.dd_label, chunk.R1.dd_label)"""
 weight: """?(dd_weight_column_0, dd_weight_column_1)"""

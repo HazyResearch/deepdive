@@ -471,29 +471,28 @@ class QueryCompiler(cq : ConjunctiveQuery, hackFrom: List[String] = Nil, hackWhe
       case (x: Atom, i) if schemaDeclarationByRelationName get x.name exists (_.isQuery) =>
         // TODO maybe TableAlias can be useful here or we can completely get rid of it?
         // variable id column
-        s"""R_${headAsBody indexOf x}.${
+        s"""${deepdiveVariableIdColumn}_${headAsBody indexOf x}.${
           deepdiveVariableIdColumn
-        } AS "${x.name}.R${headAsBody indexOf x}.${deepdiveVariableIdColumn}\"""" ::
-        List(
+        } AS "${x.name}.R${headAsBody indexOf x}.${deepdiveVariableIdColumn}\"""" :: (
           // project variable key columns as well (to reduce unnecssary joins)
           schemaDeclarationByRelationName get x.name map (_.keyColumns map {
             case term => s"""R${headAsBody indexOf x}.${term
             } AS "${x.name}.R${headAsBody indexOf x}.${term}\""""
           }) get
-        ).flatten ::: List(
+        ) ++ (
           // project category value columns as well (to reduce unnecssary joins)
           schemaDeclarationByRelationName get x.name map (_.categoricalColumns map {
             case term => s"""R${headAsBody indexOf x}.${term
             } AS "${x.name}.R${headAsBody indexOf x}.${term}\""""
           }) get
-        ).flatten
+        )
 
       case _ => List.empty
     }
 
     val internalVarTables = headAsBody.zipWithIndex flatMap {
       case (x: Atom, i) if schemaDeclarationByRelationName get x.name exists (_.isQuery) =>
-        List(s"""${deepdivePrefixForVariablesIdsTable}${x.name} AS R_${headAsBody indexOf x}""")
+        List(s"""${deepdivePrefixForVariablesIdsTable}${x.name} AS ${deepdiveVariableIdColumn}_${headAsBody indexOf x}""")
       case _ => List.empty
     }
 
@@ -502,7 +501,7 @@ class QueryCompiler(cq : ConjunctiveQuery, hackFrom: List[String] = Nil, hackWhe
         List(
           // project variable key columns as well (to reduce unnecssary joins)
           schemaDeclarationByRelationName get x.name map (_.keyColumns map {
-            case term => s"""R${headAsBody indexOf x}.${term} = R_${headAsBody indexOf x}.${term}"""
+            case term => s"""R${headAsBody indexOf x}.${term} = ${deepdiveVariableIdColumn}_${headAsBody indexOf x}.${term}"""
           }) get
         )
       case _ => List.empty
@@ -515,6 +514,8 @@ class QueryCompiler(cq : ConjunctiveQuery, hackFrom: List[String] = Nil, hackWhe
         // This is achieved by puting head atoms into the body.
         val fakeBody        = headAsBody ++ cqBody
         val fakeCQ          = stmt.q.copy(bodies = List(fakeBody))
+
+        // TODO XXX: Fix the `internal` hack below
         val qc = new QueryCompiler(fakeCQ, internalVarTables, internalVarJoinConds)
 
         // weight columns
