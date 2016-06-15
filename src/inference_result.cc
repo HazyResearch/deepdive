@@ -4,7 +4,7 @@
 
 namespace dd {
 
-InferenceResult::InferenceResult(const CompiledFactorGraph &fg,
+InferenceResult::InferenceResult(const CompactFactorGraph &fg,
                                  const CmdParser &opts)
     : fg(fg),
       opts(opts),
@@ -20,7 +20,7 @@ InferenceResult::InferenceResult(const CompiledFactorGraph &fg,
       weight_values(new double[nweights]),
       weights_isfixed(new bool[nweights]) {}
 
-InferenceResult::InferenceResult(const CompiledFactorGraph &fg,
+InferenceResult::InferenceResult(const CompactFactorGraph &fg,
                                  const Weight weights[], const CmdParser &opts)
     : InferenceResult(fg, opts) {
   for (long t = 0; t < nweights; t++) {

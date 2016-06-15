@@ -14,13 +14,13 @@ namespace dd {
  */
 class GibbsSampler {
  private:
-  std::unique_ptr<CompiledFactorGraph> pfg;
+  std::unique_ptr<CompactFactorGraph> pfg;
   std::vector<std::thread> threads;
   const CmdParser &opts;
 
  public:
   // factor graph
-  CompiledFactorGraph &fg;  // TODO replace fg.* with fg->*
+  CompactFactorGraph &fg;  // TODO replace fg.* with fg->*
   InferenceResult infrs;
   // number of threads
   int nthread;
@@ -31,7 +31,7 @@ class GibbsSampler {
    * Constructs a GibbsSampler given factor graph, number of threads, and
    * node id.
    */
-  GibbsSampler(std::unique_ptr<CompiledFactorGraph> pfg, const Weight weights[],
+  GibbsSampler(std::unique_ptr<CompactFactorGraph> pfg, const Weight weights[],
                int nthread, int nodeid, const CmdParser &opts);
 
   /**
@@ -65,7 +65,7 @@ class GibbsSamplerThread {
   std::vector<double> varlen_potential_buffer_;
 
   // references and cached flags
-  CompiledFactorGraph &fg;
+  CompactFactorGraph &fg;
   InferenceResult &infrs;
   bool sample_evidence;
   bool learn_non_evidence;
@@ -74,7 +74,7 @@ class GibbsSamplerThread {
   /**
    * Constructs a GibbsSamplerThread with given factor graph
    */
-  GibbsSamplerThread(CompiledFactorGraph &fg, InferenceResult &infrs,
+  GibbsSamplerThread(CompactFactorGraph &fg, InferenceResult &infrs,
                      int i_sharding, int n_sharding, const CmdParser &opts);
 
   /**

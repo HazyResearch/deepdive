@@ -78,7 +78,7 @@ void read_domains(std::string filename, dd::FactorGraph &fg);
  * @param i Indicates the NUMA node to which the factor graph should be loaded
  * @param[out] cfg The compiled factor graph to which the state is resumed
  */
-void resume(std::string filename, int i, dd::CompiledFactorGraph &cfg);
+void resume(std::string filename, int i, dd::CompactFactorGraph &cfg);
 
 /**
  * Checkpoints all copies of the compiled factor graph to various files.
@@ -89,7 +89,7 @@ void resume(std::string filename, int i, dd::CompiledFactorGraph &cfg);
  * @param cfgs A list of CompiledFactorGraphs to write to file.
  */
 void checkpoint(std::string filename,
-                std::vector<dd::CompiledFactorGraph> &cfgs);
+                std::vector<dd::CompactFactorGraph> &cfgs);
 
 }  // namespace dd
 

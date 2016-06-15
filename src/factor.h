@@ -251,7 +251,7 @@ class Factor {
   /**
    * Turns out the no-arg constructor is still required, since we're
    * initializing arrays of these objects inside FactorGraph and
-   * CompiledFactorGraph.
+   * CompactFactorGraph.
    */
   Factor();
 

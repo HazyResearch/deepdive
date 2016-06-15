@@ -7,14 +7,14 @@
 
 namespace dd {
 
-class CompiledFactorGraph;
+class CompactFactorGraph;
 
 /**
  * Encapsulates inference result statistics
  */
 class InferenceResult {
  private:
-  const CompiledFactorGraph &fg;
+  const CompactFactorGraph &fg;
   const CmdParser &opts;
   int weight_values_normalizer;
 
@@ -36,7 +36,7 @@ class InferenceResult {
   std::unique_ptr<double[]> weight_values;  // array of weight values
   std::unique_ptr<bool[]> weights_isfixed;  // array of whether weight is fixed
 
-  InferenceResult(const CompiledFactorGraph &fg, const Weight weights[],
+  InferenceResult(const CompactFactorGraph &fg, const Weight weights[],
                   const CmdParser &opts);
 
   // copy constructor
@@ -55,7 +55,7 @@ class InferenceResult {
   void dump_marginals_in_text(std::ostream &text_output) const;
 
  private:
-  InferenceResult(const CompiledFactorGraph &fg, const CmdParser &opts);
+  InferenceResult(const CompactFactorGraph &fg, const CmdParser &opts);
 };
 
 }  // namespace dd

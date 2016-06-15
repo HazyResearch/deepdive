@@ -73,9 +73,8 @@ int gibbs(const dd::CmdParser &args) {
   }
 
   // Initialize Gibbs sampling application.
-  DimmWitted dw(
-      std::unique_ptr<CompiledFactorGraph>(new CompiledFactorGraph(fg)),
-      fg.weights.get(), args);
+  DimmWitted dw(std::unique_ptr<CompactFactorGraph>(new CompactFactorGraph(fg)),
+                fg.weights.get(), args);
 
   // learning
   dw.learn();
@@ -90,7 +89,7 @@ int gibbs(const dd::CmdParser &args) {
   return 0;
 }
 
-DimmWitted::DimmWitted(std::unique_ptr<CompiledFactorGraph> p_cfg,
+DimmWitted::DimmWitted(std::unique_ptr<CompactFactorGraph> p_cfg,
                        const Weight weights[], const CmdParser &opts)
     : weights(weights), opts(opts) {
   n_numa_nodes = numa_max_node() + 1;
@@ -109,8 +108,8 @@ DimmWitted::DimmWitted(std::unique_ptr<CompiledFactorGraph> p_cfg,
 
     std::cout << "CREATE CFG ON NODE ..." << i << std::endl;
     sampler.push_back(GibbsSampler(
-        std::unique_ptr<CompiledFactorGraph>(
-            i == 0 ? p_cfg.release() : new CompiledFactorGraph(*p_cfg)),
+        std::unique_ptr<CompactFactorGraph>(
+            i == 0 ? p_cfg.release() : new CompactFactorGraph(*p_cfg)),
         weights, n_thread_per_numa /* TODO fold this into opts */, i, opts));
   }
 }

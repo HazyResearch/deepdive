@@ -14,7 +14,7 @@
 namespace dd {
 
 class FactorGraph;
-class CompiledFactorGraph;
+class CompactFactorGraph;
 
 /** Meta data describing the dimension of a factor graph */
 class FactorGraphDescriptor {
@@ -96,7 +96,7 @@ inline std::ostream& operator<<(std::ostream& out, FactorGraph const& fg) {
   return out;
 }
 
-class CompiledFactorGraph {
+class CompactFactorGraph {
  public:
   FactorGraphDescriptor size;
 
@@ -122,13 +122,13 @@ class CompiledFactorGraph {
    * it also has to transfer the variable, factor, and weight counts,
    * and other statistics as well.
    */
-  CompiledFactorGraph(const FactorGraph& fg);
+  CompactFactorGraph(const FactorGraph& fg);
 
   /* Produces an empty factor graph to be initialized by resume() */
-  CompiledFactorGraph(const FactorGraphDescriptor& size);
+  CompactFactorGraph(const FactorGraphDescriptor& size);
 
   // copy constructor
-  CompiledFactorGraph(const CompiledFactorGraph& other);
+  CompactFactorGraph(const CompactFactorGraph& other);
 
   /*
    * Given a factor and variable assignment, returns corresponding multinomial
@@ -171,15 +171,15 @@ class CompiledFactorGraph {
                           const double weight_values[]);
 };
 
-inline double CompiledFactorGraph::potential(
-    const CompactFactor& factor, const VariableValue assignments[]) {
+inline double CompactFactorGraph::potential(const CompactFactor& factor,
+                                            const VariableValue assignments[]) {
   return factor.potential(vifs.get(), assignments, -1, -1);
 }
 
-inline double CompiledFactorGraph::potential(const Variable& variable,
-                                             const double& proposal,
-                                             const VariableValue assignments[],
-                                             const double weight_values[]) {
+inline double CompactFactorGraph::potential(const Variable& variable,
+                                            const double& proposal,
+                                            const VariableValue assignments[],
+                                            const double weight_values[]) {
   // potential
   double pot = 0.0;
   // pointer to the first factor the given variable connects to

@@ -2,7 +2,7 @@
 
 namespace dd {
 
-GibbsSampler::GibbsSampler(std::unique_ptr<CompiledFactorGraph> pfg_,
+GibbsSampler::GibbsSampler(std::unique_ptr<CompactFactorGraph> pfg_,
                            const Weight weights[], int nthread, int nodeid,
                            const CmdParser &opts)
     : pfg(std::move(pfg_)),
@@ -37,7 +37,7 @@ void GibbsSampler::wait() {
   threads.clear();
 }
 
-GibbsSamplerThread::GibbsSamplerThread(CompiledFactorGraph &fg,
+GibbsSamplerThread::GibbsSamplerThread(CompactFactorGraph &fg,
                                        InferenceResult &infrs, int ith_shard,
                                        int n_shards, const CmdParser &opts)
     : varlen_potential_buffer_(0),

@@ -45,8 +45,8 @@ FactorGraph::FactorGraph(const FactorGraphDescriptor &capacity)
       factors(new RawFactor[capacity.num_factors]),
       weights(new Weight[capacity.num_weights]) {}
 
-CompiledFactorGraph::CompiledFactorGraph(const FactorGraph &fg)
-    : CompiledFactorGraph(fg.size) {
+CompactFactorGraph::CompactFactorGraph(const FactorGraph &fg)
+    : CompactFactorGraph(fg.size) {
   long i_edge = 0;
 
   // For each factor, put the variables sorted within each factor in an array.
@@ -127,7 +127,7 @@ void FactorGraph::safety_check() {
   }
 }
 
-CompiledFactorGraph::CompiledFactorGraph(const FactorGraphDescriptor &size)
+CompactFactorGraph::CompactFactorGraph(const FactorGraphDescriptor &size)
     : size(size),
       variables(new Variable[size.num_variables]),
       factors(new Factor[size.num_factors]),
@@ -136,8 +136,8 @@ CompiledFactorGraph::CompiledFactorGraph(const FactorGraphDescriptor &size)
       factor_ids(new long[size.num_edges]),
       vifs(new VariableInFactor[size.num_edges]) {}
 
-CompiledFactorGraph::CompiledFactorGraph(const CompiledFactorGraph &other)
-    : CompiledFactorGraph(other.size) {
+CompactFactorGraph::CompactFactorGraph(const CompactFactorGraph &other)
+    : CompactFactorGraph(other.size) {
   // copy each member from the given graph
   memcpy(variables.get(), other.variables.get(),
          sizeof(Variable) * size.num_variables);
@@ -153,7 +153,7 @@ CompiledFactorGraph::CompiledFactorGraph(const CompiledFactorGraph &other)
          sizeof(VariableInFactor) * size.num_edges);
 }
 
-long CompiledFactorGraph::get_multinomial_weight_id(
+long CompactFactorGraph::get_multinomial_weight_id(
     const VariableValue assignments[], const CompactFactor &fs, long vid,
     long proposal) {
   /**
@@ -199,9 +199,9 @@ long CompiledFactorGraph::get_multinomial_weight_id(
   return weight_id;
 }
 
-void CompiledFactorGraph::update_weight(const Variable &variable,
-                                        InferenceResult &infrs,
-                                        double stepsize) {
+void CompactFactorGraph::update_weight(const Variable &variable,
+                                       InferenceResult &infrs,
+                                       double stepsize) {
   // corresponding factors and weights in a continous region
   CompactFactor *const fs = &compact_factors[variable.n_start_i_factors];
   const int *const ws = &compact_factors_weightids[variable.n_start_i_factors];

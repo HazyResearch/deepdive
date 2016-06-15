@@ -65,7 +65,7 @@ TEST_F(LoadingTest, load_factor_graph) {
 //               (due to dellocation of tmp_variables etc)
 // // test for FactorGraph::compile() function
 // TEST_F(LoadingTest, organize_graph_by_edge) {
-//   dd::CompiledFactorGraph cfg(18, 18, 1, 18);
+//   dd::CompactFactorGraph cfg(18, 18, 1, 18);
 //   fg.compile(cfg);
 //
 //   EXPECT_EQ(cfg.size.num_variables, 18);
@@ -78,9 +78,9 @@ TEST_F(LoadingTest, load_factor_graph) {
 
 // test for FactorGraph::copy_from function
 TEST_F(LoadingTest, copy_from) {
-  dd::CompiledFactorGraph cfg(fg);
+  dd::CompactFactorGraph cfg(fg);
 
-  dd::CompiledFactorGraph cfg2 = cfg;
+  dd::CompactFactorGraph cfg2 = cfg;
 
   EXPECT_TRUE(memcmp(&cfg, &cfg2, sizeof(cfg)));
 }

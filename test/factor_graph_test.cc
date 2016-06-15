@@ -18,7 +18,7 @@ namespace dd {
 // positive and id 8 negative.
 class FactorGraphTest : public testing::Test {
  protected:
-  std::unique_ptr<dd::CompiledFactorGraph> cfg;
+  std::unique_ptr<dd::CompactFactorGraph> cfg;
   std::unique_ptr<dd::InferenceResult> infrs;
 
   virtual void SetUp() {
@@ -43,7 +43,7 @@ class FactorGraphTest : public testing::Test {
     fg.load_factors(cmd_parser.factor_file);
     fg.safety_check();
 
-    cfg.reset(new CompiledFactorGraph(fg));
+    cfg.reset(new CompactFactorGraph(fg));
     infrs.reset(new InferenceResult(*cfg, fg.weights.get(), cmd_parser));
   }
 };

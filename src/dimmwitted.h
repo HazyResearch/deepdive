@@ -48,7 +48,7 @@ class DimmWitted {
    * n_datacopy number of factor graph copies. n_datacopy = 1 means only
    * keeping one factor graph.
    */
-  DimmWitted(std::unique_ptr<CompiledFactorGraph> p_cfg, const Weight weights[],
+  DimmWitted(std::unique_ptr<CompactFactorGraph> p_cfg, const Weight weights[],
              const CmdParser& opts);
 
   /**
