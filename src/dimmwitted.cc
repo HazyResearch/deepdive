@@ -109,7 +109,12 @@ DimmWitted::DimmWitted(std::unique_ptr<CompactFactorGraph> p_cfg,
     std::cout << "CREATE CFG ON NODE ..." << i << std::endl;
     sampler.push_back(GibbsSampler(
         std::unique_ptr<CompactFactorGraph>(
-            i == 0 ? p_cfg.release() : new CompactFactorGraph(*p_cfg)),
+            i == 0 ?
+                   // use the given factor graph for the first sampler
+                p_cfg.release()
+                   :
+                   // then, make a copy for the rest
+                new CompactFactorGraph(sampler[0].fg)),
         weights, n_thread_per_numa /* TODO fold this into opts */, i, opts));
   }
 }
