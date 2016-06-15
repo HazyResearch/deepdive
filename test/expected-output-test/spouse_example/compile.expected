@@ -91,14 +91,16 @@ materialize: false
 
 deepdive.inference.factors.inf_istrue_has_spouse {
 input_query: """
-SELECT R0.dd_id AS "has_spouse.R0.dd_id"
+SELECT dd_id_0.dd_id AS "has_spouse.R0.dd_id"
      , R0.relation_id AS "has_spouse.R0.relation_id"
      , R2.feature AS "dd_weight_column_0"
-FROM dd_variables_has_spouse R0
+FROM has_spouse R0
    , has_spouse_candidates R1
    , has_spouse_features R2
+   , dd_variables_has_spouse AS dd_id_0
 WHERE R1.relation_id = R0.relation_id
   AND R2.relation_id = R0.relation_id
+  AND R0.relation_id = dd_id_0.relation_id
 """
 function: """Imply(has_spouse.R0.dd_label)"""
 weight: """?(dd_weight_column_0)"""

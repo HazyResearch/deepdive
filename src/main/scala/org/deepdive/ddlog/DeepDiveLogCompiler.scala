@@ -93,14 +93,8 @@ class DeepDiveLogCompiler( program : DeepDiveLog.Program, config : DeepDiveLog.C
   // odd has happened.
   def resolveName( v : Variable ) : String = {
     v match { case Variable(v,relName,i) =>
-      val relNameNormalized =
-        // Drop deepdivePrefixForVariablesIdsTable.
-        // XXX This is ugly, but no alternative simpler way for now.  We should soon refactor the resolve*() stuffs as well as the QueryCompiler to make it produce an IR that's easier to manipulate post-hoc.
-        if (relName startsWith deepdivePrefixForVariablesIdsTable)
-          relName.substring(DeepDiveLogCompiler.deepdivePrefixForVariablesIdsTable.length)
-        else relName
-      if(attrNameForRelationAndPosition contains (relNameNormalized,i)) {
-        attrNameForRelationAndPosition(relNameNormalized,i)
+      if(attrNameForRelationAndPosition contains (relName,i)) {
+        attrNameForRelationAndPosition(relName,i)
       } else {
         // for views, columns names are in the form of "column_index"
         return s"column_${i}"
@@ -132,7 +126,7 @@ class DeepDiveLogCompiler( program : DeepDiveLog.Program, config : DeepDiveLog.C
 
 
   // This is responsible for compiling a single conjunctive query
-class QueryCompiler(cq : ConjunctiveQuery) {
+class QueryCompiler(cq : ConjunctiveQuery, hackFrom: List[String] = Nil, hackWhere: List[String] = Nil) {
   // TODO remove var and make the generate* stuff below side-effect free
   // This is responsible for schema elements within a given query, e.g.,
   // what is the canonical version of x? (i.e., the first time it is
@@ -263,7 +257,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
   def generateSQLBody(body: List[Body]) : String = {
     // generate where clause from unification and conditions
     def generateWhereClause(bodies: List[Body], indexPrefix: String) : String = {
-      val conditions = bodies.zipWithIndex.flatMap {
+      val conditions = (bodies.zipWithIndex.flatMap {
         case (Atom(relName, terms), index) => {
           val bodyIndex = s"${indexPrefix}${index}"
           terms.zipWithIndex flatMap { case (pattern, termIndex) =>
@@ -298,15 +292,15 @@ class QueryCompiler(cq : ConjunctiveQuery) {
             case _ => None
           }
         }
-      }
+      }) ::: hackWhere
       conditions.mkString("\n  AND ")
     }
 
     def generateFromClause(bodies: List[Body], indexPrefix: String) : String = {
-      val atoms = bodies.zipWithIndex flatMap {
+      val atoms = (bodies.zipWithIndex flatMap {
         case (x:Atom,i) => Some(s"${x.name} R${indexPrefix}${i}")
         case _ => None
-      }
+      }) ::: hackFrom
       val outers = bodies.zipWithIndex flatMap {
         case (x:QuantifiedBody,i) => {
           val newIndexPrefix = s"${indexPrefix}${i}_"
@@ -473,11 +467,11 @@ class QueryCompiler(cq : ConjunctiveQuery) {
   // generate inference rule part for deepdive
   def compile(stmt: InferenceRule): CompiledBlocks = {
     val headAsBody = stmt.head.variables map (_.atom)
-    val variableIdAndKeyColumns = headAsBody.zipWithIndex flatMap {
+    val variableIdAndColumns = headAsBody.zipWithIndex flatMap {
       case (x: Atom, i) if schemaDeclarationByRelationName get x.name exists (_.isQuery) =>
         // TODO maybe TableAlias can be useful here or we can completely get rid of it?
         // variable id column
-        s"""R${headAsBody indexOf x}.${
+        s"""${deepdiveVariableIdColumn}_${headAsBody indexOf x}.${
           deepdiveVariableIdColumn
         } AS "${x.name}.R${headAsBody indexOf x}.${deepdiveVariableIdColumn}\"""" :: (
           // project variable key columns as well (to reduce unnecssary joins)
@@ -485,18 +479,44 @@ class QueryCompiler(cq : ConjunctiveQuery) {
             case term => s"""R${headAsBody indexOf x}.${term
             } AS "${x.name}.R${headAsBody indexOf x}.${term}\""""
           }) get
+        ) ++ (
+          // project category value columns as well (to reduce unnecssary joins)
+          schemaDeclarationByRelationName get x.name map (_.categoricalColumns map {
+            case term => s"""R${headAsBody indexOf x}.${term
+            } AS "${x.name}.R${headAsBody indexOf x}.${term}\""""
+          }) get
         )
+
       case _ => List.empty
     }
+
+    val internalVarTables = headAsBody.zipWithIndex flatMap {
+      case (x: Atom, i) if schemaDeclarationByRelationName get x.name exists (_.isQuery) =>
+        List(s"""${deepdivePrefixForVariablesIdsTable}${x.name} AS ${deepdiveVariableIdColumn}_${headAsBody indexOf x}""")
+      case _ => List.empty
+    }
+
+    val internalVarJoinConds = headAsBody.zipWithIndex flatMap {
+      case (x: Atom, i) if schemaDeclarationByRelationName get x.name exists (_.isQuery) =>
+        List(
+          // project variable key columns as well (to reduce unnecssary joins)
+          schemaDeclarationByRelationName get x.name map (_.keyColumns map {
+            case term => s"""R${headAsBody indexOf x}.${term} = ${deepdiveVariableIdColumn}_${headAsBody indexOf x}.${term}"""
+          }) get
+        )
+      case _ => List.empty
+    } flatten
 
     val inputQueries =
       stmt.q.bodies map { case cqBody =>
         // Here we need to select from the bodies atoms as well as the head atoms,
         // which are the variable relations.
         // This is achieved by puting head atoms into the body.
-        val fakeBody        = (headAsBody map { h => h.copy(name = s"$deepdivePrefixForVariablesIdsTable${h.name}") }) ++ cqBody
+        val fakeBody        = headAsBody ++ cqBody
         val fakeCQ          = stmt.q.copy(bodies = List(fakeBody))
-        val qc = new QueryCompiler(fakeCQ)
+
+        // TODO XXX: Fix the `internal` hack below
+        val qc = new QueryCompiler(fakeCQ, internalVarTables, internalVarJoinConds)
 
         // weight columns
         val weightColumns = stmt.weights.variables.zipWithIndex collect {
@@ -505,7 +525,7 @@ class QueryCompiler(cq : ConjunctiveQuery) {
         }
 
         // factor input query
-        s"""SELECT ${(variableIdAndKeyColumns ++ weightColumns) mkString ("\n     , ")
+        s"""SELECT ${(variableIdAndColumns ++ weightColumns) mkString ("\n     , ")
         }\n${qc.generateSQLBody(fakeBody) }"""
       }
 
