@@ -19,8 +19,9 @@ ifeq ($(UNAME), Linux)
 ifndef CXX
 CXX = g++
 endif
-# optimization flags
+ifndef DEBUG
 CXXFLAGS += -Ofast
+endif
 # using NUMA for Linux
 CXXFLAGS += -I./lib/numactl-2.0.9/
 LDFLAGS += -L./lib/numactl-2.0.9/
