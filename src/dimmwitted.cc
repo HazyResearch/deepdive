@@ -71,19 +71,19 @@ int gibbs(const dd::CmdParser &args) {
   }
 
   // Initialize Gibbs sampling application.
-  GibbsSampling gibbs(
+  DimmWitted dw(
       std::unique_ptr<CompiledFactorGraph>(new CompiledFactorGraph(fg)),
       fg.weights.get(), args);
 
   // learning
-  gibbs.learn();
+  dw.learn();
 
   // dump weights
-  gibbs.dump_weights();
+  dw.dump_weights();
 
   // inference
-  gibbs.inference();
-  gibbs.aggregate_results_and_dump();
+  dw.inference();
+  dw.aggregate_results_and_dump();
 
   return 0;
 }

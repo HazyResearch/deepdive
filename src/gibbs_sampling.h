@@ -14,7 +14,7 @@ namespace dd {
  * This class encapsulates gibbs learning and inference, and dumping results.
  * Note the factor graph is copied on each NUMA node.
  */
-class GibbsSampling {
+class DimmWitted {
  public:
   const Weight* const weights;  // TODO clarify ownership
 
@@ -32,14 +32,14 @@ class GibbsSampling {
   std::vector<GibbsSampler> sampler;
 
   /**
-   * Constructs GibbsSampling class with given factor graph, command line
+   * Constructs DimmWitted class with given factor graph, command line
    * parser,
    * and number of data copies. Allocate factor graph to NUMA nodes.
    * n_datacopy number of factor graph copies. n_datacopy = 1 means only
    * keeping one factor graph.
    */
-  GibbsSampling(std::unique_ptr<CompiledFactorGraph> p_cfg,
-                const Weight weights[], const CmdParser& opts);
+  DimmWitted(std::unique_ptr<CompiledFactorGraph> p_cfg, const Weight weights[],
+             const CmdParser& opts);
 
   /**
    * Performs learning

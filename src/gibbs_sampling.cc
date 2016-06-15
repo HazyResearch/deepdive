@@ -9,8 +9,8 @@
 
 namespace dd {
 
-GibbsSampling::GibbsSampling(std::unique_ptr<CompiledFactorGraph> p_cfg,
-                             const Weight weights[], const CmdParser &opts)
+DimmWitted::DimmWitted(std::unique_ptr<CompiledFactorGraph> p_cfg,
+                       const Weight weights[], const CmdParser &opts)
     : weights(weights), opts(opts) {
   n_numa_nodes = numa_max_node() + 1;
   if (opts.n_datacopy > 0 && opts.n_datacopy < n_numa_nodes) {
@@ -34,7 +34,7 @@ GibbsSampling::GibbsSampling(std::unique_ptr<CompiledFactorGraph> p_cfg,
   }
 }
 
-void GibbsSampling::inference() {
+void DimmWitted::inference() {
   const int n_epoch = compute_n_epochs(opts.n_inference_epoch);
   const int nvar = sampler[0].fg.size.num_variables;
   const bool should_show_progress = !opts.should_be_quiet;
@@ -71,7 +71,7 @@ void GibbsSampling::inference() {
   std::cout << "TOTAL INFERENCE TIME: " << elapsed << " sec." << std::endl;
 }
 
-void GibbsSampling::learn() {
+void DimmWitted::learn() {
   InferenceResult &infrs = sampler[0].infrs;
 
   const int n_epoch = compute_n_epochs(opts.n_learning_epoch);
@@ -137,7 +137,7 @@ void GibbsSampling::learn() {
   std::cout << "TOTAL LEARNING TIME: " << elapsed << " sec." << std::endl;
 }
 
-void GibbsSampling::dump_weights() {
+void DimmWitted::dump_weights() {
   // learning weights snippets
   const InferenceResult &infrs = sampler[0].infrs;
 
@@ -152,7 +152,7 @@ void GibbsSampling::dump_weights() {
   fout_text.close();
 }
 
-void GibbsSampling::aggregate_results_and_dump() {
+void DimmWitted::aggregate_results_and_dump() {
   InferenceResult &infrs = sampler[0].infrs;
 
   // aggregate assignments across all possible worlds
@@ -172,7 +172,7 @@ void GibbsSampling::aggregate_results_and_dump() {
 }
 
 // compute number of NUMA-aware epochs for learning or inference
-int GibbsSampling::compute_n_epochs(int n_epoch) {
+int DimmWitted::compute_n_epochs(int n_epoch) {
   return std::ceil((double)n_epoch / n_numa_nodes);
 }
 
