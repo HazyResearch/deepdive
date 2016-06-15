@@ -100,7 +100,8 @@ void dump_factors(const dd::FactorGraph &fg, const std::string &filename) {
         for (const auto &item : ordered) {
           size_t key = item.first;
           WeightIndex wid = item.second;
-          for (size_t k = f.n_variables - 1; k >= 0; --k) {
+          for (size_t k = f.n_variables; k > 0;) {
+            --k;  // turning it into a correct index
             VariableIndex vid = (*f.tmp_variables)[k].vid;
             dd::Variable &var = fg.variables[vid];
             size_t val_idx = key % var.cardinality;
