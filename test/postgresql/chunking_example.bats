@@ -2,7 +2,7 @@
 # Tests for chunking example
 
 . "$BATS_TEST_DIRNAME"/env.sh >&2
-: ${SUBSAMPLE_NUM_WORDS_TRAIN:=5000} ${SUBSAMPLE_NUM_WORDS_TEST:=1000}
+: ${SUBSAMPLE_NUM_WORDS_TRAIN:=1000} ${SUBSAMPLE_NUM_WORDS_TEST:=200}
 export SUBSAMPLE_NUM_WORDS_TRAIN SUBSAMPLE_NUM_WORDS_TEST
 
 get_f1score() {
@@ -18,7 +18,7 @@ run_chunking_example() {
     deepdive redo process/init/app data/model/probabilities
     f1score=$(get_f1score)
     echo "f1score = $f1score"
-    [[ $f1score -ge 75 ]]
+    [[ $f1score -ge 60 ]]
 }
 
 run_chunking_example_reusing_weights() {
@@ -27,7 +27,7 @@ run_chunking_example_reusing_weights() {
     deepdive model weights keep
 
     # load larger test corpus
-    SUBSAMPLE_NUM_WORDS_TRAIN=0 SUBSAMPLE_NUM_WORDS_TEST=5000 \
+    SUBSAMPLE_NUM_WORDS_TRAIN=0 SUBSAMPLE_NUM_WORDS_TEST=1000 \
     deepdive redo words_raw
 
     # reuse the weights (to skip learning)
@@ -39,7 +39,7 @@ run_chunking_example_reusing_weights() {
     # check quality
     f1score=$(get_f1score)
     echo "f1score = $f1score"
-    [[ $f1score -ge 70 ]]
+    [[ $f1score -ge 60 ]]
 }
 
 @test "$DBVARIANT chunking example" {
