@@ -69,29 +69,6 @@ size_t read_edges_inc(const std::string& filename, dd::FactorGraph&);
 // Loads domains for multinomial variables
 void read_domains(const std::string& filename, dd::FactorGraph& fg);
 
-/**
- * Resumes the computation state from the last checkpoint. It is critical
- * that we resume graphs one by one since we need to be NUMA aware.
- *
- * @param filename
- *   The base filename to load the checkpoint from. ".part$i" will be appended
- *   to this parameter to generate the full checkpoint filename.
- * @param i Indicates the NUMA node to which the factor graph should be loaded
- * @param[out] cfg The compiled factor graph to which the state is resumed
- */
-void resume(const std::string& filename, int i, dd::CompactFactorGraph& cfg);
-
-/**
- * Checkpoints all copies of the compiled factor graph to various files.
- *
- * @param filename
- *   The base filename to checkpoint to. ".part$i" will be appended into this
- *   parameter to generate the full checkpoint filename.
- * @param cfgs A list of CompiledFactorGraphs to write to file.
- */
-void checkpoint(const std::string& filename,
-                std::vector<dd::CompactFactorGraph>& cfgs);
-
 }  // namespace dd
 
 #endif  // DIMMWITTED_BINARY_FORMAT_H_
