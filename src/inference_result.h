@@ -20,19 +20,19 @@ class InferenceResult {
   size_t weight_values_normalizer;
 
  public:
-  VariableIndex nvars;   // number of variables
-  WeightIndex nweights;  // number of weights
+  variable_id_t nvars;   // number of variables
+  weight_id_t nweights;  // number of weights
   size_t ntallies;
 
   std::unique_ptr<size_t[]> multinomial_tallies;  // this might be slow...
 
   // array of sum of samples for each variable
-  std::unique_ptr<VariableValue[]> agg_means;
+  std::unique_ptr<variable_value_t[]> agg_means;
   // array of number of samples for each variable
   std::unique_ptr<size_t[]> agg_nsamples;
   // assignment to variables, see variable.h for more detail
-  std::unique_ptr<VariableValue[]> assignments_free;
-  std::unique_ptr<VariableValue[]> assignments_evid;
+  std::unique_ptr<variable_value_t[]> assignments_free;
+  std::unique_ptr<variable_value_t[]> assignments_evid;
 
   std::unique_ptr<weight_value_t[]> weight_values;  // array of weight values
   std::unique_ptr<bool[]> weights_isfixed;  // array of whether weight is fixed

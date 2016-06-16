@@ -10,9 +10,9 @@ namespace dd {
 
 TEST(FactorTest, ONE_VAR_FACTORS) {
   VariableInFactor vifs[1];
-  VariableValue values[1];
-  VariableIndex vid;
-  VariableValue propose;
+  variable_value_t values[1];
+  variable_id_t vid;
+  variable_value_t propose;
 
   vifs[0].vid = 0;
   vifs[0].is_positive = true;
@@ -48,9 +48,9 @@ TEST(FactorTest, ONE_VAR_FACTORS) {
 
 TEST(FactorTest, TWO_VAR_FACTORS) {
   VariableInFactor vifs[2];
-  VariableValue values[2];
-  VariableIndex vid;
-  VariableValue propose;
+  variable_value_t values[2];
+  variable_id_t vid;
+  variable_value_t propose;
 
   vifs[0].vid = 0;
   vifs[0].is_positive = true;
@@ -119,9 +119,9 @@ TEST(FactorTest, TWO_VAR_FACTORS) {
 
 TEST(FactorTest, THREE_VAR_IMPLY) {
   VariableInFactor vifs[3];
-  VariableValue values[3];
-  VariableIndex vid;
-  VariableValue propose;
+  variable_value_t values[3];
+  variable_id_t vid;
+  variable_value_t propose;
 
   // first test case: True /\ x => True, x propose to False, Expect 0
   vifs[0].vid = 0;

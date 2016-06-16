@@ -2,7 +2,7 @@
 
 namespace dd {
 
-Weight::Weight(WeightIndex id, weight_value_t weight, bool isfixed)
+Weight::Weight(weight_id_t id, weight_value_t weight, bool isfixed)
     : id(id), weight(weight), isfixed(isfixed) {}
 
 Weight::Weight() : Weight(INVALID_ID, 0.0, false) {}

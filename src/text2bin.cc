@@ -165,7 +165,7 @@ void load_factor(std::string input_filename, std::string output_filename,
     n_vars = htobe64(n_vars);
     fout.write((char *)&predicate, 8);
     fout.write((char *)&n_vars, 8);
-    for (VariableIndex i = 0; i < variables.size(); i++) {
+    for (variable_id_t i = 0; i < variables.size(); i++) {
       fout.write((char *)&variables[i], 8);
       char flag = positives_vec.at(i) ? 1 : 0;
       fout.write((char *)&flag, 1);

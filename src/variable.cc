@@ -4,10 +4,11 @@ namespace dd {
 
 RawVariable::RawVariable() : Variable() {}
 
-RawVariable::RawVariable(VariableIndex id, variable_domain_type_t domain_type,
-                         bool is_evidence, VariableValue cardinality,
-                         VariableValue init_value, VariableValue current_value,
-                         size_t n_factors, bool is_observation)
+RawVariable::RawVariable(variable_id_t id, variable_domain_type_t domain_type,
+                         bool is_evidence, variable_value_t cardinality,
+                         variable_value_t init_value,
+                         variable_value_t current_value, size_t n_factors,
+                         bool is_observation)
     : Variable(id, domain_type, is_evidence, cardinality, init_value,
                current_value, n_factors, is_observation),
       tmp_factor_ids(NULL) {}
@@ -15,9 +16,9 @@ RawVariable::RawVariable(VariableIndex id, variable_domain_type_t domain_type,
 Variable::Variable()
     : Variable(INVALID_ID, DTYPE_BOOLEAN, false, 2, 0, 0, 0, false) {}
 
-Variable::Variable(VariableIndex id, variable_domain_type_t domain_type,
-                   bool is_evidence, VariableValue cardinality,
-                   VariableValue init_value, VariableValue current_value,
+Variable::Variable(variable_id_t id, variable_domain_type_t domain_type,
+                   bool is_evidence, variable_value_t cardinality,
+                   variable_value_t init_value, variable_value_t current_value,
                    size_t n_factors, bool is_observation)
     : id(id),
       domain_type(domain_type),
@@ -44,7 +45,7 @@ Variable::Variable(const Variable &rv)
       domain_map(rv.domain_map),
       domain_list(NULL) {}
 
-bool VariableInFactor::satisfiedUsing(VariableValue value) const {
+bool VariableInFactor::satisfiedUsing(variable_value_t value) const {
   return is_positive ? equal_to == value : !(equal_to == value);
 }
 
@@ -52,8 +53,8 @@ VariableInFactor::VariableInFactor()
     : VariableInFactor(Variable::INVALID_ID, -1, true,
                        Variable::INVALID_VALUE) {}
 
-VariableInFactor::VariableInFactor(VariableIndex vid, size_t n_position,
-                                   bool is_positive, VariableValue equal_to)
+VariableInFactor::VariableInFactor(variable_id_t vid, size_t n_position,
+                                   bool is_positive, variable_value_t equal_to)
     : vid(vid),
       n_position(n_position),
       is_positive(is_positive),

@@ -48,8 +48,8 @@ typedef enum {
   DTYPE_MULTINOMIAL = 0x04,
 } variable_domain_type_t;
 
-typedef size_t VariableValue;
-typedef size_t VariableIndex;
+typedef size_t variable_value_t;
+typedef size_t variable_id_t;
 
 // enumeration for factor function types
 typedef enum FACTOR_FUCNTION_TYPE {
@@ -71,9 +71,9 @@ typedef enum FACTOR_FUCNTION_TYPE {
   FUNC_UNDEFINED = -1,
 } factor_function_type_t;
 
-typedef size_t FactorIndex;
+typedef size_t factor_id_t;
 
-typedef size_t WeightIndex;
+typedef size_t weight_id_t;
 typedef double weight_value_t;
 
 /**

@@ -100,17 +100,17 @@ class GibbsSamplerThread {
   /**
    * Performs SGD by sampling a single variable with id vid
    */
-  inline void sample_sgd_single_variable(VariableIndex vid, double stepsize);
+  inline void sample_sgd_single_variable(variable_id_t vid, double stepsize);
 
   /**
    * Samples a single variable with id vid
    */
-  inline void sample_single_variable(VariableIndex vid);
+  inline void sample_single_variable(variable_id_t vid);
 
   // sample a single variable
-  inline VariableValue draw_sample(Variable &variable,
-                                   const VariableValue assignments[],
-                                   const double weight_values[]);
+  inline variable_value_t draw_sample(Variable &variable,
+                                      const variable_value_t assignments[],
+                                      const double weight_values[]);
 
   /**
     * Resets RNG seed to given values
@@ -118,7 +118,7 @@ class GibbsSamplerThread {
   void set_random_seed(unsigned short s0, unsigned short s1, unsigned short s2);
 };
 
-inline void GibbsSamplerThread::sample_sgd_single_variable(VariableIndex vid,
+inline void GibbsSamplerThread::sample_sgd_single_variable(variable_id_t vid,
                                                            double stepsize) {
   // stochastic gradient ascent
   // gradient of weight = E[f|D] - E[f], where D is evidence variables,
@@ -130,7 +130,7 @@ inline void GibbsSamplerThread::sample_sgd_single_variable(VariableIndex vid,
 
   if (!learn_non_evidence && !variable.is_evid) return;
 
-  VariableValue proposal = 0;
+  variable_value_t proposal = 0;
 
   // sample the variable with evidence unchanged
   proposal = variable.is_evid
@@ -148,7 +148,7 @@ inline void GibbsSamplerThread::sample_sgd_single_variable(VariableIndex vid,
   fg.update_weight(variable, infrs, stepsize);
 }
 
-inline void GibbsSamplerThread::sample_single_variable(VariableIndex vid) {
+inline void GibbsSamplerThread::sample_single_variable(variable_id_t vid) {
   // this function uses the same sampling technique as in
   // sample_sgd_single_variable
 
@@ -156,8 +156,8 @@ inline void GibbsSamplerThread::sample_single_variable(VariableIndex vid) {
   if (variable.is_observation) return;
 
   if (!variable.is_evid || sample_evidence) {
-    VariableValue proposal = draw_sample(variable, infrs.assignments_evid.get(),
-                                         infrs.weight_values.get());
+    variable_value_t proposal = draw_sample(
+        variable, infrs.assignments_evid.get(), infrs.weight_values.get());
     infrs.assignments_evid[variable.id] = proposal;
 
     // bookkeep aggregates for computing marginals
@@ -176,10 +176,10 @@ inline void GibbsSamplerThread::sample_single_variable(VariableIndex vid) {
   }
 }
 
-inline VariableValue dd::GibbsSamplerThread::draw_sample(
-    Variable &variable, const VariableValue assignments[],
+inline variable_value_t dd::GibbsSamplerThread::draw_sample(
+    Variable &variable, const variable_value_t assignments[],
     const double weight_values[]) {
-  VariableValue proposal = 0;
+  variable_value_t proposal = 0;
 
   switch (variable.domain_type) {
     case DTYPE_BOOLEAN: {

@@ -121,7 +121,7 @@ DimmWitted::DimmWitted(std::unique_ptr<CompactFactorGraph> p_cfg,
 
 void DimmWitted::inference() {
   const size_t n_epoch = compute_n_epochs(opts.n_inference_epoch);
-  const VariableIndex nvar = samplers[0].fg.size.num_variables;
+  const variable_id_t nvar = samplers[0].fg.size.num_variables;
   const bool should_show_progress = !opts.should_be_quiet;
   Timer t_total, t;
 
@@ -160,8 +160,8 @@ void DimmWitted::learn() {
   InferenceResult &infrs = samplers[0].infrs;
 
   const size_t n_epoch = compute_n_epochs(opts.n_learning_epoch);
-  const VariableIndex nvar = infrs.nvars;
-  const WeightIndex nweight = infrs.nweights;
+  const variable_id_t nvar = infrs.nvars;
+  const weight_id_t nweight = infrs.nweights;
   const double decay = opts.decay;
   const bool should_show_progress = !opts.should_be_quiet;
   Timer t_total, t;
@@ -199,7 +199,7 @@ void DimmWitted::learn() {
     // and last epoch
     double lmax = -INFINITY;
     double l2 = 0.0;
-    for (WeightIndex j = 0; j < nweight; ++j) {
+    for (weight_id_t j = 0; j < nweight; ++j) {
       double diff = fabs(prev_weights[j] - infrs.weight_values[j]);
       prev_weights[j] = infrs.weight_values[j];
       l2 += diff * diff;

@@ -133,12 +133,12 @@ void FactorGraph::load_factors(const std::string &filename) {
   std::ifstream file;
   file.open(filename.c_str(), std::ios::in | std::ios::binary);
   size_t count = 0;
-  VariableIndex variable_id;
-  WeightIndex weightid;
-  VariableValue value_id;
+  variable_id_t variable_id;
+  weight_id_t weightid;
+  variable_value_t value_id;
   short type;
   size_t edge_count;
-  VariableValue equal_predicate;
+  variable_value_t equal_predicate;
   bool ispositive;
   while (file.good()) {
     file.read((char *)&type, 2);
@@ -171,13 +171,13 @@ void FactorGraph::load_factors(const std::string &filename) {
 
     switch (type) {
       case (FUNC_SPARSE_MULTINOMIAL): {
-        WeightIndex n_weights = 0;
+        weight_id_t n_weights = 0;
         file.read((char *)&n_weights, 8);
         n_weights = be64toh(n_weights);
 
         factors[size.num_factors].weight_ids =
-            new std::unordered_map<VariableValue, WeightIndex>(n_weights);
-        for (WeightIndex i = 0; i < n_weights; i++) {
+            new std::unordered_map<variable_value_t, weight_id_t>(n_weights);
+        for (weight_id_t i = 0; i < n_weights; i++) {
           // calculate radix-based key into weight_ids (see also
           // FactorGraph::get_multinomial_weight_id)
           // TODO: refactor the above formula into a shared routine. (See also
@@ -229,7 +229,7 @@ void FactorGraph::load_domains(const std::string &filename) {
     assert(variable.cardinality == domain_size);
 
     std::vector<int> domain_list(domain_size);
-    variable.domain_map = new std::unordered_map<VariableValue, size_t>();
+    variable.domain_map = new std::unordered_map<variable_value_t, size_t>();
 
     for (size_t i = 0; i < domain_size; ++i) {
       file.read((char *)&value, 8);

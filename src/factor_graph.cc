@@ -49,7 +49,7 @@ CompactFactorGraph::CompactFactorGraph(const FactorGraph &fg)
   size_t i_edge = 0;
 
   // For each factor, put the variables sorted within each factor in an array.
-  for (FactorIndex i = 0; i < fg.size.num_factors; ++i) {
+  for (factor_id_t i = 0; i < fg.size.num_factors; ++i) {
     const RawFactor &rf = fg.factors[i];
     factors[i] = rf;
     factors[i].n_start_i_vif = i_edge;
@@ -73,7 +73,7 @@ CompactFactorGraph::CompactFactorGraph(const FactorGraph &fg)
   // For each variable, lay the factors sequentially in an array as well.
   i_edge = 0;
   size_t ntallies = 0;
-  for (VariableIndex i = 0; i < fg.size.num_variables; ++i) {
+  for (variable_id_t i = 0; i < fg.size.num_variables; ++i) {
     const RawVariable &rv = fg.variables[i];
     variables[i] = rv;
     variables[i].n_factors = rv.tmp_factor_ids ? rv.tmp_factor_ids->size() : 0;
@@ -115,13 +115,13 @@ void FactorGraph::safety_check() {
 
   // check whether variables, factors, and weights are stored
   // in the order of their id
-  for (VariableIndex i = 0; i < size.num_variables; ++i) {
+  for (variable_id_t i = 0; i < size.num_variables; ++i) {
     assert(this->variables[i].id == i);
   }
-  for (FactorIndex i = 0; i < size.num_factors; ++i) {
+  for (factor_id_t i = 0; i < size.num_factors; ++i) {
     assert(this->factors[i].id == i);
   }
-  for (WeightIndex i = 0; i < size.num_weights; ++i) {
+  for (weight_id_t i = 0; i < size.num_weights; ++i) {
     assert(this->weights[i].id == i);
   }
 }
@@ -131,8 +131,8 @@ CompactFactorGraph::CompactFactorGraph(const FactorGraphDescriptor &size)
       variables(new Variable[size.num_variables]),
       factors(new Factor[size.num_factors]),
       compact_factors(new CompactFactor[size.num_edges]),
-      compact_factors_weightids(new WeightIndex[size.num_edges]),
-      factor_ids(new FactorIndex[size.num_edges]),
+      compact_factors_weightids(new weight_id_t[size.num_edges]),
+      factor_ids(new factor_id_t[size.num_edges]),
       vifs(new VariableInFactor[size.num_edges]) {}
 
 CompactFactorGraph::CompactFactorGraph(const CompactFactorGraph &other)
@@ -152,9 +152,9 @@ CompactFactorGraph::CompactFactorGraph(const CompactFactorGraph &other)
   memcpy(vifs.get(), other.vifs.get(), sizeof(*vifs.get()) * size.num_edges);
 }
 
-WeightIndex CompactFactorGraph::get_multinomial_weight_id(
-    const VariableValue assignments[], const CompactFactor &fs,
-    VariableIndex vid, VariableValue proposal) {
+weight_id_t CompactFactorGraph::get_multinomial_weight_id(
+    const variable_value_t assignments[], const CompactFactor &fs,
+    variable_id_t vid, variable_value_t proposal) {
   /**
    * For FUNC_MULTINOMIAL, the weight ids are aligned in a continuous region
    * according
@@ -169,7 +169,7 @@ WeightIndex CompactFactorGraph::get_multinomial_weight_id(
    * TODO: refactor the above formula into a shared routine. (See also
    * binary_parser.read_factors)
    */
-  WeightIndex weight_offset = 0;
+  weight_id_t weight_offset = 0;
   // for each variable in the factor
   for (size_t i = fs.n_start_i_vif; i < fs.n_start_i_vif + fs.n_variables;
        ++i) {
@@ -200,7 +200,7 @@ void CompactFactorGraph::update_weight(const Variable &variable,
                                        double stepsize) {
   // corresponding factors and weights in a continous region
   CompactFactor *const fs = &compact_factors[variable.n_start_i_factors];
-  const WeightIndex *const ws =
+  const weight_id_t *const ws =
       &compact_factors_weightids[variable.n_start_i_factors];
   // for each factor
   for (size_t i = 0; i < variable.n_factors; i++) {
@@ -227,9 +227,9 @@ void CompactFactorGraph::update_weight(const Variable &variable,
         // sample without evidence unfixed, I1, with corresponding weight w2
         // gradient of wd0 = f(I0) - I(w1==w2)f(I1)
         // gradient of wd1 = I(w1==w2)f(I0) - f(I1)
-        WeightIndex wid1 = get_multinomial_weight_id(
+        weight_id_t wid1 = get_multinomial_weight_id(
             infrs.assignments_evid.get(), fs[i], -1, -1);
-        WeightIndex wid2 = get_multinomial_weight_id(
+        weight_id_t wid2 = get_multinomial_weight_id(
             infrs.assignments_free.get(), fs[i], -1, -1);
         bool equal = (wid1 == wid2);
 

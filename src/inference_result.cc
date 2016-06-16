@@ -13,24 +13,24 @@ InferenceResult::InferenceResult(const CompactFactorGraph &fg,
       nweights(fg.size.num_weights),
       ntallies(0),
       multinomial_tallies(),
-      agg_means(new VariableValue[nvars]),
+      agg_means(new variable_value_t[nvars]),
       agg_nsamples(new size_t[nvars]),
-      assignments_free(new VariableValue[nvars]),
-      assignments_evid(new VariableValue[nvars]),
+      assignments_free(new variable_value_t[nvars]),
+      assignments_evid(new variable_value_t[nvars]),
       weight_values(new weight_value_t[nweights]),
       weights_isfixed(new bool[nweights]) {}
 
 InferenceResult::InferenceResult(const CompactFactorGraph &fg,
                                  const Weight weights[], const CmdParser &opts)
     : InferenceResult(fg, opts) {
-  for (WeightIndex t = 0; t < nweights; t++) {
+  for (weight_id_t t = 0; t < nweights; t++) {
     const Weight &weight = weights[t];
     weight_values[weight.id] = weight.weight;
     weights_isfixed[weight.id] = weight.isfixed;
   }
 
   ntallies = 0;
-  for (VariableIndex t = 0; t < nvars; t++) {
+  for (variable_id_t t = 0; t < nvars; t++) {
     const Variable &variable = fg.variables[t];
     assignments_free[variable.id] = variable.assignment_free;
     assignments_evid[variable.id] = variable.assignment_evid;
@@ -67,13 +67,13 @@ InferenceResult::InferenceResult(const InferenceResult &other)
 
 void InferenceResult::merge_weights_from(const InferenceResult &other) {
   assert(nweights == other.nweights);
-  for (WeightIndex j = 0; j < nweights; ++j)
+  for (weight_id_t j = 0; j < nweights; ++j)
     weight_values[j] += other.weight_values[j];
   ++weight_values_normalizer;
 }
 
 void InferenceResult::average_regularize_weights(double current_stepsize) {
-  for (WeightIndex j = 0; j < nweights; ++j) {
+  for (weight_id_t j = 0; j < nweights; ++j) {
     weight_values[j] /= weight_values_normalizer;
     if (!weights_isfixed[j]) {
       switch (opts.regularization) {
@@ -95,14 +95,14 @@ void InferenceResult::average_regularize_weights(double current_stepsize) {
 
 void InferenceResult::copy_weights_to(InferenceResult &other) const {
   assert(nweights == other.nweights);
-  for (WeightIndex j = 0; j < nweights; ++j)
+  for (weight_id_t j = 0; j < nweights; ++j)
     if (!weights_isfixed[j]) other.weight_values[j] = weight_values[j];
 }
 
 void InferenceResult::show_weights_snippet(std::ostream &output) const {
   output << "LEARNING SNIPPETS (QUERY WEIGHTS):" << std::endl;
   size_t ct = 0;
-  for (WeightIndex j = 0; j < nweights; ++j) {
+  for (weight_id_t j = 0; j < nweights; ++j) {
     ++ct;
     output << "   " << j << " " << weight_values[j] << std::endl;
     if (ct % 10 == 0) {
@@ -113,13 +113,13 @@ void InferenceResult::show_weights_snippet(std::ostream &output) const {
 }
 
 void InferenceResult::dump_weights_in_text(std::ostream &text_output) const {
-  for (WeightIndex j = 0; j < nweights; ++j) {
+  for (weight_id_t j = 0; j < nweights; ++j) {
     text_output << j << " " << weight_values[j] << std::endl;
   }
 }
 
 void InferenceResult::clear_variabletally() {
-  for (VariableIndex i = 0; i < nvars; i++) {
+  for (variable_id_t i = 0; i < nvars; i++) {
     agg_means[i] = 0.0;
     agg_nsamples[i] = 0.0;
   }
@@ -132,7 +132,7 @@ void InferenceResult::aggregate_marginals_from(const InferenceResult &other) {
   // TODO maybe make this an operator+ after separating marginals from weights
   assert(nvars == other.nvars);
   assert(ntallies == other.ntallies);
-  for (VariableIndex j = 0; j < other.nvars; ++j) {
+  for (variable_id_t j = 0; j < other.nvars; ++j) {
     const Variable &variable = other.fg.variables[j];
     agg_means[variable.id] += other.agg_means[variable.id];
     agg_nsamples[variable.id] += other.agg_nsamples[variable.id];
@@ -145,7 +145,7 @@ void InferenceResult::aggregate_marginals_from(const InferenceResult &other) {
 void InferenceResult::show_marginal_snippet(std::ostream &output) const {
   output << "INFERENCE SNIPPETS (QUERY VARIABLES):" << std::endl;
   size_t ct = 0;
-  for (VariableIndex j = 0; j < fg.size.num_variables; ++j) {
+  for (variable_id_t j = 0; j < fg.size.num_variables; ++j) {
     const Variable &variable = fg.variables[j];
     if (!variable.is_evid || opts.should_sample_evidence) {
       ++ct;
@@ -160,7 +160,7 @@ void InferenceResult::show_marginal_snippet(std::ostream &output) const {
 
         case DTYPE_MULTINOMIAL: {
           const auto &print_snippet = [this, &output, variable](
-              VariableValue domain_value, size_t domain_index) {
+              variable_value_t domain_value, size_t domain_index) {
             output << "        @ " << domain_value << " -> EXP="
                    << 1.0 * multinomial_tallies[variable.n_start_i_tally +
                                                 domain_index] /
@@ -197,7 +197,7 @@ void InferenceResult::show_marginal_histogram(std::ostream &output) const {
     abc.push_back(0);
   }
   size_t bad = 0;
-  for (VariableIndex j = 0; j < nvars; ++j) {
+  for (variable_id_t j = 0; j < nvars; ++j) {
     const Variable &variable = fg.variables[j];
     if (!opts.should_sample_evidence && variable.is_evid) {
       continue;
@@ -218,7 +218,7 @@ void InferenceResult::show_marginal_histogram(std::ostream &output) const {
 }
 
 void InferenceResult::dump_marginals_in_text(std::ostream &text_output) const {
-  for (VariableIndex j = 0; j < nvars; ++j) {
+  for (variable_id_t j = 0; j < nvars; ++j) {
     const Variable &variable = fg.variables[j];
     if (variable.is_evid && !opts.should_sample_evidence) {
       continue;
@@ -235,7 +235,7 @@ void InferenceResult::dump_marginals_in_text(std::ostream &text_output) const {
 
       case DTYPE_MULTINOMIAL: {
         const auto &print_result = [this, &text_output, variable](
-            VariableValue domain_value, size_t domain_index) {
+            variable_value_t domain_value, size_t domain_index) {
           text_output
               << variable.id << " " << domain_value << " "
               << (1.0 *

@@ -25,7 +25,7 @@ class RawFactor;
  */
 class CompactFactor {
  public:
-  FactorIndex id;                  // factor id
+  factor_id_t id;                  // factor id
   factor_function_type_t func_id;  // function type id
   size_t n_variables;              // number of variables in the factor
   size_t n_start_i_vif;  // the id of the first variable.  the variables of a
@@ -41,105 +41,105 @@ class CompactFactor {
   /**
    * Constructs a CompactFactor with given factor id
    */
-  CompactFactor(FactorIndex id);
+  CompactFactor(factor_id_t id);
 
   /**
    * Returns the potential of continousLR factor function. See factor.hxx for
    * more detail
    */
-  inline double _potential_continuousLR(const VariableInFactor *const vifs,
-                                        const VariableValue *const var_values,
-                                        const VariableIndex &,
-                                        const VariableValue &) const;
+  inline double _potential_continuousLR(
+      const VariableInFactor *const vifs,
+      const variable_value_t *const var_values, const variable_id_t &,
+      const variable_value_t &) const;
 
   /**
    * Returns the potential of or factor function. See factor.hxx for more detail
    */
   inline double _potential_or(const VariableInFactor *const vifs,
-                              const VariableValue *const var_values,
-                              const VariableIndex &,
-                              const VariableValue &) const;
+                              const variable_value_t *const var_values,
+                              const variable_id_t &,
+                              const variable_value_t &) const;
 
   /**
    * Returns the potential of and factor function. See factor.hxx for more
    * detail
    */
   inline double _potential_and(const VariableInFactor *const vifs,
-                               const VariableValue *const var_values,
-                               const VariableIndex &,
-                               const VariableValue &) const;
+                               const variable_value_t *const var_values,
+                               const variable_id_t &,
+                               const variable_value_t &) const;
 
   /**
    * Returns the potential of equal factor function. See factor.hxx for more
    * detail
    */
   inline double _potential_equal(const VariableInFactor *const vifs,
-                                 const VariableValue *const var_values,
-                                 const VariableIndex &,
-                                 const VariableValue &) const;
+                                 const variable_value_t *const var_values,
+                                 const variable_id_t &,
+                                 const variable_value_t &) const;
 
   /**
    * Returns the potential of MLN style imply factor function. See factor.hxx
    * for more detail
    */
   inline double _potential_imply_mln(const VariableInFactor *const vifs,
-                                     const VariableValue *const var_values,
-                                     const VariableIndex &,
-                                     const VariableValue &) const;
+                                     const variable_value_t *const var_values,
+                                     const variable_id_t &,
+                                     const variable_value_t &) const;
 
   /**
    * Returns the potential of imply factor function. See factor.hxx for more
    * detail
    */
   inline double _potential_imply(const VariableInFactor *const vifs,
-                                 const VariableValue *const var_values,
-                                 const VariableIndex &,
-                                 const VariableValue &) const;
+                                 const variable_value_t *const var_values,
+                                 const variable_id_t &,
+                                 const variable_value_t &) const;
 
   /**
    * Returns the potential of multinomial factor function. See factor.hxx for
    * more detail
    */
   inline double _potential_multinomial(const VariableInFactor *const vifs,
-                                       const VariableValue *const var_values,
-                                       const VariableIndex &,
-                                       const VariableValue &) const;
+                                       const variable_value_t *const var_values,
+                                       const variable_id_t &,
+                                       const variable_value_t &) const;
 
   /**
    * Returns the potential of oneIsTrue factor function. See factor.hxx for more
    * detail
    */
   inline double _potential_oneistrue(const VariableInFactor *const vifs,
-                                     const VariableValue *const var_values,
-                                     const VariableIndex &,
-                                     const VariableValue &) const;
+                                     const variable_value_t *const var_values,
+                                     const variable_id_t &,
+                                     const variable_value_t &) const;
 
   /**
    * Returns the potential of linear factor function. See factor.hxx for more
    * detail
    */
   inline double _potential_linear(const VariableInFactor *const vifs,
-                                  const VariableValue *const var_values,
-                                  const VariableIndex &,
-                                  const VariableValue &) const;
+                                  const variable_value_t *const var_values,
+                                  const variable_id_t &,
+                                  const variable_value_t &) const;
 
   /**
    * Returns the potential of ratio factor function. See factor.hxx for more
    * detail
    */
   inline double _potential_ratio(const VariableInFactor *const vifs,
-                                 const VariableValue *const var_values,
-                                 const VariableIndex &,
-                                 const VariableValue &) const;
+                                 const variable_value_t *const var_values,
+                                 const variable_id_t &,
+                                 const variable_value_t &) const;
 
   /**
    * Returns the potential of logical factor function. See factor.hxx for more
    * detail
    */
   inline double _potential_logical(const VariableInFactor *const vifs,
-                                   const VariableValue *const var_values,
-                                   const VariableIndex &,
-                                   const VariableValue &) const;
+                                   const variable_value_t *const var_values,
+                                   const variable_id_t &,
+                                   const variable_value_t &) const;
 
   /**
    * Returns potential of the factor.
@@ -156,9 +156,9 @@ class CompactFactor {
    * it gets inlined
    */
   inline double potential(const VariableInFactor *const vifs,
-                          const VariableValue *const var_values,
-                          const VariableIndex &vid,
-                          const VariableValue &proposal) const {
+                          const variable_value_t *const var_values,
+                          const variable_id_t &vid,
+                          const variable_value_t &proposal) const {
     switch (func_id) {
       case FUNC_IMPLY_MLN:
         return _potential_imply_mln(vifs, var_values, vid, proposal);
@@ -201,9 +201,9 @@ class CompactFactor {
 
  private:
   inline bool is_variable_satisfied(const VariableInFactor &vif,
-                                    const VariableIndex &vid,
-                                    const VariableValue *const var_values,
-                                    const VariableValue &proposal) const;
+                                    const variable_id_t &vid,
+                                    const variable_value_t *const var_values,
+                                    const variable_value_t &proposal) const;
 };
 
 /**
@@ -211,14 +211,14 @@ class CompactFactor {
  */
 class Factor {
  public:
-  FactorIndex id;                  // factor id
-  WeightIndex weight_id;           // weight id
+  factor_id_t id;                  // factor id
+  weight_id_t weight_id;           // weight id
   factor_function_type_t func_id;  // factor function id
   size_t n_variables;              // number of variables
 
   size_t n_start_i_vif;  // start variable id
 
-  static constexpr FactorIndex INVALID_ID = -1;
+  static constexpr factor_id_t INVALID_ID = -1;
   static constexpr factor_function_type_t INVALID_FUNC_ID = FUNC_UNDEFINED;
 
   // Variable value dependent weights for sparse multinomial factors
@@ -231,7 +231,7 @@ class Factor {
   // An empty map takes 48 bytes, so we create it only as needed, i.e., when
   // func_id = FUNC_SPARSE_MULTINOMIAL
   // Allocated in binary_parser.read_factors. Never deallocated.
-  std::unordered_map<VariableValue, WeightIndex> *weight_ids;
+  std::unordered_map<variable_value_t, weight_id_t> *weight_ids;
 
   /**
    * Turns out the no-arg constructor is still required, since we're
@@ -240,7 +240,7 @@ class Factor {
    */
   Factor();
 
-  Factor(FactorIndex id, WeightIndex weight_id, factor_function_type_t func_id,
+  Factor(factor_id_t id, weight_id_t weight_id, factor_function_type_t func_id,
          size_t n_variables);
 
   /**
@@ -275,7 +275,7 @@ class RawFactor : public Factor {
 
   /**
    */
-  RawFactor(FactorIndex id, WeightIndex weight_id,
+  RawFactor(factor_id_t id, weight_id_t weight_id,
             factor_function_type_t func_id, size_t n_variables);
 
   inline void add_variable_in_factor(const VariableInFactor &vif);

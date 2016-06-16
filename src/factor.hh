@@ -2,9 +2,9 @@ namespace dd {
 
 // whether a variable's value or proposal satisfies the is_equal condition
 inline bool CompactFactor::is_variable_satisfied(
-    const VariableInFactor &vif, const VariableIndex &vid,
-    const VariableValue *const var_values,
-    const VariableValue &proposal) const {
+    const VariableInFactor &vif, const variable_id_t &vid,
+    const variable_value_t *const var_values,
+    const variable_value_t &proposal) const {
   return (vif.vid == vid) ? vif.satisfiedUsing(proposal)
                           : vif.satisfiedUsing(var_values[vif.vid]);
 }
@@ -15,8 +15,9 @@ inline bool CompactFactor::is_variable_satisfied(
  *
  */
 inline double CompactFactor::_potential_equal(
-    const VariableInFactor *const vifs, const VariableValue *const var_values,
-    const VariableIndex &vid, const VariableValue &proposal) const {
+    const VariableInFactor *const vifs,
+    const variable_value_t *const var_values, const variable_id_t &vid,
+    const variable_value_t &proposal) const {
   const VariableInFactor &vif = vifs[n_start_i_vif];
   /* We use the value of the first variable in the factor as the "gold"
    * standard" */
@@ -40,8 +41,9 @@ inline double CompactFactor::_potential_equal(
  *
  */
 inline double CompactFactor::_potential_and(
-    const VariableInFactor *const vifs, const VariableValue *const var_values,
-    const VariableIndex &vid, const VariableValue &proposal) const {
+    const VariableInFactor *const vifs,
+    const variable_value_t *const var_values, const variable_id_t &vid,
+    const variable_value_t &proposal) const {
   /* Iterate over the factor variables */
   for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables;
        ++i_vif) {
@@ -60,8 +62,9 @@ inline double CompactFactor::_potential_and(
  *
  */
 inline double CompactFactor::_potential_or(
-    const VariableInFactor *const vifs, const VariableValue *const var_values,
-    const VariableIndex &vid, const VariableValue &proposal) const {
+    const VariableInFactor *const vifs,
+    const variable_value_t *const var_values, const variable_id_t &vid,
+    const variable_value_t &proposal) const {
   /* Iterate over the factor variables */
   for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables;
        ++i_vif) {
@@ -87,8 +90,9 @@ inline double CompactFactor::_potential_or(
  *
  */
 inline double CompactFactor::_potential_imply_mln(
-    const VariableInFactor *const vifs, const VariableValue *const var_values,
-    const VariableIndex &vid, const VariableValue &proposal) const {
+    const VariableInFactor *const vifs,
+    const variable_value_t *const var_values, const variable_id_t &vid,
+    const variable_value_t &proposal) const {
   /* Compute the value of the body of the rule */
   bool bBody = true;
   for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables - 1;
@@ -124,8 +128,9 @@ inline double CompactFactor::_potential_imply_mln(
  *
  */
 inline double CompactFactor::_potential_imply(
-    const VariableInFactor *const vifs, const VariableValue *const var_values,
-    const VariableIndex &vid, const VariableValue &proposal) const {
+    const VariableInFactor *const vifs,
+    const variable_value_t *const var_values, const variable_id_t &vid,
+    const variable_value_t &proposal) const {
   /* Compute the value of the body of the rule */
   bool bBody = true;
   for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables - 1;
@@ -150,8 +155,8 @@ inline double CompactFactor::_potential_imply(
 
 // potential for multinomial variable
 inline double CompactFactor::_potential_multinomial(
-    const VariableInFactor *vifs, const VariableValue *var_values,
-    const VariableIndex &vid, const VariableValue &proposal) const {
+    const VariableInFactor *vifs, const variable_value_t *var_values,
+    const variable_id_t &vid, const variable_value_t &proposal) const {
   return 1.0;
 }
 
@@ -161,8 +166,9 @@ inline double CompactFactor::_potential_multinomial(
  *
  */
 inline double CompactFactor::_potential_oneistrue(
-    const VariableInFactor *const vifs, const VariableValue *const var_values,
-    const VariableIndex &vid, const VariableValue &proposal) const {
+    const VariableInFactor *const vifs,
+    const variable_value_t *const var_values, const variable_id_t &vid,
+    const variable_value_t &proposal) const {
   bool found = false;
   /* Iterate over the factor variables */
   for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables;
@@ -186,8 +192,9 @@ inline double CompactFactor::_potential_oneistrue(
 
 // potential for linear expression
 inline double CompactFactor::_potential_linear(
-    const VariableInFactor *const vifs, const VariableValue *const var_values,
-    const VariableIndex &vid, const VariableValue &proposal) const {
+    const VariableInFactor *const vifs,
+    const variable_value_t *const var_values, const variable_id_t &vid,
+    const variable_value_t &proposal) const {
   double res = 0.0;
   bool bHead = is_variable_satisfied(vifs[n_start_i_vif + n_variables - 1], vid,
                                      var_values, proposal);
@@ -207,8 +214,9 @@ inline double CompactFactor::_potential_linear(
 
 // potential for linear expression
 inline double CompactFactor::_potential_ratio(
-    const VariableInFactor *const vifs, const VariableValue *const var_values,
-    const VariableIndex &vid, const VariableValue &proposal) const {
+    const VariableInFactor *const vifs,
+    const variable_value_t *const var_values, const variable_id_t &vid,
+    const variable_value_t &proposal) const {
   double res = 1.0;
   bool bHead = is_variable_satisfied(vifs[n_start_i_vif + n_variables - 1], vid,
                                      var_values, proposal);
@@ -226,8 +234,9 @@ inline double CompactFactor::_potential_ratio(
 
 // potential for linear expression
 inline double CompactFactor::_potential_logical(
-    const VariableInFactor *const vifs, const VariableValue *const var_values,
-    const VariableIndex &vid, const VariableValue &proposal) const {
+    const VariableInFactor *const vifs,
+    const variable_value_t *const var_values, const variable_id_t &vid,
+    const variable_value_t &proposal) const {
   double res = 0.0;
   bool bHead = is_variable_satisfied(vifs[n_start_i_vif + n_variables - 1], vid,
                                      var_values, proposal);
