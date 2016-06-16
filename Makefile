@@ -59,7 +59,7 @@ OBJECTS = $(SOURCES:.cc=.o)
 PROGRAM = dw
 
 # header files
-HEADERS += $(wildcard src/*.h src/*.hh)
+HEADERS += $(wildcard src/*.h)
 
 # test files
 TEST_SOURCES += test/test_main.cc
@@ -71,6 +71,7 @@ TEST_SOURCES += test/sampler_test.cc
 TEST_OBJECTS = $(TEST_SOURCES:.cc=.o)
 TEST_PROGRAM = $(PROGRAM)_test
 # test files need gtest
+$(OBJECTS): CXXFLAGS += -I./lib/gtest-1.7.0/include/
 $(TEST_OBJECTS): CXXFLAGS += -I./lib/gtest-1.7.0/include/
 $(TEST_PROGRAM): LDFLAGS += -L./lib/gtest/
 $(TEST_PROGRAM): LDLIBS += -lgtest -lpthread

@@ -2,6 +2,7 @@
 #define DIMMWITTED_COMMON_H_
 
 #include <stdio.h>
+#include <gtest/gtest_prod.h>
 
 #ifndef __MACH__
 #include <numa.h>
