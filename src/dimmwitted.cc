@@ -172,8 +172,7 @@ void DimmWitted::learn() {
 
   double current_stepsize = opts.stepsize;
   const std::unique_ptr<double[]> prev_weights(new double[nweight]);
-  memcpy(prev_weights.get(), infrs.weight_values.get(),
-         sizeof(*prev_weights.get()) * nweight);
+  COPY_ARRAY(infrs.weight_values.get(), nweight, prev_weights.get());
 
   // learning epochs
   for (size_t i_epoch = 0; i_epoch < n_epoch; ++i_epoch) {

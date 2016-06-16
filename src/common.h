@@ -78,6 +78,13 @@ typedef size_t weight_id_t;
 typedef double weight_value_t;
 
 /**
+ * Handy way to copy arrays of objects correctly, pointed by unique_ptr
+ */
+#define COPY_ARRAY_UNIQUE_PTR_MEMBER(array_up, size) \
+  COPY_ARRAY(other.array_up.get(), size, array_up.get())
+#define COPY_ARRAY(src, size, dst) std::copy(src, src + size, dst)
+
+/**
  * Explicitly say things are unused if they are actually unused.
  */
 #define UNUSED(var) (void)(var)

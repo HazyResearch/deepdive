@@ -136,18 +136,12 @@ CompactFactorGraph::CompactFactorGraph(const FactorGraphDescriptor &size)
 CompactFactorGraph::CompactFactorGraph(const CompactFactorGraph &other)
     : CompactFactorGraph(other.size) {
   // copy each member from the given graph
-  memcpy(variables.get(), other.variables.get(),
-         sizeof(*variables.get()) * size.num_variables);
-  memcpy(factors.get(), other.factors.get(),
-         sizeof(*factors.get()) * size.num_factors);
-
-  memcpy(compact_factors.get(), other.compact_factors.get(),
-         sizeof(*compact_factors.get()) * size.num_edges);
-  memcpy(compact_factors_weightids.get(), other.compact_factors_weightids.get(),
-         sizeof(*compact_factors_weightids.get()) * size.num_edges);
-  memcpy(factor_ids.get(), other.factor_ids.get(),
-         sizeof(*factor_ids.get()) * size.num_edges);
-  memcpy(vifs.get(), other.vifs.get(), sizeof(*vifs.get()) * size.num_edges);
+  COPY_ARRAY_UNIQUE_PTR_MEMBER(variables, size.num_variables);
+  COPY_ARRAY_UNIQUE_PTR_MEMBER(factors, size.num_factors);
+  COPY_ARRAY_UNIQUE_PTR_MEMBER(compact_factors, size.num_edges);
+  COPY_ARRAY_UNIQUE_PTR_MEMBER(compact_factors_weightids, size.num_edges);
+  COPY_ARRAY_UNIQUE_PTR_MEMBER(factor_ids, size.num_edges);
+  COPY_ARRAY_UNIQUE_PTR_MEMBER(vifs, size.num_edges);
 }
 
 weight_id_t CompactFactorGraph::get_multinomial_weight_id(
