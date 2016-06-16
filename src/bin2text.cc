@@ -116,9 +116,9 @@ void dump_factors(const dd::FactorGraph &fg, const std::string &filename) {
         fout << f.weight_ids->size();
         fout << field_delim;
         // output values per var
-        for (size_t k = 0; k < f.n_variables; k++) {
+        for (size_t k = 0; k < f.n_variables; ++k) {
           fout << "{";
-          for (variable_value_t j = 0; j < f.weight_ids->size(); j++) {
+          for (variable_value_t j = 0; j < f.weight_ids->size(); ++j) {
             if (j > 0) fout << ",";
             fout << vals[j * f.n_variables + k];
           }

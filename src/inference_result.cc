@@ -23,14 +23,14 @@ InferenceResult::InferenceResult(const CompactFactorGraph &fg,
 InferenceResult::InferenceResult(const CompactFactorGraph &fg,
                                  const Weight weights[], const CmdParser &opts)
     : InferenceResult(fg, opts) {
-  for (weight_id_t t = 0; t < nweights; t++) {
+  for (weight_id_t t = 0; t < nweights; ++t) {
     const Weight &weight = weights[t];
     weight_values[weight.id] = weight.weight;
     weights_isfixed[weight.id] = weight.isfixed;
   }
 
   ntallies = 0;
-  for (variable_id_t t = 0; t < nvars; t++) {
+  for (variable_id_t t = 0; t < nvars; ++t) {
     const Variable &variable = fg.variables[t];
     assignments_free[variable.id] = variable.assignment_free;
     assignments_evid[variable.id] = variable.assignment_evid;
@@ -60,7 +60,7 @@ InferenceResult::InferenceResult(const InferenceResult &other)
 
   ntallies = other.ntallies;
   multinomial_tallies.reset(new size_t[ntallies]);
-  for (size_t i = 0; i < ntallies; i++) {
+  for (size_t i = 0; i < ntallies; ++i) {
     multinomial_tallies[i] = other.multinomial_tallies[i];
   }
 }
@@ -119,11 +119,11 @@ void InferenceResult::dump_weights_in_text(std::ostream &text_output) const {
 }
 
 void InferenceResult::clear_variabletally() {
-  for (variable_id_t i = 0; i < nvars; i++) {
+  for (variable_id_t i = 0; i < nvars; ++i) {
     agg_means[i] = 0.0;
     agg_nsamples[i] = 0.0;
   }
-  for (size_t i = 0; i < ntallies; i++) {
+  for (size_t i = 0; i < ntallies; ++i) {
     multinomial_tallies[i] = 0;
   }
 }

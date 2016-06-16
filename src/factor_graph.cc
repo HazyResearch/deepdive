@@ -203,7 +203,7 @@ void CompactFactorGraph::update_weight(const Variable &variable,
   const weight_id_t *const ws =
       &compact_factors_weightids[variable.n_start_i_factors];
   // for each factor
-  for (size_t i = 0; i < variable.n_factors; i++) {
+  for (size_t i = 0; i < variable.n_factors; ++i) {
     // boolean variable
     switch (variable.domain_type) {
       case DTYPE_BOOLEAN: {

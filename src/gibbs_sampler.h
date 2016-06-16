@@ -161,7 +161,7 @@ inline void GibbsSamplerThread::sample_single_variable(variable_id_t vid) {
     infrs.assignments_evid[variable.id] = proposal;
 
     // bookkeep aggregates for computing marginals
-    infrs.agg_nsamples[variable.id]++;
+    ++infrs.agg_nsamples[variable.id];
     switch (variable.domain_type) {
       case DTYPE_BOOLEAN:
         infrs.agg_means[variable.id] += proposal;

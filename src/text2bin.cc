@@ -150,10 +150,10 @@ void load_factor(std::string input_filename, std::string output_filename,
       long variableid = atol(element.c_str());
       variableid = htobe64(variableid);
       variables.push_back(variableid);
-      nedge++;
-      n_vars++;
+      ++nedge;
+      ++n_vars;
     };
-    for (long i = 0; i < nvar; i++) {
+    for (long i = 0; i < nvar; ++i) {
       getline(ss, field, field_delim);
       // try parsing as an array first
       istringstream fieldinput(field);
@@ -165,7 +165,7 @@ void load_factor(std::string input_filename, std::string output_filename,
     n_vars = htobe64(n_vars);
     fout.write((char *)&predicate, 8);
     fout.write((char *)&n_vars, 8);
-    for (variable_id_t i = 0; i < variables.size(); i++) {
+    for (variable_id_t i = 0; i < variables.size(); ++i) {
       fout.write((char *)&variables[i], 8);
       char flag = positives_vec.at(i) ? 1 : 0;
       fout.write((char *)&flag, 1);
@@ -185,7 +185,7 @@ void load_factor(std::string input_filename, std::string output_filename,
 
         // second, parse var vals for each var
         // TODO: hard coding cid length (4) for now
-        for (long i = 0; i < nvar; i++) {
+        for (long i = 0; i < nvar; ++i) {
           getline(ss, array_piece, field_delim);
           istringstream ass(array_piece);
           parse_pgarray_or_die(
@@ -204,8 +204,8 @@ void load_factor(std::string input_filename, std::string output_filename,
             }, num_weightids);
 
         // fourth, transpose into output format
-        for (long i = 0; i < num_weightids; i++) {
-          for (long j = 0; j < nvar; j++) {
+        for (long i = 0; i < num_weightids; ++i) {
+          for (long j = 0; j < nvar; ++j) {
             int cid = (int)vals_and_weights[j * num_weightids + i];
             fout.write((char *)&cid, 4);
           }

@@ -71,7 +71,7 @@ TEST(BinaryFormatTest, read_domains) {
   }
   fg.load_domains("./test/domains/graph.domains");
 
-  for (variable_id_t i = 0; i < num_variables; i++) {
+  for (variable_id_t i = 0; i < num_variables; ++i) {
     EXPECT_EQ(fg.variables[i].domain_map->size(), domain_sizes[i]);
   }
 

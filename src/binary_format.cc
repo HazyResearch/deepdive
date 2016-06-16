@@ -55,7 +55,7 @@ void FactorGraph::load_weights(const std::string &filename) {
 
     // load into factor graph
     weights[id] = Weight(id, initial_value, isfixed);
-    count++;
+    ++count;
   }
   size.num_weights += count;
   file.close();
@@ -94,7 +94,7 @@ void FactorGraph::load_variables(const std::string &filename) {
         "cardinality=%lli\n",
         id, isevidence, initial_value, type, edge_count, cardinality);
 
-    count++;
+    ++count;
 
     variable_domain_type_t type_const;
     switch (type) {
@@ -149,7 +149,7 @@ void FactorGraph::load_factors(const std::string &filename) {
     edge_count = be64toh(edge_count);
     equal_predicate = be64toh(equal_predicate);
 
-    count++;
+    ++count;
 
     factors[size.num_factors] = RawFactor(
         size.num_factors, -1, (factor_function_type_t)type, edge_count);
@@ -177,13 +177,13 @@ void FactorGraph::load_factors(const std::string &filename) {
 
         factors[size.num_factors].weight_ids =
             new std::unordered_map<variable_value_t, weight_id_t>(n_weights);
-        for (weight_id_t i = 0; i < n_weights; i++) {
+        for (weight_id_t i = 0; i < n_weights; ++i) {
           // calculate radix-based key into weight_ids (see also
           // FactorGraph::get_multinomial_weight_id)
           // TODO: refactor the above formula into a shared routine. (See also
           // FactorGraph::get_multinomial_weight_id)
           size_t key = 0;
-          for (size_t j = 0; j < edge_count; j++) {
+          for (size_t j = 0; j < edge_count; ++j) {
             const Variable &var =
                 variables[factors[size.num_factors].tmp_variables->at(j).vid];
             file.read((char *)&value_id, 4);
@@ -238,7 +238,7 @@ void FactorGraph::load_domains(const std::string &filename) {
     }
 
     std::sort(domain_list.begin(), domain_list.end());
-    for (size_t i = 0; i < domain_size; i++) {
+    for (size_t i = 0; i < domain_size; ++i) {
       (*variable.domain_map)[domain_list[i]] = i;
     }
 
