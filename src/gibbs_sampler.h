@@ -171,7 +171,7 @@ inline void GibbsSamplerThread::sample_single_variable(variable_id_t vid) {
                                     variable.get_domain_index(proposal)];
         break;
       default:
-        abort();
+        std::abort();
     }
   }
 }
@@ -240,7 +240,7 @@ inline variable_value_t GibbsSamplerThread::draw_sample(
 
     default:
       // unsupported variable types
-      abort();
+      std::abort();
   }
 
   return proposal;

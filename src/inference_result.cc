@@ -86,7 +86,7 @@ void InferenceResult::average_regularize_weights(double current_stepsize) {
           break;
         }
         default:
-          abort();
+          std::abort();
       }
     }
   }
@@ -178,7 +178,7 @@ void InferenceResult::show_marginal_snippet(std::ostream &output) const {
         }
 
         default:
-          abort();
+          std::abort();
       }
 
       if (ct % 10 == 0) {
@@ -253,7 +253,7 @@ void InferenceResult::dump_marginals_in_text(std::ostream &text_output) const {
       }
 
       default:
-        abort();
+        std::abort();
     }
   }
 }

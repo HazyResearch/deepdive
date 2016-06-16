@@ -109,7 +109,7 @@ void FactorGraph::load_variables(const std::string &filename) {
             << "[ERROR] Only Boolean and Multinomial variables are supported "
                "now!"
             << std::endl;
-        abort();
+        std::abort();
     }
     bool is_evidence = isevidence >= 1;
     bool is_observation = isevidence == 2;

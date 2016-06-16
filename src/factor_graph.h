@@ -215,7 +215,7 @@ inline double CompactFactorGraph::potential(
       break;
     }
     default:
-      abort();
+      std::abort();
   }
   return pot;
 }

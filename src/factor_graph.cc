@@ -188,7 +188,7 @@ weight_id_t CompactFactorGraph::get_multinomial_weight_id(
       return compact_factors_weightids[&fs - &compact_factors[0]] +
              weight_offset;
     default:
-      abort();
+      std::abort();
   }
   return Weight::INVALID_ID;
 }
@@ -248,7 +248,7 @@ void CompactFactorGraph::update_weight(const Variable &variable,
       }
 
       default:
-        abort();
+        std::abort();
     }
   }
 }

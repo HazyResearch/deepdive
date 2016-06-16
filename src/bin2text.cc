@@ -41,7 +41,7 @@ void dump_variables(const FactorGraph &fg, const std::string &filename) {
         type_str = "1";
         break;
       default:
-        abort();
+        std::abort();
     }
     fout << field_delim << type_str;
     // cardinality

@@ -111,7 +111,7 @@ static inline long parse_pgarray_or_die(
   } else {
     std::cerr << "Expected an array '{' but found: " << input.get()
               << std::endl;
-    abort();
+    std::abort();
   }
 }
 
