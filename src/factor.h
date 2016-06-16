@@ -103,11 +103,10 @@ class CompactFactor {
                             : vif.satisfiedUsing(var_values[vif.vid]);
   }
 
-#define DEFINE_POTENTIAL_FOR(func_id)                                        \
-  inline double POTENTIAL(func_id)(const VariableInFactor *const vifs,       \
-                                   const variable_value_t *const var_values, \
-                                   const variable_id_t &vid,                 \
-                                   const variable_value_t &proposal) const
+#define DEFINE_POTENTIAL_FOR(func_id)                                     \
+  inline double POTENTIAL(func_id)(                                       \
+      const VariableInFactor vifs[], const variable_value_t var_values[], \
+      const variable_id_t vid, const variable_value_t &proposal) const
 
   /** Return the value of the "equality test" of the variables in the factor,
    * with the variable of index vid (wrt the factor) is set to the value of
