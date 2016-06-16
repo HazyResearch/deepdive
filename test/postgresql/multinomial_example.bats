@@ -8,7 +8,7 @@ setup() {
 }
 
 @test "$DBVARIANT multinomial example gives correct probabilities" {
-    bash run.sh
+    ./run.sh
     # Tests are inside run.sh
 }
 

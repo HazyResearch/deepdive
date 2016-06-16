@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 set -eu
 
 # A dummy program that validates the dynamic-scope multinomial variables.
@@ -15,8 +16,7 @@ set -eu
 # This script is runnable alone.
 #
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd $SCRIPT_DIR
+cd "$(dirname "$0")"
 
 # Generate db.url
 echo "postgresql://localhost/deepdive_multinomial_$USER" > db.url
