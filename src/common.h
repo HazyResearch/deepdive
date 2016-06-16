@@ -82,8 +82,6 @@ typedef double weight_value_t;
  */
 #define UNUSED(var) (void)(var)
 
-enum inc_mode { ORIGINAL, MAT, INC };
-
 enum regularization { REG_L1, REG_L2 };
 
 inline bool fast_exact_is_equal(double a, double b) {
