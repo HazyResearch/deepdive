@@ -21,10 +21,10 @@ namespace dd {
 
 constexpr char field_delim = '\t';  // tsv file delimiter
 
-void dump_variables(const dd::FactorGraph &fg, const std::string &filename) {
+void dump_variables(const FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
   for (size_t i = 0; i < fg.size.num_variables; ++i) {
-    dd::Variable &v = fg.variables[i];
+    Variable &v = fg.variables[i];
     // variable id
     fout << v.id;
     // is_evidence
@@ -50,10 +50,10 @@ void dump_variables(const dd::FactorGraph &fg, const std::string &filename) {
   }
 }
 
-void dump_domains(const dd::FactorGraph &fg, const std::string &filename) {
+void dump_domains(const FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
   for (size_t i = 0; i < fg.size.num_variables; ++i) {
-    dd::Variable &v = fg.variables[i];
+    Variable &v = fg.variables[i];
     if (v.domain_map) {
       fout << v.id;
       fout << field_delim << v.domain_map->size();
@@ -72,7 +72,7 @@ void dump_domains(const dd::FactorGraph &fg, const std::string &filename) {
   }
 }
 
-void dump_factors(const dd::FactorGraph &fg, const std::string &filename) {
+void dump_factors(const FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
   std::vector<variable_value_t> vals;
   std::vector<weight_id_t> weights;
@@ -87,7 +87,7 @@ void dump_factors(const dd::FactorGraph &fg, const std::string &filename) {
       fout << field_delim;
     }
     switch (f.func_id) {
-      case dd::FUNC_SPARSE_MULTINOMIAL: {
+      case FUNC_SPARSE_MULTINOMIAL: {
         // Format: NUM_WEIGHTS [VAR1 VAL ID] [VAR2 VAL ID] ... [WEIGHT ID]
         // transpose tuples; sort to ensure consistency
         vals.clear();
@@ -103,7 +103,7 @@ void dump_factors(const dd::FactorGraph &fg, const std::string &filename) {
           for (size_t k = f.n_variables; k > 0;) {
             --k;  // turning it into a correct index
             variable_id_t vid = f.tmp_variables.at(k).vid;
-            dd::Variable &var = fg.variables[vid];
+            Variable &var = fg.variables[vid];
             size_t val_idx = key % var.cardinality;
             variable_value_t val = var.get_domain_value_at(val_idx);
             key = key / var.cardinality;
@@ -144,10 +144,10 @@ void dump_factors(const dd::FactorGraph &fg, const std::string &filename) {
   }
 }
 
-void dump_weights(const dd::FactorGraph &fg, const std::string &filename) {
+void dump_weights(const FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
   for (weight_id_t i = 0; i < fg.size.num_weights; ++i) {
-    dd::Weight &w = fg.weights[i];
+    Weight &w = fg.weights[i];
     // weight id
     fout << w.id;
     // whether it's fixed
@@ -158,7 +158,7 @@ void dump_weights(const dd::FactorGraph &fg, const std::string &filename) {
   }
 }
 
-void dump_meta(const dd::FactorGraph &fg, const std::string &filename) {
+void dump_meta(const FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
   fout << fg.size.num_weights;
   fout << "," << fg.size.num_variables;
@@ -174,8 +174,7 @@ void dump_meta(const dd::FactorGraph &fg, const std::string &filename) {
   fout << std::endl;
 }
 
-void dump_factorgraph(const dd::FactorGraph &fg,
-                      const std::string &output_dir) {
+void dump_factorgraph(const FactorGraph &fg, const std::string &output_dir) {
   dump_variables(fg, output_dir + "/variables.tsv");
   dump_domains(fg, output_dir + "/domains.tsv");
   dump_factors(fg, output_dir + "/factors.tsv");
@@ -183,10 +182,10 @@ void dump_factorgraph(const dd::FactorGraph &fg,
   dump_meta(fg, output_dir + "/graph.meta");
 }
 
-int bin2text(const dd::CmdParser &cmd_parser) {
+int bin2text(const CmdParser &cmd_parser) {
   FactorGraphDescriptor meta = read_meta(cmd_parser.fg_file);
   // load factor graph
-  dd::FactorGraph fg(meta);
+  FactorGraph fg(meta);
   fg.load_variables(cmd_parser.variable_file);
   fg.load_weights(cmd_parser.weight_file);
   fg.load_domains(cmd_parser.domain_file);

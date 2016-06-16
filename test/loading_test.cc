@@ -18,9 +18,9 @@ namespace dd {
 // positive and id 8 negative.
 class LoadingTest : public testing::Test {
  protected:
-  dd::FactorGraph fg;
+  FactorGraph fg;
 
-  LoadingTest() : fg(dd::FactorGraph({18, 18, 1, 18})) {}
+  LoadingTest() : fg(FactorGraph({18, 18, 1, 18})) {}
 
   virtual void SetUp() {
     const char *argv[] = {
@@ -35,7 +35,7 @@ class LoadingTest : public testing::Test {
         "-s",      "1",
         "--alpha", "0.1",
     };
-    dd::CmdParser cmd_parser(sizeof(argv) / sizeof(*argv), argv);
+    CmdParser cmd_parser(sizeof(argv) / sizeof(*argv), argv);
     fg.load_variables(cmd_parser.variable_file);
     fg.load_weights(cmd_parser.weight_file);
     fg.load_domains(cmd_parser.domain_file);
@@ -65,7 +65,7 @@ TEST_F(LoadingTest, load_factor_graph) {
 //               (due to dellocation of tmp_variables etc)
 // // test for FactorGraph::compile() function
 // TEST_F(LoadingTest, organize_graph_by_edge) {
-//   dd::CompactFactorGraph cfg(18, 18, 1, 18);
+//   CompactFactorGraph cfg(18, 18, 1, 18);
 //   fg.compile(cfg);
 //
 //   EXPECT_EQ(cfg.size.num_variables, 18);
@@ -78,9 +78,9 @@ TEST_F(LoadingTest, load_factor_graph) {
 
 // test for FactorGraph::copy_from function
 TEST_F(LoadingTest, copy_from) {
-  dd::CompactFactorGraph cfg(fg);
+  CompactFactorGraph cfg(fg);
 
-  dd::CompactFactorGraph cfg2 = cfg;
+  CompactFactorGraph cfg2 = cfg;
 
   EXPECT_TRUE(memcmp(&cfg, &cfg2, sizeof(cfg)));
 }

@@ -5,7 +5,7 @@
 
 namespace dd {
 
-int text2bin(const dd::CmdParser &args);
+int text2bin(const CmdParser &args);
 
 }  // namespace dd
 

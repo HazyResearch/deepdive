@@ -20,7 +20,7 @@ namespace dd {
 
 // test read_variables
 TEST(BinaryFormatTest, read_variables) {
-  dd::FactorGraph fg({18, 1, 1, 1});
+  FactorGraph fg({18, 1, 1, 1});
   fg.load_variables("./test/biased_coin/graph.variables");
   EXPECT_EQ(fg.size.num_variables, 18);
   EXPECT_EQ(fg.size.num_variables_evidence, 9);
@@ -35,7 +35,7 @@ TEST(BinaryFormatTest, read_variables) {
 
 // test read_factors
 TEST(BinaryFormatTest, read_factors) {
-  dd::FactorGraph fg({18, 18, 1, 18});
+  FactorGraph fg({18, 18, 1, 18});
   fg.load_variables("./test/biased_coin/graph.variables");
   fg.load_factors("./test/biased_coin/graph.factors");
   EXPECT_EQ(fg.size.num_factors, 18);
@@ -50,7 +50,7 @@ TEST(BinaryFormatTest, read_factors) {
 
 // test read_weights
 TEST(BinaryFormatTest, read_weights) {
-  dd::FactorGraph fg({1, 1, 1, 1});
+  FactorGraph fg({1, 1, 1, 1});
   fg.load_weights("./test/biased_coin/graph.weights");
   EXPECT_EQ(fg.size.num_weights, 1);
   EXPECT_EQ(fg.weights[0].id, 0);
@@ -62,12 +62,12 @@ TEST(BinaryFormatTest, read_weights) {
 TEST(BinaryFormatTest, read_domains) {
   size_t num_variables = 3;
   int domain_sizes[] = {1, 2, 3};
-  dd::FactorGraph fg({num_variables, 1, 1, 1});
+  FactorGraph fg({num_variables, 1, 1, 1});
 
   // add variables
   for (variable_id_t i = 0; i < num_variables; ++i) {
     fg.variables[i] =
-        dd::RawVariable(i, DTYPE_BOOLEAN, 0, domain_sizes[i], 0, 0, 0, 0);
+        RawVariable(i, DTYPE_BOOLEAN, 0, domain_sizes[i], 0, 0, 0, 0);
   }
   fg.load_domains("./test/domains/graph.domains");
 

@@ -16,7 +16,7 @@ int dw(int argc, const char* const argv[]);
 /**
  * Runs gibbs sampling using the given command line parser
  */
-int gibbs(const dd::CmdParser& cmd_parser);
+int gibbs(const CmdParser& cmd_parser);
 
 /**
  * Class for (NUMA-aware) gibbs sampling

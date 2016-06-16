@@ -176,7 +176,7 @@ inline void GibbsSamplerThread::sample_single_variable(variable_id_t vid) {
   }
 }
 
-inline variable_value_t dd::GibbsSamplerThread::draw_sample(
+inline variable_value_t GibbsSamplerThread::draw_sample(
     Variable &variable, const variable_value_t assignments[],
     const double weight_values[]) {
   variable_value_t proposal = 0;

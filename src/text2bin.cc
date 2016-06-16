@@ -173,7 +173,7 @@ void load_factor(std::string input_filename, std::string output_filename,
 
     // weight ids
     switch (be16toh(funcid)) {
-      case dd::FUNC_SPARSE_MULTINOMIAL: {
+      case FUNC_SPARSE_MULTINOMIAL: {
         vals_and_weights.clear();
         // IN  Format: NUM_WEIGHTS [VAR1 VAL ID] [VAR2 VAL ID] ... [WEIGHT ID]
         // OUT Format: NUM_WEIGHTS [[VAR1_VALi, VAR2_VALi, ..., WEIGHTi]]
@@ -262,7 +262,7 @@ void load_domain(std::string input_filename, std::string output_filename) {
   fout.close();
 }
 
-int text2bin(const dd::CmdParser &args) {
+int text2bin(const CmdParser &args) {
   // common arguments
   if (args.text2bin_mode == "variable") {
     load_var(args.text2bin_input, args.text2bin_output);

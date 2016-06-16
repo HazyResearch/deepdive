@@ -16,21 +16,21 @@ namespace dd {
 // the command-line entry point
 int dw(int argc, const char *const argv[]) {
   // available modes
-  const std::map<std::string, int (*)(const dd::CmdParser &)> MODES = {
+  const std::map<std::string, int (*)(const CmdParser &)> MODES = {
       {"gibbs", gibbs},  // to do the learning and inference with Gibbs sampling
       {"text2bin", text2bin},  // to generate binary factor graphs from TSV
       {"bin2text", bin2text},  // to dump TSV of binary factor graphs
   };
 
   // parse command-line arguments
-  dd::CmdParser cmd_parser(argc, argv);
+  CmdParser cmd_parser(argc, argv);
 
   // dispatch to the correct function
   const auto &mode = MODES.find(cmd_parser.app_name);
   return (mode != MODES.end()) ? mode->second(cmd_parser) : 1;
 }
 
-int gibbs(const dd::CmdParser &args) {
+int gibbs(const CmdParser &args) {
   // number of NUMA nodes
   size_t n_numa_node = numa_max_node() + 1;
   // number of max threads per NUMA node

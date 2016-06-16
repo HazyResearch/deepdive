@@ -15,9 +15,9 @@ namespace dd {
 // test fixture
 class SamplerTest : public testing::Test {
  protected:
-  std::unique_ptr<dd::CompactFactorGraph> cfg;
-  std::unique_ptr<dd::InferenceResult> infrs;
-  std::unique_ptr<dd::GibbsSamplerThread> sampler;
+  std::unique_ptr<CompactFactorGraph> cfg;
+  std::unique_ptr<InferenceResult> infrs;
+  std::unique_ptr<GibbsSamplerThread> sampler;
 
   virtual void SetUp() {
     const char *argv[] = {
@@ -32,8 +32,8 @@ class SamplerTest : public testing::Test {
         "-s",      "1",
         "--alpha", "0.1",
     };
-    dd::CmdParser cmd_parser(sizeof(argv) / sizeof(*argv), argv);
-    dd::FactorGraph fg({18, 18, 1, 18});
+    CmdParser cmd_parser(sizeof(argv) / sizeof(*argv), argv);
+    FactorGraph fg({18, 18, 1, 18});
     fg.load_variables(cmd_parser.variable_file);
     fg.load_weights(cmd_parser.weight_file);
     fg.load_domains(cmd_parser.domain_file);
