@@ -43,6 +43,8 @@ class CompactFactor {
    */
   CompactFactor(factor_id_t id);
 
+#define POTENTIAL(func_id) _potential_##func_id
+
   /**
    * Returns potential of the factor.
    * (potential is the value of the factor)
@@ -57,40 +59,30 @@ class CompactFactor {
    * This function is defined in the head to make sure
    * it gets inlined
    */
-  inline double potential(const VariableInFactor *const vifs,
-                          const variable_value_t *const var_values,
-                          const variable_id_t &vid,
-                          const variable_value_t &proposal) const {
+  inline double potential(const VariableInFactor vifs[],
+                          const variable_value_t var_values[],
+                          const variable_id_t vid,
+                          const variable_value_t proposal) const {
+#define RETURN_POTENTIAL_FOR(func_id) \
+  case func_id:                       \
+    return POTENTIAL(func_id)(vifs, var_values, vid, proposal)
+#define RETURN_POTENTIAL_FOR2(func_id, func_id2) \
+  case func_id2:                                 \
+    RETURN_POTENTIAL_FOR(func_id)
     switch (func_id) {
-      case FUNC_IMPLY_MLN:
-        return _potential_imply_mln(vifs, var_values, vid, proposal);
-      case FUNC_IMPLY_neg1_1:
-        return _potential_imply(vifs, var_values, vid, proposal);
-      case FUNC_ISTRUE:
-        return _potential_and(vifs, var_values, vid, proposal);
-      case FUNC_OR:
-        return _potential_or(vifs, var_values, vid, proposal);
-      case FUNC_AND:
-        return _potential_and(vifs, var_values, vid, proposal);
-      case FUNC_EQUAL:
-        return _potential_equal(vifs, var_values, vid, proposal);
-      case FUNC_SPARSE_MULTINOMIAL:
-      case FUNC_MULTINOMIAL:
-        return _potential_multinomial(vifs, var_values, vid, proposal);
-      case FUNC_LINEAR:
-        return _potential_linear(vifs, var_values, vid, proposal);
-      case FUNC_RATIO:
-        return _potential_ratio(vifs, var_values, vid, proposal);
-      case FUNC_LOGICAL:
-        return _potential_logical(vifs, var_values, vid, proposal);
-      case FUNC_ONEISTRUE:
-        return _potential_oneistrue(vifs, var_values, vid, proposal);
-      case FUNC_SQLSELECT:
-        std::cout << "SQLSELECT Not supported yet!" << std::endl;
-        abort();
-      case FUNC_ContLR:
-        std::cout << "ContinuousLR Not supported yet!" << std::endl;
-        abort();
+      RETURN_POTENTIAL_FOR(FUNC_IMPLY_MLN);
+      RETURN_POTENTIAL_FOR(FUNC_IMPLY_neg1_1);
+      RETURN_POTENTIAL_FOR2(FUNC_AND, FUNC_ISTRUE);
+      RETURN_POTENTIAL_FOR(FUNC_OR);
+      RETURN_POTENTIAL_FOR(FUNC_EQUAL);
+      RETURN_POTENTIAL_FOR2(FUNC_MULTINOMIAL, FUNC_SPARSE_MULTINOMIAL);
+      RETURN_POTENTIAL_FOR(FUNC_LINEAR);
+      RETURN_POTENTIAL_FOR(FUNC_RATIO);
+      RETURN_POTENTIAL_FOR(FUNC_LOGICAL);
+      RETURN_POTENTIAL_FOR(FUNC_ONEISTRUE);
+      RETURN_POTENTIAL_FOR(FUNC_SQLSELECT);
+      RETURN_POTENTIAL_FOR(FUNC_ContLR);
+#undef RETURN_POTENTIAL_FOR
       default:
         std::cout << "Unsupported Factor Function ID= " << func_id << std::endl;
         abort();
@@ -111,15 +103,18 @@ class CompactFactor {
                             : vif.satisfiedUsing(var_values[vif.vid]);
   }
 
+#define DEFINE_POTENTIAL_FOR(func_id)                                        \
+  inline double POTENTIAL(func_id)(const VariableInFactor *const vifs,       \
+                                   const variable_value_t *const var_values, \
+                                   const variable_id_t &vid,                 \
+                                   const variable_value_t &proposal) const
+
   /** Return the value of the "equality test" of the variables in the factor,
    * with the variable of index vid (wrt the factor) is set to the value of
    * the 'proposal' argument.
    *
    */
-  inline double _potential_equal(const VariableInFactor *const vifs,
-                                 const variable_value_t *const var_values,
-                                 const variable_id_t &vid,
-                                 const variable_value_t &proposal) const {
+  DEFINE_POTENTIAL_FOR(FUNC_EQUAL) {
     const VariableInFactor &vif = vifs[n_start_i_vif];
     /* We use the value of the first variable in the factor as the "gold"
      * standard" */
@@ -142,10 +137,7 @@ class CompactFactor {
    * 'proposal' argument.
    *
    */
-  inline double _potential_and(const VariableInFactor *const vifs,
-                               const variable_value_t *const var_values,
-                               const variable_id_t &vid,
-                               const variable_value_t &proposal) const {
+  DEFINE_POTENTIAL_FOR(FUNC_AND) {
     /* Iterate over the factor variables */
     for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables;
          ++i_vif) {
@@ -163,10 +155,7 @@ class CompactFactor {
    * 'proposal' argument.
    *
    */
-  inline double _potential_or(const VariableInFactor *const vifs,
-                              const variable_value_t *const var_values,
-                              const variable_id_t &vid,
-                              const variable_value_t &proposal) const {
+  DEFINE_POTENTIAL_FOR(FUNC_OR) {
     /* Iterate over the factor variables */
     for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables;
          ++i_vif) {
@@ -191,10 +180,7 @@ class CompactFactor {
    * return 1.0 if the body is not satisfied.
    *
    */
-  inline double _potential_imply_mln(const VariableInFactor *const vifs,
-                                     const variable_value_t *const var_values,
-                                     const variable_id_t &vid,
-                                     const variable_value_t &proposal) const {
+  DEFINE_POTENTIAL_FOR(FUNC_IMPLY_MLN) {
     /* Compute the value of the body of the rule */
     bool bBody = true;
     for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables - 1;
@@ -229,10 +215,7 @@ class CompactFactor {
    *  return 0.0 if the body is not satisfied.
    *
    */
-  inline double _potential_imply(const VariableInFactor *const vifs,
-                                 const variable_value_t *const var_values,
-                                 const variable_id_t &vid,
-                                 const variable_value_t &proposal) const {
+  DEFINE_POTENTIAL_FOR(FUNC_IMPLY_neg1_1) {
     /* Compute the value of the body of the rule */
     bool bBody = true;
     for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables - 1;
@@ -256,22 +239,14 @@ class CompactFactor {
   }
 
   // potential for multinomial variable
-  inline double _potential_multinomial(const VariableInFactor *vifs,
-                                       const variable_value_t *var_values,
-                                       const variable_id_t &vid,
-                                       const variable_value_t &proposal) const {
-    return 1.0;
-  }
+  DEFINE_POTENTIAL_FOR(FUNC_MULTINOMIAL) { return 1.0; }
 
   /** Return the value of the oneIsTrue of the variables in the factor, with
    * the variable of index vid (wrt the factor) is set to the value of the
    * 'proposal' argument.
    *
    */
-  inline double _potential_oneistrue(const VariableInFactor *const vifs,
-                                     const variable_value_t *const var_values,
-                                     const variable_id_t &vid,
-                                     const variable_value_t &proposal) const {
+  DEFINE_POTENTIAL_FOR(FUNC_ONEISTRUE) {
     bool found = false;
     /* Iterate over the factor variables */
     for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables;
@@ -294,10 +269,7 @@ class CompactFactor {
   }
 
   // potential for linear expression
-  inline double _potential_linear(const VariableInFactor *const vifs,
-                                  const variable_value_t *const var_values,
-                                  const variable_id_t &vid,
-                                  const variable_value_t &proposal) const {
+  DEFINE_POTENTIAL_FOR(FUNC_LINEAR) {
     double res = 0.0;
     bool bHead = is_variable_satisfied(vifs[n_start_i_vif + n_variables - 1],
                                        vid, var_values, proposal);
@@ -316,10 +288,7 @@ class CompactFactor {
   }
 
   // potential for linear expression
-  inline double _potential_ratio(const VariableInFactor *const vifs,
-                                 const variable_value_t *const var_values,
-                                 const variable_id_t &vid,
-                                 const variable_value_t &proposal) const {
+  DEFINE_POTENTIAL_FOR(FUNC_RATIO) {
     double res = 1.0;
     bool bHead = is_variable_satisfied(vifs[n_start_i_vif + n_variables - 1],
                                        vid, var_values, proposal);
@@ -336,10 +305,7 @@ class CompactFactor {
   }
 
   // potential for linear expression
-  inline double _potential_logical(const VariableInFactor *const vifs,
-                                   const variable_value_t *const var_values,
-                                   const variable_id_t &vid,
-                                   const variable_value_t &proposal) const {
+  DEFINE_POTENTIAL_FOR(FUNC_LOGICAL) {
     double res = 0.0;
     bool bHead = is_variable_satisfied(vifs[n_start_i_vif + n_variables - 1],
                                        vid, var_values, proposal);
@@ -360,6 +326,18 @@ class CompactFactor {
         return 0.0;
     }
   }
+
+  DEFINE_POTENTIAL_FOR(FUNC_SQLSELECT) {
+    std::cout << "SQLSELECT Not supported yet!" << std::endl;
+    abort();
+  }
+
+  DEFINE_POTENTIAL_FOR(FUNC_ContLR) {
+    std::cout << "ContinuousLR Not supported yet!" << std::endl;
+    abort();
+  }
+
+#undef DEFINE_POTENTIAL_FOR
 };
 
 /**
