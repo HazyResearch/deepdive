@@ -128,7 +128,7 @@ inline double CompactFactor::_potential_imply(
     const VariableIndex &vid, const VariableValue &proposal) const {
   /* Compute the value of the body of the rule */
   bool bBody = true;
-  for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables;
+  for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables - 1;
        ++i_vif) {
     const VariableInFactor &vif = vifs[i_vif];
     // If it is the proposal variable, we use the truth value of the proposal
