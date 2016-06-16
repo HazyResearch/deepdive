@@ -2,33 +2,31 @@
 
 namespace dd {
 
-GibbsSampler::GibbsSampler(std::unique_ptr<CompactFactorGraph> pfg_,
+GibbsSampler::GibbsSampler(std::unique_ptr<CompactFactorGraph> _pfg,
                            const Weight weights[], size_t nthread,
                            size_t nodeid, const CmdParser &opts)
-    : pfg(std::move(pfg_)),
-      opts(opts),
+    : pfg(std::move(_pfg)),
+      pinfrs(new InferenceResult(*pfg, weights, opts)),
       fg(*pfg),
-      infrs(fg, weights, opts),
+      infrs(*pinfrs),
       nthread(nthread),
-      nodeid(nodeid) {}
+      nodeid(nodeid) {
+  for (size_t i = 0; i < nthread; ++i)
+    workers.push_back(GibbsSamplerThread(fg, infrs, i, nthread, opts));
+}
 
 void GibbsSampler::sample(size_t i_epoch) {
   numa_run_on_node(nodeid);
-  for (size_t i = 0; i < nthread; ++i) {
-    threads.push_back(std::thread([this, i]() {
-      // TODO try to share instances across epochs
-      GibbsSamplerThread(fg, infrs, i, nthread, opts).sample();
-    }));
+  for (auto &worker : workers) {
+    threads.push_back(std::thread([&worker]() { worker.sample(); }));
   }
 }
 
 void GibbsSampler::sample_sgd(double stepsize) {
   numa_run_on_node(nodeid);
-  for (size_t i = 0; i < nthread; ++i) {
-    threads.push_back(std::thread([this, i, stepsize]() {
-      // TODO try to share instances across epochs
-      GibbsSamplerThread(fg, infrs, i, nthread, opts).sample_sgd(stepsize);
-    }));
+  for (auto &worker : workers) {
+    threads.push_back(
+        std::thread([&worker, stepsize]() { worker.sample_sgd(stepsize); }));
   }
 }
 
@@ -62,12 +60,12 @@ void GibbsSamplerThread::set_random_seed(unsigned short seed0,
 }
 
 void GibbsSamplerThread::sample() {
-  // sample each variable in the partition
-  for (size_t i = start; i < end; ++i) sample_single_variable(i);
+  for (size_t vid = start; vid < end; ++vid) sample_single_variable(vid);
 }
 
 void GibbsSamplerThread::sample_sgd(double stepsize) {
-  for (size_t i = start; i < end; ++i) sample_sgd_single_variable(i, stepsize);
+  for (size_t vid = start; vid < end; ++vid)
+    sample_sgd_single_variable(vid, stepsize);
 }
 
 }  // namespace dd

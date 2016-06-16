@@ -39,7 +39,7 @@ class DimmWitted {
   size_t n_thread_per_numa;
 
   // factor graph copies per NUMA node
-  std::vector<GibbsSampler> sampler;
+  std::vector<GibbsSampler> samplers;
 
   /**
    * Constructs DimmWitted class with given factor graph, command line

@@ -107,25 +107,25 @@ DimmWitted::DimmWitted(std::unique_ptr<CompactFactorGraph> p_cfg,
     numa_set_localalloc();
 
     std::cout << "CREATE CFG ON NODE ..." << i << std::endl;
-    sampler.push_back(GibbsSampler(
+    samplers.push_back(GibbsSampler(
         std::unique_ptr<CompactFactorGraph>(
             i == 0 ?
                    // use the given factor graph for the first sampler
                 p_cfg.release()
                    :
                    // then, make a copy for the rest
-                new CompactFactorGraph(sampler[0].fg)),
+                new CompactFactorGraph(samplers[0].fg)),
         weights, n_thread_per_numa /* TODO fold this into opts */, i, opts));
   }
 }
 
 void DimmWitted::inference() {
   const size_t n_epoch = compute_n_epochs(opts.n_inference_epoch);
-  const VariableIndex nvar = sampler[0].fg.size.num_variables;
+  const VariableIndex nvar = samplers[0].fg.size.num_variables;
   const bool should_show_progress = !opts.should_be_quiet;
   Timer t_total, t;
 
-  for (auto &s : sampler) s.infrs.clear_variabletally();
+  for (auto &sampler : samplers) sampler.infrs.clear_variabletally();
 
   // inference epochs
   for (size_t i_epoch = 0; i_epoch < n_epoch; ++i_epoch) {
@@ -139,10 +139,10 @@ void DimmWitted::inference() {
     t.restart();
 
     // sample
-    for (auto &s : sampler) s.sample(i_epoch);
+    for (auto &sampler : samplers) sampler.sample(i_epoch);
 
     // wait for samplers to finish
-    for (auto &s : sampler) s.wait();
+    for (auto &sampler : samplers) sampler.wait();
 
     double elapsed = t.elapsed();
     if (should_show_progress) {
@@ -157,7 +157,7 @@ void DimmWitted::inference() {
 }
 
 void DimmWitted::learn() {
-  InferenceResult &infrs = sampler[0].infrs;
+  InferenceResult &infrs = samplers[0].infrs;
 
   const size_t n_epoch = compute_n_epochs(opts.n_learning_epoch);
   const VariableIndex nvar = infrs.nvars;
@@ -182,18 +182,18 @@ void DimmWitted::learn() {
     t.restart();
 
     // performs stochastic gradient descent with sampling
-    for (auto &s : sampler) s.sample_sgd(current_stepsize);
+    for (auto &sampler : samplers) sampler.sample_sgd(current_stepsize);
 
     // wait the samplers to finish
-    for (auto &s : sampler) s.wait();
+    for (auto &sampler : samplers) sampler.wait();
 
     // sum the weights and store in the first factor graph
     // the average weights will be calculated and assigned to all factor graphs
     for (size_t i = 1; i < n_numa_nodes; ++i)
-      infrs.merge_weights_from(sampler[i].infrs);
+      infrs.merge_weights_from(samplers[i].infrs);
     infrs.average_regularize_weights(current_stepsize);
     for (size_t i = 1; i < n_numa_nodes; ++i)
-      infrs.copy_weights_to(sampler[i].infrs);
+      infrs.copy_weights_to(samplers[i].infrs);
 
     // calculate the norms of the difference of weights from the current epoch
     // and last epoch
@@ -224,7 +224,7 @@ void DimmWitted::learn() {
 
 void DimmWitted::dump_weights() {
   // learning weights snippets
-  const InferenceResult &infrs = sampler[0].infrs;
+  const InferenceResult &infrs = samplers[0].infrs;
 
   if (!opts.should_be_quiet) infrs.show_weights_snippet(std::cout);
 
@@ -238,11 +238,11 @@ void DimmWitted::dump_weights() {
 }
 
 void DimmWitted::aggregate_results_and_dump() {
-  InferenceResult &infrs = sampler[0].infrs;
+  InferenceResult &infrs = samplers[0].infrs;
 
   // aggregate assignments across all possible worlds
   for (size_t i = 1; i < n_numa_nodes; ++i)
-    infrs.aggregate_marginals_from(sampler[i].infrs);
+    infrs.aggregate_marginals_from(samplers[i].infrs);
 
   if (!opts.should_be_quiet) infrs.show_marginal_snippet(std::cout);
 

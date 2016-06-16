@@ -9,19 +9,22 @@
 
 namespace dd {
 
+class GibbsSamplerThread;
+
 /**
  * Class for a single NUMA node sampler
  */
 class GibbsSampler {
  private:
   std::unique_ptr<CompactFactorGraph> pfg;
+  std::unique_ptr<InferenceResult> pinfrs;
+  std::vector<GibbsSamplerThread> workers;
   std::vector<std::thread> threads;
-  const CmdParser &opts;
 
  public:
-  // factor graph
-  CompactFactorGraph &fg;  // TODO replace fg.* with fg->*
-  InferenceResult infrs;
+  CompactFactorGraph &fg;
+  InferenceResult &infrs;
+
   // number of threads
   size_t nthread;
   // node id
