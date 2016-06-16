@@ -12,7 +12,7 @@ Table=$1; shift
 [[ $# -gt 0 ]] || usage "$0" "Missing ANOTHER_TABLE name"
 AnotherTable=$1; shift
 
-mkdir "$DEEPDIVE_WORK_DIRECTORY/$DBNAME/tables/$Table"
+mkdir "$DEEPDIVE_WORK_DIRECTORY/tables/$Table"
 
 exec python -c 'import json;f=open("'"$DEEPDIVE_WORK_DIRECTORY/$AnotherTable.view.drill"'","r");view=json.load(f);f.close();view["name"]="'"$Table"'";print(json.dumps(view))' >"$DEEPDIVE_WORK_DIRECTORY/$Table.view.drill"
 

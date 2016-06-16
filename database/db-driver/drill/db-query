@@ -63,6 +63,6 @@ case $format in
     *) error "$format: unsupported format by PostgreSQL driver" ;; # TODO
 esac
 
-sql="!set outputFormat $copy_option
+sql="!set outputFormat $format
      $sql;"
 exec db-execute "$sql" "$@"

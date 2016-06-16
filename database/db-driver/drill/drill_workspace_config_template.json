@@ -1,0 +1,26 @@
+{
+    "name": "",
+    "config": {
+        "type": "file",
+        "enabled": true,
+        "connection": "",
+        "workspaces": {
+            "default": {
+                "location": "",
+                "writable": true,
+                "defaultInputFormat": null
+            }
+        },
+        "formats": {
+            "tsv": {
+                "type": "text",
+                "extensions": [
+                    "tsv",
+                    "tsj"
+                ],
+                "quote": "`",
+                "delimiter": "\t"
+            }
+        }
+    }
+}

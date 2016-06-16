@@ -10,7 +10,7 @@ set -euo pipefail
 [[ $# -gt 0 ]] || usage "$0" "Missing TABLE name"
 Table=$1; shift
 
-if [ -d "$DEEPDIVE_WORK_DIRECTORY/$DBNAME/tables/$Table" ]; then
+if [ -d "$DEEPDIVE_WORK_DIRECTORY/tables/$Table" ]; then
     # table exists
     if [ -n "$CREATE_IF_NOT_EXISTS" ]; then
         exit 0
@@ -19,7 +19,7 @@ if [ -d "$DEEPDIVE_WORK_DIRECTORY/$DBNAME/tables/$Table" ]; then
     fi
 fi
 # create the directory for future table data
-mkdir "$DEEPDIVE_WORK_DIRECTORY/$DBNAME/tables/$Table"
+mkdir "$DEEPDIVE_WORK_DIRECTORY/tables/$Table"
 tableDef='SELECT '
 columnIndex=0
 # create table with column definitions
@@ -54,10 +54,10 @@ for columnDef in "$@"; do
     (( columnIndex+=1 ))
 done
 tableDef=${tableDef%,}
-tableDef+=" FROM $DEEPDIVE_WORKSPACE."'`'"$DBNAME/tables/$Table"'`'
+tableDef+=' FROM `/tables/'"$Table"'`'
 
 # for Drill instead of an actual table def we create a VIEW with schema information of the raw text data
 # also create a temporary empty file so Drill doesn't give us an error when creating the VIEW
-tempFilePath=$( mktemp --suffix=.tsv "$DEEPDIVE_WORK_DIRECTORY/$DBNAME/tables/$Table/tmpXXX" )
+tempFilePath=$( mktemp --suffix=.tsv "$DEEPDIVE_WORK_DIRECTORY/tables/$Table/tmpXXX" )
 db-create-view-as "$Table" "$tableDef"
 rm "$tempFilePath"

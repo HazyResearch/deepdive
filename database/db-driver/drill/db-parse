@@ -19,11 +19,20 @@ echo "DBPASSWORD='${password:-${PGPASSWORD:-}}'"
 echo "DBNAME=${dbname}"
 echo "export DBHOST DBPORT DBUSER DBPASSWORD DBNAME"
 
+joinString() {
+    local IFS="$1"
+    shift
+    echo "$*"
+}
 # variables for managing Drill tables and views
-echo "DEEPDIVE_WORK_DIRECTORY=~/drill_data/deepdive"
-echo "DEEPDIVE_WORKSPACE=dfs.deepdive"
+echo "DEEPDIVE_WORK_DIRECTORY=~/drill_data/deepdive/$dbname"
+echo ''ZOOKEEPER=localhost''
+#joinedZookeepers="$( joinString , "$ZOOKEEPER" )"
 echo "DRILL_EXECUTABLE=~/apache-drill-1.6.0/bin/drill-embedded"
-echo "export DEEPDIVE_WORK_DIRECTORY DEEPDIVE_WORKSPACE DRILL_EXECUTABLE"
+# change this to sqlline
+echo "CONFIGURED_DRILL_EXECUTABLE=~/apache-drill-1.6.0/bin/drill-embedded"
+echo "CONNECTION_TYPE=file:///"
+echo "export DEEPDIVE_WORK_DIRECTORY ZOOKEEPER DRILL_EXECUTABLE CONFIGURED_DRILL_EXECUTABLE CONNECTION_TYPE"
 
 # more variables for Scala application.conf
 echo "DEEPDIVE_JDBC_DRIVER=org.postgresql.Driver"

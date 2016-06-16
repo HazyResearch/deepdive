@@ -32,7 +32,7 @@ do_load() {
         #head -n 20 "$source"
         #exit 1
         #exec show_progress input_to "loading $table" -- \
-        cat "$source" >$( mktemp --suffix=.tsv "$DEEPDIVE_WORK_DIRECTORY/$DBNAME/tables/$table"/data-XXXXXX )
+        cat "$source" >$( mktemp --suffix=.tsv "$DEEPDIVE_WORK_DIRECTORY/tables/$table"/data-XXXXXX )
     fi
 }
 

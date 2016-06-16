@@ -7,6 +7,6 @@ set -eu
 
 sql=${1:?No SQL given}; shift
 sql=${sql//\"/\`}
-sql="use $DEEPDIVE_WORKSPACE;
+sql="use $DBNAME;
     $sql"
-exec "$DRILL_EXECUTABLE" -f <(echo "$sql")
+exec "$CONFIGURED_DRILL_EXECUTABLE" -f <(echo "$sql")

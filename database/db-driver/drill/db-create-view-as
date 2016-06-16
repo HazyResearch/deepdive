@@ -23,6 +23,5 @@ else
     fi
 
 fi
-View="$DEEPDIVE_WORKSPACE"'.`'"$View"'`'
 viewDef=" AS $Query"
 exec db-execute "CREATE $replaceClause VIEW $View $viewDef"
