@@ -10,8 +10,7 @@ RawVariable::RawVariable(variable_id_t id, variable_domain_type_t domain_type,
                          variable_value_t current_value, size_t n_factors,
                          bool is_observation)
     : Variable(id, domain_type, is_evidence, cardinality, init_value,
-               current_value, n_factors, is_observation),
-      tmp_factor_ids(NULL) {}
+               current_value, n_factors, is_observation) {}
 
 Variable::Variable()
     : Variable(INVALID_ID, DTYPE_BOOLEAN, false, 2, 0, 0, 0, false) {}
@@ -28,22 +27,28 @@ Variable::Variable(variable_id_t id, variable_domain_type_t domain_type,
       assignment_evid(init_value),
       assignment_free(current_value),
       n_factors(n_factors),
-      domain_map(NULL),
-      domain_list(NULL) {}
+      n_start_i_factors(-1),
+      n_start_i_tally(-1) {}
 
-Variable::Variable(const Variable &rv)
-    : id(rv.id),
-      domain_type(rv.domain_type),
-      is_evid(rv.is_evid),
-      is_observation(rv.is_observation),
-      cardinality(rv.cardinality),
-      assignment_evid(rv.assignment_evid),
-      assignment_free(rv.assignment_free),
-      n_factors(rv.n_factors),
-      n_start_i_factors(rv.n_start_i_factors),
-      n_start_i_tally(rv.n_start_i_tally),
-      domain_map(rv.domain_map),
-      domain_list(NULL) {}
+Variable::Variable(const Variable &other) { *this = other; }
+
+Variable &Variable::operator=(const Variable &other) {
+  id = other.id;
+  domain_type = other.domain_type;
+  is_evid = other.is_evid;
+  is_observation = other.is_observation;
+  cardinality = other.cardinality;
+  assignment_evid = other.assignment_evid;
+  assignment_free = other.assignment_free;
+  n_factors = other.n_factors;
+  n_start_i_factors = other.n_start_i_factors;
+  n_start_i_tally = other.n_start_i_tally;
+  domain_map.reset(
+      other.domain_map
+          ? new std::unordered_map<variable_value_t, size_t>(*other.domain_map)
+          : nullptr);
+  return *this;
+}
 
 bool VariableInFactor::satisfiedUsing(variable_value_t value) const {
   return is_positive ? equal_to == value : !(equal_to == value);

@@ -59,22 +59,26 @@ int gibbs(const dd::CmdParser &args) {
 
   // Load factor graph
   dprintf("Initializing factor graph...\n");
-  dd::FactorGraph fg(meta);
+  std::unique_ptr<FactorGraph> fg(new FactorGraph(meta));
 
-  fg.load_variables(args.variable_file);
-  fg.load_weights(args.weight_file);
-  fg.load_domains(args.domain_file);
-  fg.load_factors(args.factor_file);
-  fg.safety_check();
+  fg->load_variables(args.variable_file);
+  fg->load_weights(args.weight_file);
+  fg->load_domains(args.domain_file);
+  fg->load_factors(args.factor_file);
+  fg->safety_check();
 
   if (!args.should_be_quiet) {
     std::cout << "Printing FactorGraph statistics:" << std::endl;
-    std::cout << fg << std::endl;
+    std::cout << *fg << std::endl;
   }
 
   // Initialize Gibbs sampling application.
-  DimmWitted dw(std::unique_ptr<CompactFactorGraph>(new CompactFactorGraph(fg)),
-                fg.weights.get(), args);
+  DimmWitted dw(
+      std::unique_ptr<CompactFactorGraph>(new CompactFactorGraph(*fg)),
+      fg->weights.get(), args);
+
+  // Explicitly drop the raw factor graph used only during loading
+  fg.release();
 
   // learning
   dw.learn();

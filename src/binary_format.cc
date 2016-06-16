@@ -185,7 +185,7 @@ void FactorGraph::load_factors(const std::string &filename) {
           size_t key = 0;
           for (size_t j = 0; j < edge_count; ++j) {
             const Variable &var =
-                variables[factors[size.num_factors].tmp_variables->at(j).vid];
+                variables[factors[size.num_factors].tmp_variables.at(j).vid];
             file.read((char *)&value_id, 4);
             value_id = be32toh(value_id);
             key *= var.cardinality;
@@ -229,7 +229,8 @@ void FactorGraph::load_domains(const std::string &filename) {
     assert(variable.cardinality == domain_size);
 
     std::vector<int> domain_list(domain_size);
-    variable.domain_map = new std::unordered_map<variable_value_t, size_t>();
+    variable.domain_map.reset(
+        new std::unordered_map<variable_value_t, size_t>());
 
     for (size_t i = 0; i < domain_size; ++i) {
       file.read((char *)&value, 8);

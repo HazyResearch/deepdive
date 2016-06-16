@@ -45,13 +45,13 @@ class Variable {
   size_t n_start_i_tally;
 
   // map from value to index in the domain vector
-  std::unordered_map<variable_value_t, size_t>* domain_map;
+  std::unique_ptr<std::unordered_map<variable_value_t, size_t>> domain_map;
 
-  // inverse of domain_map, constructed on demand by get_domain_value_at (to
-  // save RAM)
-  // currently used only by bin2text
-  // TODO: try to remove this pointer altogether
-  std::vector<variable_value_t>* domain_list;
+  /**
+   * The inverse of domain_map, constructed on demand by get_domain_value_at
+   * (to save RAM) currently used only by bin2text
+   */
+  std::unique_ptr<std::vector<variable_value_t>> domain_list;
 
   static constexpr variable_id_t INVALID_ID = (variable_id_t)-1;
   static constexpr variable_value_t INVALID_VALUE = (variable_value_t)-1;
@@ -69,6 +69,7 @@ class Variable {
    * temporary variable
    */
   Variable(const Variable& variable);
+  Variable& operator=(const Variable& variable);
 
   // get the index of the value
   inline size_t get_domain_index(variable_value_t v) const {
@@ -78,7 +79,7 @@ class Variable {
   // inverse of get_domain_index
   inline variable_value_t get_domain_value_at(size_t idx) {
     if (!domain_list && domain_map) {
-      domain_list = new std::vector<variable_value_t>(domain_map->size());
+      domain_list.reset(new std::vector<variable_value_t>(domain_map->size()));
       for (const auto& item : *domain_map) {
         domain_list->at(item.second) = item.first;
       }
@@ -96,11 +97,7 @@ class Variable {
  */
 class RawVariable : public Variable {
  public:
-  // This list is used only during loading time. Allocate and destroy to save
-  // space.
-  // Life starts: binary_parser.read_factors (via add_factor_id)
-  // Life ends: FactorGraph::organize_graph_by_edge (via clear_tmp_factor_ids)
-  std::vector<factor_id_t>*
+  std::vector<factor_id_t>
       tmp_factor_ids;  // factor ids the variable connects to
 
   RawVariable();  // default constructor, necessary for FactorGraph::variables
@@ -111,17 +108,7 @@ class RawVariable : public Variable {
               bool is_observation);
 
   inline void add_factor_id(factor_id_t factor_id) {
-    if (!tmp_factor_ids) {
-      tmp_factor_ids = new std::vector<factor_id_t>();
-    }
-    tmp_factor_ids->push_back(factor_id);
-  }
-
-  inline void clear_tmp_factor_ids() {
-    if (tmp_factor_ids) {
-      delete tmp_factor_ids;
-      tmp_factor_ids = NULL;
-    }
+    tmp_factor_ids.push_back(factor_id);
   }
 };
 

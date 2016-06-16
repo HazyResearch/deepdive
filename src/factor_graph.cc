@@ -50,7 +50,7 @@ CompactFactorGraph::CompactFactorGraph(const FactorGraph &fg)
 
   // For each factor, put the variables sorted within each factor in an array.
   for (factor_id_t i = 0; i < fg.size.num_factors; ++i) {
-    const RawFactor &rf = fg.factors[i];
+    RawFactor &rf = fg.factors[i];
     factors[i] = rf;
     factors[i].n_start_i_vif = i_edge;
 
@@ -59,11 +59,11 @@ CompactFactorGraph::CompactFactorGraph(const FactorGraph &fg)
      * within the factor by their position, lay the variables in this factor
      * one after another in the vifs array.
      */
-    std::sort(rf.tmp_variables->begin(), rf.tmp_variables->end(),
+    std::sort(rf.tmp_variables.begin(), rf.tmp_variables.end(),
               [](const VariableInFactor &x, const VariableInFactor &y) {
                 return x.n_position < y.n_position;
               });
-    for (const VariableInFactor &vif : *rf.tmp_variables) {
+    for (const VariableInFactor &vif : rf.tmp_variables) {
       vifs[i_edge] = vif;
       ++i_edge;
     }
@@ -76,7 +76,7 @@ CompactFactorGraph::CompactFactorGraph(const FactorGraph &fg)
   for (variable_id_t i = 0; i < fg.size.num_variables; ++i) {
     const RawVariable &rv = fg.variables[i];
     variables[i] = rv;
-    variables[i].n_factors = rv.tmp_factor_ids ? rv.tmp_factor_ids->size() : 0;
+    variables[i].n_factors = rv.tmp_factor_ids.size();
     variables[i].n_start_i_factors = i_edge;
 
     if (rv.domain_type == DTYPE_MULTINOMIAL) {
@@ -84,21 +84,19 @@ CompactFactorGraph::CompactFactorGraph(const FactorGraph &fg)
       ntallies += variables[i].cardinality;
     }
 
-    if (rv.tmp_factor_ids) {
-      for (const auto &fid : *rv.tmp_factor_ids) {
-        factor_ids[i_edge] = fid;
+    for (const auto &fid : rv.tmp_factor_ids) {
+      factor_ids[i_edge] = fid;
 
-        auto &cf = compact_factors[i_edge];
-        const auto &f = factors[fid];
-        cf.id = f.id;
-        cf.func_id = f.func_id;
-        cf.n_variables = f.n_variables;
-        cf.n_start_i_vif = f.n_start_i_vif;
+      auto &cf = compact_factors[i_edge];
+      const auto &f = factors[fid];
+      cf.id = f.id;
+      cf.func_id = f.func_id;
+      cf.n_variables = f.n_variables;
+      cf.n_start_i_vif = f.n_start_i_vif;
 
-        compact_factors_weightids[i_edge] = f.weight_id;
+      compact_factors_weightids[i_edge] = f.weight_id;
 
-        ++i_edge;
-      }
+      ++i_edge;
     }
   }
   assert(i_edge == fg.size.num_edges);

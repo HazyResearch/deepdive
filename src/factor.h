@@ -97,7 +97,7 @@ class CompactFactor {
   // whether a variable's value or proposal satisfies the is_equal condition
   inline bool is_variable_satisfied(const VariableInFactor &vif,
                                     const variable_id_t &vid,
-                                    const variable_value_t *const var_values,
+                                    const variable_value_t var_values[],
                                     const variable_value_t &proposal) const {
     return (vif.vid == vid) ? vif.satisfiedUsing(proposal)
                             : vif.satisfiedUsing(var_values[vif.vid]);
@@ -394,12 +394,8 @@ class RawFactor : public Factor {
   /*
    * Populated when loading the factor graph, used when compiling the factor
    * graph, and after that, it's useless.
-   * This list is used only during loading time. Allocate and destroy to save
-   * space.
-   * Life starts: binary_parser.read_factors (via add_variable_in_factor)
-   * Life ends: FactorGraph::organize_graph_by_edge (via clear_tmp_variables)
    */
-  std::vector<VariableInFactor> *tmp_variables;  // variables in the factor
+  std::vector<VariableInFactor> tmp_variables;  // variables in the factor
 
   /**
    * Need default constructor to create arrays of uninitialized RawFactors.
@@ -411,24 +407,10 @@ class RawFactor : public Factor {
   RawFactor(factor_id_t id, weight_id_t weight_id,
             factor_function_type_t func_id, size_t n_variables);
 
-  inline void add_variable_in_factor(const VariableInFactor &vif);
-
-  inline void clear_tmp_variables();
+  inline void add_variable_in_factor(const VariableInFactor &vif) {
+    tmp_variables.push_back(vif);
+  }
 };
-
-inline void RawFactor::add_variable_in_factor(const VariableInFactor &vif) {
-  if (!tmp_variables) {
-    tmp_variables = new std::vector<VariableInFactor>();
-  }
-  tmp_variables->push_back(vif);
-}
-
-inline void RawFactor::clear_tmp_variables() {
-  if (tmp_variables) {
-    delete tmp_variables;
-    tmp_variables = NULL;
-  }
-}
 
 }  // namespace dd
 

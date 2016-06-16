@@ -82,7 +82,7 @@ void dump_factors(const dd::FactorGraph &fg, const std::string &filename) {
     // FIXME this output is lossy since it drops the f.func_id and
     // f.tmp_variables[*].is_positive
     // variable ids the factor is defined over
-    for (const auto &v : *(f.tmp_variables)) {
+    for (const auto &v : f.tmp_variables) {
       fout << v.vid;
       fout << field_delim;
     }
@@ -102,7 +102,7 @@ void dump_factors(const dd::FactorGraph &fg, const std::string &filename) {
           weight_id_t wid = item.second;
           for (size_t k = f.n_variables; k > 0;) {
             --k;  // turning it into a correct index
-            variable_id_t vid = (*f.tmp_variables)[k].vid;
+            variable_id_t vid = f.tmp_variables.at(k).vid;
             dd::Variable &var = fg.variables[vid];
             size_t val_idx = key % var.cardinality;
             variable_value_t val = var.get_domain_value_at(val_idx);

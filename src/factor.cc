@@ -29,10 +29,10 @@ Factor::Factor(const Factor &rf)
       n_start_i_vif(rf.n_start_i_vif),
       weight_ids(rf.weight_ids) {}
 
-RawFactor::RawFactor() : Factor(), tmp_variables(NULL) {}
+RawFactor::RawFactor() : Factor() {}
 
 RawFactor::RawFactor(factor_id_t id, weight_id_t weight_id,
                      factor_function_type_t func_id, size_t n_variables)
-    : Factor(id, weight_id, func_id, n_variables), tmp_variables(NULL) {}
+    : Factor(id, weight_id, func_id, n_variables) {}
 
 }  // namespace dd
