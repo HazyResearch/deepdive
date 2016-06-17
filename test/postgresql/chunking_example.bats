@@ -6,7 +6,7 @@
 : ${CHUNKING_TEST_NUM_WORDS_TRAIN:=1000} ${CHUNKING_TEST_NUM_WORDS_TEST:=200}
 : ${CHUNKING_TEST_MIN_F1SCORE:=60}
 
-: ${CHUNKING_TEST_REUSE_NUM_WORDS_TEST:=2000}
+: ${CHUNKING_TEST_REUSE_NUM_WORDS_TEST:=200}
 : ${CHUNKING_TEST_REUSE_MIN_F1SCORE:=60}
 
 get_f1score() {
@@ -29,7 +29,7 @@ run_chunking_example() {
 
 run_chunking_example_reusing_weights() {
     cd "$BATS_TEST_DIRNAME"/chunking_example || skip
-    export SUBSAMPLE_NUM_WORDS_TRAIN=0 SUBSAMPLE_NUM_WORDS_TEST=$CHUNKING_TEST_NUM_WORDS_TEST_REUSE
+    export SUBSAMPLE_NUM_WORDS_TRAIN=0 SUBSAMPLE_NUM_WORDS_TEST=$CHUNKING_TEST_REUSE_NUM_WORDS_TEST
 
     # keep the learned weights from a small corpus
     deepdive model weights keep
