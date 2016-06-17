@@ -300,7 +300,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | ("TRUE" | "FALSE") ^^ { x => BooleanConst(x.toBoolean) }
     | "NULL" ^^ { _ => NullConst() }
     | functionName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ {
-        case (name ~ _ ~ args ~ _) => FuncExpr(name, args, aggregationFunctions contains name)
+        case (name ~ _ ~ args ~ _) => FuncExpr(name, args, aggregationFunctions contains name.toUpperCase)
       }
     | variableName ^^ VarExpr
     | "(" ~> expr <~ ")"
