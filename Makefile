@@ -121,7 +121,7 @@ checkstyle:
 build-sampler: build-dimmwitted
 .PHONY: build-dimmwitted
 build-dimmwitted:
-	@util/build/build-submodule-if-needed inference/dimmwitted dw text2bin
+	@util/build/build-submodule-if-needed inference/dimmwitted dw
 build: build-dimmwitted
 
 .PHONY: build-hocon2json

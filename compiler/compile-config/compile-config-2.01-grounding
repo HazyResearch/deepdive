@@ -279,7 +279,7 @@ def factorWeightDescriptionSqlExpr:
                 } }
             } | asSql | asPrettySqlArg) \\
             command=\("
-                sampler-text2bin variable /dev/stdin >(pbzip2 >variables.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
+                sampler-dw text2bin variable /dev/stdin >(pbzip2 >variables.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
             " | @sh) \\
             output_relation=
         "
@@ -334,7 +334,7 @@ def factorWeightDescriptionSqlExpr:
         , GROUP_BY: [ { table: "i", column: deepdiveVariableIdColumn } ]
         } | asSql | asPrettySqlArg) \\
         command=\("
-            sampler-text2bin domain /dev/stdin >(pbzip2 >domains.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
+            sampler-dw text2bin domain /dev/stdin >(pbzip2 >domains.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
         " | @sh) \\
         output_relation=
         "
@@ -596,7 +596,7 @@ def factorWeightDescriptionSqlExpr:
                 command=\("
                     # also record the factor count
                     tee >(wc -l >nfactors.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}) |
-                    sampler-text2bin factor /dev/stdin >(pbzip2 >factors.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2) \\
+                    sampler-dw text2bin factor /dev/stdin >(pbzip2 >factors.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2) \\
                         $\(.function_.name)Factor \\
                         $numVariablesForFactor \\
                         original \\
@@ -659,7 +659,7 @@ def factorWeightDescriptionSqlExpr:
                     } | asSql | asPrettySqlArg)
                 fi)\" \\
                 command=\("
-                    sampler-text2bin weight /dev/stdin >(pbzip2 >weights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
+                    sampler-dw text2bin weight /dev/stdin >(pbzip2 >weights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
                 " | @sh) \\
                 output_relation=
         "

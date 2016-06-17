@@ -37,5 +37,9 @@ case $(uname) in
         export CXX
 esac
 
-[ -e ./lib/gtest -a -e ./lib/tclap ] || make dep
-make dw text2bin
+[ -e ./lib/gtest -a -e ./lib/tclap ] || make -j dep
+make -j dw || {
+    # retry build after clean
+    make clean
+    make -j dw
+}
