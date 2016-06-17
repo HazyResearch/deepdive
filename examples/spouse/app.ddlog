@@ -100,6 +100,7 @@ spouse_candidate(
 num_people(doc_id, sentence_index, COUNT(p)) :-
     person_mention(p, _, doc_id, sentence_index, _, _).
 
+@materialize
 spouse_candidate(p1, p1_name, p2, p2_name) :-
     num_people(same_doc, same_sentence, num_p),
     person_mention(p1, p1_name, same_doc, same_sentence, p1_begin, _),
@@ -213,6 +214,7 @@ spouse_label += supervise(
 spouse_label_resolved(p1_id, p2_id, SUM(vote)) :- spouse_label(p1_id, p2_id, vote, rule_id).
 
 # assign the resolved labels for the spouse relation
+@materialize
 has_spouse(p1_id, p2_id) = if l > 0 then TRUE
                       else if l < 0 then FALSE
                       else NULL end :- spouse_label_resolved(p1_id, p2_id, l).
