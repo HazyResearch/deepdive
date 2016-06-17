@@ -98,3 +98,6 @@ X(x) :-
     b(x, _, _, z),
     c(_, x, y).
 
+Y(a, Array_Agg(b)) :-
+    C(a, b, _).
+

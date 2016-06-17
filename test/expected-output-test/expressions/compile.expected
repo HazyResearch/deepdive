@@ -380,6 +380,22 @@ materialize: false
 
 }
 
+deepdive.extraction.extractors.ext_Y {
+sql: """
+SELECT R0.column_0 AS column_0
+     , Array_Agg(R0.column_1) AS column_1
+FROM C R0
+GROUP BY R0.column_0
+"""
+input_relations: [
+  C
+]
+style: sql_extractor
+output_relation: Y
+materialize: false
+
+}
+
 deepdive.pipeline.run: ${PIPELINE}
 
 deepdive.pipeline.pipelines.extraction: [
@@ -406,6 +422,7 @@ deepdive.pipeline.pipelines.extraction: [
   ext_W
   ext_V
   ext_X
+  ext_Y
 ]
 
 deepdive.pipeline.pipelines.endtoend: [
@@ -432,5 +449,6 @@ deepdive.pipeline.pipelines.endtoend: [
   ext_W
   ext_V
   ext_X
+  ext_Y
 ]
 
