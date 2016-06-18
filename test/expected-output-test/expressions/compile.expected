@@ -168,7 +168,7 @@ deepdive.extraction.extractors.ext_I {
 sql: """
 SELECT R0.k AS column_0
 FROM b R0
-WHERE ((R0.k + R0.r) = 100 OR (R0.k > 50 AND R0.r < 10))
+WHERE ((R0.k + R0.r) = 100 OR (R0.k > 50 AND R0.r <= 10))
 """
 input_relations: [
   b
