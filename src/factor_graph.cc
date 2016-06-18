@@ -79,7 +79,7 @@ CompactFactorGraph::CompactFactorGraph(const FactorGraph &fg)
     variables[i].n_factors = rv.tmp_factor_ids.size();
     variables[i].n_start_i_factors = i_edge;
 
-    if (rv.domain_type == DTYPE_MULTINOMIAL) {
+    if (rv.domain_type == DTYPE_CATEGORICAL) {
       variables[i].n_start_i_tally = ntallies;
       ntallies += variables[i].cardinality;
     }
@@ -213,7 +213,7 @@ void CompactFactorGraph::update_weight(const Variable &variable,
         }
         break;
       }
-      case DTYPE_MULTINOMIAL: {
+      case DTYPE_CATEGORICAL: {
         // two weights need to be updated
         // sample with evidence fixed, I0, with corresponding weight w1
         // sample without evidence unfixed, I1, with corresponding weight w2

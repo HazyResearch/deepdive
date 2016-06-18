@@ -20,7 +20,7 @@ class Variable {
   variable_id_t id;  // variable id
   variable_domain_type_t
       domain_type;      // variable domain type, can be DTYPE_BOOLEAN or
-                        // DTYPE_MULTINOMIAL
+                        // DTYPE_CATEGORICAL
   bool is_evid;         // whether the variable is evidence
   bool is_observation;  // observed variable (fixed)
   size_t cardinality;   // cardinality

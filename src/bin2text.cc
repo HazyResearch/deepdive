@@ -37,7 +37,7 @@ void dump_variables(const FactorGraph &fg, const std::string &filename) {
       case DTYPE_BOOLEAN:
         type_str = "0";
         break;
-      case DTYPE_MULTINOMIAL:
+      case DTYPE_CATEGORICAL:
         type_str = "1";
         break;
       default:

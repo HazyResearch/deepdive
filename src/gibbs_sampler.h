@@ -166,7 +166,7 @@ inline void GibbsSamplerThread::sample_single_variable(variable_id_t vid) {
       case DTYPE_BOOLEAN:
         infrs.agg_means[variable.id] += proposal;
         break;
-      case DTYPE_MULTINOMIAL:
+      case DTYPE_CATEGORICAL:
         ++infrs.multinomial_tallies[variable.n_start_i_tally +
                                     variable.get_domain_index(proposal)];
         break;
@@ -201,7 +201,7 @@ inline variable_value_t GibbsSamplerThread::draw_sample(
       break;
     }
 
-    case DTYPE_MULTINOMIAL: {
+    case DTYPE_CATEGORICAL: {
       varlen_potential_buffer_.reserve(variable.cardinality);
       double sum = -100000.0;
 

@@ -34,7 +34,7 @@ InferenceResult::InferenceResult(const CompactFactorGraph &fg,
     const Variable &variable = fg.variables[t];
     assignments_free[variable.id] = variable.assignment_free;
     assignments_evid[variable.id] = variable.assignment_evid;
-    if (variable.domain_type == DTYPE_MULTINOMIAL) {
+    if (variable.domain_type == DTYPE_CATEGORICAL) {
       ntallies += variable.cardinality;
     }
   }
@@ -158,7 +158,7 @@ void InferenceResult::show_marginal_snippet(std::ostream &output) const {
                  << std::endl;
           break;
 
-        case DTYPE_MULTINOMIAL: {
+        case DTYPE_CATEGORICAL: {
           const auto &print_snippet = [this, &output, variable](
               variable_value_t domain_value, size_t domain_index) {
             output << "        @ " << domain_value << " -> EXP="
@@ -233,7 +233,7 @@ void InferenceResult::dump_marginals_in_text(std::ostream &text_output) const {
         break;
       }
 
-      case DTYPE_MULTINOMIAL: {
+      case DTYPE_CATEGORICAL: {
         const auto &print_result = [this, &text_output, variable](
             variable_value_t domain_value, size_t domain_index) {
           text_output

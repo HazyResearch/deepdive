@@ -44,9 +44,9 @@
 namespace dd {
 
 typedef enum {
-  DTYPE_BOOLEAN = 0x00,
-  DTYPE_REAL = 0x01,
-  DTYPE_MULTINOMIAL = 0x04,
+  DTYPE_BOOLEAN = 0,
+  DTYPE_CATEGORICAL = 1,
+  DTYPE_REAL = 2,
 } variable_domain_type_t;
 
 typedef size_t variable_value_t;

@@ -89,11 +89,6 @@ void FactorGraph::load_variables(const std::string &filename) {
     edge_count = be64toh(edge_count);
     cardinality = be64toh(cardinality);
 
-    dprintf(
-        "----- id=%lli isevidence=%d initial=%f type=%d edge_count=%lli"
-        "cardinality=%lli\n",
-        id, isevidence, initial_value, type, edge_count, cardinality);
-
     ++count;
 
     variable_domain_type_t type_const;
@@ -102,11 +97,11 @@ void FactorGraph::load_variables(const std::string &filename) {
         type_const = DTYPE_BOOLEAN;
         break;
       case 1:
-        type_const = DTYPE_MULTINOMIAL;
+        type_const = DTYPE_CATEGORICAL;
         break;
       default:
         std::cerr
-            << "[ERROR] Only Boolean and Multinomial variables are supported "
+            << "[ERROR] Only Boolean and Categorical variables are supported "
                "now!"
             << std::endl;
         std::abort();

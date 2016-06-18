@@ -202,7 +202,7 @@ inline double CompactFactorGraph::potential(
       }
       break;
     }
-    case DTYPE_MULTINOMIAL: {
+    case DTYPE_CATEGORICAL: {
       for (factor_id_t i = 0; i < variable.n_factors; ++i) {
         // get weight id associated with this factor and variable
         // assignment
