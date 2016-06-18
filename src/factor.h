@@ -80,11 +80,10 @@ class CompactFactor {
       RETURN_POTENTIAL_FOR(FUNC_RATIO);
       RETURN_POTENTIAL_FOR(FUNC_LOGICAL);
       RETURN_POTENTIAL_FOR(FUNC_ONEISTRUE);
-      RETURN_POTENTIAL_FOR(FUNC_SQLSELECT);
-      RETURN_POTENTIAL_FOR(FUNC_ContLR);
 #undef RETURN_POTENTIAL_FOR
       default:
-        std::cout << "Unsupported Factor Function ID= " << func_id << std::endl;
+        std::cout << "Unsupported FACTOR_FUCNTION_TYPE = " << func_id
+                  << std::endl;
         std::abort();
     }
   }
@@ -324,16 +323,6 @@ class CompactFactor {
       else
         return 0.0;
     }
-  }
-
-  DEFINE_POTENTIAL_FOR(FUNC_SQLSELECT) {
-    std::cout << "SQLSELECT Not supported yet!" << std::endl;
-    std::abort();
-  }
-
-  DEFINE_POTENTIAL_FOR(FUNC_ContLR) {
-    std::cout << "ContinuousLR Not supported yet!" << std::endl;
-    std::abort();
   }
 
 #undef DEFINE_POTENTIAL_FOR

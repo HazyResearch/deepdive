@@ -46,7 +46,6 @@ namespace dd {
 typedef enum {
   DTYPE_BOOLEAN = 0,
   DTYPE_CATEGORICAL = 1,
-  DTYPE_REAL = 2,
 } variable_domain_type_t;
 
 typedef size_t variable_value_t;
@@ -64,9 +63,7 @@ typedef enum FACTOR_FUCNTION_TYPE {
   FUNC_LINEAR = 7,
   FUNC_RATIO = 8,
   FUNC_LOGICAL = 9,
-  FUNC_SQLSELECT = 10,
   FUNC_AND_CATEGORICAL = 12,
-  FUNC_ContLR = 20,
 
   FUNC_UNDEFINED = -1,
 } factor_function_type_t;
