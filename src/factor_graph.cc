@@ -156,7 +156,7 @@ weight_id_t CompactFactorGraph::get_multinomial_weight_id(
    * The weight index is
    * (...((((0 * d1 + i1) * d2) + i2) * d3 + i3) * d4 + ...) * dk + ik
    *
-   * For FUNC_SPARSE_MULTINOMIAL, we look up the weight_ids map.
+   * For FUNC_AND_CATEGORICAL, we look up the weight_ids map.
    *
    * TODO: refactor the above formula into a shared routine. (See also
    * binary_parser.read_factors)
@@ -173,14 +173,11 @@ weight_id_t CompactFactorGraph::get_multinomial_weight_id(
   }
 
   switch (fs.func_id) {
-    case FUNC_SPARSE_MULTINOMIAL: {
+    case FUNC_AND_CATEGORICAL: {
       auto iter = factors[fs.id].weight_ids->find(weight_offset);
       if (iter != factors[fs.id].weight_ids->end()) return iter->second;
       break;
     }
-    case FUNC_MULTINOMIAL:
-      return compact_factors_weightids[&fs - &compact_factors[0]] +
-             weight_offset;
     default:
       std::abort();
   }

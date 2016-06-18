@@ -75,7 +75,7 @@ class CompactFactor {
       RETURN_POTENTIAL_FOR2(FUNC_AND, FUNC_ISTRUE);
       RETURN_POTENTIAL_FOR(FUNC_OR);
       RETURN_POTENTIAL_FOR(FUNC_EQUAL);
-      RETURN_POTENTIAL_FOR2(FUNC_MULTINOMIAL, FUNC_SPARSE_MULTINOMIAL);
+      RETURN_POTENTIAL_FOR(FUNC_AND_CATEGORICAL);
       RETURN_POTENTIAL_FOR(FUNC_LINEAR);
       RETURN_POTENTIAL_FOR(FUNC_RATIO);
       RETURN_POTENTIAL_FOR(FUNC_LOGICAL);
@@ -238,7 +238,7 @@ class CompactFactor {
   }
 
   // potential for multinomial variable
-  DEFINE_POTENTIAL_FOR(FUNC_MULTINOMIAL) { return 1.0; }
+  DEFINE_POTENTIAL_FOR(FUNC_AND_CATEGORICAL) { return 1.0; }
 
   /** Return the value of the oneIsTrue of the variables in the factor, with
    * the variable of index vid (wrt the factor) is set to the value of the
@@ -362,7 +362,7 @@ class Factor {
   // inactive (potential = 0).
   // TODO: handle key overflow...
   // An empty map takes 48 bytes, so we create it only as needed, i.e., when
-  // func_id = FUNC_SPARSE_MULTINOMIAL
+  // func_id = FUNC_AND_CATEGORICAL
   // Allocated in binary_parser.read_factors. Never deallocated.
   std::unordered_map<variable_value_t, weight_id_t> *weight_ids;
 

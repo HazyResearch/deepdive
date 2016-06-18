@@ -87,7 +87,7 @@ void dump_factors(const FactorGraph &fg, const std::string &filename) {
       fout << field_delim;
     }
     switch (f.func_id) {
-      case FUNC_SPARSE_MULTINOMIAL: {
+      case FUNC_AND_CATEGORICAL: {
         // Format: NUM_WEIGHTS [VAR1 VAL ID] [VAR2 VAL ID] ... [WEIGHT ID]
         // transpose tuples; sort to ensure consistency
         vals.clear();

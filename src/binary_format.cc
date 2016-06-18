@@ -165,7 +165,7 @@ void FactorGraph::load_factors(const std::string &filename) {
     size.num_edges += edge_count;
 
     switch (type) {
-      case (FUNC_SPARSE_MULTINOMIAL): {
+      case (FUNC_AND_CATEGORICAL): {
         weight_id_t n_weights = 0;
         file.read((char *)&n_weights, 8);
         n_weights = be64toh(n_weights);

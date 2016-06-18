@@ -173,7 +173,7 @@ void load_factor(std::string input_filename, std::string output_filename,
 
     // weight ids
     switch (be16toh(funcid)) {
-      case FUNC_SPARSE_MULTINOMIAL: {
+      case FUNC_AND_CATEGORICAL: {
         vals_and_weights.clear();
         // IN  Format: NUM_WEIGHTS [VAR1 VAL ID] [VAR2 VAL ID] ... [WEIGHT ID]
         // OUT Format: NUM_WEIGHTS [[VAR1_VALi, VAR2_VALi, ..., WEIGHTi]]
