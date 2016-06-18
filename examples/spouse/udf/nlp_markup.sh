@@ -23,4 +23,4 @@ tsv2json "$@" |
 # finally, fixup unescaped characters in the TSV emitted by Bazaar/Parser
 # (This will become unnecessary once HazyResearch/bazaar#20 is fixed)
 # See: http://www.postgresql.org/docs/9.5/static/sql-copy.html#AEN74312
-sed -e "$(for ch in b f r v; do printf 's/\'$ch'/\\\\'$ch'/g;'; done)" |
+sed -e "$(for ch in b f r v; do printf 's/\'$ch'/\\\\'$ch'/g;'; done)"

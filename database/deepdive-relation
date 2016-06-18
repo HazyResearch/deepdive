@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# deepdive-relation -- Shows information about relations defined in a DeepDive app
+#
+# $ deepdive relation list
+# Lists all declared relations.
+#
+# $ deepdive relation columns RELATION
+# Lists all column names of RELATION.
+#
+# $ deepdive relation column-types RELATION
+# Lists name and type of all columns for RELATION.
+#
+# $ deepdive relation variables
+# Lists all variable relations declared in the app.
+#
+# $ deepdive relation variable-type RELATION
+# Prints type of the given variable RELATION.
+#
+# $ deepdive relation is-variable RELATION
+# Exits with zero if given RELATION is a variable or non-zero otherwise.
+##
+set -euo pipefail
+
+[[ $# -gt 0 ]] || usage "$0" "Missing mode"
+Mode=$1; shift
+
+DEEPDIVE_APP=$(find-deepdive-app)
+export DEEPDIVE_APP
+app-has-been-compiled
+cd "$DEEPDIVE_APP"
+
+case $Mode in
+    list)
+        # enumerate names of all relations
+        exec jq -r '.deepdive_.schema.relations | keys[]' run/compiled/config.json
+        ;;
+
+    variables)
+        # enumerate names of all variable relations
+        exec jq -r '.deepdive_.schema.relations | to_entries[] |
+                     select(.value.variable_type) | .key' run/compiled/config.json
+        ;;
+
+    is-variable)
+        # check if given of variable relation
+        exec "$0" variable-type "$@" >/dev/null
+        ;;
+
+    variable-type)
+        # print type of variable for given RELATION
+        [[ $# -gt 0 ]] || usage "$0" "Missing RELATION"
+        export Relation=$1; shift
+        exec jq -e -r '.deepdive_.schema.relations[env.Relation] | .variable_type?' run/compiled/config.json
+        ;;
+
+    columns)
+        # enumerate a COLUMN name per line for given RELATION
+        "$0" column-types "$@" | sed 's/:[^:]*$//'
+        ;;
+
+    column-types)
+        # enumerate a COLUMN:TYPE pair per line for given RELATION
+        [[ $# -gt 0 ]] || usage "$0" "Missing RELATION"
+        export Relation=$1; shift
+        jq -e -r '
+            .deepdive_.schema.relations[env.Relation] |
+            if type == "null" then
+                # non-existent relation
+                empty
+            else
+                if .variable_type then
+                    .columns
+                    # variable relations have implied label column
+                    + { dd_label: { type: "BOOLEAN", index: (.columns|length+1) } }
+                else
+                    .columns
+                end |
+                to_entries |
+                sort_by(.value.index) |
+                # output COLUMN:TYPE lines
+                .[] | [.key, .value.type] | join(":")
+            end
+        ' run/compiled/config.json ||
+            error "$Relation: No such relation"
+        ;;
+
+    *)
+        usage "$0" "$Mode: Unrecognized mode"
+esac

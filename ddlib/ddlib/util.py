@@ -2,7 +2,8 @@ from collections import namedtuple,OrderedDict
 import re
 import sys
 from inspect import isgeneratorfunction,getargspec
-from StringIO import StringIO
+import csv
+from io import StringIO
 
 def print_error(err_string):
   """Function to write to stderr"""
@@ -63,7 +64,7 @@ def parse_pgtsv_element(s, t, array_nesting_depth=0):
         c = matches.group(1)
         return escapeCodeToSpecial[c] if c in escapeCodeToSpecial else c
       s = re.sub(r'\\(.)', unescapeTSVBackslashes, s)
-      s = re.sub(r'\\(.)', lambda(m): '""' if m.group(1) == '"' else m.group(1), s) # XXX quotes and backslashes in arrays are escaped another time
+      s = re.sub(r'\\(.)', lambda m : '""' if m.group(1) == '"' else m.group(1), s) # XXX quotes and backslashes in arrays are escaped another time
       values = []
       v = None
       while len(s) > 0:
@@ -158,7 +159,7 @@ def print_pgtsv_element(x, n, t, array_nesting_depth=0):
   # Handle NULLs first
   if x is None:
     if array_nesting_depth == 0:
-      return '\N'
+      return r'\N'
     else:
       return ''
 
@@ -184,13 +185,13 @@ def print_pgtsv_element(x, n, t, array_nesting_depth=0):
       return x
     else:
       def escapeWithTSVBackslashes(x):
-        return re.sub(r'[\b\f\n\r\t\\]', lambda(m): "\\" + specialToEscapeCode[m.group(0)], x)
+        return re.sub(r'[\b\f\n\r\t\\]', lambda m : "\\" + specialToEscapeCode[m.group(0)], x)
       if re.search(r'^[a-zA-Z0-9_.\x1c\x1d\x1e\x1f\x7f\[\]()]+$|^[\b]$', x) \
           and x not in ["", "NULL", "null"]:
         # we don't need to quote the value in some special cases
         return escapeWithTSVBackslashes(x)
       else: # otherwise, surround value with quotes
-        x = re.sub(r'[\\"]', lambda(m): '\\' +  m.group(0), x) # XXX quotes and backslashes in arrays are escaped another time
+        x = re.sub(r'[\\"]', lambda m : '\\' +  m.group(0), x) # XXX quotes and backslashes in arrays are escaped another time
         return '"%s"' % escapeWithTSVBackslashes(x) # then, the TSV escaping
   elif t == 'boolean':
     return 't' if x else 'f'
@@ -212,7 +213,7 @@ class PGTSVPrinter:
         num_rows_declared=len(self.fields), num_rows_found=len(out), row=out,
       ))
     else:
-      print '\t'.join(print_pgtsv_element(x, n, t) for x,(n,t) in zip(out, self.fields))
+      print('\t'.join(print_pgtsv_element(x, n, t) for x,(n,t) in zip(out, self.fields)))
 
 
 # how to get types specified as default values of a function

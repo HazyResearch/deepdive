@@ -81,24 +81,30 @@ else
     . load-db-driver.sh
 fi
 
+relationIsntInAppSchema=true
 # find the columns to load (when no $Columns were explicitly specified and
 # $Relation is a random variable, load the user-defined columns with the
 # internal dd_label column but nothing else)
 if [[ -z "$Columns" && -e "$DEEPDIVE_APP" ]] && app-has-been-compiled; then
-    Columns=$(
-        cd "$DEEPDIVE_APP"
-        Relation=$Relation \
-        jq -r '
-            .deepdive_.schema.relations[env.Relation] |
-            if .variable_type then
-                .columns | to_entries |
-                sort_by(.value.index) |
-                map(.key)+["dd_label"] | join(",")
-            else
-                empty
-            end
-        ' run/compiled/config.json
-    )
+    # make sure app has been initialized
+    deepdive-done process/init/app ||
+    DEEPDIVE_PLAN_EDIT=false deepdive-do process/init/app
+    # find the list of columns
+    Columns=
+    if deepdive-relation columns "$Relation" &>/dev/null; then
+        relationIsntInAppSchema=false
+        Columns=$(
+            ! deepdive-relation is-variable "$Relation" ||
+            deepdive-relation columns "$Relation" |
+            # do not expect "id" column to be present by default
+            grep -vxF id |
+            tr '\n' ,
+        )
+        Columns=${Columns%,}
+    fi
+    # make sure table is created if the relation's schema is known
+    $relationIsntInAppSchema ||
+    deepdive-create table-if-not-exists "$Relation"
 fi
 
 # how to load a set of source expressions
@@ -173,3 +179,6 @@ done
 
 # load everything queued so far
 loadQueued
+
+$relationIsntInAppSchema ||
+deepdive-mark done data/"$Relation"

@@ -31,13 +31,13 @@ for row in sys.stdin:
   # Intuition: if they are close by, the link may be stronger.
   #
   words_between = ddlib.tokens_between_spans(words, span1, span2)
-  l = len(words_between.elements)
+  l = len(list(words_between.elements))
   features.add("num_words_between=%s" % l if l<5 else "many_words_between")
 
   # Feature 3: Check if the last name matches heuristically.
   #
-  last_word_left = ddlib.materialize_span(words, span1)[-1]
-  last_word_right = ddlib.materialize_span(words, span2)[-1]
+  last_word_left = list(ddlib.materialize_span(words, span1))[-1]
+  last_word_right = list(ddlib.materialize_span(words, span2))[-1]
   if (last_word_left == last_word_right):
     features.add("potential_last_name_match")
 
@@ -45,9 +45,9 @@ for row in sys.stdin:
   #
   #ddlib.log(features)
 
-  for feature in features:
-    print json.dumps({
+  for feature in sorted(features):
+    print(json.dumps({
       "relation_id": obj["relation_id"],
       "feature": feature
-    })
+    }, sort_keys=True))
 

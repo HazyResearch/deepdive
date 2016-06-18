@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# torque/compute-remote-taskinit -- Performs necessary setup before actual task is run.
+#
+# This script is somewhat confusing, since it's meant to be run in the submission node.
+# Therefore, the environment variables need to be relative to the submission node. For
+# example, DEEPDIVE_APP needs to point to the path of the application in the submission
+# node. Also, the evaluation of some variables need to be delayed until it's run.
+##
+set -euo pipefail
+
+# XXX: Hack for CentOS machines which have python 2.7 installed as
+# python2.7 in the same directory as python.
+if [[ $(uname) == "Linux" ]] && [[ -f "/etc/redhat-release" ]]; then
+  if which python2.7 &> /dev/null ; then
+    echo "Found python2.7 installation at $(which python2.7)"
+    HAS_PYTHON=true
+  else
+    warning "CentOS machine $(hostname) might not have python 2.7 installed!"
+    warning "This warning shows up if python2.7 cannot be resolved to a valid symbol."
+    warning "Continue at your own risk"
+    HAS_PYTHON=false
+  fi
+fi
+
+# Prepare submission script using echo commands.
+# WARNING: This submission script cannot output anything other than the output
+# of $COMMAND, otherwise when deepdive-sql tries to consume the output, it will
+# break.
+{
+  echo "#PBS -N $DEEPDIVE_CURRENT_PROCESS_NAME"
+  if [[ $NUM_PROCESSES -gt 1 ]]; then
+    echo "#PBS -l ncpus=1,nodes=$NUM_PROCESSES"
+    echo "#PBS -t 0-$((NUM_PROCESSES - 1))"
+  fi
+  echo "#PBS -o $REMOTE_OUT_DIR"
+  echo "#PBS -e $REMOTE_ERR_DIR"
+  echo
+  echo 'export PATH='$REMOTE_DEEPDIVE_HOME'/bin:$PATH'
+  if [[ ! -z "$REMOTE_ADDITIONAL_PATHS" ]]; then
+    for ap in $REMOTE_ADDITIONAL_PATHS; do
+      if [[ "$ap" == prepend_* ]]; then
+        echo 'export PATH='"${ap##prepend_}"':$PATH'
+      elif [[ "$ap" == append_* ]]; then
+        echo 'export PATH=$PATH:'"${ap##append_}"
+      else
+        echo 'export PATH='"$ap"':$PATH'
+      fi
+    done
+  fi
+  echo 'export PYTHONPATH='$REMOTE_DEEPDIVE_HOME'/lib/python:$PYTHONPATH'
+  echo "export DEEPDIVE_APP=\"$DEEPDIVE_APP\""
+  echo 'export DEEPDIVE_CURRENT_PROCESS_INDEX=$PBS_ARRAYID'
+  if [[ $HAS_PYTHON ]]; then
+    echo
+    echo 'export PATH='$(dirname $REMOTE_SH_DIR)':$PATH'
+    echo 'ln -sfn $(which python2.7) '$(dirname $REMOTE_SH_DIR)'/python'
+    echo
+  fi
+  echo 'cd '$REMOTE_DEEPDIVE_CWD
+  if [[ $NUM_PROCESSES -gt 1 ]]; then
+      echo 'INPUT_ID=$(printf "%04d" $PBS_ARRAYID)'
+      echo '"$SHELL" -c '"$COMMAND"' < '"$REMOTE_IN_DIR"'.$INPUT_ID'
+  else
+      echo '"$SHELL" -c '"$COMMAND"' < '"$REMOTE_IN_DIR"
+  fi
+} > $REMOTE_SH_DIR
+
+# And split data if necessary
+if [[ -f $REMOTE_IN_DIR ]] && [[ $NUM_PROCESSES -gt 1 ]]; then
+  total_lines=$(wc -l < $REMOTE_IN_DIR)
+  split -d -l $((total_lines / NUM_PROCESSES + 1)) -a 4 $REMOTE_IN_DIR $REMOTE_IN_DIR.
+  # Cleanup original remote.in file since we don't need duplicates
+  rm -fv $REMOTE_IN_DIR
+fi
+
