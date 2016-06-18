@@ -22,7 +22,7 @@ bats *.bats
     3. array of domain values, e.g., `{2,4,8}`.
 
 * `factors*.text2bin-args`
-    1. factor function id (See: [`FACTOR_FUNCTION_TYPE` enum](https://github.com/HazyResearch/sampler/blob/master/src/dstruct/factor_graph/factor.h))
+    1. factor function id (See: [`enum FACTOR_FUNCTION_TYPE`](https://github.com/HazyResearch/sampler/blob/master/src/common.h))
     2. arity: how many variables are connected, e.g., `1` for unary and `2` for binary
     3. reserved for incremental (use `0`)
     4. one or more flags to indicate which variables in corresponding position are negative (`0`) and positive (`1`)

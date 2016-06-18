@@ -149,9 +149,8 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
     // TODO turn these into labeled args
     TCLAP::UnlabeledValueArg<int> text2bin_factor_func_id_(
         "func_id",
-        "factor function id (See: "
-        "https://github.com/HazyResearch/sampler/blob/master/src/dstruct/"
-        "factor_graph/factor.h)",
+        "factor function id (See: enum FACTOR_FUCNTION_TYPE in "
+        "https://github.com/HazyResearch/sampler/blob/master/src/common.h)",
         true, 0, "func_id");
     TCLAP::UnlabeledValueArg<int> text2bin_factor_arity_(
         "arity", "arity of the factor, e.g., 1 | 2 | ...", true, 1, "arity");
