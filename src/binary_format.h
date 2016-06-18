@@ -55,18 +55,8 @@ size_t read_variables(const std::string& filename, FactorGraph&);
 size_t read_factors(const std::string& filename, FactorGraph&);
 
 /**
- * Loads factors from the given file into the given factor graph (incremental
- * mode)
+ * Loads domains for multinomial variables
  */
-size_t read_factors_inc(const std::string& filename, FactorGraph&);
-
-/**
- * Loads edges from the given file into the given factor graph (incremental
- * mode)
- */
-size_t read_edges_inc(const std::string& filename, FactorGraph&);
-
-// Loads domains for multinomial variables
 void read_domains(const std::string& filename, FactorGraph& fg);
 
 }  // namespace dd
