@@ -407,8 +407,9 @@ class QueryCompiler(cq : ConjunctiveQuery, hackFrom: List[String] = Nil, hackWhe
   }
 
   def compileExtractorBlock(stmt: Statement, stmts: List[Statement], outputRelation: String, cqs: List[ConjunctiveQuery]): CompiledBlocks = {
-    // look for @materialize annotation on any rule defining the same head
-    val shouldMaterialize = stmts flatMap (_.annotations) exists (_ named "materialize")
+    // look for @materialize annotation on the schema declaration or any rule defining the same head
+    val shouldMaterialize = ((schemaDeclarationByRelationName get outputRelation) ++ stmts
+      ) flatMap (_.annotations) exists (_ named "materialize")
     List(s"deepdive.extraction.extractors.${resolveExtractorBlockName(stmt)}" -> Map(
       "style" -> "sql_extractor",
       "input_relations" -> (stmts flatMap relationNamesUsedByStatement distinct),
