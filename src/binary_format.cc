@@ -207,7 +207,8 @@ void FactorGraph::load_factors(const std::string &filename) {
 void FactorGraph::load_domains(const std::string &filename) {
   std::ifstream file;
   file.open(filename.c_str(), std::ios::in | std::ios::binary);
-  long id, value;
+  long id;
+  variable_value_t value;
 
   while (true) {
     file.read((char *)&id, 8);
@@ -228,8 +229,8 @@ void FactorGraph::load_domains(const std::string &filename) {
         new std::unordered_map<variable_value_t, size_t>());
 
     for (size_t i = 0; i < domain_size; ++i) {
-      file.read((char *)&value, 8);
-      value = be64toh(value);
+      file.read((char *)&value, 4);
+      value = be32toh(value);
       domain_list[i] = value;
     }
 

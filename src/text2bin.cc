@@ -252,9 +252,9 @@ void load_domain(std::string input_filename, std::string output_filename) {
     // an array of domain values
     istringstream domain_input(domain);
     parse_pgarray_or_die(domain_input, [&fout](const std::string &subfield) {
-      long value = atol(subfield.c_str());
-      value = htobe64(value);
-      fout.write((char *)&value, 8);
+      variable_value_t value = atoi(subfield.c_str());
+      value = htobe32(value);
+      fout.write((char *)&value, 4);
     }, cardinality);
   }
 

@@ -48,7 +48,7 @@ typedef enum {
   DTYPE_CATEGORICAL = 1,
 } variable_domain_type_t;
 
-typedef size_t variable_value_t;
+typedef uint32_t variable_value_t;
 typedef size_t variable_id_t;
 
 // enumeration for factor function types

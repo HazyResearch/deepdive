@@ -6,7 +6,7 @@ Variable::Variable()
     : Variable(INVALID_ID, DTYPE_BOOLEAN, false, 2, 0, 0, 0, false) {}
 
 Variable::Variable(variable_id_t id, variable_domain_type_t domain_type,
-                   bool is_evidence, variable_value_t cardinality,
+                   bool is_evidence, size_t cardinality,
                    variable_value_t init_value, variable_value_t current_value,
                    size_t n_factors, bool is_observation)
     : id(id),
@@ -43,7 +43,7 @@ Variable &Variable::operator=(const Variable &other) {
 RawVariable::RawVariable() : Variable() {}
 
 RawVariable::RawVariable(variable_id_t id, variable_domain_type_t domain_type,
-                         bool is_evidence, variable_value_t cardinality,
+                         bool is_evidence, size_t cardinality,
                          variable_value_t init_value,
                          variable_value_t current_value, size_t n_factors,
                          bool is_observation)
