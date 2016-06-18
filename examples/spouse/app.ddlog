@@ -100,7 +100,6 @@ spouse_candidate(
 num_people(doc_id, sentence_index, COUNT(p)) :-
     person_mention(p, _, doc_id, sentence_index, _, _).
 
-@materialize
 spouse_candidate(p1, p1_name, p2, p2_name) :-
     num_people(same_doc, same_sentence, num_p),
     person_mention(p1, p1_name, same_doc, same_sentence, p1_begin, _),
@@ -226,16 +225,14 @@ has_spouse(p1_id, p2_id) = if l > 0 then TRUE
 # Features
 @weight(f)
 has_spouse(p1_id, p2_id) :-
-    spouse_candidate(p1_id, _, p2_id, _),
     spouse_feature(p1_id, p2_id, f).
 
 # Inference rule: Symmetry
 @weight(3.0)
 has_spouse(p1_id, p2_id) => has_spouse(p2_id, p1_id) :-
-    spouse_candidate(p1_id, _, p2_id, _).
+    TRUE.
 
 # Inference rule: Only one marriage
 @weight(-1.0)
 has_spouse(p1_id, p2_id) => has_spouse(p1_id, p3_id) :-
-    spouse_candidate(p1_id, _, p2_id, _),
-    spouse_candidate(p1_id, _, p3_id, _).
+    TRUE.
