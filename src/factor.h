@@ -79,7 +79,6 @@ class CompactFactor {
       RETURN_POTENTIAL_FOR(FUNC_LINEAR);
       RETURN_POTENTIAL_FOR(FUNC_RATIO);
       RETURN_POTENTIAL_FOR(FUNC_LOGICAL);
-      RETURN_POTENTIAL_FOR(FUNC_ONEISTRUE);
 #undef RETURN_POTENTIAL_FOR
       default:
         std::cout << "Unsupported FACTOR_FUCNTION_TYPE = " << func_id
@@ -238,33 +237,6 @@ class CompactFactor {
 
   // potential for multinomial variable
   DEFINE_POTENTIAL_FOR(FUNC_AND_CATEGORICAL) { return 1.0; }
-
-  /** Return the value of the oneIsTrue of the variables in the factor, with
-   * the variable of index vid (wrt the factor) is set to the value of the
-   * 'proposal' argument.
-   *
-   */
-  DEFINE_POTENTIAL_FOR(FUNC_ONEISTRUE) {
-    bool found = false;
-    /* Iterate over the factor variables */
-    for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables;
-         ++i_vif) {
-      const VariableInFactor &vif = vifs[i_vif];
-      const bool satisfied =
-          is_variable_satisfied(vif, vid, var_values, proposal);
-
-      if (satisfied) {
-        if (!found) found = true;
-        /* Early return if we find that two variables are satisfied */
-        else
-          return -1.0;
-      }
-    }
-    if (found)
-      return 1.0;
-    else
-      return -1.0;
-  }
 
   // potential for linear expression
   DEFINE_POTENTIAL_FOR(FUNC_LINEAR) {
