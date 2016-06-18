@@ -20,3 +20,9 @@ TQ?(x text).
 
 # base table
 D(x text).
+
+
+# should recognize @materialize on the schema declaration as well
+@materialize
+S(x text).
+S(x) :- D(x), x LIKE "foo%".

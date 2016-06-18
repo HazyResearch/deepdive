@@ -65,6 +65,21 @@ materialize: true
 
 }
 
+deepdive.extraction.extractors.ext_S {
+sql: """
+SELECT R0.x AS column_0
+FROM D R0
+WHERE R0.x LIKE 'foo%'
+"""
+input_relations: [
+  D
+]
+style: sql_extractor
+output_relation: S
+materialize: true
+
+}
+
 deepdive.pipeline.run: ${PIPELINE}
 
 deepdive.pipeline.pipelines.extraction: [
@@ -72,6 +87,7 @@ deepdive.pipeline.pipelines.extraction: [
   ext_VQ
   ext_T
   ext_TQ
+  ext_S
 ]
 
 deepdive.pipeline.pipelines.endtoend: [
@@ -79,5 +95,6 @@ deepdive.pipeline.pipelines.endtoend: [
   ext_VQ
   ext_T
   ext_TQ
+  ext_S
 ]
 
