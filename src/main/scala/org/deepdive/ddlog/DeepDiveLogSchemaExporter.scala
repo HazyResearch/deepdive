@@ -1,8 +1,6 @@
 package org.deepdive.ddlog
 
-import org.apache.commons.lang3.StringEscapeUtils
-import org.deepdive.ddlog.DeepDiveLog.Mode._
-
+import scala.language.postfixOps
 import scala.util.parsing.json.{JSONArray, JSONObject}
 
 // Schema exporter that dumps column names and types of every relation as well as their annotations
@@ -28,18 +26,14 @@ object DeepDiveLogSchemaExporter extends DeepDiveLogHandler {
           (name, JSONObject(columnSchema))
       } toMap)
     // relation annotations are omitted when not present
-    if (decl.annotation nonEmpty)
-      schema += "annotations" -> exportAnnotations(decl.annotation)
+    if (decl.annotations nonEmpty)
+      schema += "annotations" -> exportAnnotations(decl.annotations)
     // what type of random variable this relation is
     if (decl.isQuery)
-      decl.variableType getOrElse { BooleanType() } match {
-        case ty =>
-          schema += "variable_type" -> (ty match {
-            case BooleanType()      => "boolean"
-            case MultinomialType(n) => "multinomial"
-          })
-          schema += "variable_cardinality" -> ty.cardinality
-      }
+      schema += "variable_type" -> (
+        if (decl.categoricalColumns.size > 0) "categorical"
+        else "boolean"
+      )
 
     // finally, mapping for this relation
     decl.a.name -> JSONObject(schema)
@@ -52,8 +46,21 @@ object DeepDiveLogSchemaExporter extends DeepDiveLogHandler {
     var a = jsonMap(
       "name" -> anno.name
     )
-    if (anno.args nonEmpty)
-      a += "args" -> (anno.args.get fold (JSONObject, JSONArray))
+    if (anno.args nonEmpty) {
+      def toValue(e: Expr): Any = e match {
+        case IntConst(v) => v
+        case StringConst(v) => v
+        case DoubleConst(v) => v
+        case BooleanConst(v) => v
+        case NullConst() => null
+        case _ => sys.error(s"Cannot export non-constant value in annotation: ${DeepDiveLogPrettyPrinter.printAnnotations(List(anno))}")
+      }
+      def toJSONObject(nameExprMap: Map[String,Expr]) = {
+        JSONObject (nameExprMap mapValues toValue)
+      }
+      def toJSONArray(exprs: List[Expr]) = JSONArray(exprs map toValue)
+      a += "args" -> (anno.args.get fold (toJSONObject, toJSONArray))
+    }
     JSONObject(a)
   }
 
@@ -79,8 +86,7 @@ object DeepDiveLogSchemaExporter extends DeepDiveLogHandler {
                   types = rule.q.headTerms map { _ => "UNKNOWN" },
                   annotations = rule.q.headTerms map { _ => List.empty }
                 ),
-                isQuery = false,
-                variableType = None
+                isQuery = false
               ),
               "type" -> "view"
             )

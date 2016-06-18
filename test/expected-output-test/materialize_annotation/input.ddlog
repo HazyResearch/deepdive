@@ -1,0 +1,28 @@
+# test for @materialize annotation
+
+# defaults to view
+V(x) :- D(x).
+VQ(x) = TRUE :- D(x).
+
+V(x text).
+VQ?(x text).
+
+
+# with @materialize annotation on the rule, can be materialized as table
+@materialize
+T(x) :- D(x).
+
+@materialize
+TQ(x) = (if length(x) > 5 then TRUE else NULL end) :- D(x).
+
+T(x text).
+TQ?(x text).
+
+# base table
+D(x text).
+
+
+# should recognize @materialize on the schema declaration as well
+@materialize
+S(x text).
+S(x) :- D(x), x LIKE "foo%".

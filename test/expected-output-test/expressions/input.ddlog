@@ -26,7 +26,7 @@ G(x) :- b(x,y,z,w), x + w = 100.
 
 H(x) :- b(x,y,z,w), x + w = 100, x > 50.
 
-I(x) :- b(x,y,z,w), [x + w = 100; [x > 50, w < 10]].
+I(x) :- b(x,y,z,w), [x + w = 100; [x > 50, w <= 10]].
 
 J(x) :- b(x,y,z,w), [x + w = 100; !x > 50].
 
@@ -54,3 +54,6 @@ W(x) :- a(x), ALL[c(_,y,_), y < x].
 V(x) :- c(_,x,_), a(x).
 
 X(x) :- b(x,_,_,z), c(_,x,y).
+
+# agg function name is case insensitive
+Y(a, Array_Agg(b)) :- C(a, b, _).

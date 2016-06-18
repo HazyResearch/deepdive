@@ -1,0 +1,77 @@
+deepdive.schema.variables {
+P.dd_label: Boolean
+Q.dd_label: Boolean
+
+}
+
+deepdive.extraction.extractors.ext_P {
+sql: """
+SELECT R0.x AS column_0
+FROM data R0
+WHERE R0.y = 1
+"""
+input_relations: [
+  data
+]
+style: sql_extractor
+output_relation: P
+materialize: false
+
+}
+
+deepdive.extraction.extractors.ext_Q {
+sql: """
+SELECT R0.x AS column_0
+FROM data R0
+WHERE R0.y = 2
+"""
+input_relations: [
+  data
+]
+style: sql_extractor
+output_relation: Q
+materialize: false
+
+}
+
+deepdive.inference.factors.inf_imply_P_Q {
+input_query: """
+SELECT dd_id_0.dd_id AS "P.R0.dd_id"
+     , R0.x AS "P.R0.x"
+     , dd_id_1.dd_id AS "Q.R1.dd_id"
+     , R1.x AS "Q.R1.x"
+FROM P R0
+   , Q R1
+   , dd_variables_P AS dd_id_0
+   , dd_variables_Q AS dd_id_1
+WHERE R1.x = R0.x
+  AND true
+  AND R0.x = dd_id_0.x
+  AND R1.x = dd_id_1.x
+"""
+function: """Imply(P.R0.dd_label, Q.R1.dd_label)"""
+weight: """1"""
+input_relations: [
+  P
+  Q
+]
+
+}
+
+deepdive.pipeline.run: ${PIPELINE}
+
+deepdive.pipeline.pipelines.extraction: [
+  ext_P
+  ext_Q
+]
+
+deepdive.pipeline.pipelines.inference: [
+  inf_imply_P_Q
+]
+
+deepdive.pipeline.pipelines.endtoend: [
+  ext_P
+  ext_Q
+  inf_imply_P_Q
+]
+

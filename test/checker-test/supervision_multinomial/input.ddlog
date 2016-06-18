@@ -1,4 +1,4 @@
-Q?(x int) Categorical(10).
+Q?(@key x int, category int).
 R(x int, label int).
 
-Q(x) = label :- R(x, label).
+Q(x, label) = TRUE :- R(x, label).

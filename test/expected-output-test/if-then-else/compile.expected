@@ -1,73 +1,69 @@
 deepdive.schema.variables {
-q.label: Boolean
+q.dd_label: Boolean
 
 }
 
 deepdive.extraction.extractors.ext_q {
-cmd: """
-	# TODO use temporary table
-	deepdive create table "q"
-	deepdive sql 'INSERT INTO q SELECT DISTINCT R0.x, 0 AS id, 
+sql: """
+SELECT R0.x AS column_0
+     , 
 CASE WHEN R0.l > 0 THEN true
      WHEN R0.l < 0 THEN false
      ELSE NULL
-END AS label
-          FROM labels_resolved R0
-        
-          '
-	# TODO rename temporary table to replace output_relation
-	"""
-output_relation: q
-style: cmd_extractor
+END AS column_1
+FROM labels_resolved R0
+"""
 input_relations: [
   labels_resolved
 ]
+style: sql_extractor
+output_relation: q
+materialize: false
 
 }
 
 deepdive.extraction.extractors.ext_p {
-cmd: """
-	deepdive create view p as 'SELECT R0.x AS column_0, 
+sql: """
+SELECT R0.x AS column_0
+     , 
 CASE WHEN abs(R0.l) > 10 THEN true
      ELSE false
 END AS column_1
 FROM labels R0
-        
 UNION ALL
-SELECT R0.x AS column_0, 
+SELECT R0.x AS column_0
+     , 
 CASE WHEN (R0.x % 10) = 0 THEN false
      ELSE 
 END AS column_1
 FROM labels R0
-        '
-	"""
-output_relation: p
-style: cmd_extractor
+"""
 input_relations: [
   labels
 ]
+style: sql_extractor
+output_relation: p
+materialize: false
 
 }
 
 deepdive.extraction.extractors.ext_labels_resolved {
-cmd: """
-	# TODO use temporary table
-	deepdive create table "labels_resolved"
-	deepdive sql 'INSERT INTO labels_resolved SELECT R0.x AS "labels.R0.x", SUM(
+sql: """
+SELECT R0.x AS column_0
+     , SUM(
 CASE WHEN R0.l IS NULL THEN 0
      WHEN R0.l = true THEN 1
      ELSE -1
 END) AS column_1
 FROM labels R0
-        
-        GROUP BY R0.x'
-	# TODO rename temporary table to replace output_relation
-	"""
-output_relation: labels_resolved
-style: cmd_extractor
+GROUP BY R0.x
+"""
 input_relations: [
   labels
 ]
+style: sql_extractor
+output_relation: labels_resolved
+materialize: false
 
 }
 

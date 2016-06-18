@@ -1,4 +1,0 @@
-Q?(x int).
-R(x int, label text).
-
-Q(x) = label :- R(x, label).

@@ -1,0 +1,7 @@
+[error] None or all variables must be categorical
+@weight(1.0)
+P(x) => Q(y, c) :-
+    R(x),
+    R(y),
+    C(c).
+

@@ -1,7 +1,8 @@
 package org.deepdive.ddlog
 
 import org.apache.commons.lang3.StringEscapeUtils
-import org.deepdive.ddlog.DeepDiveLog.Mode._
+
+import scala.language.postfixOps
 
 // Pretty printer that simply prints the parsed input
 object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
@@ -12,6 +13,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     case s: FunctionDeclaration => print(s)
     case s: ExtractionRule      => print(s)
     case s: FunctionCallRule    => print(s)
+    case s: SupervisionRule     => print(s)
     case s: InferenceRule       => print(s)
   }
 
@@ -22,9 +24,9 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
           if (anno.args isEmpty) ""
           else s"(${anno.args.get fold (
             // named arguments case
-            {_ map { case (name, value) => s"${name}=${printLiteral(value)}" }},
+            {_ map { case (name, value) => s"${name}=${print(value)}" }},
             // unnamed argument list case
-            {_ map printLiteral}
+            {_ map print}
           ) mkString(", ") })"
         }" + ("\n" + indentation)
     } mkString
@@ -38,7 +40,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
         printAnnotations(stmt.a.annotations(i), indentation) +
         s"${name} ${stmt.a.types(i)}"
     }
-    printAnnotations(stmt.annotation) +
+    printAnnotations(stmt.annotations) +
     s"""${prefix}${columnDecls.mkString(",\n" + indentation)}).
        |""".stripMargin
   }
@@ -60,6 +62,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
         "\"" + StringEscapeUtils.escapeJava(impl.command) + "\"" + styleStr
       }
     }
+    printAnnotations(stmt.annotations) +
     s"""function ${stmt.functionName}
        |    over ${inputType}
        | returns ${outputType}
@@ -100,7 +103,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     }
   }
 
-  def print(a: BodyAtom) : String = {
+  def print(a: Atom) : String = {
     val vars = a.terms map print
     s"${a.name}(${vars.mkString(", ")})"
   }
@@ -136,7 +139,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   def print(b: Body) : String = b match {
-    case b: BodyAtom => print(b)
+    case b: Atom => print(b)
     case b: Cond => print(b)
     case b: QuantifiedBody => print(b)
   }
@@ -161,44 +164,46 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   def print(a: HeadAtom) : String = {
-    val vars = a.terms map print
-    s"${if (a.isNegated) "!" else ""}${a.name}(${vars.mkString(", ")})"
+    s"${if (a.isNegated) "!" else ""}${print(a.atom)}"
   }
 
   def print(head: InferenceRuleHead) : String = {
-    def printImplyHead = s"""${printHead(head.terms.dropRight(1), ", ")} => ${print(head.terms.last)}"""
+    def printImplyHead = s"""${printHead(head.variables.dropRight(1), ", ")} => ${print(head.variables.last)}"""
     def printHead(a: List[HeadAtom], delim: String) : String = a map print mkString(delim)
     head.function match {
       case FactorFunction.Imply()  => printImplyHead
-      case FactorFunction.Linear() => s"""@semantics("linear")\n${printImplyHead}"""
-      case FactorFunction.Ratio()  => s"""@semantics("ratio")\n${printImplyHead}"""
-      case FactorFunction.And()    => printHead(head.terms, " ^ ")
-      case FactorFunction.Or()     => printHead(head.terms, " v ")
-      case FactorFunction.Equal()  => printHead(head.terms, " = ")
-      case FactorFunction.IsTrue() => printHead(head.terms, "")
-      case FactorFunction.Multinomial() => s"""Multinomial(${printHead(head.terms, ", ")})"""
+      case FactorFunction.Linear() => printImplyHead
+      case FactorFunction.Ratio()  => printImplyHead
+      case FactorFunction.And()    => printHead(head.variables, " ^ ")
+      case FactorFunction.Or()     => printHead(head.variables, " v ")
+      case FactorFunction.Equal()  => printHead(head.variables, " = ")
+      case FactorFunction.IsTrue() => printHead(head.variables, "")
     }
   }
 
   def print(stmt: ExtractionRule): String = {
-    stmt.headName + print(stmt.q, stmt.supervision) + ".\n"
+    printAnnotations(stmt.annotations) +
+    stmt.headName + print(stmt.q) + ".\n"
+  }
+
+  def print(stmt: SupervisionRule): String = {
+    printAnnotations(stmt.annotations) +
+    stmt.headName + print(stmt.q, Some(stmt.supervision)) + ".\n"
   }
 
   def print(stmt: FunctionCallRule): String = {
-    ( stmt.mode map (s => s"""@mode("${s}")\n""") getOrElse("") ) +
-    ( stmt.parallelism map (s => s"@parallelism($s)\n") getOrElse("") ) +
+    printAnnotations(stmt.annotations) +
     s"${stmt.output} += ${stmt.function}${print(stmt.q)}.\n"
   }
 
   def print(stmt: InferenceRule): String = {
-    ( stmt.mode map (s => s"""@mode("${s}")\n""") getOrElse "" ) +
-    ( s"@weight(${stmt.weights.variables map print mkString(", ")})\n"
-    ) + print(stmt.head) + print(stmt.q) + ".\n"
+    printAnnotations(stmt.annotations) +
+    print(stmt.head) + print(stmt.q) + ".\n"
   }
 
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {
     val programToPrint = parsedProgram
     // pretty print in original syntax
-    programToPrint foreach {stmt => println(print(stmt))}
+    programToPrint foreach { stmt => println(print(stmt)) }
   }
 }

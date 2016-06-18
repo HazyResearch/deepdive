@@ -1,51 +1,51 @@
 deepdive.schema.variables {
-q1.label: Boolean
-q2.label: Boolean
+q1.dd_label: Boolean
+q2.dd_label: Boolean
 
 }
 
 deepdive.extraction.extractors.ext_q1 {
-cmd: """
-	# TODO use temporary table
-	deepdive create table "q1"
-	deepdive sql 'INSERT INTO q1 SELECT DISTINCT R0.wid, 0 AS id, R0.val AS label
-          FROM label1 R0
-        
-          '
-	# TODO rename temporary table to replace output_relation
-	"""
-output_relation: q1
-style: cmd_extractor
+sql: """
+SELECT R0.wid AS column_0
+     , R0.val AS column_1
+FROM label1 R0
+"""
 input_relations: [
   label1
 ]
+style: sql_extractor
+output_relation: q1
+materialize: false
 
 }
 
 deepdive.extraction.extractors.ext_q2 {
-cmd: """
-	# TODO use temporary table
-	deepdive create table "q2"
-	deepdive sql 'INSERT INTO q2 SELECT DISTINCT R0.wid, 0 AS id, R0.val AS label
-          FROM label2 R0
-        
-          '
-	# TODO rename temporary table to replace output_relation
-	"""
-output_relation: q2
-style: cmd_extractor
+sql: """
+SELECT R0.wid AS column_0
+     , R0.val AS column_1
+FROM label2 R0
+"""
 input_relations: [
   label2
 ]
+style: sql_extractor
+output_relation: q2
+materialize: false
 
 }
 
 deepdive.inference.factors.inf_istrue_q1 {
 input_query: """
-          SELECT R0.id AS "q1.R0.id" , R1.feature_id AS "dd_weight_column_0" 
-          FROM q1 R0, features R1
-        WHERE R1.word_id = R0.wid """
-function: """Imply(q1.R0.label)"""
+SELECT dd_id_0.dd_id AS "q1.R0.dd_id"
+     , R0.wid AS "q1.R0.wid"
+     , R1.feature_id AS "dd_weight_column_0"
+FROM q1 R0
+   , features R1
+   , dd_variables_q1 AS dd_id_0
+WHERE R1.word_id = R0.wid
+  AND R0.wid = dd_id_0.wid
+"""
+function: """Imply(q1.R0.dd_label)"""
 weight: """?(dd_weight_column_0)"""
 input_relations: [
   q1
@@ -56,10 +56,16 @@ input_relations: [
 
 deepdive.inference.factors.inf_istrue_q2 {
 input_query: """
-          SELECT R0.id AS "q2.R0.id" , R1.feature_id AS "dd_weight_column_0" 
-          FROM q2 R0, features R1
-        WHERE R1.word_id = R0.wid """
-function: """Imply(q2.R0.label)"""
+SELECT dd_id_0.dd_id AS "q2.R0.dd_id"
+     , R0.wid AS "q2.R0.wid"
+     , R1.feature_id AS "dd_weight_column_0"
+FROM q2 R0
+   , features R1
+   , dd_variables_q2 AS dd_id_0
+WHERE R1.word_id = R0.wid
+  AND R0.wid = dd_id_0.wid
+"""
+function: """Imply(q2.R0.dd_label)"""
 weight: """?(dd_weight_column_0)"""
 input_relations: [
   q2

@@ -1,45 +1,46 @@
 deepdive.schema.variables {
-Q.label: Boolean
+Q.dd_label: Boolean
 
 }
 
 deepdive.extraction.extractors.ext_S {
-cmd: """
-	# TODO use temporary table
-	deepdive create table "S"
-	deepdive sql 'INSERT INTO S SELECT R0.a AS "R.R0.a"
-FROM R R0, R R1
-        WHERE R1.a = R0.b  AND R0.a > 100
+sql: """
+SELECT R0.a AS column_0
+FROM R R0
+   , R R1
+WHERE R1.a = R0.b
+  AND R0.a > 100
 UNION ALL
-SELECT R0.a AS "R.R0.a"
-FROM R R0, R R1
-        WHERE R1.a = R0.b  AND R0.a < -100
+SELECT R0.a AS column_0
+FROM R R0
+   , R R1
+WHERE R1.a = R0.b
+  AND R0.a < -100
 UNION ALL
-SELECT R0.a AS "R.R0.a"
-FROM R R0, R R1
-        WHERE R1.a = R0.b  AND R0.a = 0
+SELECT R0.a AS column_0
+FROM R R0
+   , R R1
+WHERE R1.a = R0.b
+  AND R0.a = 0
 UNION ALL
-SELECT R0.a AS "S_0.R0.a"
+SELECT R0.a AS column_0
 FROM S_0 R0
-        
 UNION ALL
-SELECT R0.a AS "S_1.R0.a"
+SELECT R0.a AS column_0
 FROM S_1 R0
-        
 UNION ALL
-SELECT R0.a AS "S_2.R0.a"
+SELECT R0.a AS column_0
 FROM S_2 R0
-        '
-	# TODO rename temporary table to replace output_relation
-	"""
-output_relation: S
-style: cmd_extractor
+"""
 input_relations: [
   R
   S_0
   S_1
   S_2
 ]
+style: sql_extractor
+output_relation: S
+materialize: false
 
 }
 
@@ -52,41 +53,38 @@ style: tsv_extractor
 output_relation: T___0
 udf: """/bin/false"""
 input_batch_size: ${INPUT_BATCH_SIZE}
-input: """SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
+input: """
+SELECT R0.a AS column_0
+     , R0.b AS column_1
 FROM R R0
-        WHERE R0.a > 1000"""
+WHERE R0.a > 1000
+"""
 
 }
 
 deepdive.extraction.extractors.ext_T {
-cmd: """
-	# TODO use temporary table
-	deepdive create table "T"
-	deepdive sql 'INSERT INTO T SELECT R0.a AS "T___0.R0.a"
+sql: """
+SELECT R0.a AS column_0
 FROM T___0 R0
-        
 UNION ALL
-SELECT R0.a AS "T___1.R0.a"
+SELECT R0.a AS column_0
 FROM T___1 R0
-        
 UNION ALL
-SELECT R0.a AS "T___2.R0.a"
+SELECT R0.a AS column_0
 FROM T___2 R0
-        
 UNION ALL
-SELECT R0.a AS "T___3.R0.a"
+SELECT R0.a AS column_0
 FROM T___3 R0
-        '
-	# TODO rename temporary table to replace output_relation
-	"""
-output_relation: T
-style: cmd_extractor
+"""
 input_relations: [
   T___0
   T___1
   T___2
   T___3
 ]
+style: sql_extractor
+output_relation: T
+materialize: false
 
 }
 
@@ -99,9 +97,13 @@ style: tsv_extractor
 output_relation: T___1
 udf: """/bin/false"""
 input_batch_size: ${INPUT_BATCH_SIZE}
-input: """SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
+input: """
+SELECT R0.a AS column_0
+     , R0.b AS column_1
 FROM R R0
-        WHERE 10 < R0.a AND R0.a < 20"""
+WHERE 10 < R0.a
+  AND R0.a < 20
+"""
 
 }
 
@@ -114,9 +116,13 @@ style: tsv_extractor
 output_relation: T___2
 udf: """/bin/false"""
 input_batch_size: ${INPUT_BATCH_SIZE}
-input: """SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
+input: """
+SELECT R0.a AS column_0
+     , R0.b AS column_1
 FROM R R0
-        WHERE 100 < R0.a AND R0.a < 200"""
+WHERE 100 < R0.a
+  AND R0.a < 200
+"""
 
 }
 
@@ -129,9 +135,12 @@ style: tsv_extractor
 output_relation: S_0
 udf: """/bin/false"""
 input_batch_size: ${INPUT_BATCH_SIZE}
-input: """SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
+input: """
+SELECT R0.a AS column_0
+     , R0.b AS column_1
 FROM R R0
-        WHERE R0.a < 0"""
+WHERE R0.a < 0
+"""
 
 }
 
@@ -144,9 +153,12 @@ style: tsv_extractor
 output_relation: S_1
 udf: """/bin/false"""
 input_batch_size: ${INPUT_BATCH_SIZE}
-input: """SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
+input: """
+SELECT R0.a AS column_0
+     , R0.b AS column_1
 FROM R R0
-        WHERE R0.a > 0"""
+WHERE R0.a > 0
+"""
 
 }
 
@@ -159,9 +171,11 @@ style: tsv_extractor
 output_relation: T___3
 udf: """/bin/false"""
 input_batch_size: ${INPUT_BATCH_SIZE}
-input: """SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
+input: """
+SELECT R0.a AS column_0
+     , R0.b AS column_1
 FROM R R0
-        """
+"""
 
 }
 
@@ -174,18 +188,28 @@ style: tsv_extractor
 output_relation: S_2
 udf: """/bin/false"""
 input_batch_size: ${INPUT_BATCH_SIZE}
-input: """SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
+input: """
+SELECT R0.a AS column_0
+     , R0.b AS column_1
 FROM R R0
-        WHERE R0.a > 0"""
+WHERE R0.a > 0
+"""
 
 }
 
 deepdive.inference.factors.inf_istrue_Q {
 input_query: """
-          SELECT R0.id AS "Q.R0.id" , R0.x AS "dd_weight_column_0" 
-          FROM Q R0, S R1
-        WHERE R1.a = R0.x  AND R0.x > 1000"""
-function: """Imply(Q.R0.label)"""
+SELECT dd_id_0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+     , R0.x AS "dd_weight_column_0"
+FROM Q R0
+   , S R1
+   , dd_variables_Q AS dd_id_0
+WHERE R1.a = R0.x
+  AND R0.x > 1000
+  AND R0.x = dd_id_0.x
+"""
+function: """Imply(Q.R0.dd_label)"""
 weight: """?(dd_weight_column_0)"""
 input_relations: [
   Q
@@ -196,10 +220,16 @@ input_relations: [
 
 deepdive.inference.factors.inf1_istrue_Q {
 input_query: """
-          SELECT R0.id AS "Q.R0.id" 
-          FROM Q R0, S R1
-        WHERE R1.a = R0.x  AND R0.x = 0"""
-function: """Imply(Q.R0.label)"""
+SELECT dd_id_0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+FROM Q R0
+   , S R1
+   , dd_variables_Q AS dd_id_0
+WHERE R1.a = R0.x
+  AND R0.x = 0
+  AND R0.x = dd_id_0.x
+"""
+function: """Imply(Q.R0.dd_label)"""
 weight: """1.0"""
 input_relations: [
   Q
@@ -210,10 +240,16 @@ input_relations: [
 
 deepdive.inference.factors.inf_istrue_not_Q {
 input_query: """
-          SELECT R0.id AS "Q.R0.id" 
-          FROM Q R0, S R1
-        WHERE R1.a = R0.x  AND R0.x < 1000"""
-function: """Imply(!Q.R0.label)"""
+SELECT dd_id_0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+FROM Q R0
+   , S R1
+   , dd_variables_Q AS dd_id_0
+WHERE R1.a = R0.x
+  AND R0.x < 1000
+  AND R0.x = dd_id_0.x
+"""
+function: """Imply(!Q.R0.dd_label)"""
 weight: """?"""
 input_relations: [
   Q
@@ -224,10 +260,26 @@ input_relations: [
 
 deepdive.inference.factors.inf_imply_Q_Q {
 input_query: """
-          SELECT R0.id AS "Q.R0.id" , R1.id AS "Q.R1.id" , R0.x AS "dd_weight_column_0" 
-          FROM Q R0, Q R1, S R2, R R3, S R4
-        WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x """
-function: """Imply(Q.R0.label, Q.R1.label)"""
+SELECT dd_id_0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+     , dd_id_1.dd_id AS "Q.R1.dd_id"
+     , R1.x AS "Q.R1.x"
+     , R0.x AS "dd_weight_column_0"
+FROM Q R0
+   , Q R1
+   , S R2
+   , R R3
+   , S R4
+   , dd_variables_Q AS dd_id_0
+   , dd_variables_Q AS dd_id_1
+WHERE R2.a = R0.x
+  AND R3.a = R0.x
+  AND R3.b = R1.x
+  AND R4.a = R1.x
+  AND R0.x = dd_id_0.x
+  AND R1.x = dd_id_1.x
+"""
+function: """Imply(Q.R0.dd_label, Q.R1.dd_label)"""
 weight: """?(dd_weight_column_0)"""
 input_relations: [
   Q
@@ -239,10 +291,26 @@ input_relations: [
 
 deepdive.inference.factors.inf1_imply_Q_Q {
 input_query: """
-          SELECT R0.id AS "Q.R0.id" , R1.id AS "Q.R1.id" 
-          FROM Q R0, Q R1, S R2, R R3, S R4
-        WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x  AND (R0.x + R1.x) < 1000"""
-function: """Imply(Q.R0.label, Q.R1.label)"""
+SELECT dd_id_0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+     , dd_id_1.dd_id AS "Q.R1.dd_id"
+     , R1.x AS "Q.R1.x"
+FROM Q R0
+   , Q R1
+   , S R2
+   , R R3
+   , S R4
+   , dd_variables_Q AS dd_id_0
+   , dd_variables_Q AS dd_id_1
+WHERE R2.a = R0.x
+  AND R3.a = R0.x
+  AND R3.b = R1.x
+  AND R4.a = R1.x
+  AND (R0.x + R1.x) < 1000
+  AND R0.x = dd_id_0.x
+  AND R1.x = dd_id_1.x
+"""
+function: """Imply(Q.R0.dd_label, Q.R1.dd_label)"""
 weight: """-10.0"""
 input_relations: [
   Q
@@ -254,10 +322,26 @@ input_relations: [
 
 deepdive.inference.factors.inf2_imply_Q_Q {
 input_query: """
-          SELECT R0.id AS "Q.R0.id" , R1.id AS "Q.R1.id" 
-          FROM Q R0, Q R1, S R2, R R3, S R4
-        WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x  AND (R0.x + R1.x) > 1000"""
-function: """Imply(Q.R0.label, Q.R1.label)"""
+SELECT dd_id_0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+     , dd_id_1.dd_id AS "Q.R1.dd_id"
+     , R1.x AS "Q.R1.x"
+FROM Q R0
+   , Q R1
+   , S R2
+   , R R3
+   , S R4
+   , dd_variables_Q AS dd_id_0
+   , dd_variables_Q AS dd_id_1
+WHERE R2.a = R0.x
+  AND R3.a = R0.x
+  AND R3.b = R1.x
+  AND R4.a = R1.x
+  AND (R0.x + R1.x) > 1000
+  AND R0.x = dd_id_0.x
+  AND R1.x = dd_id_1.x
+"""
+function: """Imply(Q.R0.dd_label, Q.R1.dd_label)"""
 weight: """10.0"""
 input_relations: [
   Q
@@ -268,16 +352,16 @@ input_relations: [
 }
 
 deepdive.extraction.extractors.ext_T__3 {
-cmd: """
-	deepdive create view T__3 as 'SELECT R0.a AS column_0
+sql: """
+SELECT R0.a AS column_0
 FROM T R0
-        '
-	"""
-output_relation: T__3
-style: cmd_extractor
+"""
 input_relations: [
   T
 ]
+style: sql_extractor
+output_relation: T__3
+materialize: false
 
 }
 
