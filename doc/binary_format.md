@@ -58,7 +58,7 @@ The following fields are repeated for each factor.
     equalPredicate  uint64_t    8   // value to check equality against the variable (FIXME subject to change)
     arity           uint64_t    8   // arity of the factor, i.e., how many variables it connects to
     variableReferences              // references to variables (one block per arity)
-    weightReferences                // reference to multiple weights (MULTINOMIAL factor) or a single weight id
+    weightReferences                // reference to multiple weights (categorical factor) or a single weight id
 
 For valid values for `factorFunction`, see [`FACTOR_FUNCTION_TYPE` enum](../src/common.h).
 
@@ -71,9 +71,9 @@ Each block of `variableReferences` consists of the following fields:
 FIXME `equalPredicate` will be moved to each `variableReferences` block and replace the `isPositive` field.
 
 ### Weight References of a Factor
-Each block of `weightReferences` must have the following structure when `factorFunction` is `FUNC_SPARSE_MULTINOMIAL`:
+Each block of `weightReferences` must have the following structure when `factorFunction` is `FUNC_AND_CATEGORICAL`:
 
-    numWeights      uint64_t    8   // the number of weights defined for this multinomial factor
+    numWeights      uint64_t    8   // the number of weights defined for this categorical factor
     categoryValue_i uint32_t    4   // the value id to compare against for a connected variable
     ...                             // categoryValue must appear exactly arity times
     weightId        uint64_t    8   // the weight id for this factor when each connected variable

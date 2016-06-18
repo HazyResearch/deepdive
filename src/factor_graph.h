@@ -131,13 +131,13 @@ class CompactFactorGraph {
   CompactFactorGraph(const CompactFactorGraph& other);
 
   /*
-   * Given a factor and variable assignment, returns corresponding multinomial
+   * Given a factor and variable assignment, returns corresponding categorical
    * factor weight id, using proposal value for the variable with id vid.
-   * For multinomial weights, for each possible assignment, there is a
+   * For categorical weights, for each possible assignment, there is a
    * corresponding
    * indicator function and weight.
    */
-  weight_id_t get_multinomial_weight_id(const variable_value_t assignments[],
+  weight_id_t get_categorical_weight_id(const variable_value_t assignments[],
                                         const CompactFactor& fs,
                                         variable_id_t vid,
                                         variable_value_t proposal);
@@ -206,7 +206,7 @@ inline double CompactFactorGraph::potential(
       for (factor_id_t i = 0; i < variable.n_factors; ++i) {
         // get weight id associated with this factor and variable
         // assignment
-        weight_id_t wid = get_multinomial_weight_id(assignments, fs[i],
+        weight_id_t wid = get_categorical_weight_id(assignments, fs[i],
                                                     variable.id, proposal);
         if (wid == Weight::INVALID_ID) continue;
         pot += weight_values[wid] *

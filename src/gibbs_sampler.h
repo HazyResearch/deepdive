@@ -64,7 +64,7 @@ class GibbsSamplerThread {
   // RNG seed
   unsigned short p_rand_seed[3];
 
-  // potential for each proposals for multinomial
+  // potential for each proposals for categorical
   std::vector<double> varlen_potential_buffer_;
 
   // references and cached flags
@@ -167,7 +167,7 @@ inline void GibbsSamplerThread::sample_single_variable(variable_id_t vid) {
         infrs.agg_means[variable.id] += proposal;
         break;
       case DTYPE_CATEGORICAL:
-        ++infrs.multinomial_tallies[variable.n_start_i_tally +
+        ++infrs.categorical_tallies[variable.n_start_i_tally +
                                     variable.get_domain_index(proposal)];
         break;
       default:

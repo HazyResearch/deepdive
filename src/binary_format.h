@@ -55,7 +55,7 @@ size_t read_variables(const std::string& filename, FactorGraph&);
 size_t read_factors(const std::string& filename, FactorGraph&);
 
 /**
- * Loads domains for multinomial variables
+ * Loads domains for categorical variables
  */
 void read_domains(const std::string& filename, FactorGraph& fg);
 

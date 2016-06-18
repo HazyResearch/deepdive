@@ -230,7 +230,7 @@ void load_factor(std::string input_filename, std::string output_filename,
   fout.close();
 }
 
-// read multinomial variable domains and convert to binary format
+// read categorical variable domains and convert to binary format
 void load_domain(std::string input_filename, std::string output_filename) {
   std::ifstream fin(input_filename.c_str());
   std::ofstream fout(output_filename.c_str(), std::ios::binary | std::ios::out);

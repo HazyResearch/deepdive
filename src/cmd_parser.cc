@@ -40,7 +40,7 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
     output_folder_ = new TCLAP::ValueArg<std::string>(
         "o", "outputFile", "Output Folder", false, "", "string", *cmd_);
     domain_file_ = new TCLAP::ValueArg<std::string>(
-        "", "domains", "Multinomial domains", false, "", "string", *cmd_);
+        "", "domains", "Categorical domains", false, "", "string", *cmd_);
 
     original_folder_ = new TCLAP::ValueArg<std::string>(
         "r", "ori_folder", "Folder of original factor graph", false, "",
@@ -195,7 +195,7 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
     output_folder_ = new TCLAP::ValueArg<std::string>(
         "o", "outputFile", "Output Folder", false, "", "string", *cmd_);
     domain_file_ = new TCLAP::ValueArg<std::string>(
-        "", "domains", "Multinomial domains", false, "", "string", *cmd_);
+        "", "domains", "Categorical domains", false, "", "string", *cmd_);
 
     cmd_->parse(argc, argv);
 

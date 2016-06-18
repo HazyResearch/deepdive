@@ -144,11 +144,11 @@ CompactFactorGraph::CompactFactorGraph(const CompactFactorGraph &other)
   COPY_ARRAY_UNIQUE_PTR_MEMBER(vifs, size.num_edges);
 }
 
-weight_id_t CompactFactorGraph::get_multinomial_weight_id(
+weight_id_t CompactFactorGraph::get_categorical_weight_id(
     const variable_value_t assignments[], const CompactFactor &fs,
     variable_id_t vid, variable_value_t proposal) {
   /**
-   * For FUNC_MULTINOMIAL, the weight ids are aligned in a continuous region
+   * For FUNC_AND_CATEGORICAL, the weight ids are aligned in a continuous region
    * according
    * to the numerical order of variable values.
    * For example, for variable assignment indexes i1, ..., ik with cardinality
@@ -216,9 +216,9 @@ void CompactFactorGraph::update_weight(const Variable &variable,
         // sample without evidence unfixed, I1, with corresponding weight w2
         // gradient of wd0 = f(I0) - I(w1==w2)f(I1)
         // gradient of wd1 = I(w1==w2)f(I0) - f(I1)
-        weight_id_t wid1 = get_multinomial_weight_id(
+        weight_id_t wid1 = get_categorical_weight_id(
             infrs.assignments_evid.get(), fs[i], -1, -1);
-        weight_id_t wid2 = get_multinomial_weight_id(
+        weight_id_t wid2 = get_categorical_weight_id(
             infrs.assignments_free.get(), fs[i], -1, -1);
         bool equal = (wid1 == wid2);
 

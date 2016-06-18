@@ -12,7 +12,7 @@ InferenceResult::InferenceResult(const CompactFactorGraph &fg,
       nvars(fg.size.num_variables),
       nweights(fg.size.num_weights),
       ntallies(0),
-      multinomial_tallies(),
+      categorical_tallies(),
       agg_means(new variable_value_t[nvars]),
       agg_nsamples(new size_t[nvars]),
       assignments_free(new variable_value_t[nvars]),
@@ -39,7 +39,7 @@ InferenceResult::InferenceResult(const CompactFactorGraph &fg,
     }
   }
 
-  multinomial_tallies.reset(new size_t[ntallies]);
+  categorical_tallies.reset(new size_t[ntallies]);
 
   clear_variabletally();
 }
@@ -59,9 +59,9 @@ InferenceResult::InferenceResult(const InferenceResult &other)
          sizeof(*weights_isfixed.get()) * nweights);
 
   ntallies = other.ntallies;
-  multinomial_tallies.reset(new size_t[ntallies]);
+  categorical_tallies.reset(new size_t[ntallies]);
   for (size_t i = 0; i < ntallies; ++i) {
-    multinomial_tallies[i] = other.multinomial_tallies[i];
+    categorical_tallies[i] = other.categorical_tallies[i];
   }
 }
 
@@ -124,7 +124,7 @@ void InferenceResult::clear_variabletally() {
     agg_nsamples[i] = 0.0;
   }
   for (size_t i = 0; i < ntallies; ++i) {
-    multinomial_tallies[i] = 0;
+    categorical_tallies[i] = 0;
   }
 }
 
@@ -138,7 +138,7 @@ void InferenceResult::aggregate_marginals_from(const InferenceResult &other) {
     agg_nsamples[variable.id] += other.agg_nsamples[variable.id];
   }
   for (size_t j = 0; j < other.ntallies; ++j) {
-    multinomial_tallies[j] += other.multinomial_tallies[j];
+    categorical_tallies[j] += other.categorical_tallies[j];
   }
 }
 
@@ -162,7 +162,7 @@ void InferenceResult::show_marginal_snippet(std::ostream &output) const {
           const auto &print_snippet = [this, &output, variable](
               variable_value_t domain_value, size_t domain_index) {
             output << "        @ " << domain_value << " -> EXP="
-                   << 1.0 * multinomial_tallies[variable.n_start_i_tally +
+                   << 1.0 * categorical_tallies[variable.n_start_i_tally +
                                                 domain_index] /
                           agg_nsamples[variable.id]
                    << std::endl;
@@ -239,7 +239,7 @@ void InferenceResult::dump_marginals_in_text(std::ostream &text_output) const {
           text_output
               << variable.id << " " << domain_value << " "
               << (1.0 *
-                  multinomial_tallies[variable.n_start_i_tally + domain_index] /
+                  categorical_tallies[variable.n_start_i_tally + domain_index] /
                   agg_nsamples[variable.id])
               << std::endl;
         };

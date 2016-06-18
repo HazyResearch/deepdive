@@ -235,7 +235,7 @@ class CompactFactor {
     }
   }
 
-  // potential for multinomial variable
+  // potential for factor over categorical variables
   DEFINE_POTENTIAL_FOR(FUNC_AND_CATEGORICAL) { return 1.0; }
 
   // potential for linear expression
@@ -315,7 +315,7 @@ class Factor {
   static constexpr factor_id_t INVALID_ID = -1;
   static constexpr factor_function_type_t INVALID_FUNC_ID = FUNC_UNDEFINED;
 
-  // Variable value dependent weights for sparse multinomial factors
+  // Variable value dependent weights for categorical factors
   // Key: radix encoding of var values: (...((((0 * d1 + i1) * d2) + i2) * d3 +
   // i3) * d4 + ...) * dk + ik
   // Value: weight id

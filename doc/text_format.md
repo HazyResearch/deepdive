@@ -17,7 +17,7 @@ TODO polish the following
     1. vid, e.g., `0`
     2. is evidence (`0` or `1`)
     3. initial value
-    4. variable type (`0` for Boolean, `1` for categorical/multinomial)
+    4. variable type (`0` for Boolean, `1` for categorical)
     5. cardinality
 
 ## Domains TSV
@@ -37,7 +37,7 @@ TODO polish the following
 * `factors*.tsv`
     1. vids: one or more depending on the given arity delimited by tabs, e.g., `0	1` for binary factors
     2. wids
-        * when the factor function id is `FUNC_SPARSE_MULTINOMIAL`:
+        * when the factor function id is `FUNC_AND_CATEGORICAL`:
             2. number of weights, e.g., `3`
             3. wid array, e.g., `{100,101,102}`
         * Otherwise:

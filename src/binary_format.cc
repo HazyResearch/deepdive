@@ -174,9 +174,9 @@ void FactorGraph::load_factors(const std::string &filename) {
             new std::unordered_map<variable_value_t, weight_id_t>(n_weights);
         for (weight_id_t i = 0; i < n_weights; ++i) {
           // calculate radix-based key into weight_ids (see also
-          // FactorGraph::get_multinomial_weight_id)
+          // FactorGraph::get_categorical_weight_id)
           // TODO: refactor the above formula into a shared routine. (See also
-          // FactorGraph::get_multinomial_weight_id)
+          // FactorGraph::get_categorical_weight_id)
           size_t key = 0;
           for (size_t j = 0; j < edge_count; ++j) {
             const Variable &var =

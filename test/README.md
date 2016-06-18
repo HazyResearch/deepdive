@@ -13,7 +13,7 @@ bats *.bats
     1. vid, e.g., `0`
     2. is evidence (`0` or `1`)
     3. initial value
-    4. variable type (`0` for Boolean, `1` for categorical/multinomial)
+    4. variable type (`0` for Boolean, `1` for categorical)
     5. cardinality
 
 * `domains*.tsv`

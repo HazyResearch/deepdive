@@ -24,7 +24,7 @@ class InferenceResult {
   weight_id_t nweights;  // number of weights
   size_t ntallies;
 
-  std::unique_ptr<size_t[]> multinomial_tallies;  // this might be slow...
+  std::unique_ptr<size_t[]> categorical_tallies;  // this might be slow...
 
   // array of sum of samples for each variable
   std::unique_ptr<variable_value_t[]> agg_means;

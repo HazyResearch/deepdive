@@ -33,12 +33,12 @@ class Variable {
   size_t n_start_i_factors;  // id of the first factor
 
   /*
-   * The values of multinomial variables are stored in an array that looks
+   * The values of categorical variables are stored in an array that looks
    * roughly like this:
    *
    *   [v11 v12 ... v1m v21 ... v2n ...]
    *
-   * where v1, v2 are two multinomial variables, with domain 1-m, and 1-n
+   * where v1, v2 are two categorical variables, with domain 1-m, and 1-n
    * respectively.
    */
 
