@@ -325,7 +325,7 @@ class Factor {
   // An empty map takes 48 bytes, so we create it only as needed, i.e., when
   // func_id = FUNC_AND_CATEGORICAL
   // Allocated in binary_parser.read_factors. Never deallocated.
-  std::unordered_map<uint64_t, weight_id_t> *weight_ids;
+  std::unordered_map<factor_weight_key_t, weight_id_t> *weight_ids;
 
   /**
    * Turns out the no-arg constructor is still required, since we're

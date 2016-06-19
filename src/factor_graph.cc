@@ -161,7 +161,7 @@ weight_id_t CompactFactorGraph::get_categorical_weight_id(
    * TODO: refactor the above formula into a shared routine. (See also
    * binary_parser.read_factors)
    */
-  uint64_t key = 0;
+  factor_weight_key_t key = 0;
   // for each variable in the factor
   for (size_t i = fs.n_start_i_vif; i < fs.n_start_i_vif + fs.n_variables;
        ++i) {

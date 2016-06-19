@@ -71,6 +71,7 @@ typedef enum FACTOR_FUCNTION_TYPE {
 
 typedef uint64_t factor_id_t;
 typedef uint32_t factor_arity_t;
+typedef uint64_t factor_weight_key_t;
 
 typedef uint64_t weight_id_t;
 typedef double weight_value_t;

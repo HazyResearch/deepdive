@@ -160,13 +160,13 @@ void FactorGraph::load_factors(const std::string &filename) {
         n_weights = be32toh(n_weights);
 
         factors[size.num_factors].weight_ids =
-            new std::unordered_map<uint64_t, weight_id_t>(n_weights);
+            new std::unordered_map<factor_weight_key_t, weight_id_t>(n_weights);
         for (uint32_t i = 0; i < n_weights; ++i) {
           // calculate radix-based key into weight_ids (see also
           // FactorGraph::get_categorical_weight_id)
           // TODO: refactor the above formula into a shared routine. (See also
           // FactorGraph::get_categorical_weight_id)
-          uint64_t key = 0;
+          factor_weight_key_t key = 0;
           for (factor_arity_t j = 0; j < arity; ++j) {
             const Variable &var =
                 variables[factors[size.num_factors].tmp_variables.at(j).vid];

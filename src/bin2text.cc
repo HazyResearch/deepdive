@@ -94,11 +94,11 @@ void dump_factors(const FactorGraph &fg, const std::string &filename) {
         weights.clear();
         vals.reserve(f.n_variables * f.weight_ids->size());
         weights.reserve(f.weight_ids->size());
-        std::map<uint64_t, weight_id_t> ordered(f.weight_ids->begin(),
-                                                f.weight_ids->end());
-        size_t w = 0;
+        std::map<factor_weight_key_t, weight_id_t> ordered(
+            f.weight_ids->begin(), f.weight_ids->end());
+        factor_weight_key_t w = 0;
         for (const auto &item : ordered) {
-          uint64_t key = item.first;
+          factor_weight_key_t key = item.first;
           weight_id_t wid = item.second;
           for (size_t k = f.n_variables; k > 0;) {
             --k;  // turning it into a correct index
@@ -118,7 +118,7 @@ void dump_factors(const FactorGraph &fg, const std::string &filename) {
         // output values per var
         for (size_t k = 0; k < f.n_variables; ++k) {
           fout << "{";
-          for (variable_value_t j = 0; j < f.weight_ids->size(); ++j) {
+          for (factor_weight_key_t j = 0; j < f.weight_ids->size(); ++j) {
             if (j > 0) fout << ",";
             fout << vals[j * f.n_variables + k];
           }
@@ -127,7 +127,7 @@ void dump_factors(const FactorGraph &fg, const std::string &filename) {
         }
         // output weights
         fout << "{";
-        size_t j = 0;
+        factor_weight_key_t j = 0;
         for (weight_id_t wid : weights) {
           if (j > 0) fout << ",";
           fout << wid;
