@@ -378,7 +378,7 @@ def factorWeightDescriptionSqlExpr:
                 # Not using DISTINCT: User decides if they want to have duplicate factors
                 { SELECT:
                     [ ( .function_.variables[] | { table: "F", column: .columnId } )
-                    # TODO XXXX: assuming categorical factors' heads have categorical vars only
+                    # TODO: assuming categorical factors' heads have categorical vars only
                     , ( .function_ | select(.isCategorical) | .variables[] |
                         { table: "C\(.ordinal)", column: "cid", alias: "\(.columnPrefix)\(deepdiveVariableInternalLabelColumn)" } )
                     , ( .weight_.params[]      | { table: "F", column: . } )
@@ -496,8 +496,6 @@ def factorWeightDescriptionSqlExpr:
                     , { column: "isfixed" }
                     , { column: "initvalue" }
                     , { alias: "description", expr: factorWeightDescriptionSqlExpr }
-                    # TODO XXXX remove this useless column (weights are orthogonal to categories)
-                    , { alias: "categories", expr: "NULL || ''" }
                     ]
                 , FROM:
                     [ { table: .weightsTable }
@@ -540,7 +538,7 @@ def factorWeightDescriptionSqlExpr:
                 "\"$(
                     # categorical factor need to find exact combinations of category values and
                     # weight parameters present in the data, hence a lot of joins! but doesn't waste the weights
-                    # FIXME XXXXX: Assuming all var tables are categorical; TODO: Support mixed head.
+                    # Assuming all var tables are categorical; TODO: Support mixed head.
                     echo \(
                         # Order for parallel ARRAY_AGG expressions
                         ( [ .function_.variables[] |
