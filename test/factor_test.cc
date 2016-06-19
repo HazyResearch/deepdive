@@ -15,7 +15,6 @@ TEST(FactorTest, ONE_VAR_FACTORS) {
   variable_value_t propose;
 
   vifs[0].vid = 0;
-  vifs[0].is_positive = true;
   vifs[0].equal_to = 1;
 
   CompactFactor f;
@@ -59,11 +58,9 @@ TEST(FactorTest, TWO_VAR_FACTORS) {
   variable_value_t propose;
 
   vifs[0].vid = 0;
-  vifs[0].is_positive = true;
   vifs[0].equal_to = 1;
 
   vifs[1].vid = 1;
-  vifs[1].is_positive = true;
   vifs[1].equal_to = 1;
 
   CompactFactor f;
@@ -143,15 +140,12 @@ TEST(FactorTest, THREE_VAR_IMPLY) {
 
   // first test case: True /\ x => True, x propose to False, Expect 0
   vifs[0].vid = 0;
-  vifs[0].is_positive = true;
   vifs[0].equal_to = 1;
 
   vifs[1].vid = 1;
-  vifs[1].is_positive = true;
   vifs[1].equal_to = 1;
 
   vifs[2].vid = 2;
-  vifs[2].is_positive = true;
   vifs[2].equal_to = 1;
 
   values[0] = 1;

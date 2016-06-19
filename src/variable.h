@@ -120,7 +120,6 @@ class VariableInFactor {
  public:
   variable_id_t vid;  // variable id
   size_t n_position;  // position of the variable inside factor
-  bool is_positive;   // whether the variable is positive or negated
   // the variable's predicate value. A variable is "satisfied" if its value
   // equals equal_to
   variable_value_t equal_to;
@@ -132,7 +131,7 @@ class VariableInFactor {
 
   VariableInFactor();
 
-  VariableInFactor(variable_id_t vid, size_t n_position, bool is_positive,
+  VariableInFactor(variable_id_t vid, size_t n_position,
                    variable_value_t equal_to);
 };
 

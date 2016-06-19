@@ -51,18 +51,14 @@ RawVariable::RawVariable(variable_id_t id, variable_domain_type_t domain_type,
                current_value, n_factors, is_observation) {}
 
 bool VariableInFactor::satisfiedUsing(variable_value_t value) const {
-  return is_positive ? equal_to == value : !(equal_to == value);
+  return equal_to == value;
 }
 
 VariableInFactor::VariableInFactor()
-    : VariableInFactor(Variable::INVALID_ID, -1, true,
-                       Variable::INVALID_VALUE) {}
+    : VariableInFactor(Variable::INVALID_ID, -1, Variable::INVALID_VALUE) {}
 
 VariableInFactor::VariableInFactor(variable_id_t vid, size_t n_position,
-                                   bool is_positive, variable_value_t equal_to)
-    : vid(vid),
-      n_position(n_position),
-      is_positive(is_positive),
-      equal_to(equal_to) {}
+                                   variable_value_t equal_to)
+    : vid(vid), n_position(n_position), equal_to(equal_to) {}
 
 }  // namespace dd

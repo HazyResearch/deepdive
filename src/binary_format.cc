@@ -153,7 +153,7 @@ void FactorGraph::load_factors(const std::string &filename) {
 
       // add variables to factors
       factors[size.num_factors].add_variable_in_factor(
-          VariableInFactor(variable_id, position, true, should_equal_to));
+          VariableInFactor(variable_id, position, should_equal_to));
       variables[variable_id].add_factor_id(size.num_factors);
     }
     size.num_edges += edge_count;
