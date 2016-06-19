@@ -26,7 +26,7 @@ include "util";
             , params: (ltrimstr("?") | trimWhitespace
                 | ltrimstr("(") | rtrimstr(")") | trimWhitespace
                 | if length == 0 then [] else split("\\s*,\\s*"; "") end)
-            , init_value: 0.0
+            , init_value: 0
             }
         else
             # fixed weight
