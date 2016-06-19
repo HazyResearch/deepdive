@@ -236,11 +236,11 @@ def factorWeightDescriptionSqlExpr:
                 , { alias: "init_value", expr:
                     "CASE WHEN variable_role = 0 THEN 0
                           ELSE (\(
-                            if   .variableType == "boolean"     then "CASE WHEN label THEN 1 ELSE 0 END" # XXX a portable way to turn boolean to integers in SQL, CAST(label AS INT) does not work for MySQL
+                            if   .variableType == "boolean"     then "CASE WHEN label THEN 1 ELSE 0 END"
                             elif .variableType == "categorical" then "label"
                             else error("Internal error: Unknown variableType: \(.variableType)")
                             end
-                            )) + 0.0
+                            ))
                       END" }
                 , { column: "variable_type" }
                 , { column: "cardinality" }
