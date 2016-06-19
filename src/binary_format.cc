@@ -121,7 +121,6 @@ void FactorGraph::load_variables(const std::string &filename) {
 void FactorGraph::load_factors(const std::string &filename) {
   std::ifstream file;
   file.open(filename.c_str(), std::ios::in | std::ios::binary);
-  size_t count = 0;
   variable_id_t variable_id;
   weight_id_t weightid;
   variable_value_t value_id;
@@ -134,8 +133,6 @@ void FactorGraph::load_factors(const std::string &filename) {
 
     type = be16toh(type);
     arity = be32toh(arity);
-
-    ++count;
 
     factors[size.num_factors] =
         RawFactor(size.num_factors, -1, (factor_function_type_t)type, arity);
