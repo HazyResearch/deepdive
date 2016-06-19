@@ -2,6 +2,7 @@
 #define DIMMWITTED_COMMON_H_
 
 #include <gtest/gtest_prod.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #ifndef __MACH__
