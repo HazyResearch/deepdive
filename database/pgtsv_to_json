@@ -3,6 +3,33 @@
 # Usage: pgtsv_to_json COLUMN_NAME1:TYPE1 COLUMN_NAME2:TYPE2 ...
 
 import json, sys, csv, re
+from datetime import datetime
+
+def timestamp(timestamp_str):
+    """Given a timestamp string, return a timestamp string in ISO 8601 format to emulate
+    Postgres 9.5's to_json timestamp formatting.
+
+    This supports the `timestamp without time zone` PostgreSQL type.
+
+    Time zone offsets are not supported. http://bugs.python.org/issue6641
+
+    Examples:
+
+        >>> timestamp('2016-06-17 20:10:38')
+        '2016-06-17T20:10:38'
+
+        >>> timestamp('2016-06-17 20:10:37.9293')
+        '2016-06-17T20:10:37.929300'
+
+    """
+
+    try:
+        parsed = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S.%f')
+    except ValueError:
+        parsed = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+    except ValueError:
+        return timestamp_str
+    return parsed.isoformat()
 
 # given a column type, returns a function that takes a string input
 # and output with the correct type
@@ -25,6 +52,7 @@ def convert_type_func(ty, ty_rest = ""):
       return convert_other_array
   else: # non-array, must be primitive type
     normalized_type_name = {
+        "timestamp without time zone": "timestamp",
         "integer" : "int",
         "bigint"  : "int",
         "double"  : "float",
@@ -32,6 +60,7 @@ def convert_type_func(ty, ty_rest = ""):
         "unknown" : "text",
         }
     convert_for_primitive_types = {
+        "timestamp": timestamp,
         "int"     : int,
         "float"   : float,
         "text"    : lambda x: x,
@@ -39,6 +68,8 @@ def convert_type_func(ty, ty_rest = ""):
         }
     # find the convert function with normalized type name
     ty = ty.lower()
+    if re.match('timestamp(\(\d\))? without time zone', ty):
+      ty = 'timestamp without time zone'
     if ty in normalized_type_name:
       ty = normalized_type_name[ty]
     if ty in convert_for_primitive_types:
