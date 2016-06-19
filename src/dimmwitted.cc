@@ -1,14 +1,14 @@
 #include "dimmwitted.h"
-#include "common.h"
 #include "assert.h"
 #include "bin2text.h"
-#include "text2bin.h"
 #include "binary_format.h"
+#include "common.h"
 #include "factor_graph.h"
 #include "gibbs_sampler.h"
+#include "text2bin.h"
 
-#include <map>
 #include <fstream>
+#include <map>
 #include <unistd.h>
 
 namespace dd {

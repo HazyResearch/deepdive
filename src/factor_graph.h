@@ -4,10 +4,10 @@
 #include "cmd_parser.h"
 #include "common.h"
 
-#include "variable.h"
 #include "factor.h"
-#include "weight.h"
 #include "inference_result.h"
+#include "variable.h"
+#include "weight.h"
 
 #include <xmmintrin.h>
 

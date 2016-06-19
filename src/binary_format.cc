@@ -4,14 +4,14 @@
  * definitions of these methods as it conveys the intentions quite clearly
  * (i.e. for binary formatting of these objects).
  */
-#include "common.h"
 #include "binary_format.h"
-#include "factor_graph.h"
+#include "common.h"
 #include "factor.h"
+#include "factor_graph.h"
 #include "variable.h"
+#include <cstdint>
 #include <fstream>
 #include <iostream>
-#include <cstdint>
 
 namespace dd {
 
@@ -137,8 +137,8 @@ void FactorGraph::load_factors(const std::string &filename) {
 
     ++count;
 
-    factors[size.num_factors] = RawFactor(
-        size.num_factors, -1, (factor_function_type_t)type, arity);
+    factors[size.num_factors] =
+        RawFactor(size.num_factors, -1, (factor_function_type_t)type, arity);
 
     for (size_t position = 0; position < arity; ++position) {
       file.read((char *)&variable_id, 8);

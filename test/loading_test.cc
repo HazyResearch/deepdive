@@ -4,10 +4,10 @@
  * Author: Feiran Wang
  */
 
-#include "factor_graph.h"
 #include "dimmwitted.h"
-#include <gtest/gtest.h>
+#include "factor_graph.h"
 #include <fstream>
+#include <gtest/gtest.h>
 
 namespace dd {
 

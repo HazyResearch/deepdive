@@ -1,9 +1,9 @@
 #ifndef DIMMWITTED_INFERENCE_RESULT_H_
 #define DIMMWITTED_INFERENCE_RESULT_H_
 
+#include "cmd_parser.h"
 #include "variable.h"
 #include "weight.h"
-#include "cmd_parser.h"
 #include <memory>
 
 namespace dd {

@@ -1,8 +1,8 @@
 #ifndef DIMMWITTED_COMMON_H_
 #define DIMMWITTED_COMMON_H_
 
-#include <stdio.h>
 #include <gtest/gtest_prod.h>
+#include <stdio.h>
 
 #ifndef __MACH__
 #include <numa.h>

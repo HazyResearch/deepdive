@@ -1,9 +1,9 @@
 #ifndef DIMMWITTED_GIBBS_SAMPLER_H_
 #define DIMMWITTED_GIBBS_SAMPLER_H_
 
+#include "common.h"
 #include "factor_graph.h"
 #include "timer.h"
-#include "common.h"
 #include <stdlib.h>
 #include <thread>
 

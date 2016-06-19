@@ -5,17 +5,17 @@
 
 #include "bin2text.h"
 #include "binary_format.h"
-#include "factor_graph.h"
 #include "dimmwitted.h"
+#include "factor_graph.h"
 
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <stdlib.h>
-#include <stdint.h>
 #include <assert.h>
-#include <vector>
+#include <fstream>
+#include <iostream>
 #include <map>
+#include <sstream>
+#include <stdint.h>
+#include <stdlib.h>
+#include <vector>
 
 namespace dd {
 

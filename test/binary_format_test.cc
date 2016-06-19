@@ -4,12 +4,12 @@
  * Author: Feiran Wang
  */
 
+#include "binary_format.h"
+#include "dimmwitted.h"
 #include "factor.h"
 #include "factor_graph.h"
-#include "dimmwitted.h"
-#include "binary_format.h"
-#include <gtest/gtest.h>
 #include <fstream>
+#include <gtest/gtest.h>
 
 namespace dd {
 

@@ -5,11 +5,11 @@
 #include "variable.h"
 #include "weight.h"
 
+#include <cassert>
+#include <cmath>
 #include <iostream>
 #include <unordered_map>
 #include <vector>
-#include <cassert>
-#include <cmath>
 
 namespace dd {
 
@@ -308,7 +308,7 @@ class Factor {
   factor_id_t id;                  // factor id
   weight_id_t weight_id;           // weight id
   factor_function_type_t func_id;  // factor function id
-  factor_arity_t n_variables;              // number of variables
+  factor_arity_t n_variables;      // number of variables
 
   size_t n_start_i_vif;  // start variable id
 

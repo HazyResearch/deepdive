@@ -1,6 +1,6 @@
 #include "factor_graph.h"
-#include "factor.h"
 #include "binary_format.h"
+#include "factor.h"
 
 #include <iostream>
 
@@ -168,8 +168,8 @@ weight_id_t CompactFactorGraph::get_categorical_weight_id(
     const VariableInFactor &vif = vifs[i];
     const Variable &variable = variables[vif.vid];
     key *= variable.cardinality;
-    key += variable.get_domain_index(
-        vif.vid == vid ? proposal : assignments[vif.vid]);
+    key += variable.get_domain_index(vif.vid == vid ? proposal
+                                                    : assignments[vif.vid]);
   }
 
   switch (fs.func_id) {

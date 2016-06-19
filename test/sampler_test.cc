@@ -4,11 +4,11 @@
  * Author: Feiran Wang
  */
 
-#include "gibbs_sampler.h"
-#include "factor_graph.h"
 #include "dimmwitted.h"
-#include <gtest/gtest.h>
+#include "factor_graph.h"
+#include "gibbs_sampler.h"
 #include <fstream>
+#include <gtest/gtest.h>
 
 namespace dd {
 

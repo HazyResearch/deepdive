@@ -1,8 +1,8 @@
 #ifndef DIMMWITTED_CMD_PARSER_H_
 #define DIMMWITTED_CMD_PARSER_H_
 
-#include "factor.h"
 #include "common.h"
+#include "factor.h"
 
 #include <algorithm>
 #include <assert.h>
