@@ -3,12 +3,12 @@
 namespace dd {
 
 Variable::Variable()
-    : Variable(INVALID_ID, DTYPE_BOOLEAN, false, 2, 0, 0, 0, false) {}
+    : Variable(INVALID_ID, DTYPE_BOOLEAN, false, 2, 0, 0, false) {}
 
 Variable::Variable(variable_id_t id, variable_domain_type_t domain_type,
                    bool is_evidence, variable_value_t cardinality,
                    variable_value_t init_value, variable_value_t current_value,
-                   size_t n_factors, bool is_observation)
+                   bool is_observation)
     : id(id),
       domain_type(domain_type),
       is_evid(is_evidence),
@@ -16,7 +16,7 @@ Variable::Variable(variable_id_t id, variable_domain_type_t domain_type,
       cardinality(cardinality),
       assignment_evid(init_value),
       assignment_free(current_value),
-      n_factors(n_factors),
+      n_factors(0),
       n_start_i_factors(-1),
       n_start_i_tally(-1) {}
 
@@ -45,10 +45,9 @@ RawVariable::RawVariable() : Variable() {}
 RawVariable::RawVariable(variable_id_t id, variable_domain_type_t domain_type,
                          bool is_evidence, variable_value_t cardinality,
                          variable_value_t init_value,
-                         variable_value_t current_value, size_t n_factors,
-                         bool is_observation)
+                         variable_value_t current_value, bool is_observation)
     : Variable(id, domain_type, is_evidence, cardinality, init_value,
-               current_value, n_factors, is_observation) {}
+               current_value, is_observation) {}
 
 bool VariableInFactor::satisfiedUsing(variable_value_t value) const {
   return equal_to == value;

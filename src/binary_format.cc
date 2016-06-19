@@ -108,7 +108,7 @@ void FactorGraph::load_variables(const std::string &filename) {
     double init_value = is_evidence ? initial_value : 0;
 
     variables[id] = RawVariable(id, type_const, is_evidence, cardinality,
-                                init_value, init_value, -1, is_observation);
+                                init_value, init_value, is_observation);
 
     ++size.num_variables;
     if (is_evidence) {

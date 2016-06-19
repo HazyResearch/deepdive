@@ -66,7 +66,7 @@ TEST(BinaryFormatTest, read_domains) {
   // add variables
   for (variable_id_t i = 0; i < num_variables; ++i) {
     fg.variables[i] =
-        RawVariable(i, DTYPE_BOOLEAN, 0, domain_sizes[i], 0, 0, 0, 0);
+        RawVariable(i, DTYPE_BOOLEAN, 0, domain_sizes[i], 0, 0, 0);
   }
   fg.load_domains("./test/domains/graph.domains");
 
