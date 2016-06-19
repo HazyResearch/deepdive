@@ -37,7 +37,7 @@ class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
     checkRelationDefined(stmt)
     checkFunctionDefined(stmt)
     checkVariableRelationSchema(stmt)
-    checkMultinomialFactors(stmt)
+    checkCategoricalFactors(stmt)
     checkNumberOfColumns(stmt)
     checkQuantifiedBody(stmt)
     checkWeight(stmt)
@@ -104,8 +104,8 @@ class DeepDiveLogSemanticChecker(program: DeepDiveLog.Program) {
 
   // TODO check if all factors have only isQuery relations in their heads
 
-  // check if any factors are defined across categorical and Boolean variables
-  def checkMultinomialFactors(stmt: Statement) = stmt match {
+  // check if any factors are defined across categorical and Boolean variables (not currently supported)
+  def checkCategoricalFactors(stmt: Statement) = stmt match {
     case s: InferenceRule =>
       val categoricalVars = s.head.variables filter { t =>
         schemaDeclarationByName get t.atom.name map(_.categoricalColumns nonEmpty) getOrElse(false) }

@@ -537,16 +537,16 @@ class QueryCompiler(cq : ConjunctiveQuery, hackFrom: List[String] = Nil, hackWhe
       }
 
       val categoricalVars = stmt.head.variables filter { t => isCategoricalRelation(t.atom.name) }
-      val isMultinomialFactor =
+      val isCategoricalAndFactor =
         if (categoricalVars.size == 0 || stmt.head.variables.size == categoricalVars.size)
           categoricalVars.size > 0
         else
           sys.error("None or all variables must be categorical")
 
       val function =
-        if (isMultinomialFactor) {
+        if (isCategoricalAndFactor) {
           stmt.head.function match {
-            case FactorFunction.IsTrue() | FactorFunction.And() => "Multinomial"
+            case FactorFunction.IsTrue() | FactorFunction.And() => "AndCategorical"
             case f => sys.error(s"Unsupported factor over categorical variables: ${f}")
           }
         } else { // Boolean
