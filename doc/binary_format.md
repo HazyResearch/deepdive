@@ -55,7 +55,6 @@ This input enumerates all factors in the factor graph that refers to variables a
 The following fields are repeated for each factor.
 
     factorFunction  uint16_t    2   // type of factor function, see: FACTOR_FUNCTION_TYPE
-    equalPredicate  uint64_t    8   // value to check equality against the variable (FIXME subject to change)
     arity           uint64_t    8   // arity of the factor, i.e., how many variables it connects to
     variableReferences              // references to variables (one block per arity)
     weightReferences                // reference to multiple weights (categorical factor) or a single weight id
@@ -66,9 +65,7 @@ For valid values for `factorFunction`, see [`FACTOR_FUNCTION_TYPE` enum](../src/
 Each block of `variableReferences` consists of the following fields:
 
     variableId      uint64_t    8   // the variable id for this factor
-    isPositive      uint8_t     1   // whether the variable is positive or not (FIXME subject to removal)
-
-FIXME `equalPredicate` will be moved to each `variableReferences` block and replace the `isPositive` field.
+    equalPredicate  uint64_t    8   // value to check equality against the variable
 
 ### Weight References of a Factor
 Each block of `weightReferences` must have the following structure when `factorFunction` is `FUNC_AND_CATEGORICAL`:

@@ -125,13 +125,10 @@ void load_factor(std::string input_filename, std::string output_filename,
 
   long weightid = 0;
   long nedge = 0;
-  long predicate = funcid == 5 ? -1 : 1;
   std::vector<long> variables;
   std::vector<long> vals_and_weights;
 
   funcid = htobe16(funcid);
-
-  predicate = htobe64(predicate);
 
   std::string line;
   std::string array_piece;
@@ -163,12 +160,13 @@ void load_factor(std::string input_filename, std::string output_filename,
       }
     }
     n_vars = htobe64(n_vars);
-    fout.write((char *)&predicate, 8);
     fout.write((char *)&n_vars, 8);
     for (variable_id_t i = 0; i < variables.size(); ++i) {
       fout.write((char *)&variables[i], 8);
-      char flag = positives_vec.at(i) ? 1 : 0;
-      fout.write((char *)&flag, 1);
+
+      long should_equal_to = positives_vec.at(i) ? 1 : 0;
+      should_equal_to = htobe64(should_equal_to);
+      fout.write((char *)&should_equal_to, 8);
     }
 
     // weight ids

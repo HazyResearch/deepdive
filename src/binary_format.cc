@@ -133,16 +133,13 @@ void FactorGraph::load_factors(const std::string &filename) {
   variable_value_t value_id;
   short type;
   size_t edge_count;
-  variable_value_t equal_predicate;
-  bool ispositive;
+  variable_value_t should_equal_to;
   while (file.good()) {
     file.read((char *)&type, 2);
-    file.read((char *)&equal_predicate, 8);
     if (!file.read((char *)&edge_count, 8)) break;
 
     type = be16toh(type);
     edge_count = be64toh(edge_count);
-    equal_predicate = be64toh(equal_predicate);
 
     ++count;
 
@@ -151,15 +148,16 @@ void FactorGraph::load_factors(const std::string &filename) {
 
     for (size_t position = 0; position < edge_count; ++position) {
       file.read((char *)&variable_id, 8);
-      file.read((char *)&ispositive, 1);
+      file.read((char *)&should_equal_to, 8);
       variable_id = be64toh(variable_id);
+      should_equal_to = be64toh(should_equal_to);
 
       // check for wrong id
       assert(variable_id < capacity.num_variables && variable_id >= 0);
 
       // add variables to factors
       factors[size.num_factors].add_variable_in_factor(
-          VariableInFactor(variable_id, position, ispositive, equal_predicate));
+          VariableInFactor(variable_id, position, true, should_equal_to));
       variables[variable_id].add_factor_id(size.num_factors);
     }
     size.num_edges += edge_count;
