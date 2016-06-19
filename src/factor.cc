@@ -13,7 +13,7 @@ CompactFactor::CompactFactor(const factor_id_t id)
 Factor::Factor() : Factor(INVALID_ID, Weight::INVALID_ID, INVALID_FUNC_ID, 0) {}
 
 Factor::Factor(factor_id_t id, weight_id_t weight_id,
-               factor_function_type_t func_id, size_t n_variables)
+               factor_function_type_t func_id, factor_arity_t n_variables)
     : id(id),
       weight_id(weight_id),
       func_id(func_id),
@@ -32,7 +32,7 @@ Factor::Factor(const Factor &rf)
 RawFactor::RawFactor() : Factor() {}
 
 RawFactor::RawFactor(factor_id_t id, weight_id_t weight_id,
-                     factor_function_type_t func_id, size_t n_variables)
+                     factor_function_type_t func_id, factor_arity_t n_variables)
     : Factor(id, weight_id, func_id, n_variables) {}
 
 }  // namespace dd

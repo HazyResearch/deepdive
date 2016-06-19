@@ -308,7 +308,7 @@ class Factor {
   factor_id_t id;                  // factor id
   weight_id_t weight_id;           // weight id
   factor_function_type_t func_id;  // factor function id
-  size_t n_variables;              // number of variables
+  factor_arity_t n_variables;              // number of variables
 
   size_t n_start_i_vif;  // start variable id
 
@@ -325,7 +325,7 @@ class Factor {
   // An empty map takes 48 bytes, so we create it only as needed, i.e., when
   // func_id = FUNC_AND_CATEGORICAL
   // Allocated in binary_parser.read_factors. Never deallocated.
-  std::unordered_map<variable_value_t, weight_id_t> *weight_ids;
+  std::unordered_map<uint64_t, weight_id_t> *weight_ids;
 
   /**
    * Turns out the no-arg constructor is still required, since we're
@@ -335,7 +335,7 @@ class Factor {
   Factor();
 
   Factor(factor_id_t id, weight_id_t weight_id, factor_function_type_t func_id,
-         size_t n_variables);
+         factor_arity_t n_variables);
 
   /**
    * Copy constructor from a RawFactor.
@@ -366,7 +366,7 @@ class RawFactor : public Factor {
   /**
    */
   RawFactor(factor_id_t id, weight_id_t weight_id,
-            factor_function_type_t func_id, size_t n_variables);
+            factor_function_type_t func_id, factor_arity_t n_variables);
 
   inline void add_variable_in_factor(const VariableInFactor &vif) {
     tmp_variables.push_back(vif);

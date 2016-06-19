@@ -48,8 +48,9 @@ typedef enum {
   DTYPE_CATEGORICAL = 1,
 } variable_domain_type_t;
 
-typedef uint32_t variable_value_t;
 typedef uint64_t variable_id_t;
+typedef uint32_t variable_value_t;
+typedef uint32_t variable_cardinality_t;
 
 // enumeration for factor function types
 typedef enum FACTOR_FUCNTION_TYPE {
@@ -68,6 +69,7 @@ typedef enum FACTOR_FUCNTION_TYPE {
 } factor_function_type_t;
 
 typedef uint64_t factor_id_t;
+typedef uint32_t factor_arity_t;
 
 typedef uint64_t weight_id_t;
 typedef double weight_value_t;

@@ -39,7 +39,8 @@ TODO polish the following
     2. wids
         * when the factor function id is `FUNC_AND_CATEGORICAL`:
             2. number of weights, e.g., `3`
-            3. wid array, e.g., `{100,101,102}`
+            3. num_vars columns of parallel var value arrays, e.g., `{1,2,3}	{2,3,4}`
+            4. wid array, e.g., `{100,101,102}`
         * Otherwise:
             2. wid, e.g., `100`
 

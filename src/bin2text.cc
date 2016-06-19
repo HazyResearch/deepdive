@@ -94,11 +94,11 @@ void dump_factors(const FactorGraph &fg, const std::string &filename) {
         weights.clear();
         vals.reserve(f.n_variables * f.weight_ids->size());
         weights.reserve(f.weight_ids->size());
-        std::map<size_t, weight_id_t> ordered(f.weight_ids->begin(),
-                                              f.weight_ids->end());
+        std::map<uint64_t, weight_id_t> ordered(f.weight_ids->begin(),
+                                                f.weight_ids->end());
         size_t w = 0;
         for (const auto &item : ordered) {
-          size_t key = item.first;
+          uint64_t key = item.first;
           weight_id_t wid = item.second;
           for (size_t k = f.n_variables; k > 0;) {
             --k;  // turning it into a correct index

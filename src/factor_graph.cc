@@ -161,20 +161,20 @@ weight_id_t CompactFactorGraph::get_categorical_weight_id(
    * TODO: refactor the above formula into a shared routine. (See also
    * binary_parser.read_factors)
    */
-  weight_id_t weight_offset = 0;
+  uint64_t key = 0;
   // for each variable in the factor
   for (size_t i = fs.n_start_i_vif; i < fs.n_start_i_vif + fs.n_variables;
        ++i) {
     const VariableInFactor &vif = vifs[i];
     const Variable &variable = variables[vif.vid];
-    weight_offset *= variable.cardinality;
-    weight_offset += variable.get_domain_index(
+    key *= variable.cardinality;
+    key += variable.get_domain_index(
         vif.vid == vid ? proposal : assignments[vif.vid]);
   }
 
   switch (fs.func_id) {
     case FUNC_AND_CATEGORICAL: {
-      auto iter = factors[fs.id].weight_ids->find(weight_offset);
+      auto iter = factors[fs.id].weight_ids->find(key);
       if (iter != factors[fs.id].weight_ids->end()) return iter->second;
       break;
     }

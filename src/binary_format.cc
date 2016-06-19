@@ -37,21 +37,21 @@ void FactorGraph::load_weights(const std::string &filename) {
   std::ifstream file;
   file.open(filename, std::ios::in | std::ios::binary);
 
-  long long count = 0;
-  long long id;
   bool isfixed;
-  char padding;
-  double initial_value;
+  char isfixed_char;
+  weight_id_t count = 0;
+  weight_id_t id;
+  weight_value_t initial_value;
   while (file.good()) {
     // read fields
     file.read((char *)&id, 8);
-    file.read((char *)&padding, 1);
+    file.read((char *)&isfixed_char, 1);
     if (!file.read((char *)&initial_value, 8)) break;
     // convert endian
     id = be64toh(id);
-    isfixed = padding;
-    long long tmp = be64toh(*(uint64_t *)&initial_value);
-    initial_value = *(double *)&tmp;
+    isfixed = isfixed_char;
+    uint64_t tmp = be64toh(*(uint64_t *)&initial_value);
+    initial_value = *(weight_value_t *)&tmp;
 
     // load into factor graph
     weights[id] = Weight(id, initial_value, isfixed);
@@ -65,29 +65,27 @@ void FactorGraph::load_variables(const std::string &filename) {
   std::ifstream file;
   file.open(filename, std::ios::in | std::ios::binary);
 
-  long long count = 0;
-  long long id;
-  char isevidence;
-  double initial_value;
   short type;
-  variable_value_t cardinality;
+  char isevidence;
+  variable_id_t count = 0;
+  variable_id_t id;
+  variable_value_t initial_value;
+  variable_cardinality_t cardinality;
   while (file.good()) {
     // read fields
     file.read((char *)&id, 8);
     file.read((char *)&isevidence, 1);
-    file.read((char *)&initial_value, 8);
+    file.read((char *)&initial_value, 4);
     file.read((char *)&type, 2);
     if (!file.read((char *)&cardinality, 4)) break;
 
     // convert endian
     id = be64toh(id);
     type = be16toh(type);
-    long long tmp = be64toh(*(uint64_t *)&initial_value);
-    initial_value = *(double *)&tmp;
+    initial_value = be32toh(initial_value);
     cardinality = be32toh(cardinality);
 
     ++count;
-
     variable_domain_type_t type_const;
     switch (type) {
       case 0:
@@ -105,7 +103,7 @@ void FactorGraph::load_variables(const std::string &filename) {
     }
     bool is_evidence = isevidence >= 1;
     bool is_observation = isevidence == 2;
-    double init_value = is_evidence ? initial_value : 0;
+    variable_value_t init_value = is_evidence ? initial_value : 0;
 
     variables[id] = RawVariable(id, type_const, is_evidence, cardinality,
                                 init_value, init_value, is_observation);
@@ -128,25 +126,25 @@ void FactorGraph::load_factors(const std::string &filename) {
   weight_id_t weightid;
   variable_value_t value_id;
   short type;
-  size_t edge_count;
+  factor_arity_t arity;
   variable_value_t should_equal_to;
   while (file.good()) {
     file.read((char *)&type, 2);
-    if (!file.read((char *)&edge_count, 8)) break;
+    if (!file.read((char *)&arity, 4)) break;
 
     type = be16toh(type);
-    edge_count = be64toh(edge_count);
+    arity = be32toh(arity);
 
     ++count;
 
     factors[size.num_factors] = RawFactor(
-        size.num_factors, -1, (factor_function_type_t)type, edge_count);
+        size.num_factors, -1, (factor_function_type_t)type, arity);
 
-    for (size_t position = 0; position < edge_count; ++position) {
+    for (size_t position = 0; position < arity; ++position) {
       file.read((char *)&variable_id, 8);
-      file.read((char *)&should_equal_to, 8);
+      file.read((char *)&should_equal_to, 4);
       variable_id = be64toh(variable_id);
-      should_equal_to = be64toh(should_equal_to);
+      should_equal_to = be32toh(should_equal_to);
 
       // check for wrong id
       assert(variable_id < capacity.num_variables && variable_id >= 0);
@@ -156,23 +154,23 @@ void FactorGraph::load_factors(const std::string &filename) {
           VariableInFactor(variable_id, position, should_equal_to));
       variables[variable_id].add_factor_id(size.num_factors);
     }
-    size.num_edges += edge_count;
+    size.num_edges += arity;
 
     switch (type) {
       case (FUNC_AND_CATEGORICAL): {
-        weight_id_t n_weights = 0;
-        file.read((char *)&n_weights, 8);
-        n_weights = be64toh(n_weights);
+        uint32_t n_weights = 0;
+        file.read((char *)&n_weights, 4);
+        n_weights = be32toh(n_weights);
 
         factors[size.num_factors].weight_ids =
-            new std::unordered_map<variable_value_t, weight_id_t>(n_weights);
-        for (weight_id_t i = 0; i < n_weights; ++i) {
+            new std::unordered_map<uint64_t, weight_id_t>(n_weights);
+        for (uint32_t i = 0; i < n_weights; ++i) {
           // calculate radix-based key into weight_ids (see also
           // FactorGraph::get_categorical_weight_id)
           // TODO: refactor the above formula into a shared routine. (See also
           // FactorGraph::get_categorical_weight_id)
-          size_t key = 0;
-          for (size_t j = 0; j < edge_count; ++j) {
+          uint64_t key = 0;
+          for (factor_arity_t j = 0; j < arity; ++j) {
             const Variable &var =
                 variables[factors[size.num_factors].tmp_variables.at(j).vid];
             file.read((char *)&value_id, 4);
@@ -201,7 +199,7 @@ void FactorGraph::load_factors(const std::string &filename) {
 void FactorGraph::load_domains(const std::string &filename) {
   std::ifstream file;
   file.open(filename.c_str(), std::ios::in | std::ios::binary);
-  long id;
+  variable_id_t id;
   variable_value_t value;
 
   while (true) {
@@ -213,9 +211,10 @@ void FactorGraph::load_domains(const std::string &filename) {
     id = be64toh(id);
     RawVariable &variable = variables[id];
 
-    variable_value_t domain_size;
+    variable_cardinality_t domain_size;
     file.read((char *)&domain_size, 4);
     domain_size = be32toh(domain_size);
+
     assert(variable.cardinality == domain_size);
 
     std::vector<int> domain_list(domain_size);
