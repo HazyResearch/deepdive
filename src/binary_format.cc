@@ -70,7 +70,6 @@ void FactorGraph::load_variables(const std::string &filename) {
   char isevidence;
   double initial_value;
   short type;
-  long long edge_count;
   variable_value_t cardinality;
   while (file.good()) {
     // read fields
@@ -78,7 +77,6 @@ void FactorGraph::load_variables(const std::string &filename) {
     file.read((char *)&isevidence, 1);
     file.read((char *)&initial_value, 8);
     file.read((char *)&type, 2);
-    file.read((char *)&edge_count, 8);
     if (!file.read((char *)&cardinality, 4)) break;
 
     // convert endian
@@ -86,7 +84,6 @@ void FactorGraph::load_variables(const std::string &filename) {
     type = be16toh(type);
     long long tmp = be64toh(*(uint64_t *)&initial_value);
     initial_value = *(double *)&tmp;
-    edge_count = be64toh(edge_count);
     cardinality = be32toh(cardinality);
 
     ++count;
@@ -110,9 +107,8 @@ void FactorGraph::load_variables(const std::string &filename) {
     bool is_observation = isevidence == 2;
     double init_value = is_evidence ? initial_value : 0;
 
-    variables[id] =
-        RawVariable(id, type_const, is_evidence, cardinality, init_value,
-                    init_value, edge_count, is_observation);
+    variables[id] = RawVariable(id, type_const, is_evidence, cardinality,
+                                init_value, init_value, -1, is_observation);
 
     ++size.num_variables;
     if (is_evidence) {

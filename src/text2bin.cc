@@ -26,10 +26,7 @@ void load_var(std::string input_filename, std::string output_filename) {
   int is_evidence;
   double initial_value;
   short type;
-  long edge_count = -1;
   variable_value_t cardinality;
-
-  edge_count = htobe64(edge_count);
 
   while (fin >> vid >> is_evidence >> initial_value >> type >> cardinality) {
     // endianess
@@ -42,7 +39,6 @@ void load_var(std::string input_filename, std::string output_filename) {
     fout.write((char *)&is_evidence, 1);
     fout.write((char *)&initval, 8);
     fout.write((char *)&type, 2);
-    fout.write((char *)&edge_count, 8);
     fout.write((char *)&cardinality, 4);
 
     ++count;

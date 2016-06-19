@@ -34,7 +34,6 @@ This input enumerates all variables present in the factor graph where the follow
     dataType        uint16_t    2   // indicates whether this is:
                                     //   a Boolean variable (0x0000), or
                                     //   a categorical variable (0x0001)
-    ignored         uint64_t    8   // deprecated, edgeCount field no longer used (FIXME subject to removal)
     cardinality     uint64_t    8   // cardinality of the variable:
                                     //   2 for Boolean variables, or
                                     //   a number for categorical variables
