@@ -183,22 +183,20 @@ void load_factor(std::string input_filename, std::string output_filename,
         for (long i = 0; i < nvar; ++i) {
           getline(ss, array_piece, field_delim);
           istringstream ass(array_piece);
-          parse_pgarray_or_die(ass,
-                               [&vals_and_weights](const std::string &element) {
-                                 variable_value_t cid = atoi(element.c_str());
-                                 cid = htobe32(cid);
-                                 vals_and_weights.push_back(cid);
-                               },
-                               num_weightids);
+          parse_pgarray_or_die(
+              ass, [&vals_and_weights](const std::string &element) {
+                variable_value_t cid = atoi(element.c_str());
+                cid = htobe32(cid);
+                vals_and_weights.push_back(cid);
+              }, num_weightids);
         }
         // third, parse weights
-        parse_pgarray_or_die(ss,
-                             [&vals_and_weights](const std::string &element) {
-                               weight_id_t weightid = atol(element.c_str());
-                               weightid = htobe64(weightid);
-                               vals_and_weights.push_back(weightid);
-                             },
-                             num_weightids);
+        parse_pgarray_or_die(
+            ss, [&vals_and_weights](const std::string &element) {
+              weight_id_t weightid = atol(element.c_str());
+              weightid = htobe64(weightid);
+              vals_and_weights.push_back(weightid);
+            }, num_weightids);
 
         // fourth, transpose into output format
         for (long i = 0; i < num_weightids; ++i) {
@@ -250,13 +248,11 @@ void load_domain(std::string input_filename, std::string output_filename) {
 
     // an array of domain values
     istringstream domain_input(domain);
-    parse_pgarray_or_die(domain_input,
-                         [&fout](const std::string &subfield) {
-                           variable_value_t value = atoi(subfield.c_str());
-                           value = htobe32(value);
-                           fout.write((char *)&value, 4);
-                         },
-                         cardinality);
+    parse_pgarray_or_die(domain_input, [&fout](const std::string &subfield) {
+      variable_value_t value = atoi(subfield.c_str());
+      value = htobe32(value);
+      fout.write((char *)&value, 4);
+    }, cardinality);
   }
 
   fin.close();
