@@ -23,7 +23,7 @@ class Variable {
                         // DTYPE_CATEGORICAL
   bool is_evid;         // whether the variable is evidence
   bool is_observation;  // observed variable (fixed)
-  size_t cardinality;   // cardinality
+  variable_value_t cardinality;  // cardinality
 
   variable_value_t assignment_evid;  // assignment, while keeping evidence
                                      // variables unchanged
@@ -61,9 +61,9 @@ class Variable {
                // CompactFactorGraph::variables
 
   Variable(variable_id_t id, variable_domain_type_t domain_type,
-           bool is_evidence, size_t cardinality, variable_value_t init_value,
-           variable_value_t current_value, size_t n_factors,
-           bool is_observation);
+           bool is_evidence, variable_value_t cardinality,
+           variable_value_t init_value, variable_value_t current_value,
+           size_t n_factors, bool is_observation);
 
   /**
    * Constructs a variable with only the important information from a
@@ -104,9 +104,9 @@ class RawVariable : public Variable {
   RawVariable();  // default constructor, necessary for FactorGraph::variables
 
   RawVariable(variable_id_t id, variable_domain_type_t domain_type,
-              bool is_evidence, size_t cardinality, variable_value_t init_value,
-              variable_value_t current_value, size_t n_factors,
-              bool is_observation);
+              bool is_evidence, variable_value_t cardinality,
+              variable_value_t init_value, variable_value_t current_value,
+              size_t n_factors, bool is_observation);
 
   inline void add_factor_id(factor_id_t factor_id) {
     tmp_factor_ids.push_back(factor_id);

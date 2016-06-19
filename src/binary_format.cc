@@ -71,7 +71,7 @@ void FactorGraph::load_variables(const std::string &filename) {
   double initial_value;
   short type;
   long long edge_count;
-  long long cardinality;
+  variable_value_t cardinality;
   while (file.good()) {
     // read fields
     file.read((char *)&id, 8);
@@ -79,7 +79,7 @@ void FactorGraph::load_variables(const std::string &filename) {
     file.read((char *)&initial_value, 8);
     file.read((char *)&type, 2);
     file.read((char *)&edge_count, 8);
-    if (!file.read((char *)&cardinality, 8)) break;
+    if (!file.read((char *)&cardinality, 4)) break;
 
     // convert endian
     id = be64toh(id);
@@ -87,7 +87,7 @@ void FactorGraph::load_variables(const std::string &filename) {
     long long tmp = be64toh(*(uint64_t *)&initial_value);
     initial_value = *(double *)&tmp;
     edge_count = be64toh(edge_count);
-    cardinality = be64toh(cardinality);
+    cardinality = be32toh(cardinality);
 
     ++count;
 
@@ -219,9 +219,9 @@ void FactorGraph::load_domains(const std::string &filename) {
     id = be64toh(id);
     RawVariable &variable = variables[id];
 
-    size_t domain_size;
-    file.read((char *)&domain_size, 8);
-    domain_size = be64toh(domain_size);
+    variable_value_t domain_size;
+    file.read((char *)&domain_size, 4);
+    domain_size = be32toh(domain_size);
     assert(variable.cardinality == domain_size);
 
     std::vector<int> domain_list(domain_size);

@@ -27,7 +27,7 @@ void load_var(std::string input_filename, std::string output_filename) {
   double initial_value;
   short type;
   long edge_count = -1;
-  long cardinality;
+  variable_value_t cardinality;
 
   edge_count = htobe64(edge_count);
 
@@ -36,14 +36,14 @@ void load_var(std::string input_filename, std::string output_filename) {
     vid = htobe64(vid);
     uint64_t initval = htobe64(*(uint64_t *)&initial_value);
     type = htobe16(type);
-    cardinality = htobe64(cardinality);
+    cardinality = htobe32(cardinality);
 
     fout.write((char *)&vid, 8);
     fout.write((char *)&is_evidence, 1);
     fout.write((char *)&initval, 8);
     fout.write((char *)&type, 2);
     fout.write((char *)&edge_count, 8);
-    fout.write((char *)&cardinality, 8);
+    fout.write((char *)&cardinality, 4);
 
     ++count;
   }
@@ -238,7 +238,8 @@ void load_domain(std::string input_filename, std::string output_filename) {
   std::string line;
   while (getline(fin, line)) {
     istringstream line_input(line);
-    long vid, cardinality, cardinality_big;
+    long vid;
+    variable_value_t cardinality, cardinality_big;
     std::string domain;
     assert(line_input >> vid >> cardinality >> domain);
 
@@ -247,7 +248,7 @@ void load_domain(std::string input_filename, std::string output_filename) {
     cardinality_big = htobe64(cardinality);
 
     fout.write((char *)&vid, 8);
-    fout.write((char *)&cardinality_big, 8);
+    fout.write((char *)&cardinality_big, 4);
 
     // an array of domain values
     istringstream domain_input(domain);
