@@ -104,10 +104,10 @@ case $Command in
                                      , dd_graph_weights            wi
                                  WHERE wo.wid = wi.wid
                                    AND weight <> 0
-                                   AND categories IS NULL -- to rule out multinomial
+                                   AND categories IS NULL -- to rule out categorical
                             " format=tsv | pbzip2 >"$dest"/dd_weights.tsv.bz2
                         fi
-                        # dump non-zero weights for multinomial factors
+                        # dump non-zero weights for categorical factors
                         if [[ -n $(deepdive-sql eval "
                                 SELECT 1 WHERE EXISTS (
                                     SELECT wid FROM dd_graph_weights
@@ -123,9 +123,9 @@ case $Command in
                                      , dd_graph_weights            wi
                                  WHERE wo.wid = wi.wid
                                    AND weight <> 0
-                                   AND categories IS NOT NULL -- to include multinomial only
+                                   AND categories IS NOT NULL -- to include categorical only
                                  GROUP BY description
-                            " format=tsv | pbzip2 >"$dest"/dd_weights.multinomial.tsv.bz2
+                            " format=tsv | pbzip2 >"$dest"/dd_weights.categorical.tsv.bz2
                         fi
                         ;;
                 esac
@@ -167,10 +167,10 @@ case $Command in
                                 weightsReuseFlag="$DEEPDIVE_APP"/run/model/grounding/factor/weights.reuse
                                 deepdive create table "$weightTableName" "description:TEXT" "categories:TEXT" "weight:DOUBLE PRECISION"
                                 rm -f "$weightsReuseFlag"
-                                for weightFile in "$src"/dd_weights{,.multinomial}.tsv.bz2; do
+                                for weightFile in "$src"/dd_weights{,.categorical}.tsv.bz2; do
                                     [[ -e "$weightFile" ]] || continue
                                     case $weightFile in
-                                        *.multinomial.tsv.bz2)
+                                        *.categorical.tsv.bz2)
                                             # first load the grouped data from file
                                             deepdive create table "${weightTableName}_array" "description:TEXT" "categories::TEXT[]" "weights:DOUBLE PRECISION[]"
                                             # TODO parallel load

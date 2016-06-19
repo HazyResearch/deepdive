@@ -316,7 +316,7 @@ person_has_cancer.has_cancer: Boolean
 
 A table can have up to one column declared as a DeepDive variable.
 This restriction makes the semantics clear such that each tuple in the database corresponds to one random variable.
-DeepDive currently supports Boolean and Multinomial variables.
+DeepDive currently supports Boolean and Categorical variables.
 
 
 ## <a name="inference_rules" href="#"></a> Inference rules

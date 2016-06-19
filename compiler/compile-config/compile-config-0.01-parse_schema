@@ -6,7 +6,7 @@ include "util";
 
 .deepdive_ as $deepdive
 
-# parse variable schema to define some names (mainly to find Multinomial cardinality)
+# parse variable schema to define some names (mainly to find categorical cardinality)
 | .deepdive_.schema.variables_ = [
     $deepdive.schema.variables | to_entries[]
     | .key as $relationName | (.value | to_entries) as $columns

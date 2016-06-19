@@ -5,6 +5,7 @@
 /.travis.tar
 /.github-release-assets
 /deepdive-*.tar.gz
+/inference/format_converter
 
 # misc.
 .DS_Store

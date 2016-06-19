@@ -3,11 +3,13 @@ layout: default
 title: Text chunking example
 ---
 
+# THIS EXAMPLE IS STALE. NEEDS REVAMP!
+
 # Text chunking example
 
 ## Introduction
 
-In this document, we will describe an example application of text chunking using DeepDive to demonstrate how to use *multinomial factors* with *categorical variables*.
+In this document, we will describe an example application of text chunking using DeepDive to demonstrate how to use *categorical factors* with *categorical variables*.
 This example assumes a [working installation of DeepDive](installation.md) and basic knowledge of how to build an application in DeepDive.
 Please go through the [tutorial with the spouse example application](example-spouse.md) before preceding.
 
@@ -28,7 +30,7 @@ Training and test data for this task is derived from the Wall Street Journal cor
 
 In the example, we will predicate chunk label for each word.
 We include three inference rules, corresponding to *logistic regression*, *linear-chain conditional random field* (CRF), and *skip-chain conditional random field*.
-The features and rules we use are very simple, just to illustrate how to use categorical variables and multinomial factors in DeepDive to build applications.
+The features and rules we use are very simple, just to illustrate how to use categorical variables and categorical factors in DeepDive to build applications.
 
 
 ## Running the example

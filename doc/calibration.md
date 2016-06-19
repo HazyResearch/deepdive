@@ -68,7 +68,7 @@ Specification for these fields:
 - **id**: the unique identifier for the weight
 - **initial_value**: the initial value for the weight
 - **is_fixed**: whether the weight is fixed (cannot be changed during learning)
-- **cardinality**: the cardinality of this factor. Meaningful for [multinomial factors](example-chunking.md).
+- **cardinality**: the cardinality of this factor. Meaningful for [categorical factors](example-chunking.md).
 - **description**: description of the weight, composed by [the name of inference rule]-[the specified value of "weight" in inference rule]
 - **weight**: the learned weight value
 
