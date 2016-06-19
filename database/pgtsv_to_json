@@ -27,6 +27,8 @@ def timestamp(timestamp_str):
         parsed = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S.%f')
     except ValueError:
         parsed = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+    except ValueError:
+        return timestamp_str
     return parsed.isoformat()
 
 # given a column type, returns a function that takes a string input
