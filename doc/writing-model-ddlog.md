@@ -170,7 +170,7 @@ Whenever a rule has to refer to a case when the Boolean variable is false (also 
 @weight(...)  ! P(x) v  ! Q(x)  :- RULE_BODY.
 ```
 
-#### Multinomial factors
+#### Multinomial factors (STALE. NEEDS REVAMP.)
 
 DeepDive has limited support for expressing correlations of categorical variables.
 The introduced syntax above can be used only for expressing correlations between Boolean variables.
@@ -195,9 +195,9 @@ Then, `Multinomial(a, b)` is equivalent to having factors between `a` and `b` th
 * I{`a` = 2, `b` = 1}
 
 Note that each of the factors above has a distinct weight, i.e., one weight for each possible assignment of variables in the `Multinomial` factor.
-For more detail on how to specify Conditional Random Fields and perform Multi-class Logistic Regression using multinomial factor, see [the chunking example](example-chunking.md).
+For more detail on how to specify Conditional Random Fields and perform Multi-class Logistic Regression using categorical factor, see [the chunking example](example-chunking.md).
 
-<sup>*</sup> Because of this limitation, categorical variables and multinomial factor support is likely to go away in a near future release, in favor of a more flexible way to express multi-class predictions and mutual exclusions.
+<sup>*</sup> Because of this limitation, categorical variables and categorical factor support is likely to go away in a near future release, in favor of a more flexible way to express multi-class predictions and mutual exclusions.
 <todo> Emulate categorical variables with functional dependencies in the Boolean variable columns, i.e., `tag?(@key word_id BIGINT, pos TEXT)` rather than `tag?(word_id BIGINT) Categorical(N)`, and replace `Multinomial` factor with conjunction of those Boolean variables with columns having functional dependencies.</todo>
 
 ### Specifying weights

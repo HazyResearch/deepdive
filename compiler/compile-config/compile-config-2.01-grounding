@@ -378,15 +378,15 @@ def factorWeightDescriptionSqlExpr:
                 # Not using DISTINCT: User decides if they want to have duplicate factors
                 { SELECT:
                     [ ( .function_.variables[] | { table: "F", column: .columnId } )
-                    # TODO XXXX: assuming so-called "multinomial" factors' heads have categorical vars only
-                    , ( .function_ | select(.isMultinomial) | .variables[] |
+                    # TODO: assuming categorical factors' heads have categorical vars only
+                    , ( .function_ | select(.isCategorical) | .variables[] |
                         { table: "C\(.ordinal)", column: "cid", alias: "\(.columnPrefix)\(deepdiveVariableInternalLabelColumn)" } )
                     , ( .weight_.params[]      | { table: "F", column: . } )
                     ]
                 , FROM: [
                     { alias: "F", sql: "\(.input_query)" }
                     ]
-                , JOIN: [(.function_ | select(.isMultinomial) | .variables[]
+                , JOIN: [(.function_ | select(.isCategorical) | .variables[]
                     | "C\(.ordinal)" as $ctable
                     | .columnPrefix as $prefix
                     | { INNER: { alias: $ctable, table: .schema.variablesCategoriesTable }
@@ -496,8 +496,6 @@ def factorWeightDescriptionSqlExpr:
                     , { column: "isfixed" }
                     , { column: "initvalue" }
                     , { alias: "description", expr: factorWeightDescriptionSqlExpr }
-                    # TODO XXXX remove this useless column (weights are orthogonal to categories)
-                    , { alias: "categories", expr: "NULL || ''" }
                     ]
                 , FROM:
                     [ { table: .weightsTable }
@@ -530,21 +528,17 @@ def factorWeightDescriptionSqlExpr:
 
             # named codes used by sampler
             export \(.function_.name)Factor=\(.function_.id)  # factor function id
-            \( if .function_.isMultinomial then "
-                \(.function_.name)Factor=\(.function_.idForSparseVariant)  # use sparse variant"
-            else ""
-            end )
             export numVariablesForFactor=\(.function_.variables | length)
             export areVariablesPositive=\(.function_.variables | map(if .isNegated then "0" else "1" end) | join(" ") | @sh)
 
             # dump the factors joining the assigned weight ids, converting into binary format for the inference engine
             deepdive compute execute \\
                 input_sql=\(
-                if .function_.isMultinomial then
+                if .function_.isCategorical then
                 "\"$(
-                    # sparse multinomial factor need to find exact combinations of category values and
+                    # categorical factor need to find exact combinations of category values and
                     # weight parameters present in the data, hence a lot of joins! but doesn't waste the weights
-                    # FIXME XXXXX: Assuming all var tables are categorical; TODO: Support mixed head.
+                    # Assuming all var tables are categorical; TODO: Support mixed head.
                     echo \(
                         # Order for parallel ARRAY_AGG expressions
                         ( [ .function_.variables[] |

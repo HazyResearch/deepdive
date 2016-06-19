@@ -80,26 +80,19 @@ include "util";
             , and         : 2
             , equal       : 3
             , istrue      : 4
-            , multinomial : 5
             , linear      : 7
             , ratio       : 8
             , logical     : 9
             , imply3      : 11
+            , andcategorical : 12
             }[.name] //
                 error("deepdive.inference.factors.\($factorName
                     ) uses an unrecognized function: \(.name | @json)")
 
-        # finds out whether it is multinomial, i.e., defined over categorical variables
-        | .isMultinomial = (.name | in(
-            { multinomial: 1
+        # finds out whether it is defined over categorical variables
+        | .isCategorical = (.name | in(
+            { andcategorical: 1
             }))
-        # find the sparse variant
-        | .nameForSparseVariant =
-            { multinomial: "sparse_multinomial"
-            }[.name]
-        | .idForSparseVariant =
-            { sparse_multinomial: 12
-            }[.nameForSparseVariant // ""]
 
         # check required/permitted number of parameters
         | if .name == "istrue" and (.variables | length) != 1
@@ -111,14 +104,8 @@ include "util";
             .name)' must be over exactly two variables but found \(.variables | length)")
         else . end
 
-        # TODO check if all .variables type are categorical for multinomial function
+        # TODO check if all .variables type are categorical for categorical function
         )
-
-    # some more handy names for multinomial
-    | ( if .function_.isMultinomial then
-        .weightGroupsTable = "\(deepdivePrefixForWeightGroupsTable)\($factorName)"
-    else .
-    end)
 
 ]
 
