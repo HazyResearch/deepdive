@@ -102,9 +102,11 @@ DimmWitted::DimmWitted(std::unique_ptr<CompactFactorGraph> p_cfg,
     n_numa_nodes = opts.n_datacopy;
   }
 
+  // limit number of NUMA nodes such that each gets at least one thread
+  if (opts.n_threads < n_numa_nodes) n_numa_nodes = opts.n_threads;
+
   // max possible threads per NUMA node
-  n_thread_per_numa = (sysconf(_SC_NPROCESSORS_CONF)) / n_numa_nodes;
-  // n_thread_per_numa = 1;
+  n_thread_per_numa = opts.n_threads / n_numa_nodes;
 
   // copy factor graphs
   for (size_t i = 0; i < n_numa_nodes; ++i) {
@@ -120,7 +122,7 @@ DimmWitted::DimmWitted(std::unique_ptr<CompactFactorGraph> p_cfg,
                    :
                    // then, make a copy for the rest
                 new CompactFactorGraph(samplers[0].fg)),
-        weights, n_thread_per_numa /* TODO fold this into opts */, i, opts));
+        weights, n_thread_per_numa, i, opts));
   }
 }
 

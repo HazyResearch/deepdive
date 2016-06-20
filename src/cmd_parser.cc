@@ -3,6 +3,8 @@
 #define HAVE_LONG_LONG  // necessary for uint64_t arg parsing
 #include <tclap/CmdLine.h>
 
+#include <unistd.h>
+
 namespace dd {
 
 constexpr char DimmWittedVersion[] = "0.01";
@@ -56,6 +58,10 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
         "Number of factor graph copies. Use 0 for all "
         "available NUMA nodes (default)",
         false, "int", cmd_);
+    TCLAP::MultiArg<size_t> n_threads_(
+        "t", "n_threads",
+        "Number of threads to use. Use 0 for all available threads (default)",
+        false, "int", cmd_);
     TCLAP::MultiArg<double> stepsize_("a", "alpha", "Stepsize", false, "double",
                                       cmd_);
     TCLAP::MultiArg<double> stepsize2_("p", "stepsize", "Stepsize", false,
@@ -90,6 +96,8 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
     n_inference_epoch =
         getLastValueOrDefault(n_inference_epoch_, (num_epochs_t)0);
     n_datacopy = getLastValueOrDefault(n_datacopy_, (size_t)0);
+    n_threads = getLastValueOrDefault(n_threads_, (size_t)0);
+    if (n_threads == 0) n_threads = sysconf(_SC_NPROCESSORS_CONF);
     burn_in = getLastValueOrDefault(burn_in_, (num_epochs_t)0);
     stepsize = getLastValueOrDefault(stepsize_, 0.01);
     stepsize2 = getLastValueOrDefault(stepsize2_, 0.01);
@@ -197,10 +205,10 @@ std::ostream& operator<<(std::ostream& stream, const CmdParser& args) {
   stream << "# decay              : " << args.decay << std::endl;
   stream << "# regularization     : " << args.reg_param << std::endl;
   stream << "# burn_in            : " << args.burn_in << std::endl;
+  stream << "# n_threads          : " << args.n_threads << std::endl;
   stream << "# learn_non_evidence : " << args.should_learn_non_evidence
          << std::endl;
   stream << "################################################" << std::endl;
-  stream << "# IGNORE -t (threads). ALWAYS USE ALL THREADS. #" << std::endl;
   return stream;
 }
 

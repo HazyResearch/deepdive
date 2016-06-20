@@ -26,6 +26,7 @@ class CmdParser {
   num_epochs_t n_learning_epoch;
   num_epochs_t n_inference_epoch;
   size_t n_datacopy;
+  size_t n_threads;
   num_epochs_t burn_in;
   double stepsize;
   double stepsize2;
