@@ -37,33 +37,72 @@ namespace dd {
  * a few specialized functions for writing big endian values
  */
 template <int num_bytes>
-inline void write_be(std::ostream &output, void *value);
+inline std::ostream &write_be(std::ostream &output, void *value);
 template <>
-inline void write_be<1>(std::ostream &output, void *value) {
-  output.write((char *)value, 1);
+inline std::ostream &write_be<1>(std::ostream &output, void *value) {
+  return output.write((char *)value, 1);
 }
 template <>
-inline void write_be<2>(std::ostream &output, void *value) {
+inline std::ostream &write_be<2>(std::ostream &output, void *value) {
   uint16_t tmp = htobe16(*(uint16_t *)value);
-  output.write((char *)&tmp, sizeof(tmp));
+  return output.write((char *)&tmp, sizeof(tmp));
 }
 template <>
-inline void write_be<4>(std::ostream &output, void *value) {
+inline std::ostream &write_be<4>(std::ostream &output, void *value) {
   uint32_t tmp = htobe32(*(uint32_t *)value);
-  output.write((char *)&tmp, sizeof(tmp));
+  return output.write((char *)&tmp, sizeof(tmp));
 }
 template <>
-inline void write_be<8>(std::ostream &output, void *value) {
+inline std::ostream &write_be<8>(std::ostream &output, void *value) {
   uint64_t tmp = htobe64(*(uint64_t *)value);
-  output.write((char *)&tmp, sizeof(tmp));
+  return output.write((char *)&tmp, sizeof(tmp));
 }
 
 /**
  * a handy way to serialize values of certain type in big endian
  */
 template <typename T>
-inline void write_be(std::ostream &output, T value) {
-  write_be<sizeof(T)>(output, &value);
+inline std::ostream &write_be(std::ostream &output, T value) {
+  return write_be<sizeof(T)>(output, &value);
+}
+
+/**
+ * a few specialized functions for reading big endian values
+ */
+template <int num_bytes>
+inline std::istream &read_be(std::istream &input, char *dst);
+template <>
+inline std::istream &read_be<1>(std::istream &input, char *dst) {
+  return input.read(dst, 1);
+}
+template <>
+inline std::istream &read_be<2>(std::istream &input, char *dst) {
+  std::istream &s = input.read(dst, 2);
+  *(uint16_t *)dst = be16toh(*(uint16_t *)dst);
+  return s;
+}
+template <>
+inline std::istream &read_be<4>(std::istream &input, char *dst) {
+  std::istream &s = input.read(dst, 4);
+  *(uint32_t *)dst = be32toh(*(uint32_t *)dst);
+  return s;
+}
+template <>
+inline std::istream &read_be<8>(std::istream &input, char *dst) {
+  std::istream &s = input.read(dst, 8);
+  *(uint64_t *)dst = be64toh(*(uint64_t *)dst);
+  return s;
+}
+
+/**
+ * a handy way to deserialize big endian bytes into values of certain type
+ */
+template <typename T>
+inline std::istream &read_be(std::istream &input, T &value) {
+  char tmp[sizeof(T)];
+  std::istream &s = read_be<sizeof(T)>(input, tmp);
+  value = *(T *)(tmp);  // interpret what's read into type T
+  return s;
 }
 
 /**

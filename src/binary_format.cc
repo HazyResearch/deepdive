@@ -36,25 +36,18 @@ FactorGraphDescriptor read_meta(const std::string &meta_file) {
 void FactorGraph::load_weights(const std::string &filename) {
   std::ifstream file;
   file.open(filename, std::ios::in | std::ios::binary);
-
-  bool isfixed;
-  char isfixed_char;
-  weight_id_t count = 0;
-  weight_id_t id;
-  weight_value_t initial_value;
+  num_weights_t count = 0;
   while (file.good()) {
     // read fields
-    file.read((char *)&id, 8);
-    file.read((char *)&isfixed_char, 1);
-    if (!file.read((char *)&initial_value, 8)) break;
-    // convert endian
-    id = be64toh(id);
-    isfixed = isfixed_char;
-    uint64_t tmp = be64toh(*(uint64_t *)&initial_value);
-    initial_value = *(weight_value_t *)&tmp;
+    weight_id_t wid;
+    uint8_t isfixed;
+    weight_value_t initial_value;
+    read_be(file, wid);
+    read_be(file, isfixed);
+    if (!read_be(file, initial_value)) break;
 
     // load into factor graph
-    weights[id] = Weight(id, initial_value, isfixed);
+    weights[wid] = Weight(wid, initial_value, isfixed);
     ++count;
   }
   size.num_weights += count;
@@ -64,35 +57,29 @@ void FactorGraph::load_weights(const std::string &filename) {
 void FactorGraph::load_variables(const std::string &filename) {
   std::ifstream file;
   file.open(filename, std::ios::in | std::ios::binary);
-
-  short type;
-  char isevidence;
-  variable_id_t count = 0;
-  variable_id_t id;
-  variable_value_t initial_value;
-  num_variable_values_t cardinality;
+  num_variables_t count = 0;
   while (file.good()) {
+    variable_id_t vid;
+    uint8_t role_serialized;
+    variable_value_t initial_value;
+    uint16_t
+        dtype_serialized;  // TODO shouldn't this come before the actual value?
+    num_variable_values_t cardinality;
     // read fields
-    file.read((char *)&id, 8);
-    file.read((char *)&isevidence, 1);
-    file.read((char *)&initial_value, 4);
-    file.read((char *)&type, 2);
-    if (!file.read((char *)&cardinality, 4)) break;
-
-    // convert endian
-    id = be64toh(id);
-    type = be16toh(type);
-    initial_value = be32toh(initial_value);
-    cardinality = be32toh(cardinality);
+    read_be(file, vid);
+    read_be(file, role_serialized);
+    read_be(file, initial_value);
+    read_be(file, dtype_serialized);
+    if (!read_be(file, cardinality)) break;
 
     ++count;
-    variable_domain_type_t type_const;
-    switch (type) {
+    variable_domain_type_t dtype;
+    switch (dtype_serialized) {
       case 0:
-        type_const = DTYPE_BOOLEAN;
+        dtype = DTYPE_BOOLEAN;
         break;
       case 1:
-        type_const = DTYPE_CATEGORICAL;
+        dtype = DTYPE_CATEGORICAL;
         break;
       default:
         std::cerr
@@ -101,12 +88,13 @@ void FactorGraph::load_variables(const std::string &filename) {
             << std::endl;
         std::abort();
     }
-    bool is_evidence = isevidence >= 1;
-    bool is_observation = isevidence == 2;
+    bool is_evidence = role_serialized >=
+                       1;  // TODO interpret as bit vector instead of number?
+    bool is_observation = role_serialized == 2;
     variable_value_t init_value = is_evidence ? initial_value : 0;
 
-    variables[id] = RawVariable(id, type_const, is_evidence, cardinality,
-                                init_value, init_value, is_observation);
+    variables[vid] = RawVariable(vid, dtype, is_evidence, cardinality,
+                                 init_value, init_value, is_observation);
 
     ++size.num_variables;
     if (is_evidence) {
@@ -121,27 +109,22 @@ void FactorGraph::load_variables(const std::string &filename) {
 void FactorGraph::load_factors(const std::string &filename) {
   std::ifstream file;
   file.open(filename.c_str(), std::ios::in | std::ios::binary);
-  variable_id_t variable_id;
-  weight_id_t weightid;
-  variable_value_t value_id;
-  int16_t type;
-  factor_arity_t arity;
-  variable_value_t should_equal_to;
   while (file.good()) {
-    file.read((char *)&type, 2);
-    if (!file.read((char *)&arity, 4)) break;
-
-    type = be16toh(type);
-    arity = be32toh(arity);
+    uint16_t type;
+    factor_arity_t arity;
+    // read fields
+    read_be(file, type);
+    if (!read_be(file, arity)) break;
 
     factors[size.num_factors] =
         RawFactor(size.num_factors, -1, (factor_function_type_t)type, arity);
 
     for (factor_arity_t position = 0; position < arity; ++position) {
-      file.read((char *)&variable_id, 8);
-      file.read((char *)&should_equal_to, 4);
-      variable_id = be64toh(variable_id);
-      should_equal_to = be32toh(should_equal_to);
+      // read fields for each variable reference
+      variable_id_t variable_id;
+      variable_value_t should_equal_to;
+      read_be(file, variable_id);
+      read_be(file, should_equal_to);
 
       // check for wrong id
       assert(variable_id < capacity.num_variables && variable_id >= 0);
@@ -154,14 +137,13 @@ void FactorGraph::load_factors(const std::string &filename) {
     size.num_edges += arity;
 
     switch (type) {
-      case (FUNC_AND_CATEGORICAL): {
-        uint32_t n_weights = 0;
-        file.read((char *)&n_weights, 4);
-        n_weights = be32toh(n_weights);
-
+      case FUNC_AND_CATEGORICAL: {
+        // weight references for categorical factors
+        uint32_t n_weights = 0;  // FIXME factor_weight_key_t
+        read_be(file, n_weights);
         factors[size.num_factors].weight_ids =
             new std::unordered_map<factor_weight_key_t, weight_id_t>(n_weights);
-        for (uint32_t i = 0; i < n_weights; ++i) {
+        for (factor_weight_key_t i = 0; i < n_weights; ++i) {
           // calculate radix-based key into weight_ids (see also
           // FactorGraph::get_categorical_weight_id)
           // TODO: refactor the above formula into a shared routine. (See also
@@ -170,22 +152,23 @@ void FactorGraph::load_factors(const std::string &filename) {
           for (factor_arity_t j = 0; j < arity; ++j) {
             const Variable &var =
                 variables[factors[size.num_factors].tmp_variables.at(j).vid];
-            file.read((char *)&value_id, 4);
-            value_id = be32toh(value_id);
+            variable_value_t value_id;
+            read_be(file, value_id);
             key *= var.cardinality;
             key += var.get_domain_index(value_id);
           }
-          file.read((char *)&weightid, 8);
-          weightid = be64toh(weightid);
-          (*factors[size.num_factors].weight_ids)[key] = weightid;
+          weight_id_t wid;
+          read_be(file, wid);
+          (*factors[size.num_factors].weight_ids)[key] = wid;
         }
         break;
       }
 
       default:
-        file.read((char *)&weightid, 8);
-        weightid = be64toh(weightid);
-        factors[size.num_factors].weight_id = weightid;
+        // weight reference is simple for Boolean factors
+        weight_id_t wid;
+        read_be(file, wid);
+        factors[size.num_factors].weight_id = wid;
     }
 
     ++size.num_factors;
@@ -196,31 +179,26 @@ void FactorGraph::load_factors(const std::string &filename) {
 void FactorGraph::load_domains(const std::string &filename) {
   std::ifstream file;
   file.open(filename.c_str(), std::ios::in | std::ios::binary);
-  variable_id_t id;
-  variable_value_t value;
 
-  while (true) {
-    file.read((char *)&id, 8);
+  while (file.good()) {
+    variable_id_t vid;
+    read_be(file, vid);
     if (!file.good()) {
       return;
     }
-
-    id = be64toh(id);
-    RawVariable &variable = variables[id];
+    RawVariable &variable = variables[vid];
 
     num_variable_values_t domain_size;
-    file.read((char *)&domain_size, 4);
-    domain_size = be32toh(domain_size);
-
+    read_be(file, domain_size);
     assert(variable.cardinality == domain_size);
 
-    std::vector<int> domain_list(domain_size);
+    std::vector<variable_value_t> domain_list(domain_size);
     variable.domain_map.reset(
         new std::unordered_map<variable_value_t, variable_value_index_t>());
 
     for (variable_value_index_t i = 0; i < domain_size; ++i) {
-      file.read((char *)&value, 4);
-      value = be32toh(value);
+      variable_value_t value;
+      read_be(file, value);
       domain_list[i] = value;
     }
 
