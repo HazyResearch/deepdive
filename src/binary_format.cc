@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <algorithm>
 
 namespace dd {
 
