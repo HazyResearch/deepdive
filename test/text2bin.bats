@@ -16,7 +16,7 @@ teardown() {
 
 @test "text2bin factor works" {
     rm -f ./dd_factors.bin
-    dw text2bin factor ./dd_factors.txt ./dd_factors.bin 2 1 original 1
+    dw text2bin factor ./dd_factors.txt ./dd_factors.bin 2 1 1
     compare_binary_with_xxd_text ./dd_factors.bin.txt ./dd_factors.bin 
 }
 
