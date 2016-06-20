@@ -151,7 +151,7 @@ and
 
 <!-- Toy Examples -->
 - [Cancer/Smoke/Friends: a classical toy example for MLNs](example-smoke.md)
-- [Text chunking with Multinomial](example-chunking.md)
+- [Text chunking with categorical variables](example-chunking.md)
 
 
 #### Advanced topics

@@ -42,3 +42,25 @@ setup() {
         false
     }
 }
+
+@test "$DBVARIANT db-assign_sequential_id works with ORDER_BY constraint" {
+    numrows=1000
+    echo "populating table foo..."
+    deepdive sql "DROP TABLE foo CASCADE;" || true
+    deepdive sql "CREATE TABLE foo(x TEXT, y BIGINT, z DOUBLE PRECISION);"
+    seq $numrows | sed 's/.*/INSERT INTO foo(x) VALUES (&);/' | deepdive sql >/dev/null
+
+    # set a column to random numbers
+    echo "randomizing column z..."
+    deepdive sql "UPDATE foo SET z = RANDOM()"
+
+    # assign id according to the order of the randomized column
+    echo "db-assign_sequential_id..."
+    deepdive db assign_sequential_id foo y 1 1 "z"
+
+    # check if the order is correct
+    echo "checking order..."
+    incorrect_rows=$(deepdive sql eval "SELECT * FROM (SELECT *, ROW_NUMBER() OVER (ORDER BY z) AS rn FROM foo) bar WHERE rn != y" format=tsv)
+    echo "$incorrect_rows"
+    [[ -z $incorrect_rows ]]
+}

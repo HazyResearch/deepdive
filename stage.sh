@@ -72,7 +72,7 @@ stage compiler/compile-code                                       util/
 stage compiler/compile-codegen                                    util/
 
 stage compiler/ddlog-wrapper.sh                                   bin/ddlog
-stage .build/submodule/compiler/ddlog/target/scala-2.10/ddlog-assembly-0.1-SNAPSHOT.jar  lib/ddlog.jar
+stage .build/submodule/compiler/ddlog/target/scala-2.11/ddlog-assembly-0.1-SNAPSHOT.jar  lib/ddlog.jar
 stage .build/submodule/compiler/hocon2json/hocon2json.sh                                util/hocon2json
 stage .build/submodule/compiler/hocon2json/target/scala-2.10/hocon2json-assembly-*.jar  util/hocon2json.jar
 
@@ -124,13 +124,14 @@ stage ddlib/deepdive.py                                           lib/python/
 # DeepDive inference engine and supporting utilities
 #  copying shared libraries required by the dimmwitted sampler and generating a wrapper
 PATH="$PWD"/extern/buildkit:"$PATH"
-generate-wrapper-for-libdirs          "$STAGE_DIR"/util/sampler-dw \
-                                      "$STAGE_DIR"/util/sampler-dw.bin \
-                                      "$STAGE_DIR"/lib/dw
+for cmd in dw; do
+stage .build/submodule/inference/dimmwitted/$cmd              	  util/sampler-$cmd.bin
 install-shared-libraries-required-by  "$STAGE_DIR"/lib/dw \
-      .build/submodule/inference/dimmwitted/dw
-stage .build/submodule/inference/dimmwitted/dw                	  util/sampler-dw.bin
-stage inference/format_converter                                  util/format_converter
+      .build/submodule/inference/dimmwitted/$cmd
+generate-wrapper-for-libdirs          "$STAGE_DIR"/util/sampler-$cmd \
+                                      "$STAGE_DIR"/util/sampler-$cmd.bin \
+                                      "$STAGE_DIR"/lib/dw
+done
 stage inference/deepdive-model                                    util/
 
 # DeepDive utilities

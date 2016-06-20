@@ -17,7 +17,9 @@ AnotherTable=$1; shift
 distributedBy=$(
     db-execute "\\d $AnotherTable" |
     grep '^Distributed ' |
-    sed 's/Distributed by: /Distributed by /'
+    sed 's/Distributed by: /Distributed by /' |
+    # quote all column names to be robust from DDlog compiled inference rules such as "table.R0.column"
+    sed 's/"/""/g; s/^.*(/DISTRIBUTED BY ("/; s/)$/")/; s/, /", "/g'
 )
 
 tableDef=" (LIKE $AnotherTable) $distributedBy"

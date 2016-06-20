@@ -10,8 +10,6 @@
 ##
 set -euo pipefail
 
-: ${DEEPDIVE_PREFIX_TABLE_TEMPORARY:=dd_tmp_} ${DEEPDIVE_PREFIX_TABLE_OLD:=dd_old_}
-
 # load compute configuration
 eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \
     num_processes='.num_processes' \
@@ -20,24 +18,7 @@ eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \
     #
 )"
 # respect the DEEPDIVE_NUM_PROCESSES environment
-num_processes=${DEEPDIVE_NUM_PROCESSES:-${num_processes:-$(
-        # detect number of processor cores
-        nproc=$(
-            # Linux typically has coreutils which includes nproc
-            nproc ||
-            # OS X
-            sysctl -n hw.ncpu ||
-            # fall back to 1
-            echo 1
-        )
-        if [[ $nproc -gt 1 ]]; then
-            # leave one processor out
-            let nproc-=1
-        elif [[ $nproc -lt 1 ]]; then
-            nproc=1
-        fi
-        echo $nproc
-    )}}
+num_processes=${DEEPDIVE_NUM_PROCESSES:-${num_processes:-$(nproc --ignore=1)}}
 num_parallel_unloads=${DEEPDIVE_NUM_PARALLEL_UNLOADS:-${num_parallel_unloads:-1}}
 num_parallel_loads=${DEEPDIVE_NUM_PARALLEL_LOADS:-${num_parallel_loads:-1}}
 
@@ -56,20 +37,6 @@ echo " DEEPDIVE_NUM_PARALLEL_LOADS=$num_parallel_loads"
 # 2) input-only command which has no output to the database and streams from the database
 # 3) output-only command which has no input from the database and streams to the database
 # 4) database-independent command which simply runs in parallel
-
-# prepare a temporary output table when output_relation is given
-if [[ -n $output_relation ]]; then
-    # some derived values
-    output_relation_tmp="${DEEPDIVE_PREFIX_TABLE_TEMPORARY}${output_relation}"
-
-    # show configuration
-    echo " output_relation_tmp=$output_relation_tmp"
-    echo
-
-    # use an empty temporary table as a sink instead of TRUNCATE'ing the output_relation
-    deepdive-create table-if-not-exists "$output_relation"
-    db-create-table-like "$output_relation_tmp" "$output_relation"
-fi
 
 # set up named pipes for parallel processes and make sure they are cleaned up upon exit
 [[ -z $input_sql       ]] || for i in $(seq $num_processes); do rm -f process-$i.input ; mkfifo process-$i.input ; done
@@ -112,7 +79,7 @@ if [[ -n $output_relation ]]; then
     mkmimo process-*.output \> output_computed-* &
     pids_load+=($!)
     # load the output data to the temporary table in the database
-    deepdive-load "$output_relation_tmp" output_computed-* &
+    deepdive-load "$output_relation" output_computed-* &
     pids_load+=($!)
 fi
 
@@ -146,16 +113,3 @@ all_finishes_ok() {
 [[ ${#pids_load[@]}    -eq 0 ]] || all_finishes_ok "deepdive-load"                   "${pids_load[@]}"
 [[ ${#pids_unload[@]}  -eq 0 ]] || all_finishes_ok "deepdive-unload"                 "${pids_unload[@]}"
 wait  # until everything is done ##############################################
-
-if [[ -n $output_relation ]]; then
-    # rename the new temporary table
-    # TODO maybe use PostgreSQL's schema support here?
-    echo "Replacing $output_relation with $output_relation_tmp"
-    output_relation_old="${DEEPDIVE_PREFIX_TABLE_OLD}${output_relation}"
-    deepdive-sql "DROP TABLE IF EXISTS ${output_relation_old} CASCADE;" 2>/dev/null || true
-    deepdive-sql "ALTER TABLE ${output_relation}     RENAME TO ${output_relation_old};"
-    deepdive-sql "ALTER TABLE ${output_relation_tmp} RENAME TO ${output_relation};"
-    deepdive-sql "DROP TABLE IF EXISTS ${output_relation_old} CASCADE;" 2>/dev/null || true
-    # and analyze the table to speed up future queries
-    db-analyze "${output_relation}"
-fi

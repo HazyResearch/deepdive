@@ -2,6 +2,9 @@
 # compile-config-2.02-learning_inference -- Adds processes for performing inference with the grounded factor graph
 ##
 
+include "constants";
+include "sql";
+
 # skip adding learning/inference processes unless one for grounding is there
 if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph") | not then . else
 
@@ -13,18 +16,21 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         dependencies_: ["model/factorgraph"],
         output_: "model/weights",
         style: "cmd_extractor",
-        cmd: "mkdir -p ../../../model && cd ../../../model
+        cmd: ": ${DEEPDIVE_NUM_PROCESSES:=$(nproc --ignore=1)}
+            mkdir -p ../../../model && cd ../../../model
             mkdir -p weights
             [ -d factorgraph ] || error \"No factorgraph found\"
             # run inference engine for learning and inference
-            flatten() { find -L \"$@\" -type f -exec pbzip2 -c -d -k {} +; }
+            flatten() { find -L \"$@\" -type f -size +0 -exec pbzip2 -c -d -k {} +; }
             \($deepdive.sampler.sampler_cmd // "sampler-dw") \\
                 gibbs \\
-                -w <(flatten factorgraph/weights) \\
-                -v <(flatten factorgraph/variables) \\
-                -f <(flatten factorgraph/factors) \\
-                -m factorgraph/meta \\
-                -o weights \\
+                --variables <(flatten factorgraph/variables) \\
+                --domains <(flatten factorgraph/domains) \\
+                --factors <(flatten factorgraph/factors) \\
+                --weights <(flatten factorgraph/weights) \\
+                --fg_meta factorgraph/meta \\
+                --outputFile weights \\
+                --n_threads $DEEPDIVE_NUM_PROCESSES \\
                 \($deepdive.sampler.sampler_args // "#")
             mkdir -p probabilities
             mv -f weights/inference_result.out.text probabilities/
@@ -36,20 +42,23 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         dependencies_: ["model/factorgraph", "model/weights"],
         output_: "model/probabilities",
         style: "cmd_extractor",
-        cmd: "mkdir -p ../../../model && cd ../../../model
+        cmd: ": ${DEEPDIVE_NUM_PROCESSES:=$(nproc --ignore=1)}
+            mkdir -p ../../../model && cd ../../../model
             [ -d factorgraph ] || error \"No factorgraph found\"
             if [[ factorgraph/weights -nt probabilities/inference_result.out.text ]]; then
                 # no need to run inference unless the weights are fresher
                 # XXX this skipping may cause confusion
                 # run sampler for performing inference with given weights without learning
-                flatten() { find -L \"$@\" -type f -exec pbzip2 -c -d -k {} +; }
+                flatten() { find -L \"$@\" -type f -size +0 -exec pbzip2 -c -d -k {} +; }
                 \($deepdive.sampler.sampler_cmd // "sampler-dw") \\
                     gibbs \\
-                    -w <(flatten factorgraph/weights) \\
-                    -v <(flatten factorgraph/variables) \\
-                    -f <(flatten factorgraph/factors) \\
-                    -m factorgraph/meta \\
-                    -o weights \\
+                    --variables <(flatten factorgraph/variables) \\
+                    --domains <(flatten factorgraph/domains) \\
+                    --factors <(flatten factorgraph/factors) \\
+                    --weights <(flatten factorgraph/weights) \\
+                    --fg_meta factorgraph/meta \\
+                    --outputFile weights \\
+                    --n_threads $DEEPDIVE_NUM_PROCESSES \\
                     \($deepdive.sampler.sampler_args // "") \\
                     -l 0 \\
                     #
@@ -66,25 +75,27 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         style: "cmd_extractor",
         cmd: "mkdir -p ../../../model && cd ../../../model
             # load weights to database
-            deepdive create table dd_inference_result_weights \\
-                id:BIGINT:'PRIMARY KEY' \\
+            deepdive create table \(deepdiveInferenceResultWeightsTable | @sh) \\
+                wid:BIGINT:'PRIMARY KEY' \\
                 weight:'DOUBLE PRECISION' \\
                 #
             cat weights/inference_result.out.weights.text |
             tr \(" "|@sh) \("\\t"|@sh) | DEEPDIVE_LOAD_FORMAT=tsv \\
-            deepdive load dd_inference_result_weights /dev/stdin
+            deepdive load \(deepdiveInferenceResultWeightsTable | @sh) /dev/stdin
 
             # create views
-            deepdive create view dd_inference_result_weights_mapping as \("
-                SELECT dd_graph_weights.*, dd_inference_result_weights.weight FROM
-                dd_graph_weights JOIN dd_inference_result_weights ON dd_graph_weights.id = dd_inference_result_weights.id
-                ORDER BY abs(weight) DESC
-            " | @sh)
-
-            deepdive create view dd_inference_result_variables_mapped_weights as \("
-                SELECT * FROM dd_inference_result_weights_mapping
-                ORDER BY abs(weight) DESC
-            " | @sh)
+            deepdive create view \(deepdiveInferenceResultWeightsMappingView | @sh) as \(
+                { SELECT:
+                    [ { expr: "\"w\".*" }
+                    , { table: "r", column: "weight" }
+                    ]
+                , FROM: { alias: "w", table: deepdiveGlobalWeightsTable }
+                , JOIN: { INNER: { alias: "r", table: deepdiveInferenceResultWeightsTable }
+                        , ON: { eq: [ { table: "r", column: "wid" }
+                                    , { table: "w", column: "wid" }
+                                    ] } }
+                , ORDER_BY: { expr: "ABS(\"r\".\"weight\")", order: "DESC" }
+                } | asSql | asPrettySqlArg)
         "
     },
     "process/model/load_probabilities": {
@@ -93,23 +104,63 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         style: "cmd_extractor",
         cmd: "mkdir -p ../../../model && cd ../../../model
             # load weights to database
-            deepdive create table dd_inference_result_variables \\
-                id:BIGINT \\
-                category:BIGINT \\
-                expectation:'DOUBLE PRECISION' \\
+            deepdive create table \(deepdiveInferenceResultVariablesTable | @sh) \\
+                vid:BIGINT \\
+                cid:BIGINT \\
+                prb:'DOUBLE PRECISION' \\
                 #
             cat probabilities/inference_result.out.text |
             tr \(" "|@sh) \("\\t"|@sh) | DEEPDIVE_LOAD_FORMAT=tsv \\
-            deepdive load dd_inference_result_variables /dev/stdin
+            deepdive load \(deepdiveInferenceResultVariablesTable | @sh) /dev/stdin
 
             # create a view for each app schema variable
             \([ $deepdive.schema.variables_[] | "
-            deepdive create view \("\(.variablesTable)_\(.variablesLabelColumn)_inference" | @sh) as \("
-                SELECT \(.variablesTable).*, mir.category, mir.expectation FROM
-                \(.variablesTable), dd_inference_result_variables mir
-                WHERE \(.variablesTable).id = mir.id
-                ORDER BY mir.expectation DESC
-                " | @sh)"
+                deepdive create view \("\(.variablesTable)_inference" | @sh) as \(
+                { SELECT:
+                    [ { expr: "\"v\".*" }
+                    , { alias: deepdiveVariableExpectationColumn,   table: "r", column: "prb" }
+                    , { alias: deepdiveVariableInternalLabelColumn, table: "i", column: deepdiveVariableInternalLabelColumn }
+                    , { alias: deepdiveVariableIdColumn,            table: "i", column: deepdiveVariableIdColumn }
+                    ]
+                , FROM: [ { alias: "v", table: .variablesTable } ]
+                , JOIN:
+                    # variable ids
+                    [ { LEFT_OUTER: { alias: "i", table: .variablesIdsTable }
+                      , ON: { and:  [ .variablesKeyColumns[]
+                                    | { eq: [ { table: "i", column: . }
+                                            , { table: "v", column: . }
+                                            ] }
+                                    ] } }
+                    , if .variableType == "boolean" then
+                    # inference results
+                      { LEFT_OUTER: { alias: "r", table: deepdiveInferenceResultVariablesTable }
+                      , ON: { eq:   [ { table: "r", column: "vid" }
+                                    , { table: "i", column: deepdiveVariableIdColumn }
+                                    ] } }
+                    else
+                    # category ids are necessary to find the inference result corresponding to the variable
+                      { LEFT_OUTER: { alias: "c", table: .variablesCategoriesTable }
+                      , ON: { and:  [ .variablesCategoryColumns[]
+                                    | { eq: [ { table: "c", column: "_\(.)" }
+                                            , { table: "v", column: . }
+                                            ] }
+                                    ] } }
+                    # inference results
+                    , { LEFT_OUTER: { alias: "r", table: deepdiveInferenceResultVariablesTable }
+                      , ON: { and:  [ { eq: [ { table: "r", column: "vid" }
+                                            , { table: "i", column: deepdiveVariableIdColumn }
+                                            ] }
+                                    , { eq: [ { table: "r", column: "cid" }
+                                            , { table: "c", column: "cid" }
+                                            ] }
+                                    ] } }
+                    end
+                    ]
+                , ORDER_BY:
+                    { expr: { table: "r", column: "prb" }
+                    , order: "DESC"
+                    }
+                } | asSql | @sh)"
             ] | join("\n"))
         "
     }

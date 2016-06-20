@@ -80,11 +80,6 @@ release-%:
 
 ### build recipes #############################################################
 
-# binary format converter for sampler
-inference/format_converter: inference/format_converter.cc
-	$(CXX) -Os -o $@ $^
-build: inference/format_converter
-
 # common build steps
 BUILD_INFO=$(STAGE_DIR)/.build-info.sh
 build:
@@ -94,9 +89,10 @@ build:
 	util/build/generate-build-info.sh >$(BUILD_INFO)
 
 # how to build external runtime dependencies to bundle
-.PHONY: extern/.build/bundled
-extern/.build/bundled: extern/bundle-runtime-dependencies.sh
+.PHONY: bundled-runtime-dependencies
+bundled-runtime-dependencies extern/.build/bundled: extern/bundle-runtime-dependencies.sh
 	PACKAGENAME=deepdive  $<
+$(PACKAGE): bundled-runtime-dependencies
 build: extern/.build/bundled
 
 
@@ -140,7 +136,7 @@ build: build-mindbender
 
 .PHONY: build-ddlog
 build-ddlog:
-	@util/build/build-submodule-if-needed compiler/ddlog target/scala-2.10/ddlog-assembly-0.1-SNAPSHOT.jar
+	@util/build/build-submodule-if-needed compiler/ddlog target/scala-2.11/ddlog-assembly-0.1-SNAPSHOT.jar
 build: build-ddlog
 
 .PHONY: build-mkmimo

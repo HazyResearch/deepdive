@@ -6,36 +6,35 @@ include "util";
 
 .deepdive_ as $deepdive
 
-# parse variable schema to define some names (mainly to find Multinomial cardinality)
+# parse variable schema to define some names (mainly to find categorical cardinality)
 | .deepdive_.schema.variables_ = [
     $deepdive.schema.variables | to_entries[]
-    | .key as $relationName | .value | to_entries
-        | if length != 1 then error("deepdive.schema.variables.\($relationName) has \(length
-            ) columns declared as variable. Every relation can have up to one column declared as a variable") else .[] end
-        | .key as $columnName | .value as $variableType |
+    | .key as $relationName | (.value | to_entries) as $columns
+    | ([$columns[] | .value | ascii_downcase] | unique) as $variableTypes
+    | ([$columns[] | .key]) as $columnNames
+        | if $variableTypes | length == 1 then .
+        else error("deepdive.schema.variables.\($relationName) has \(length) columns declared as variable. Every relation in the schema must have more than one column declared as a variable of the same type")
+        end
+        |  $columns[0].key as $columnName | $variableTypes[0] as $variableType |
         { variableName         : $relationName
         , variablesTable       : $relationName
-        , variablesLabelColumn : $columnName
-        , variableCategoriesTable : "\(deepdivePrefixForVariableCategoriesTable)\($relationName)"
-        } + (
-            # parse variable type
-            $variableType | trimWhitespace | ascii_downcase |
-            capture("^(?:
-                        (?<isBooleanType>     boolean     )
-                      | (?<isCategoricalType> categorical )
-                            \\s* \\(
-                            \\s* (?<variableCardinality> \\d+)
-                            \\s* \\)
-                      )$"; "xmi") //
-                error("deepdive.schema.variables.\($relationName).\($columnName
-                    ) has an unrecognized type: \($variableType | @json)")
-        )
-        | .isBooleanType     |= (length > 0)
-        | .isCategoricalType |= (length > 0)
-        | if .isBooleanType     then .variableType = "boolean"     | .variableCardinality = 2
-        elif .isCategoricalType then .variableType = "categorical" | .variableCardinality |= tonumber
-        else .
-        end
+        , variablesIdsTable    : "\(deepdivePrefixForVariablesIdsTable)\($relationName)"
+        , variablesKeyColumns  : [ [ $deepdive.schema.relations[$relationName].columns | to_entries[]? ]
+            | [.[] | select([.value.annotations[]? | .name == "key"] | any)] as $keyColumns
+            | if $keyColumns | length == 0
+            then .  # all user columns are considered keys if none were annotated as @key
+            else $keyColumns  # or use only the key columns to find distinct variables
+            end
+            | .[].key
+            ]
+        , variableType : ($variableType | trimWhitespace | ascii_downcase
+            | if in({boolean: 1, categorical: 1}) then .
+            else error("deepdive.schema.variables.\($relationName).\($columnName) has an unrecognized type: \($variableType | @json)")
+            end)
+        }
+        | .variablesCategoryColumns = if .variableType == "boolean" then []          else $columnNames                                                      end
+        | .variablesCategoriesTable = if .variableType == "boolean" then null        else "\(deepdivePrefixForVariablesCategoriesTable)\($relationName)"    end
+        | .variablesLabelColumn     = if .variableType == "boolean" then $columnName else deepdiveVariableLabelColumn                                       end
 ]
 
 # create a map to make it easy to access a variable by its name

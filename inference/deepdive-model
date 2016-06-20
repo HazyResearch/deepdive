@@ -30,7 +30,7 @@ Command=$1; shift
 case $Command in
     # shorthands for repeating groups of processes related to the model
     ground)
-        exec deepdive-redo process/grounding/{variable_id_partition,combine_factorgraph}
+        exec deepdive-redo process/grounding/{from_grounding,combine_factorgraph}
         ;;
 
     learn)
@@ -93,7 +93,7 @@ case $Command in
                         # dump non-zero weights for boolean factors
                         if [[ -n $(deepdive-sql eval "
                                 SELECT 1 WHERE EXISTS (
-                                    SELECT id FROM dd_graph_weights
+                                    SELECT wid FROM dd_graph_weights
                                      WHERE categories IS NULL)") ]]; then
                             # TODO parallel unload
                             show_progress output_from "$dest" -- \
@@ -102,15 +102,15 @@ case $Command in
                                      , weight
                                   FROM dd_inference_result_weights wo
                                      , dd_graph_weights            wi
-                                 WHERE wo.id = wi.id
+                                 WHERE wo.wid = wi.wid
                                    AND weight <> 0
-                                   AND categories IS NULL -- to rule out multinomial
+                                   AND categories IS NULL -- to rule out categorical
                             " format=tsv | pbzip2 >"$dest"/dd_weights.tsv.bz2
                         fi
-                        # dump non-zero weights for multinomial factors
+                        # dump non-zero weights for categorical factors
                         if [[ -n $(deepdive-sql eval "
                                 SELECT 1 WHERE EXISTS (
-                                    SELECT id FROM dd_graph_weights
+                                    SELECT wid FROM dd_graph_weights
                                      WHERE categories IS NOT NULL)") ]]; then
                             # TODO parallel unload
                             # XXX ARRAY_AGG is postgres specific
@@ -121,11 +121,11 @@ case $Command in
                                      , ARRAY_AGG(weight)
                                   FROM dd_inference_result_weights wo
                                      , dd_graph_weights            wi
-                                 WHERE wo.id = wi.id
+                                 WHERE wo.wid = wi.wid
                                    AND weight <> 0
-                                   AND categories IS NOT NULL -- to include multinomial only
+                                   AND categories IS NOT NULL -- to include categorical only
                                  GROUP BY description
-                            " format=tsv | pbzip2 >"$dest"/dd_weights.multinomial.tsv.bz2
+                            " format=tsv | pbzip2 >"$dest"/dd_weights.categorical.tsv.bz2
                         fi
                         ;;
                 esac
@@ -167,10 +167,10 @@ case $Command in
                                 weightsReuseFlag="$DEEPDIVE_APP"/run/model/grounding/factor/weights.reuse
                                 deepdive create table "$weightTableName" "description:TEXT" "categories:TEXT" "weight:DOUBLE PRECISION"
                                 rm -f "$weightsReuseFlag"
-                                for weightFile in "$src"/dd_weights{,.multinomial}.tsv.bz2; do
+                                for weightFile in "$src"/dd_weights{,.categorical}.tsv.bz2; do
                                     [[ -e "$weightFile" ]] || continue
                                     case $weightFile in
-                                        *.multinomial.tsv.bz2)
+                                        *.categorical.tsv.bz2)
                                             # first load the grouped data from file
                                             deepdive create table "${weightTableName}_array" "description:TEXT" "categories::TEXT[]" "weights:DOUBLE PRECISION[]"
                                             # TODO parallel load
