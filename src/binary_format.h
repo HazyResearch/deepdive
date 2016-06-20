@@ -4,6 +4,7 @@
 #include "factor_graph.h"
 
 #include <cstdlib>
+#include <iostream>
 
 // Following gives be64toh() and htobe64() for 64-bit big <-> host endian
 // conversions.
@@ -33,31 +34,64 @@
 namespace dd {
 
 /**
+ * a few specialized functions for writing big endian values
+ */
+template <int num_bytes>
+inline void write_be(std::ostream &output, void *value);
+template <>
+inline void write_be<1>(std::ostream &output, void *value) {
+  output.write((char *)value, 1);
+}
+template <>
+inline void write_be<2>(std::ostream &output, void *value) {
+  uint16_t tmp = htobe16(*(uint16_t *)value);
+  output.write((char *)&tmp, sizeof(tmp));
+}
+template <>
+inline void write_be<4>(std::ostream &output, void *value) {
+  uint32_t tmp = htobe32(*(uint32_t *)value);
+  output.write((char *)&tmp, sizeof(tmp));
+}
+template <>
+inline void write_be<8>(std::ostream &output, void *value) {
+  uint64_t tmp = htobe64(*(uint64_t *)value);
+  output.write((char *)&tmp, sizeof(tmp));
+}
+
+/**
+ * a handy way to serialize values of certain type in big endian
+ */
+template <typename T>
+inline void write_be(std::ostream &output, T value) {
+  write_be<sizeof(T)>(output, &value);
+}
+
+/**
  * Reads meta data from the given file.
  * For reference of factor graph file formats, refer to
  * deepdive.stanford.edu
  */
-FactorGraphDescriptor read_meta(const std::string& meta_file);
+FactorGraphDescriptor read_meta(const std::string &meta_file);
 
 /**
  * Loads weights from the given file into the given factor graph
  */
-num_weights_t read_weights(const std::string& filename, FactorGraph&);
+num_weights_t read_weights(const std::string &filename, FactorGraph &);
 
 /**
  * Loads variables from the given file into the given factor graph
  */
-num_variables_t read_variables(const std::string& filename, FactorGraph&);
+num_variables_t read_variables(const std::string &filename, FactorGraph &);
 
 /**
  * Loads factors from the given file into the given factor graph (original mode)
  */
-num_factors_t read_factors(const std::string& filename, FactorGraph&);
+num_factors_t read_factors(const std::string &filename, FactorGraph &);
 
 /**
  * Loads domains for categorical variables
  */
-num_variables_t read_domains(const std::string& filename, FactorGraph& fg);
+num_variables_t read_domains(const std::string &filename, FactorGraph &fg);
 
 }  // namespace dd
 
