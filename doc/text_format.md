@@ -29,7 +29,7 @@ TODO polish the following
 
 ## Factors TSV
 * `factors*.text2bin-args`
-    1. factor function id (See: [`FACTOR_FUNCTION_TYPE` enum](https://github.com/HazyResearch/sampler/blob/master/src/dstruct/factor_graph/factor.h))
+    1. factor function id (See: [`enum FACTOR_FUNCTION_TYPE`](https://github.com/HazyResearch/sampler/blob/master/src/common.h))
     2. arity: how many variables are connected, e.g., `1` for unary and `2` for binary
     3. a variable value to compare against the variable in corresponding position (one per arity), e.g., negative (`0`) and positive (`1`) for Boolean variables
 
