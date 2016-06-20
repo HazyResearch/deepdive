@@ -204,9 +204,7 @@ inline variable_value_t GibbsSamplerThread::draw_sample(
     case DTYPE_CATEGORICAL: {
       varlen_potential_buffer_.reserve(variable.cardinality);
       double sum = -100000.0;
-
       proposal = Variable::INVALID_VALUE;
-
 // calculate potential for each proposal given a way to iterate the domain
 #define COMPUTE_PROPOSAL(EACH_DOMAIN_VALUE, DOMAIN_VALUE, DOMAIN_INDEX)       \
   do {                                                                        \
@@ -226,16 +224,15 @@ inline variable_value_t GibbsSamplerThread::draw_sample(
         }                                                                     \
       }                                                                       \
   } while (0)
-      if (variable.domain_map) {  // sparse case
+      if (variable.domain_map) {  // sparse domain
         COMPUTE_PROPOSAL((const auto &entry
                           : *variable.domain_map),
                          entry.first, entry.second);
-      } else {  // dense case // TODO remove
+      } else {  // dense domain, full values are implied
         COMPUTE_PROPOSAL(
             (variable_value_index_t i = 0; i < variable.cardinality; ++i), i,
             i);
       }
-
       assert(proposal != Variable::INVALID_VALUE);
       break;
     }
