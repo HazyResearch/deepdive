@@ -161,7 +161,7 @@ weight_id_t CompactFactorGraph::get_categorical_weight_id(
    * For FUNC_AND_CATEGORICAL, we look up the weight_ids map.
    *
    * TODO: refactor the above formula into a shared routine. (See also
-   * binary_parser.read_factors)
+   * binary_format.cc read_factors)
    */
   factor_weight_key_t key = 0;
   // for each variable in the factor
