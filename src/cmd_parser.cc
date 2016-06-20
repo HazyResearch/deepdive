@@ -154,14 +154,15 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
         true, 0, "func_id");
     TCLAP::UnlabeledValueArg<int> text2bin_factor_arity_(
         "arity", "arity of the factor, e.g., 1 | 2 | ...", true, 1, "arity");
-    TCLAP::UnlabeledMultiArg<int> text2bin_factor_positives_or_not_(
-        "var_is_positive",
-        "whether each variable in position is positive or not, 1 or 0", 1,
-        "var_is_positive");
+    TCLAP::UnlabeledMultiArg<variable_value_t>
+        text2bin_factor_variables_should_equal_to_(
+            "var_is_positive",
+            "whether each variable in position is positive or not, 1 or 0", 1,
+            "var_is_positive");
     if (argc > 0 && std::string(argv[1]) == "factor") {
       cmd_->add(text2bin_factor_func_id_);
       cmd_->add(text2bin_factor_arity_);
-      cmd_->add(text2bin_factor_positives_or_not_);
+      cmd_->add(text2bin_factor_variables_should_equal_to_);
     }
 
     cmd_->parse(argc, argv);
@@ -172,8 +173,9 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
     text2bin_factor_func_id = static_cast<factor_function_type_t>(
         text2bin_factor_func_id_.getValue());
     text2bin_factor_arity = text2bin_factor_arity_.getValue();
-    for (int positive_or_not : text2bin_factor_positives_or_not_.getValue()) {
-      text2bin_factor_positives_or_not.push_back(positive_or_not != 0);
+    for (auto positive_or_not :
+         text2bin_factor_variables_should_equal_to_.getValue()) {
+      text2bin_factor_variables_should_equal_to.push_back(positive_or_not != 0);
     }
 
   } else if (app_name == "bin2text") {

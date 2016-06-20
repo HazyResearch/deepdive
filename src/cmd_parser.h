@@ -56,7 +56,7 @@ class CmdParser {
   std::string text2bin_output;
   factor_function_type_t text2bin_factor_func_id;
   factor_arity_t text2bin_factor_arity;
-  std::vector<bool> text2bin_factor_positives_or_not;
+  std::vector<variable_value_t> text2bin_factor_variables_should_equal_to;
 
   CmdParser(int argc, const char *const argv[]);
 

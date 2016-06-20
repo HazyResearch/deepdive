@@ -96,9 +96,10 @@ static inline size_t parse_pgarray_or_die(
 
 // load factors
 // wid, vids
-void load_factor(std::string input_filename, std::string output_filename,
-                 factor_function_type_t funcid, factor_arity_t arity_expected,
-                 const std::vector<bool> &positives_vec) {
+void load_factor(
+    std::string input_filename, std::string output_filename,
+    factor_function_type_t funcid, factor_arity_t arity_expected,
+    const std::vector<variable_value_t> &variables_should_equal_to) {
   std::ifstream fin(input_filename);
   std::ofstream fout(output_filename, std::ios::binary | std::ios::out);
   num_edges_t total_edges = 0;
@@ -134,7 +135,7 @@ void load_factor(std::string input_filename, std::string output_filename,
     write_be(fout, arity);
     for (factor_arity_t i = 0; i < vids.size(); ++i) {
       write_be(fout, vids[i]);
-      variable_value_t should_equal_to = positives_vec.at(i) ? 1 : 0;
+      variable_value_t should_equal_to = variables_should_equal_to.at(i);
       write_be(fout, should_equal_to);
     }
     // weight ids
@@ -217,7 +218,7 @@ int text2bin(const CmdParser &args) {
   } else if (args.text2bin_mode == "factor") {
     load_factor(args.text2bin_input, args.text2bin_output,
                 args.text2bin_factor_func_id, args.text2bin_factor_arity,
-                args.text2bin_factor_positives_or_not);
+                args.text2bin_factor_variables_should_equal_to);
   } else if (args.text2bin_mode == "domain") {
     load_domain(args.text2bin_input, args.text2bin_output);
   } else {
