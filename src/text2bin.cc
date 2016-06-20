@@ -43,7 +43,7 @@ void load_var(std::string input_filename, std::string output_filename) {
 void load_weight(std::string input_filename, std::string output_filename) {
   std::ifstream fin(input_filename);
   std::ofstream fout(output_filename, std::ios::binary | std::ios::out);
-  long count = 0;
+  num_weights_t count = 0;
   int isfixed;
   weight_id_t wid;
   weight_value_t initial_value;
@@ -56,14 +56,14 @@ void load_weight(std::string input_filename, std::string output_filename) {
   std::cout << count << std::endl;
 }
 
-static inline long parse_pgarray(
+static inline size_t parse_pgarray(
     std::istream &input, std::function<void(const std::string &)> parse_element,
-    long expected_count = -1) {
+    size_t expected_count = -1) {
   if (input.peek() == '{') {
     input.get();
     std::string element;
     bool ended = false;
-    long count = 0;
+    size_t count = 0;
     while (getline(input, element, ',')) {
       if (element.at(element.length() - 1) == '}') {
         ended = true;
@@ -73,17 +73,17 @@ static inline long parse_pgarray(
       count++;
       if (ended) break;
     }
-    assert(expected_count < 0 || count == expected_count);
+    assert(expected_count == -1 || count == expected_count);
     return count;
   } else {
     return -1;
   }
 }
-static inline long parse_pgarray_or_die(
+static inline size_t parse_pgarray_or_die(
     std::istream &input, std::function<void(const std::string &)> parse_element,
-    long expected_count = -1) {
-  long count = parse_pgarray(input, parse_element, expected_count);
-  if (count >= 0) {
+    size_t expected_count = -1) {
+  size_t count = parse_pgarray(input, parse_element, expected_count);
+  if (count != -1) {
     return count;
   } else {
     std::cerr << "Expected an array '{' but found: " << input.get()
@@ -124,7 +124,7 @@ void load_factor(std::string input_filename, std::string output_filename,
       // FIXME remove this?  parsing vid arrays is probably broken since this
       // doesn't create a cross product of factors but simply widens the arity
       istringstream fieldinput(field);
-      if (parse_pgarray(fieldinput, parse_variableid) < 0) {
+      if (parse_pgarray(fieldinput, parse_variableid) == -1) {
         // otherwise, parse it as a single variable
         parse_variableid(field);
       }
