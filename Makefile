@@ -125,15 +125,26 @@ include test/bats.mk
 test-build: $(PROGRAM) $(TEST_PROGRAM)
 
 # how to format code
+# XXX requiring a particular version since clang-format is not backward-compatible
+CLANG_FORMAT_REQUIRED_VERSION := 3.7
 ifndef CLANG_FORMAT
-ifneq ($(shell type clang-format-3.7 2>/dev/null),)
-    CLANG_FORMAT = clang-format-3.7
+ifneq ($(shell which clang-format-$(CLANG_FORMAT_REQUIRED_VERSION) 2>/dev/null),)
+    CLANG_FORMAT := clang-format-$(CLANG_FORMAT_REQUIRED_VERSION)
 else
-    CLANG_FORMAT = clang-format
+    CLANG_FORMAT := clang-format
 endif
 endif
+ifeq (0,$(shell $(CLANG_FORMAT) --version | grep -cF $(CLANG_FORMAT_REQUIRED_VERSION)))
+format:
+	@echo '# ERROR: clang-format $(CLANG_FORMAT_REQUIRED_VERSION) required'
+	@echo '# On a Mac, try:'
+	@echo 'brew reinstall https://github.com/Homebrew/homebrew-core/raw/0c1a8721e1d2aeca63647f4f1b5f5a1dbe5d9a8b/Formula/clang-format.rb'
+	@echo '# Otherwise, install a release for your OS from http://llvm.org/releases/'
+	@false
+else
 format:
 	$(CLANG_FORMAT) -i $(SOURCES) $(TEST_SOURCES) $(TEXT2BIN_SOURCES) $(HEADERS)
+endif
 .PHONY: format
 
 # how to quickly turn actual test output into expected ones
