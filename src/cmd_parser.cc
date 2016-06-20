@@ -128,7 +128,7 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
         "factor function id (See: enum FACTOR_FUNCTION_TYPE in "
         "https://github.com/HazyResearch/sampler/blob/master/src/common.h)",
         true, 0, "func_id");
-    TCLAP::UnlabeledValueArg<int> text2bin_factor_arity_(
+    TCLAP::UnlabeledValueArg<factor_arity_t> text2bin_factor_arity_(
         "arity", "arity of the factor, e.g., 1 | 2 | ...", true, 1, "arity");
     TCLAP::UnlabeledMultiArg<variable_value_t>
         text2bin_factor_variables_should_equal_to_(
