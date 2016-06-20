@@ -18,24 +18,7 @@ eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \
     #
 )"
 # respect the DEEPDIVE_NUM_PROCESSES environment
-num_processes=${DEEPDIVE_NUM_PROCESSES:-${num_processes:-$(
-        # detect number of processor cores
-        nproc=$(
-            # Linux typically has coreutils which includes nproc
-            nproc ||
-            # OS X
-            sysctl -n hw.ncpu ||
-            # fall back to 1
-            echo 1
-        )
-        if [[ $nproc -gt 1 ]]; then
-            # leave one processor out
-            let nproc-=1
-        elif [[ $nproc -lt 1 ]]; then
-            nproc=1
-        fi
-        echo $nproc
-    )}}
+num_processes=${DEEPDIVE_NUM_PROCESSES:-${num_processes:-$(nproc --ignore=1)}}
 num_parallel_unloads=${DEEPDIVE_NUM_PARALLEL_UNLOADS:-${num_parallel_unloads:-1}}
 num_parallel_loads=${DEEPDIVE_NUM_PARALLEL_LOADS:-${num_parallel_loads:-1}}
 
