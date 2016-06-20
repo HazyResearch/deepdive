@@ -144,7 +144,7 @@ void load_factor(std::string input_filename, std::string output_filename,
         // first, the run-length
         getline(ss, field, field_delim);
         factor_weight_key_t num_weightids = atol(field.c_str());
-        write_be<uint32_t /*FIXME factor_weight_key_t*/>(fout, num_weightids);
+        write_be<factor_weight_key_t>(fout, num_weightids);
         // second, parse var vals for each var
         // TODO: hard coding cid length (4) for now
         for (factor_arity_t i = 0; i < arity; ++i) {

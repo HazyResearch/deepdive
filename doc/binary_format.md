@@ -69,7 +69,7 @@ Each block of `variableReferences` consists of the following fields:
 ### Weight References of a Factor
 Each block of `weightReferences` must have the following structure when `factorFunction` is `FUNC_AND_CATEGORICAL`:
 
-    numWeights      uint32_t    4   // the number of weights defined for this categorical factor
+    numWeights      uint64_t    4   // the number of weights defined for this categorical factor
     categoryValue_i uint32_t    4   // the value id to compare against for a connected variable
     ...                             // categoryValue must appear exactly arity times
     weightId        uint64_t    8   // the weight id for this factor when each connected variable

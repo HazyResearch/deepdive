@@ -124,7 +124,7 @@ void FactorGraph::load_factors(const std::string &filename) {
     switch (type) {
       case FUNC_AND_CATEGORICAL: {
         // weight references for categorical factors
-        uint32_t n_weights = 0;  // FIXME factor_weight_key_t
+        factor_weight_key_t n_weights = 0;
         read_be(file, n_weights);
         factors[size.num_factors].weight_ids =
             new std::unordered_map<factor_weight_key_t, weight_id_t>(n_weights);
