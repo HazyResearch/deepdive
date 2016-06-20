@@ -5,6 +5,8 @@
 
 namespace dd {
 
+constexpr char text_field_delim = '\t';  // tsv file delimiter
+
 int text2bin(const CmdParser &args);
 
 }  // namespace dd

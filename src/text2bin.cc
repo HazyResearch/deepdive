@@ -15,12 +15,11 @@
 
 namespace dd {
 
-constexpr char field_delim = '\t';  // tsv file delimiter
-
 // read variables and convert to binary format
-void load_var(std::string input_filename, std::string output_filename) {
+void text2bin_variables(std::string input_filename,
+                        std::string output_filename) {
   std::ifstream fin(input_filename);
-  std::ofstream fout(output_filename, std::ios::binary | std::ios::out);
+  std::ofstream fout(output_filename, std::ios::binary);
   num_variables_t count = 0;
   int is_evidence;
   uint16_t var_type;
@@ -41,9 +40,9 @@ void load_var(std::string input_filename, std::string output_filename) {
 }
 
 // convert weights
-void load_weight(std::string input_filename, std::string output_filename) {
+void text2bin_weights(std::string input_filename, std::string output_filename) {
   std::ifstream fin(input_filename);
-  std::ofstream fout(output_filename, std::ios::binary | std::ios::out);
+  std::ofstream fout(output_filename, std::ios::binary);
   num_weights_t count = 0;
   int isfixed;
   weight_id_t wid;
@@ -98,12 +97,12 @@ static inline size_t parse_pgarray_or_die(
 
 // load factors
 // wid, vids
-void load_factor(
+void text2bin_factors(
     std::string input_filename, std::string output_filename,
     factor_function_type_t funcid, factor_arity_t arity_expected,
     const std::vector<variable_value_t> &variables_should_equal_to) {
   std::ifstream fin(input_filename);
-  std::ofstream fout(output_filename, std::ios::binary | std::ios::out);
+  std::ofstream fout(output_filename, std::ios::binary);
   num_edges_t total_edges = 0;
   std::vector<variable_id_t> vids;
   std::vector<variable_value_t> cids_per_wid;
@@ -126,7 +125,7 @@ void load_factor(
       ++arity;
     };
     for (factor_arity_t i = 0; i < arity_expected; ++i) {
-      getline(ss, field, field_delim);
+      getline(ss, field, text_field_delim);
       // try parsing as an array first
       // FIXME remove this?  parsing vid arrays is probably broken since this
       // doesn't create a cross product of factors but simply widens the arity
@@ -150,12 +149,12 @@ void load_factor(
         // IN  Format: NUM_WEIGHTS [VAR1 VAL ID] [VAR2 VAL ID] ... [WEIGHT ID]
         // OUT Format: NUM_WEIGHTS [[VAR1_VALi, VAR2_VALi, ..., WEIGHTi]]
         // first, the run-length
-        getline(ss, field, field_delim);
+        getline(ss, field, text_field_delim);
         factor_weight_key_t num_weightids = atol(field.c_str());
         write_be_or_die(fout, num_weightids);
         // second, parse var vals for each var
         for (factor_arity_t i = 0; i < arity; ++i) {
-          getline(ss, array_piece, field_delim);
+          getline(ss, array_piece, text_field_delim);
           std::istringstream ass(array_piece);
           parse_pgarray_or_die(
               ass, [&cids_per_wid](const std::string &element) {
@@ -181,7 +180,7 @@ void load_factor(
       }
       default:
         // a single weight id
-        getline(ss, field, field_delim);
+        getline(ss, field, text_field_delim);
         weight_id_t wid = atol(field.c_str());
         write_be_or_die(fout, wid);
     }
@@ -190,9 +189,9 @@ void load_factor(
 }
 
 // read categorical variable domains and convert to binary format
-void load_domain(std::string input_filename, std::string output_filename) {
+void text2bin_domains(std::string input_filename, std::string output_filename) {
   std::ifstream fin(input_filename);
-  std::ofstream fout(output_filename, std::ios::binary | std::ios::out);
+  std::ofstream fout(output_filename, std::ios::binary);
   std::string line;
   while (getline(fin, line)) {
     std::istringstream line_input(line);
@@ -214,15 +213,15 @@ void load_domain(std::string input_filename, std::string output_filename) {
 int text2bin(const CmdParser &args) {
   // common arguments
   if (args.text2bin_mode == "variable") {
-    load_var(args.text2bin_input, args.text2bin_output);
+    text2bin_variables(args.text2bin_input, args.text2bin_output);
   } else if (args.text2bin_mode == "weight") {
-    load_weight(args.text2bin_input, args.text2bin_output);
+    text2bin_weights(args.text2bin_input, args.text2bin_output);
   } else if (args.text2bin_mode == "factor") {
-    load_factor(args.text2bin_input, args.text2bin_output,
-                args.text2bin_factor_func_id, args.text2bin_factor_arity,
-                args.text2bin_factor_variables_should_equal_to);
+    text2bin_factors(args.text2bin_input, args.text2bin_output,
+                     args.text2bin_factor_func_id, args.text2bin_factor_arity,
+                     args.text2bin_factor_variables_should_equal_to);
   } else if (args.text2bin_mode == "domain") {
-    load_domain(args.text2bin_input, args.text2bin_output);
+    text2bin_domains(args.text2bin_input, args.text2bin_output);
   } else {
     std::cerr << "Unsupported type" << std::endl;
     return 1;

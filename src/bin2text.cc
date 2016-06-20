@@ -4,6 +4,7 @@
  */
 
 #include "bin2text.h"
+#include "text2bin.h"
 #include "binary_format.h"
 #include "dimmwitted.h"
 #include "factor_graph.h"
@@ -19,8 +20,6 @@
 
 namespace dd {
 
-constexpr char field_delim = '\t';  // tsv file delimiter
-
 void dump_variables(const FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
   for (variable_id_t i = 0; i < fg.size.num_variables; ++i) {
@@ -28,9 +27,9 @@ void dump_variables(const FactorGraph &fg, const std::string &filename) {
     // variable id
     fout << v.id;
     // is_evidence
-    fout << field_delim << (v.is_evid ? "1" : "0");
+    fout << text_field_delim << (v.is_evid ? "1" : "0");
     // value
-    fout << field_delim << v.assignment_evid;
+    fout << text_field_delim << v.assignment_evid;
     // data type
     std::string type_str;
     switch (v.domain_type) {
@@ -43,9 +42,9 @@ void dump_variables(const FactorGraph &fg, const std::string &filename) {
       default:
         std::abort();
     }
-    fout << field_delim << type_str;
+    fout << text_field_delim << type_str;
     // cardinality
-    fout << field_delim << v.cardinality;
+    fout << text_field_delim << v.cardinality;
     fout << std::endl;
   }
 }
@@ -56,8 +55,8 @@ void dump_domains(const FactorGraph &fg, const std::string &filename) {
     Variable &v = fg.variables[i];
     if (v.domain_map) {
       fout << v.id;
-      fout << field_delim << v.domain_map->size();
-      fout << field_delim;
+      fout << text_field_delim << v.domain_map->size();
+      fout << text_field_delim;
       fout << "{";
       v.get_domain_value_at(0);  // trigger construction of domain_list
       variable_value_t j = 0;
@@ -84,7 +83,7 @@ void dump_factors(const FactorGraph &fg, const std::string &filename) {
     // variable ids the factor is defined over
     for (const auto &v : f.tmp_variables) {
       fout << v.vid;
-      fout << field_delim;
+      fout << text_field_delim;
     }
     switch (f.func_id) {
       case FUNC_AND_CATEGORICAL: {
@@ -114,7 +113,7 @@ void dump_factors(const FactorGraph &fg, const std::string &filename) {
         }
         // output num_weights
         fout << f.weight_ids->size();
-        fout << field_delim;
+        fout << text_field_delim;
         // output values per var
         for (factor_arity_t k = 0; k < f.n_variables; ++k) {
           fout << "{";
@@ -123,7 +122,7 @@ void dump_factors(const FactorGraph &fg, const std::string &filename) {
             fout << vals[j * f.n_variables + k];
           }
           fout << "}";
-          fout << field_delim;
+          fout << text_field_delim;
         }
         // output weights
         fout << "{";
@@ -151,9 +150,9 @@ void dump_weights(const FactorGraph &fg, const std::string &filename) {
     // weight id
     fout << w.id;
     // whether it's fixed
-    fout << field_delim << w.isfixed;
+    fout << text_field_delim << w.isfixed;
     // weight value
-    fout << field_delim << w.weight;
+    fout << text_field_delim << w.weight;
     fout << std::endl;
   }
 }
