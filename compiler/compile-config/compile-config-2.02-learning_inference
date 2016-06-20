@@ -16,7 +16,8 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         dependencies_: ["model/factorgraph"],
         output_: "model/weights",
         style: "cmd_extractor",
-        cmd: "mkdir -p ../../../model && cd ../../../model
+        cmd: ": ${DEEPDIVE_NUM_PROCESSES:=$(nproc --ignore=1)}
+            mkdir -p ../../../model && cd ../../../model
             mkdir -p weights
             [ -d factorgraph ] || error \"No factorgraph found\"
             # run inference engine for learning and inference
@@ -29,6 +30,7 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                 --weights <(flatten factorgraph/weights) \\
                 --fg_meta factorgraph/meta \\
                 --outputFile weights \\
+                --n_threads $DEEPDIVE_NUM_PROCESSES \\
                 \($deepdive.sampler.sampler_args // "#")
             mkdir -p probabilities
             mv -f weights/inference_result.out.text probabilities/
@@ -40,7 +42,8 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         dependencies_: ["model/factorgraph", "model/weights"],
         output_: "model/probabilities",
         style: "cmd_extractor",
-        cmd: "mkdir -p ../../../model && cd ../../../model
+        cmd: ": ${DEEPDIVE_NUM_PROCESSES:=$(nproc --ignore=1)}
+            mkdir -p ../../../model && cd ../../../model
             [ -d factorgraph ] || error \"No factorgraph found\"
             if [[ factorgraph/weights -nt probabilities/inference_result.out.text ]]; then
                 # no need to run inference unless the weights are fresher
@@ -55,6 +58,7 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                     --weights <(flatten factorgraph/weights) \\
                     --fg_meta factorgraph/meta \\
                     --outputFile weights \\
+                    --n_threads $DEEPDIVE_NUM_PROCESSES \\
                     \($deepdive.sampler.sampler_args // "") \\
                     -l 0 \\
                     #
