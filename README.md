@@ -22,7 +22,7 @@ Then, build:
 
     make -j
 
-A modern C++ compiler is required g++ >= 4.8 or clang++ >= 4.2.
+A modern C++ compiler is required: g++ >= 4.8 or clang++ >= 4.2.
 To specify the compiler to use, set the `CXX` variable:
 
     CXX=/dfs/rulk/0/czhang/software/gcc/bin/g++ make
