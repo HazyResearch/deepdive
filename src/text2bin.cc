@@ -56,9 +56,11 @@ void load_weight(std::string input_filename, std::string output_filename) {
   std::cout << count << std::endl;
 }
 
+constexpr size_t UNDEFINED_COUNT = (size_t)-1;
+
 static inline size_t parse_pgarray(
     std::istream &input, std::function<void(const std::string &)> parse_element,
-    size_t expected_count = -1) {
+    size_t expected_count = UNDEFINED_COUNT) {
   if (input.peek() == '{') {
     input.get();
     std::string element;
@@ -73,17 +75,17 @@ static inline size_t parse_pgarray(
       count++;
       if (ended) break;
     }
-    assert(expected_count == -1 || count == expected_count);
+    assert(expected_count == UNDEFINED_COUNT || count == expected_count);
     return count;
   } else {
-    return -1;
+    return UNDEFINED_COUNT;
   }
 }
 static inline size_t parse_pgarray_or_die(
     std::istream &input, std::function<void(const std::string &)> parse_element,
-    size_t expected_count = -1) {
+    size_t expected_count = UNDEFINED_COUNT) {
   size_t count = parse_pgarray(input, parse_element, expected_count);
-  if (count != -1) {
+  if (count != UNDEFINED_COUNT) {
     return count;
   } else {
     std::cerr << "Expected an array '{' but found: " << input.get()
@@ -124,7 +126,7 @@ void load_factor(std::string input_filename, std::string output_filename,
       // FIXME remove this?  parsing vid arrays is probably broken since this
       // doesn't create a cross product of factors but simply widens the arity
       istringstream fieldinput(field);
-      if (parse_pgarray(fieldinput, parse_variableid) == -1) {
+      if (parse_pgarray(fieldinput, parse_variableid) == UNDEFINED_COUNT) {
         // otherwise, parse it as a single variable
         parse_variableid(field);
       }
