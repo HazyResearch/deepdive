@@ -54,7 +54,7 @@ case $What in
             # show warning if the table exists in app schema
             if DEEPDIVE_APP=$(find-deepdive-app) &&
                     app-has-been-compiled &>/dev/null &&
-                    columns=$(deepdive-relation columns "$Table"); then
+                    columns=$(deepdive-relation columns "$Table" 2>/dev/null); then
                 warning "$Table: Already defined in schema, overriding its definition"
             fi
             # create table from given definition

@@ -1,0 +1,12 @@
+flips (
+    trial int,
+    outcome bool
+    ).
+
+coin? (
+    trial int
+).
+
+coin(t) = out :- flips(t, out).
+
+@weight("?") coin(p) :- TRUE.

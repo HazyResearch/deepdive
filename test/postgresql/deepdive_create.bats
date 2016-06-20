@@ -96,11 +96,6 @@ numcolumns() {
     deepdive create view bar as "SELECT 456 AS x"
     [ $(deepdive sql eval "SELECT SUM(x) FROM bar") -eq 456 ]
 
-    # only SELECT queries should work
-    ! deepdive create view bar as "INSERT INTO foo VALUES (789)" || false
-    [ $(numcolumns bar) -eq 0 ]
-    [ $(numcolumns foo) -eq 1 ]
-
     # see if it is really a view
     deepdive create table foo x:INT
     deepdive create view bar as "SELECT * FROM foo"
@@ -110,6 +105,13 @@ numcolumns() {
     [ $(deepdive sql eval "SELECT SUM(x) FROM bar") -eq 123 ]
 }
 
+@test "$DBVARIANT deepdive create view bar as with only SELECT query" {
+    # only SELECT queries should work
+    ! deepdive create view bar as "INSERT INTO foo VALUES (789)" ||
+        skip "Did not return error"  # XXX Greenplum does not exit with non-zero status upon syntax error
+    [ $(numcolumns bar) -eq 0 ]
+    [ $(numcolumns foo) -eq 1 ]
+}
 
 @test "$DBVARIANT deepdive create table foo outside app fails" {
     mkdir -p tmp || skip "Cannot create directory: tmp"

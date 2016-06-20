@@ -25,7 +25,7 @@ For viewing the inference result, DeepDive creates a database view that correspo
 For example, the following SQL query can be used for inspecting the probabilities of the variables in relation `has_spouse`:
 
 ```bash
-deepdive sql "SELECT * FROM has_spouse_label_inference"
+deepdive sql "SELECT * FROM has_spouse_inference"
 ```
 <!-- TODO rewrite this in DDlog
 ```bash
