@@ -66,6 +66,8 @@ inline std::ostream &write_be(std::ostream &output, T value) {
   return write_be<sizeof(T)>(output, &value);
 }
 
+#define write_be_or_die(args...) assert(write_be(args))
+
 /**
  * a few specialized functions for reading big endian values
  */
@@ -104,6 +106,8 @@ inline std::istream &read_be(std::istream &input, T &value) {
   value = *(T *)(tmp);  // interpret what's read into type T
   return s;
 }
+
+#define read_be_or_die(args...) assert(read_be(args))
 
 /**
  * Reads meta data from the given file.

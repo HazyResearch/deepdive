@@ -33,16 +33,16 @@ FactorGraphDescriptor read_meta(const std::string &meta_file) {
 }
 
 void FactorGraph::load_weights(const std::string &filename) {
-  std::ifstream file(filename, std::ios::in | std::ios::binary);
+  std::ifstream file(filename, std::ios::binary);
   num_weights_t count = 0;
-  while (file.good()) {
+  while (file && file.peek() != EOF) {
     // read fields
     weight_id_t wid;
     uint8_t isfixed;
     weight_value_t initial_value;
-    read_be(file, wid);
-    read_be(file, isfixed);
-    if (!read_be(file, initial_value)) break;
+    read_be_or_die(file, wid);
+    read_be_or_die(file, isfixed);
+    read_be_or_die(file, initial_value);
     // load into factor graph
     weights[wid] = Weight(wid, initial_value, isfixed);
     ++count;
@@ -51,9 +51,9 @@ void FactorGraph::load_weights(const std::string &filename) {
 }
 
 void FactorGraph::load_variables(const std::string &filename) {
-  std::ifstream file(filename, std::ios::in | std::ios::binary);
+  std::ifstream file(filename, std::ios::binary);
   num_variables_t count = 0;
-  while (file.good()) {
+  while (file && file.peek() != EOF) {
     variable_id_t vid;
     uint8_t role_serialized;
     variable_value_t initial_value;
@@ -61,11 +61,11 @@ void FactorGraph::load_variables(const std::string &filename) {
         dtype_serialized;  // TODO shouldn't this come before the actual value?
     num_variable_values_t cardinality;
     // read fields
-    read_be(file, vid);
-    read_be(file, role_serialized);
-    read_be(file, initial_value);
-    read_be(file, dtype_serialized);
-    if (!read_be(file, cardinality)) break;
+    read_be_or_die(file, vid);
+    read_be_or_die(file, role_serialized);
+    read_be_or_die(file, initial_value);
+    read_be_or_die(file, dtype_serialized);
+    read_be_or_die(file, cardinality);
     // map serialized to internal values
     ++count;
     variable_domain_type_t dtype;
@@ -99,13 +99,13 @@ void FactorGraph::load_variables(const std::string &filename) {
 }
 
 void FactorGraph::load_factors(const std::string &filename) {
-  std::ifstream file(filename, std::ios::in | std::ios::binary);
-  while (file.good()) {
+  std::ifstream file(filename, std::ios::binary);
+  while (file && file.peek() != EOF) {
     uint16_t type;
     factor_arity_t arity;
     // read fields
-    read_be(file, type);
-    if (!read_be(file, arity)) break;
+    read_be_or_die(file, type);
+    read_be_or_die(file, arity);
     // register the factor
     factors[size.num_factors] =
         RawFactor(size.num_factors, -1, (factor_function_type_t)type, arity);
@@ -113,8 +113,8 @@ void FactorGraph::load_factors(const std::string &filename) {
       // read fields for each variable reference
       variable_id_t variable_id;
       variable_value_t should_equal_to;
-      read_be(file, variable_id);
-      read_be(file, should_equal_to);
+      read_be_or_die(file, variable_id);
+      read_be_or_die(file, should_equal_to);
       assert(variable_id < capacity.num_variables && variable_id >= 0);
       // add to adjacency lists
       factors[size.num_factors].add_variable_in_factor(
@@ -126,7 +126,7 @@ void FactorGraph::load_factors(const std::string &filename) {
       case FUNC_AND_CATEGORICAL: {
         // weight references for categorical factors
         factor_weight_key_t n_weights = 0;
-        read_be(file, n_weights);
+        read_be_or_die(file, n_weights);
         factors[size.num_factors].weight_ids =
             new std::unordered_map<factor_weight_key_t, weight_id_t>(n_weights);
         for (factor_weight_key_t i = 0; i < n_weights; ++i) {
@@ -139,12 +139,12 @@ void FactorGraph::load_factors(const std::string &filename) {
             const Variable &var =
                 variables[factors[size.num_factors].tmp_variables.at(j).vid];
             variable_value_t value_id;
-            read_be(file, value_id);
+            read_be_or_die(file, value_id);
             key *= var.cardinality;
             key += var.get_domain_index(value_id);
           }
           weight_id_t wid;
-          read_be(file, wid);
+          read_be_or_die(file, wid);
           (*factors[size.num_factors].weight_ids)[key] = wid;
         }
         break;
@@ -153,7 +153,7 @@ void FactorGraph::load_factors(const std::string &filename) {
       default:
         // weight reference is simple for Boolean factors
         weight_id_t wid;
-        read_be(file, wid);
+        read_be_or_die(file, wid);
         factors[size.num_factors].weight_id = wid;
     }
     ++size.num_factors;
@@ -161,25 +161,22 @@ void FactorGraph::load_factors(const std::string &filename) {
 }
 
 void FactorGraph::load_domains(const std::string &filename) {
-  std::ifstream file(filename, std::ios::in | std::ios::binary);
-  while (file.good()) {
+  std::ifstream file(filename, std::ios::binary);
+  while (file && file.peek() != EOF) {
     // read field to find which categorical variable this block is for
     variable_id_t vid;
-    read_be(file, vid);
-    if (!file.good()) {
-      return;
-    }
+    read_be_or_die(file, vid);
     RawVariable &variable = variables[vid];
     // read all category values for this variables
     num_variable_values_t domain_size;
-    read_be(file, domain_size);
+    read_be_or_die(file, domain_size);
     assert(variable.cardinality == domain_size);
     std::vector<variable_value_t> domain_list(domain_size);
     variable.domain_map.reset(
         new std::unordered_map<variable_value_t, variable_value_index_t>());
     for (variable_value_index_t i = 0; i < domain_size; ++i) {
       variable_value_t value;
-      read_be(file, value);
+      read_be_or_die(file, value);
       domain_list[i] = value;
     }
     // populate the mapping from value to index

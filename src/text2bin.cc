@@ -29,11 +29,12 @@ void load_var(std::string input_filename, std::string output_filename) {
   num_variable_values_t cardinality;
   while (fin >> vid >> is_evidence >> initial_value >> var_type >>
          cardinality) {
-    write_be(fout, vid);
-    write_be<uint8_t>(fout, is_evidence);
-    write_be(fout, initial_value);
-    write_be(fout, var_type);
-    write_be(fout, cardinality);
+    uint8_t is_evidence_serialized = is_evidence;
+    write_be_or_die(fout, vid);
+    write_be_or_die(fout, is_evidence_serialized);
+    write_be_or_die(fout, initial_value);
+    write_be_or_die(fout, var_type);
+    write_be_or_die(fout, cardinality);
     ++count;
   }
   std::cout << count << std::endl;
@@ -48,9 +49,10 @@ void load_weight(std::string input_filename, std::string output_filename) {
   weight_id_t wid;
   weight_value_t initial_value;
   while (fin >> wid >> isfixed >> initial_value) {
-    write_be(fout, wid);
-    write_be<uint8_t>(fout, isfixed);
-    write_be(fout, initial_value);
+    uint8_t isfixed_serialized = isfixed;
+    write_be_or_die(fout, wid);
+    write_be_or_die(fout, isfixed_serialized);
+    write_be_or_die(fout, initial_value);
     ++count;
   }
   std::cout << count << std::endl;
@@ -113,7 +115,8 @@ void load_factor(
     std::istringstream ss(line);
     vids.clear();
     // factor type
-    write_be<uint16_t>(fout, funcid);
+    uint16_t funcid_serialized = funcid;
+    write_be_or_die(fout, funcid_serialized);
     // variable ids
     factor_arity_t arity = 0;
     auto parse_variableid = [&vids, &arity,
@@ -133,11 +136,11 @@ void load_factor(
         parse_variableid(field);
       }
     }
-    write_be(fout, arity);
+    write_be_or_die(fout, arity);
     for (factor_arity_t i = 0; i < vids.size(); ++i) {
-      write_be(fout, vids[i]);
+      write_be_or_die(fout, vids[i]);
       variable_value_t should_equal_to = variables_should_equal_to.at(i);
-      write_be(fout, should_equal_to);
+      write_be_or_die(fout, should_equal_to);
     }
     // weight ids
     switch (funcid) {
@@ -149,7 +152,7 @@ void load_factor(
         // first, the run-length
         getline(ss, field, field_delim);
         factor_weight_key_t num_weightids = atol(field.c_str());
-        write_be<factor_weight_key_t>(fout, num_weightids);
+        write_be_or_die(fout, num_weightids);
         // second, parse var vals for each var
         for (factor_arity_t i = 0; i < arity; ++i) {
           getline(ss, array_piece, field_delim);
@@ -169,10 +172,10 @@ void load_factor(
         for (factor_weight_key_t i = 0; i < num_weightids; ++i) {
           for (factor_arity_t j = 0; j < arity; ++j) {
             variable_value_t cid = cids_per_wid[j * num_weightids + i];
-            write_be(fout, cid);
+            write_be_or_die(fout, cid);
           }
           weight_id_t wid = wids[i];
-          write_be(fout, wid);
+          write_be_or_die(fout, wid);
         }
         break;
       }
@@ -180,7 +183,7 @@ void load_factor(
         // a single weight id
         getline(ss, field, field_delim);
         weight_id_t wid = atol(field.c_str());
-        write_be(fout, wid);
+        write_be_or_die(fout, wid);
     }
   }
   std::cout << total_edges << std::endl;
@@ -197,13 +200,13 @@ void load_domain(std::string input_filename, std::string output_filename) {
     num_variable_values_t cardinality;
     std::string domain;
     assert(line_input >> vid >> cardinality >> domain);
-    write_be(fout, vid);
-    write_be(fout, cardinality);
+    write_be_or_die(fout, vid);
+    write_be_or_die(fout, cardinality);
     // an array of domain values
     std::istringstream domain_input(domain);
     parse_pgarray_or_die(domain_input, [&fout](const std::string &subfield) {
       variable_value_t value = atoi(subfield.c_str());
-      write_be(fout, value);
+      write_be_or_die(fout, value);
     }, cardinality);
   }
 }
