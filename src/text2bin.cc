@@ -104,7 +104,8 @@ void load_factor(
   std::ofstream fout(output_filename, std::ios::binary | std::ios::out);
   num_edges_t total_edges = 0;
   std::vector<variable_id_t> vids;
-  std::vector<weight_id_t> vals_and_weights;  // FIXME separate the two
+  std::vector<variable_value_t> cids_per_wid;
+  std::vector<weight_id_t> wids;
   std::string line;
   std::string array_piece;
   while (getline(fin, line)) {
@@ -141,7 +142,8 @@ void load_factor(
     // weight ids
     switch (funcid) {
       case FUNC_AND_CATEGORICAL: {
-        vals_and_weights.clear();
+        cids_per_wid.clear();
+        wids.clear();
         // IN  Format: NUM_WEIGHTS [VAR1 VAL ID] [VAR2 VAL ID] ... [WEIGHT ID]
         // OUT Format: NUM_WEIGHTS [[VAR1_VALi, VAR2_VALi, ..., WEIGHTi]]
         // first, the run-length
@@ -149,39 +151,36 @@ void load_factor(
         factor_weight_key_t num_weightids = atol(field.c_str());
         write_be<factor_weight_key_t>(fout, num_weightids);
         // second, parse var vals for each var
-        // TODO: hard coding cid length (4) for now
         for (factor_arity_t i = 0; i < arity; ++i) {
           getline(ss, array_piece, field_delim);
           std::istringstream ass(array_piece);
           parse_pgarray_or_die(
-              ass, [&vals_and_weights](const std::string &element) {
+              ass, [&cids_per_wid](const std::string &element) {
                 variable_value_t cid = atoi(element.c_str());
-                vals_and_weights.push_back(cid);
+                cids_per_wid.push_back(cid);
               }, num_weightids);
         }
         // third, parse weights
-        parse_pgarray_or_die(
-            ss, [&vals_and_weights](const std::string &element) {
-              weight_id_t weightid = atol(element.c_str());
-              vals_and_weights.push_back(weightid);
-            }, num_weightids);
+        parse_pgarray_or_die(ss, [&wids](const std::string &element) {
+          weight_id_t wid = atol(element.c_str());
+          wids.push_back(wid);
+        }, num_weightids);
         // fourth, transpose into output format
         for (factor_weight_key_t i = 0; i < num_weightids; ++i) {
           for (factor_arity_t j = 0; j < arity; ++j) {
-            variable_value_t cid =
-                (variable_value_t)vals_and_weights[j * num_weightids + i];
+            variable_value_t cid = cids_per_wid[j * num_weightids + i];
             write_be(fout, cid);
           }
-          weight_id_t weightid = vals_and_weights[arity * num_weightids + i];
-          write_be(fout, weightid);
+          weight_id_t wid = wids[i];
+          write_be(fout, wid);
         }
         break;
       }
       default:
         // a single weight id
         getline(ss, field, field_delim);
-        weight_id_t weightid = atol(field.c_str());
-        write_be(fout, weightid);
+        weight_id_t wid = atol(field.c_str());
+        write_be(fout, wid);
     }
   }
   std::cout << total_edges << std::endl;
