@@ -50,9 +50,7 @@ int gibbs(const CmdParser &args) {
   }
 
   FactorGraphDescriptor meta = read_meta(args.fg_file);
-  if (!args.should_be_quiet) {
-    std::cout << meta << std::endl;
-  }
+  std::cout << "Factor graph to load:\t" << meta << std::endl;
 
   // Run on NUMA node 0
   numa_run_on_node(0);
@@ -66,6 +64,7 @@ int gibbs(const CmdParser &args) {
   fg->load_weights(args.weight_file);
   fg->load_domains(args.domain_file);
   fg->load_factors(args.factor_file);
+  std::cout << "Factor graph loaded:\t" << fg->size << std::endl;
   fg->safety_check();
 
   if (!args.should_be_quiet) {
