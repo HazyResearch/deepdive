@@ -168,9 +168,13 @@ void InferenceResult::show_marginal_snippet(std::ostream &output) const {
                           agg_nsamples[variable.id]
                    << std::endl;
           };
-          assert(variable.domain_map);
-          for (const auto &entry : *variable.domain_map)
-            print_snippet(entry.first, entry.second);
+          if (variable.domain_map) {  // sparse case
+            for (const auto &entry : *variable.domain_map)
+              print_snippet(entry.first, entry.second);
+          } else {  // dense case, full domain implied
+            for (variable_value_index_t j = 0; j < variable.cardinality; ++j)
+              print_snippet(j, j);
+          }
           break;
         }
 
