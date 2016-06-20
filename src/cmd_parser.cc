@@ -87,8 +87,6 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
 
     n_learning_epoch =
         getLastValueOrDefault(n_learning_epoch_, (num_epochs_t)0);
-    n_samples_per_learning_epoch =
-        getLastValueOrDefault(n_samples_per_learning_epoch_, (num_epochs_t)1);
     n_inference_epoch =
         getLastValueOrDefault(n_inference_epoch_, (num_epochs_t)0);
     n_datacopy = getLastValueOrDefault(n_datacopy_, (size_t)0);
@@ -194,8 +192,6 @@ std::ostream& operator<<(std::ostream& stream, const CmdParser& args) {
   stream << "# factor_file        : " << args.factor_file << std::endl;
   stream << "# output_folder      : " << args.output_folder << std::endl;
   stream << "# n_learning_epoch   : " << args.n_learning_epoch << std::endl;
-  stream << "# n_samples/l. epoch : " << args.n_samples_per_learning_epoch
-         << std::endl;
   stream << "# n_inference_epoch  : " << args.n_inference_epoch << std::endl;
   stream << "# stepsize           : " << args.stepsize << std::endl;
   stream << "# decay              : " << args.decay << std::endl;
@@ -204,7 +200,6 @@ std::ostream& operator<<(std::ostream& stream, const CmdParser& args) {
   stream << "# learn_non_evidence : " << args.should_learn_non_evidence
          << std::endl;
   stream << "################################################" << std::endl;
-  stream << "# IGNORE -s (n_samples/l. epoch). ALWAYS -s 1. #" << std::endl;
   stream << "# IGNORE -t (threads). ALWAYS USE ALL THREADS. #" << std::endl;
   return stream;
 }

@@ -24,7 +24,6 @@ class CmdParser {
   std::string domain_file;
 
   num_epochs_t n_learning_epoch;
-  num_samples_t n_samples_per_learning_epoch;
   num_epochs_t n_inference_epoch;
   size_t n_datacopy;
   num_epochs_t burn_in;
