@@ -4,7 +4,6 @@
 *.o
 dw
 dw_test
-text2bin
 
 # Compiled Dependency files
 *.d
@@ -25,6 +24,8 @@ lib/
 tags
 .DS_Store
 *.json
+.color_coded
+.ycm_extra_conf.py*
 
 # test artifacts
 inference_result.out*
@@ -33,3 +34,4 @@ test/*/graph.variables*
 test/*/graph.weights*
 test/*/graph.factors*
 test/*/graph.domains*
+test/biased_coin-performance/

@@ -3,10 +3,14 @@
 .DEFAULT_GOAL := all
 
 # common compiler flags
-CXXFLAGS += -std=c++0x -Wall -fno-strict-aliasing
+CXXFLAGS += -std=c++0x -Wall -Werror -fno-strict-aliasing
 LDFLAGS =
 LDLIBS =
 CXXFLAGS += -I./lib/tclap/include/ -I./src
+
+ifdef DEBUG
+CXXFLAGS += -g -DDEBUG
+endif
 
 # platform dependent compiler flags
 UNAME := $(shell uname)
@@ -15,8 +19,9 @@ ifeq ($(UNAME), Linux)
 ifndef CXX
 CXX = g++
 endif
-# optimization flags
+ifndef DEBUG
 CXXFLAGS += -Ofast
+endif
 # using NUMA for Linux
 CXXFLAGS += -I./lib/numactl-2.0.9/
 LDFLAGS += -L./lib/numactl-2.0.9/
@@ -28,52 +33,50 @@ ifeq ($(UNAME), Darwin)
 ifndef CXX
 CXX = clang++
 endif
+ifndef DEBUG
+CXXFLAGS += -O3
+endif
 # optimization
-CXXFLAGS += -O3 -stdlib=libc++ -mmacosx-version-min=10.7
+CXXFLAGS += -stdlib=libc++ -mmacosx-version-min=10.7
 CXXFLAGS += -flto
 endif
 
 # source files
-SOURCES += src/gibbs.cpp
-SOURCES += src/io/cmd_parser.cpp
-SOURCES += src/io/binary_parser.cpp
-SOURCES += src/io/bin2text.cpp
-SOURCES += src/main.cpp
-SOURCES += src/dstruct/factor_graph/weight.cpp
-SOURCES += src/dstruct/factor_graph/variable.cpp
-SOURCES += src/dstruct/factor_graph/factor.cpp
-SOURCES += src/dstruct/factor_graph/factor_graph.cpp
-SOURCES += src/dstruct/factor_graph/inference_result.cpp
-SOURCES += src/app/gibbs/gibbs_sampling.cpp
-SOURCES += src/app/gibbs/single_thread_sampler.cpp
-SOURCES += src/app/gibbs/single_node_sampler.cpp
-SOURCES += src/timer.cpp
-OBJECTS = $(SOURCES:.cpp=.o)
+SOURCES += src/dimmwitted.cc
+SOURCES += src/cmd_parser.cc
+SOURCES += src/binary_format.cc
+SOURCES += src/bin2text.cc
+SOURCES += src/text2bin.cc
+SOURCES += src/main.cc
+SOURCES += src/weight.cc
+SOURCES += src/variable.cc
+SOURCES += src/factor.cc
+SOURCES += src/factor_graph.cc
+SOURCES += src/inference_result.cc
+SOURCES += src/gibbs_sampler.cc
+SOURCES += src/timer.cc
+OBJECTS = $(SOURCES:.cc=.o)
 PROGRAM = dw
 
 # header files
-HEADERS += $(wildcard src/*.h src/*/*.h src/**/*.h src/*/*/*.hxx)
+HEADERS += $(wildcard src/*.h)
 
 # test files
-TEST_SOURCES += test/test.cpp
-TEST_SOURCES += test/FactorTest.cpp
-TEST_SOURCES += test/binary_parser_test.cpp
-TEST_SOURCES += test/loading_test.cpp
-TEST_SOURCES += test/factor_graph_test.cpp
-TEST_SOURCES += test/sampler_test.cpp
-TEST_OBJECTS = $(TEST_SOURCES:.cpp=.o)
+TEST_SOURCES += test/test_main.cc
+TEST_SOURCES += test/factor_test.cc
+TEST_SOURCES += test/binary_format_test.cc
+TEST_SOURCES += test/loading_test.cc
+TEST_SOURCES += test/factor_graph_test.cc
+TEST_SOURCES += test/sampler_test.cc
+TEST_OBJECTS = $(TEST_SOURCES:.cc=.o)
 TEST_PROGRAM = $(PROGRAM)_test
 # test files need gtest
+$(OBJECTS): CXXFLAGS += -I./lib/gtest-1.7.0/include/
 $(TEST_OBJECTS): CXXFLAGS += -I./lib/gtest-1.7.0/include/
 $(TEST_PROGRAM): LDFLAGS += -L./lib/gtest/
-$(TEST_PROGRAM): LDLIBS += -lgtest
+$(TEST_PROGRAM): LDLIBS += -lgtest -lpthread
 
-# source files for other utilities
-TEXT2BIN_SOURCES += src/io/text2bin.cpp
-TEXT2BIN_OBJECTS = $(TEXT2BIN_SOURCES:.cpp=.o)
-TEXT2BIN_PROGRAM = text2bin
-
-all: $(PROGRAM) $(TEXT2BIN_PROGRAM)
+all: $(PROGRAM)
 .PHONY: all
 
 # how to link our sampler
@@ -84,18 +87,14 @@ $(PROGRAM): $(OBJECTS)
 $(TEST_PROGRAM): $(TEST_OBJECTS) $(filter-out src/main.o,$(OBJECTS))
 	$(CXX) -o $@ $(LDFLAGS) $^ $(LDLIBS)
 
-# how to link the format converters
-$(TEXT2BIN_PROGRAM): $(TEXT2BIN_OBJECTS)
-	$(CXX) -o $@ $(LDFLAGS) $^
-
 # compiler generated dependency
 # See: http://stackoverflow.com/a/16969086
-DEPENDENCIES = $(SOURCES:.cpp=.d) $(TEST_SOURCES:.cpp=.d) $(TEXT2BIN_SOURCES:.cpp=.d)
+DEPENDENCIES = $(SOURCES:.cc=.d) $(TEST_SOURCES:.cc=.d) $(TEXT2BIN_SOURCES:.cc=.d)
 -include $(DEPENDENCIES)
 CXXFLAGS += -MMD
 
 # how to compile each source
-%.o: %.cpp
+%.o: %.cc
 	$(CXX) -o $@ $(CPPFLAGS) $(CXXFLAGS) -c $<
 
 # how to get dependencies prepared
@@ -118,28 +117,34 @@ dep:
 
 # how to clean
 clean:
-	rm -f $(PROGRAM) $(OBJECTS) $(TEST_PROGRAM) $(TEST_OBJECTS) $(TEXT2BIN_PROGRAM) $(TEXT2BIN_OBJECTS) $(DEPENDENCIES)
+	rm -f $(PROGRAM) $(OBJECTS) $(TEST_PROGRAM) $(TEST_OBJECTS) $(DEPENDENCIES)
 .PHONY: clean
 
 # how to test
-test: unit-test end2end-test
-unit-test: $(TEST_PROGRAM)
-	./$(TEST_PROGRAM)
-PATH := $(shell pwd)/test/bats/bin:$(PATH)
-end2end-test: $(PROGRAM) $(TEXT2BIN_PROGRAM)
-	bats test/*.bats
-.PHONY: test unit-test end2end-test
+include test/bats.mk
+test-build: $(PROGRAM) $(TEST_PROGRAM)
 
 # how to format code
+# XXX requiring a particular version since clang-format is not backward-compatible
+CLANG_FORMAT_REQUIRED_VERSION := 3.7
 ifndef CLANG_FORMAT
-ifneq ($(shell type clang-format-3.7 2>/dev/null),)
-    CLANG_FORMAT = clang-format-3.7
+ifneq ($(shell which clang-format-$(CLANG_FORMAT_REQUIRED_VERSION) 2>/dev/null),)
+    CLANG_FORMAT := clang-format-$(CLANG_FORMAT_REQUIRED_VERSION)
 else
-    CLANG_FORMAT = clang-format
+    CLANG_FORMAT := clang-format
 endif
 endif
+ifeq (0,$(shell $(CLANG_FORMAT) --version | grep -cF $(CLANG_FORMAT_REQUIRED_VERSION)))
+format:
+	@echo '# ERROR: clang-format $(CLANG_FORMAT_REQUIRED_VERSION) required'
+	@echo '# On a Mac, try:'
+	@echo 'brew reinstall https://github.com/Homebrew/homebrew-core/raw/0c1a8721e1d2aeca63647f4f1b5f5a1dbe5d9a8b/Formula/clang-format.rb'
+	@echo '# Otherwise, install a release for your OS from http://llvm.org/releases/'
+	@false
+else
 format:
 	$(CLANG_FORMAT) -i $(SOURCES) $(TEST_SOURCES) $(TEXT2BIN_SOURCES) $(HEADERS)
+endif
 .PHONY: format
 
 # how to quickly turn actual test output into expected ones
