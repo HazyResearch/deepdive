@@ -148,9 +148,9 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
     text2bin_factor_func_id = static_cast<factor_function_type_t>(
         text2bin_factor_func_id_.getValue());
     text2bin_factor_arity = text2bin_factor_arity_.getValue();
-    for (auto positive_or_not :
+    for (const auto& value :
          text2bin_factor_variables_should_equal_to_.getValue()) {
-      text2bin_factor_variables_should_equal_to.push_back(positive_or_not != 0);
+      text2bin_factor_variables_should_equal_to.push_back(value);
     }
 
   } else if (app_name == "bin2text") {
