@@ -26,16 +26,16 @@ std::ostream &operator<<(std::ostream &stream,
   stream << "#V=" << size.num_variables;
   if (size.num_variables_query + size.num_variables_evidence > 0) {
     stream << "(";
-    stream << "qry=" << size.num_variables_query;
-    stream << ",";
-    stream << "evd=" << size.num_variables_evidence;
+    stream << "#Vqry=" << size.num_variables_query;
+    stream << "\t";
+    stream << "#Vevd=" << size.num_variables_evidence;
     stream << ")";
   }
-  stream << ",\t"
+  stream << "\t"
          << "#F=" << size.num_factors;
-  stream << ",\t"
+  stream << "\t"
          << "#W=" << size.num_weights;
-  stream << ",\t"
+  stream << "\t"
          << "#E=" << size.num_edges;
   return stream;
 }

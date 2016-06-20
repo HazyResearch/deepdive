@@ -21,18 +21,25 @@ void text2bin_variables(std::string input_filename,
   std::ifstream fin(input_filename);
   std::ofstream fout(output_filename, std::ios::binary);
   num_variables_t count = 0;
-  int is_evidence;
-  uint16_t var_type;
-  variable_id_t vid;
-  variable_value_t initial_value;
-  num_variable_values_t cardinality;
-  while (fin >> vid >> is_evidence >> initial_value >> var_type >>
-         cardinality) {
-    uint8_t is_evidence_serialized = is_evidence;
+  std::string line;
+  while (getline(fin, line)) {
+    std::istringstream ss(line);
+    variable_id_t vid;
+    int var_role;
+    variable_value_t initial_value;
+    int var_type;
+    num_variable_values_t cardinality;
+    assert(ss >> vid);
+    assert(ss >> var_role);
+    assert(ss >> initial_value);
+    assert(ss >> var_type);
+    assert(ss >> cardinality);
+    uint8_t var_role_serialized = var_role;
+    uint16_t var_type_serialized = var_type;
     write_be_or_die(fout, vid);
-    write_be_or_die(fout, is_evidence_serialized);
+    write_be_or_die(fout, var_role_serialized);
     write_be_or_die(fout, initial_value);
-    write_be_or_die(fout, var_type);
+    write_be_or_die(fout, var_type_serialized);
     write_be_or_die(fout, cardinality);
     ++count;
   }
@@ -44,10 +51,15 @@ void text2bin_weights(std::string input_filename, std::string output_filename) {
   std::ifstream fin(input_filename);
   std::ofstream fout(output_filename, std::ios::binary);
   num_weights_t count = 0;
-  int isfixed;
-  weight_id_t wid;
-  weight_value_t initial_value;
-  while (fin >> wid >> isfixed >> initial_value) {
+  std::string line;
+  while (getline(fin, line)) {
+    std::istringstream ss(line);
+    weight_id_t wid;
+    int isfixed;
+    weight_value_t initial_value;
+    assert(ss >> wid);
+    assert(ss >> isfixed);
+    assert(ss >> initial_value);
     uint8_t isfixed_serialized = isfixed;
     write_be_or_die(fout, wid);
     write_be_or_die(fout, isfixed_serialized);
@@ -125,7 +137,7 @@ void text2bin_factors(
       ++arity;
     };
     for (factor_arity_t i = 0; i < arity_expected; ++i) {
-      getline(ss, field, text_field_delim);
+      assert(getline(ss, field, text_field_delim));
       // try parsing as an array first
       // FIXME remove this?  parsing vid arrays is probably broken since this
       // doesn't create a cross product of factors but simply widens the arity
@@ -149,12 +161,12 @@ void text2bin_factors(
         // IN  Format: NUM_WEIGHTS [VAR1 VAL ID] [VAR2 VAL ID] ... [WEIGHT ID]
         // OUT Format: NUM_WEIGHTS [[VAR1_VALi, VAR2_VALi, ..., WEIGHTi]]
         // first, the run-length
-        getline(ss, field, text_field_delim);
+        assert(getline(ss, field, text_field_delim));
         factor_weight_key_t num_weightids = atol(field.c_str());
         write_be_or_die(fout, num_weightids);
         // second, parse var vals for each var
         for (factor_arity_t i = 0; i < arity; ++i) {
-          getline(ss, array_piece, text_field_delim);
+          assert(getline(ss, array_piece, text_field_delim));
           std::istringstream ass(array_piece);
           parse_pgarray_or_die(
               ass, [&cids_per_wid](const std::string &element) {
@@ -180,7 +192,7 @@ void text2bin_factors(
       }
       default:
         // a single weight id
-        getline(ss, field, text_field_delim);
+        assert(getline(ss, field, text_field_delim));
         weight_id_t wid = atol(field.c_str());
         write_be_or_die(fout, wid);
     }
@@ -194,11 +206,13 @@ void text2bin_domains(std::string input_filename, std::string output_filename) {
   std::ofstream fout(output_filename, std::ios::binary);
   std::string line;
   while (getline(fin, line)) {
-    std::istringstream line_input(line);
+    std::istringstream ss(line);
     variable_id_t vid;
     num_variable_values_t cardinality;
     std::string domain;
-    assert(line_input >> vid >> cardinality >> domain);
+    assert(ss >> vid);
+    assert(ss >> cardinality);
+    assert(ss >> domain);
     write_be_or_die(fout, vid);
     write_be_or_die(fout, cardinality);
     // an array of domain values
