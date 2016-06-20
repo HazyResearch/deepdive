@@ -1,4 +1,4 @@
-# DimmWitted [![Build Status](https://travis-ci.org/HazyResearch/sampler.svg)](https://travis-ci.org/HazyResearch/sampler)
+# DimmWitted: Fast Gibbs Sampler [![Build Status](https://travis-ci.org/HazyResearch/sampler.svg)](https://travis-ci.org/HazyResearch/sampler)
 
 ## How fast is DimmWitted?
 
