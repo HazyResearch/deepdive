@@ -19,16 +19,14 @@ constexpr char field_delim = '\t';  // tsv file delimiter
 
 // read variables and convert to binary format
 void load_var(std::string input_filename, std::string output_filename) {
-  std::ifstream fin(input_filename.c_str());
-  std::ofstream fout(output_filename.c_str(), std::ios::binary | std::ios::out);
+  std::ifstream fin(input_filename);
+  std::ofstream fout(output_filename, std::ios::binary | std::ios::out);
   num_variables_t count = 0;
-
   int is_evidence;
   uint16_t var_type;
   variable_id_t vid;
   variable_value_t initial_value;
   num_variable_values_t cardinality;
-
   while (fin >> vid >> is_evidence >> initial_value >> var_type >>
          cardinality) {
     write_be(fout, vid);
@@ -36,36 +34,26 @@ void load_var(std::string input_filename, std::string output_filename) {
     write_be(fout, initial_value);
     write_be(fout, var_type);
     write_be(fout, cardinality);
-
     ++count;
   }
   std::cout << count << std::endl;
-
-  fin.close();
-  fout.close();
 }
 
 // convert weights
 void load_weight(std::string input_filename, std::string output_filename) {
-  std::ifstream fin(input_filename.c_str());
-  std::ofstream fout(output_filename.c_str(), std::ios::binary | std::ios::out);
+  std::ifstream fin(input_filename);
+  std::ofstream fout(output_filename, std::ios::binary | std::ios::out);
   long count = 0;
-
   int isfixed;
   weight_id_t wid;
   weight_value_t initial_value;
-
   while (fin >> wid >> isfixed >> initial_value) {
     write_be(fout, wid);
     write_be<uint8_t>(fout, isfixed);
     write_be(fout, initial_value);
-
     ++count;
   }
   std::cout << count << std::endl;
-
-  fin.close();
-  fout.close();
 }
 
 static inline long parse_pgarray(
@@ -109,24 +97,19 @@ static inline long parse_pgarray_or_die(
 void load_factor(std::string input_filename, std::string output_filename,
                  factor_function_type_t funcid, factor_arity_t arity_expected,
                  const std::vector<bool> &positives_vec) {
-  std::ifstream fin(input_filename.c_str());
-  std::ofstream fout(output_filename.c_str(), std::ios::binary | std::ios::out);
-
+  std::ifstream fin(input_filename);
+  std::ofstream fout(output_filename, std::ios::binary | std::ios::out);
   num_edges_t total_edges = 0;
-
   std::vector<variable_id_t> vids;
   std::vector<weight_id_t> vals_and_weights;  // FIXME separate the two
-
   std::string line;
   std::string array_piece;
   while (getline(fin, line)) {
     std::string field;
     istringstream ss(line);
     vids.clear();
-
     // factor type
     write_be<uint16_t>(fout, funcid);
-
     // variable ids
     factor_arity_t arity = 0;
     auto parse_variableid = [&vids, &arity,
@@ -149,11 +132,9 @@ void load_factor(std::string input_filename, std::string output_filename,
     write_be(fout, arity);
     for (factor_arity_t i = 0; i < vids.size(); ++i) {
       write_be(fout, vids[i]);
-
       variable_value_t should_equal_to = positives_vec.at(i) ? 1 : 0;
       write_be(fout, should_equal_to);
     }
-
     // weight ids
     switch (funcid) {
       case FUNC_AND_CATEGORICAL: {
@@ -164,7 +145,6 @@ void load_factor(std::string input_filename, std::string output_filename,
         getline(ss, field, field_delim);
         factor_weight_key_t num_weightids = atol(field.c_str());
         write_be<uint32_t /*FIXME factor_weight_key_t*/>(fout, num_weightids);
-
         // second, parse var vals for each var
         // TODO: hard coding cid length (4) for now
         for (factor_arity_t i = 0; i < arity; ++i) {
@@ -182,7 +162,6 @@ void load_factor(std::string input_filename, std::string output_filename,
               weight_id_t weightid = atol(element.c_str());
               vals_and_weights.push_back(weightid);
             }, num_weightids);
-
         // fourth, transpose into output format
         for (factor_weight_key_t i = 0; i < num_weightids; ++i) {
           for (factor_arity_t j = 0; j < arity; ++j) {
@@ -195,7 +174,6 @@ void load_factor(std::string input_filename, std::string output_filename,
         }
         break;
       }
-
       default:
         // a single weight id
         getline(ss, field, field_delim);
@@ -203,18 +181,13 @@ void load_factor(std::string input_filename, std::string output_filename,
         write_be(fout, weightid);
     }
   }
-
   std::cout << total_edges << std::endl;
-
-  fin.close();
-  fout.close();
 }
 
 // read categorical variable domains and convert to binary format
 void load_domain(std::string input_filename, std::string output_filename) {
-  std::ifstream fin(input_filename.c_str());
-  std::ofstream fout(output_filename.c_str(), std::ios::binary | std::ios::out);
-
+  std::ifstream fin(input_filename);
+  std::ofstream fout(output_filename, std::ios::binary | std::ios::out);
   std::string line;
   while (getline(fin, line)) {
     istringstream line_input(line);
@@ -222,10 +195,8 @@ void load_domain(std::string input_filename, std::string output_filename) {
     num_variable_values_t cardinality;
     std::string domain;
     assert(line_input >> vid >> cardinality >> domain);
-
     write_be(fout, vid);
     write_be(fout, cardinality);
-
     // an array of domain values
     istringstream domain_input(domain);
     parse_pgarray_or_die(domain_input, [&fout](const std::string &subfield) {
@@ -233,9 +204,6 @@ void load_domain(std::string input_filename, std::string output_filename) {
       write_be(fout, value);
     }, cardinality);
   }
-
-  fin.close();
-  fout.close();
 }
 
 int text2bin(const CmdParser &args) {

@@ -18,8 +18,7 @@ namespace dd {
 // Read meta data file, return Meta struct
 FactorGraphDescriptor read_meta(const std::string &meta_file) {
   FactorGraphDescriptor meta;
-  std::ifstream file;
-  file.open(meta_file.c_str());
+  std::ifstream file(meta_file);
   std::string buf;
   getline(file, buf, ',');
   meta.num_weights = atoll(buf.c_str());
@@ -29,13 +28,11 @@ FactorGraphDescriptor read_meta(const std::string &meta_file) {
   meta.num_factors = atoll(buf.c_str());
   getline(file, buf, ',');
   meta.num_edges = atoll(buf.c_str());
-  file.close();
   return meta;
 }
 
 void FactorGraph::load_weights(const std::string &filename) {
-  std::ifstream file;
-  file.open(filename, std::ios::in | std::ios::binary);
+  std::ifstream file(filename, std::ios::in | std::ios::binary);
   num_weights_t count = 0;
   while (file.good()) {
     // read fields
@@ -45,18 +42,15 @@ void FactorGraph::load_weights(const std::string &filename) {
     read_be(file, wid);
     read_be(file, isfixed);
     if (!read_be(file, initial_value)) break;
-
     // load into factor graph
     weights[wid] = Weight(wid, initial_value, isfixed);
     ++count;
   }
   size.num_weights += count;
-  file.close();
 }
 
 void FactorGraph::load_variables(const std::string &filename) {
-  std::ifstream file;
-  file.open(filename, std::ios::in | std::ios::binary);
+  std::ifstream file(filename, std::ios::in | std::ios::binary);
   num_variables_t count = 0;
   while (file.good()) {
     variable_id_t vid;
@@ -71,7 +65,7 @@ void FactorGraph::load_variables(const std::string &filename) {
     read_be(file, initial_value);
     read_be(file, dtype_serialized);
     if (!read_be(file, cardinality)) break;
-
+    // map serialized to internal values
     ++count;
     variable_domain_type_t dtype;
     switch (dtype_serialized) {
@@ -92,10 +86,8 @@ void FactorGraph::load_variables(const std::string &filename) {
                        1;  // TODO interpret as bit vector instead of number?
     bool is_observation = role_serialized == 2;
     variable_value_t init_value = is_evidence ? initial_value : 0;
-
     variables[vid] = RawVariable(vid, dtype, is_evidence, cardinality,
                                  init_value, init_value, is_observation);
-
     ++size.num_variables;
     if (is_evidence) {
       ++size.num_variables_evidence;
@@ -103,39 +95,32 @@ void FactorGraph::load_variables(const std::string &filename) {
       ++size.num_variables_query;
     }
   }
-  file.close();
 }
 
 void FactorGraph::load_factors(const std::string &filename) {
-  std::ifstream file;
-  file.open(filename.c_str(), std::ios::in | std::ios::binary);
+  std::ifstream file(filename, std::ios::in | std::ios::binary);
   while (file.good()) {
     uint16_t type;
     factor_arity_t arity;
     // read fields
     read_be(file, type);
     if (!read_be(file, arity)) break;
-
+    // register the factor
     factors[size.num_factors] =
         RawFactor(size.num_factors, -1, (factor_function_type_t)type, arity);
-
     for (factor_arity_t position = 0; position < arity; ++position) {
       // read fields for each variable reference
       variable_id_t variable_id;
       variable_value_t should_equal_to;
       read_be(file, variable_id);
       read_be(file, should_equal_to);
-
-      // check for wrong id
       assert(variable_id < capacity.num_variables && variable_id >= 0);
-
-      // add variables to factors
+      // add to adjacency lists
       factors[size.num_factors].add_variable_in_factor(
           VariableInFactor(variable_id, position, should_equal_to));
       variables[variable_id].add_factor_id(size.num_factors);
     }
     size.num_edges += arity;
-
     switch (type) {
       case FUNC_AND_CATEGORICAL: {
         // weight references for categorical factors
@@ -170,43 +155,39 @@ void FactorGraph::load_factors(const std::string &filename) {
         read_be(file, wid);
         factors[size.num_factors].weight_id = wid;
     }
-
     ++size.num_factors;
   }
-  file.close();
 }
 
 void FactorGraph::load_domains(const std::string &filename) {
-  std::ifstream file;
-  file.open(filename.c_str(), std::ios::in | std::ios::binary);
-
+  std::ifstream file(filename, std::ios::in | std::ios::binary);
   while (file.good()) {
+    // read field to find which categorical variable this block is for
     variable_id_t vid;
     read_be(file, vid);
     if (!file.good()) {
       return;
     }
     RawVariable &variable = variables[vid];
-
+    // read all category values for this variables
     num_variable_values_t domain_size;
     read_be(file, domain_size);
     assert(variable.cardinality == domain_size);
-
     std::vector<variable_value_t> domain_list(domain_size);
     variable.domain_map.reset(
         new std::unordered_map<variable_value_t, variable_value_index_t>());
-
     for (variable_value_index_t i = 0; i < domain_size; ++i) {
       variable_value_t value;
       read_be(file, value);
       domain_list[i] = value;
     }
-
+    // populate the mapping from value to index
+    // TODO this indexing may be unnecessary (we can use the variable_value_t
+    // directly for computing keys
     std::sort(domain_list.begin(), domain_list.end());
     for (variable_value_index_t i = 0; i < domain_size; ++i) {
       (*variable.domain_map)[domain_list[i]] = i;
     }
-
     // adjust the initial assignments to a valid one instead of zero for query
     // variables
     if (!variable.is_evid) {
