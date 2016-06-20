@@ -49,17 +49,13 @@ class CmdParser {
   factor_arity_t text2bin_factor_arity;
   std::vector<variable_value_t> text2bin_factor_variables_should_equal_to;
 
-  CmdParser(int argc, const char *const argv[]);
-
   /**
-   * parses the given command line arguments
+   * Constructs by parsing the given command line arguments
    */
-  void parse(int argc, char **argv);
-
- private:
-  friend std::ostream &operator<<(std::ostream &stream,
-                                  const CmdParser &cmd_parser);
+  CmdParser(int argc, const char *const argv[]);
 };
+
+std::ostream &operator<<(std::ostream &stream, const CmdParser &cmd_parser);
 
 }  // namespace dd
 
