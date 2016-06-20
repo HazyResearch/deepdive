@@ -8,6 +8,7 @@
 #include "text2bin.h"
 
 #include <fstream>
+#include <iomanip>
 #include <map>
 #include <unistd.h>
 

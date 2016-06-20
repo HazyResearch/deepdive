@@ -8,7 +8,6 @@
 #include <assert.h>
 #include <iostream>
 #include <string>
-#include <tclap/CmdLine.h>
 
 namespace dd {
 
@@ -58,35 +57,6 @@ class CmdParser {
   void parse(int argc, char **argv);
 
  private:
-  TCLAP::ValueArg<std::string> *fg_file_;
-
-  TCLAP::ValueArg<std::string> *edge_file_;
-  TCLAP::ValueArg<std::string> *weight_file_;
-  TCLAP::ValueArg<std::string> *variable_file_;
-  TCLAP::ValueArg<std::string> *factor_file_;
-  TCLAP::ValueArg<std::string> *output_folder_;
-  TCLAP::ValueArg<std::string> *domain_file_;
-
-  TCLAP::MultiArg<int> *n_learning_epoch_;
-  TCLAP::MultiArg<int> *n_samples_per_learning_epoch_;
-  TCLAP::MultiArg<int> *n_inference_epoch_;
-
-  TCLAP::MultiArg<double> *stepsize_;
-  TCLAP::MultiArg<double> *stepsize2_;
-  TCLAP::MultiArg<double> *decay_;
-
-  TCLAP::MultiArg<int> *n_datacopy_;
-  TCLAP::MultiArg<double> *reg_param_;
-  TCLAP::MultiArg<int> *burn_in_;
-
-  TCLAP::MultiSwitchArg *quiet_;
-  TCLAP::MultiSwitchArg *sample_evidence_;
-  TCLAP::MultiSwitchArg *learn_non_evidence_;
-
-  TCLAP::MultiArg<std::string> *regularization_;
-
-  TCLAP::CmdLine *cmd_;
-
   friend std::ostream &operator<<(std::ostream &stream,
                                   const CmdParser &cmd_parser);
 };

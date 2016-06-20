@@ -1,17 +1,17 @@
 #include "cmd_parser.h"
 
+#define HAVE_LONG_LONG  // necessary for uint64_t arg parsing
+#include <tclap/CmdLine.h>
+
 namespace dd {
 
 constexpr char DimmWittedVersion[] = "0.01";
 
 // a handy way to get value from MultiArg
-template <class T>
-static inline T getLastValueOrDefault(TCLAP::MultiArg<T>* arg, T defaultValue) {
-  if (arg->getValue().empty()) {
-    return defaultValue;
-  } else {
-    return arg->getValue().back();
-  }
+template <typename T>
+static inline const T& getLastValueOrDefault(TCLAP::MultiArg<T>& arg,
+                                             const T& defaultValue) {
+  return arg.getValue().empty() ? defaultValue : arg.getValue().back();
 }
 
 CmdParser::CmdParser(int argc, const char* const argv[]) {
@@ -24,74 +24,75 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
   // http://tclap.sourceforge.net/manual.html#FUNDAMENTAL_CLASSES
 
   if (app_name == "gibbs") {
-    cmd_ = new TCLAP::CmdLine("DimmWitted GIBBS", ' ', DimmWittedVersion);
+    TCLAP::CmdLine cmd_("DimmWitted GIBBS", ' ', DimmWittedVersion);
 
-    fg_file_ = new TCLAP::ValueArg<std::string>("m", "fg_meta",
-                                                "factor graph metadata file",
-                                                false, "", "string", *cmd_);
-    variable_file_ = new TCLAP::ValueArg<std::string>(
-        "v", "variables", "variables file", false, "", "string", *cmd_);
-    factor_file_ = new TCLAP::ValueArg<std::string>(
-        "f", "factors", "factors file", false, "", "string", *cmd_);
-    weight_file_ = new TCLAP::ValueArg<std::string>(
-        "w", "weights", "weights file", false, "", "string", *cmd_);
-    output_folder_ = new TCLAP::ValueArg<std::string>(
-        "o", "outputFile", "Output Folder", false, "", "string", *cmd_);
-    domain_file_ = new TCLAP::ValueArg<std::string>(
-        "", "domains", "Categorical domains", false, "", "string", *cmd_);
+    TCLAP::ValueArg<std::string> fg_file_("m", "fg_meta",
+                                          "factor graph metadata file", false,
+                                          "", "string", cmd_);
+    TCLAP::ValueArg<std::string> variable_file_(
+        "v", "variables", "variables file", false, "", "string", cmd_);
+    TCLAP::ValueArg<std::string> factor_file_("f", "factors", "factors file",
+                                              false, "", "string", cmd_);
+    TCLAP::ValueArg<std::string> weight_file_("w", "weights", "weights file",
+                                              false, "", "string", cmd_);
+    TCLAP::ValueArg<std::string> output_folder_(
+        "o", "outputFile", "Output Folder", false, "", "string", cmd_);
+    TCLAP::ValueArg<std::string> domain_file_(
+        "", "domains", "Categorical domains", false, "", "string", cmd_);
 
-    n_learning_epoch_ = new TCLAP::MultiArg<int>("l", "n_learning_epoch",
-                                                 "Number of Learning Epochs",
-                                                 true, "int", *cmd_);
-    n_samples_per_learning_epoch_ = new TCLAP::MultiArg<int>(
+    TCLAP::MultiArg<num_epochs_t> n_learning_epoch_("l", "n_learning_epoch",
+                                                    "Number of Learning Epochs",
+                                                    true, "int", cmd_);
+    TCLAP::MultiArg<num_samples_t> n_samples_per_learning_epoch_(
         "s", "n_samples_per_learning_epoch",
-        "Number of Samples per Leraning Epoch", true, "int", *cmd_);
-    n_inference_epoch_ = new TCLAP::MultiArg<int>(
+        "Number of Samples per Leraning Epoch", true, "int", cmd_);
+    TCLAP::MultiArg<num_epochs_t> n_inference_epoch_(
         "i", "n_inference_epoch", "Number of Samples for Inference", true,
-        "int", *cmd_);
-    burn_in_ = new TCLAP::MultiArg<int>("", "burn_in", "Burn-in period", false,
-                                        "int", *cmd_);
-    n_datacopy_ =
-        new TCLAP::MultiArg<int>("c", "n_datacopy",
-                                 "Number of factor graph copies. Use 0 for all "
-                                 "available NUMA nodes (default)",
-                                 false, "int", *cmd_);
-    stepsize_ = new TCLAP::MultiArg<double>("a", "alpha", "Stepsize", false,
-                                            "double", *cmd_);
-    stepsize2_ = new TCLAP::MultiArg<double>("p", "stepsize", "Stepsize", false,
-                                             "double", *cmd_);
-    decay_ = new TCLAP::MultiArg<double>(
-        "d", "diminish", "Decay of stepsize per epoch", false, "double", *cmd_);
-    reg_param_ = new TCLAP::MultiArg<double>("b", "reg_param",
-                                             "l2 regularization parameter",
-                                             false, "double", *cmd_);
-    regularization_ = new TCLAP::MultiArg<std::string>(
-        "", "regularization", "Regularization (l1 or l2)", false, "string",
-        *cmd_);
+        "int", cmd_);
+    TCLAP::MultiArg<num_epochs_t> burn_in_("", "burn_in", "Burn-in period",
+                                           false, "int", cmd_);
+    TCLAP::MultiArg<size_t> n_datacopy_(
+        "c", "n_datacopy",
+        "Number of factor graph copies. Use 0 for all "
+        "available NUMA nodes (default)",
+        false, "int", cmd_);
+    TCLAP::MultiArg<double> stepsize_("a", "alpha", "Stepsize", false, "double",
+                                      cmd_);
+    TCLAP::MultiArg<double> stepsize2_("p", "stepsize", "Stepsize", false,
+                                       "double", cmd_);
+    TCLAP::MultiArg<double> decay_(
+        "d", "diminish", "Decay of stepsize per epoch", false, "double", cmd_);
+    TCLAP::MultiArg<double> reg_param_(
+        "b", "reg_param", "l2 regularization parameter", false, "double", cmd_);
+    TCLAP::MultiArg<std::string> regularization_("", "regularization",
+                                                 "Regularization (l1 or l2)",
+                                                 false, "string", cmd_);
 
-    quiet_ = new TCLAP::MultiSwitchArg("q", "quiet", "quiet output", *cmd_);
-    sample_evidence_ = new TCLAP::MultiSwitchArg(
+    TCLAP::MultiSwitchArg quiet_("q", "quiet", "quiet output", cmd_);
+    TCLAP::MultiSwitchArg sample_evidence_(
         "", "sample_evidence", "also sample evidence variables in inference",
-        *cmd_);
-    learn_non_evidence_ = new TCLAP::MultiSwitchArg(
+        cmd_);
+    TCLAP::MultiSwitchArg learn_non_evidence_(
         "", "learn_non_evidence", "sample non-evidence variables in learning",
-        *cmd_);
+        cmd_);
 
-    cmd_->parse(argc, argv);
+    cmd_.parse(argc, argv);
 
-    fg_file = fg_file_->getValue();
-    variable_file = variable_file_->getValue();
-    factor_file = factor_file_->getValue();
-    weight_file = weight_file_->getValue();
-    output_folder = output_folder_->getValue();
-    domain_file = domain_file_->getValue();
+    fg_file = fg_file_.getValue();
+    variable_file = variable_file_.getValue();
+    factor_file = factor_file_.getValue();
+    weight_file = weight_file_.getValue();
+    output_folder = output_folder_.getValue();
+    domain_file = domain_file_.getValue();
 
-    n_learning_epoch = getLastValueOrDefault(n_learning_epoch_, -1);
+    n_learning_epoch =
+        getLastValueOrDefault(n_learning_epoch_, (num_epochs_t)0);
     n_samples_per_learning_epoch =
-        getLastValueOrDefault(n_samples_per_learning_epoch_, -1);
-    n_inference_epoch = getLastValueOrDefault(n_inference_epoch_, -1);
-    n_datacopy = getLastValueOrDefault(n_datacopy_, 0);
-    burn_in = getLastValueOrDefault(burn_in_, 0);
+        getLastValueOrDefault(n_samples_per_learning_epoch_, (num_epochs_t)1);
+    n_inference_epoch =
+        getLastValueOrDefault(n_inference_epoch_, (num_epochs_t)0);
+    n_datacopy = getLastValueOrDefault(n_datacopy_, (size_t)0);
+    burn_in = getLastValueOrDefault(burn_in_, (num_epochs_t)0);
     stepsize = getLastValueOrDefault(stepsize_, 0.01);
     stepsize2 = getLastValueOrDefault(stepsize2_, 0.01);
     if (stepsize == 0.01)
@@ -104,21 +105,21 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
             ? REG_L1
             : REG_L2;
 
-    should_be_quiet = quiet_->getValue() > 0;
-    should_sample_evidence = sample_evidence_->getValue() > 0;
-    should_learn_non_evidence = learn_non_evidence_->getValue() > 0;
+    should_be_quiet = quiet_.getValue() > 0;
+    should_sample_evidence = sample_evidence_.getValue() > 0;
+    should_learn_non_evidence = learn_non_evidence_.getValue() > 0;
 
   } else if (app_name == "text2bin") {
-    cmd_ = new TCLAP::CmdLine("DimmWitted text2bin", ' ', DimmWittedVersion);
+    TCLAP::CmdLine cmd_("DimmWitted text2bin", ' ', DimmWittedVersion);
     TCLAP::UnlabeledValueArg<std::string> text2bin_mode_(
         "mode", "what to convert", true, "",
-        "variable | domain | factor | weight", *cmd_);
+        "variable | domain | factor | weight", cmd_);
     TCLAP::UnlabeledValueArg<std::string> text2bin_input_(
         "input", "path to an input file formatted in TSV, tab-separated values",
-        true, "/dev/stdin", "input_file_path", *cmd_);
+        true, "/dev/stdin", "input_file_path", cmd_);
     TCLAP::UnlabeledValueArg<std::string> text2bin_output_(
         "output", "path to an output file", true, "/dev/stdout",
-        "output_file_path", *cmd_);
+        "output_file_path", cmd_);
 
     //  factor-specific arguments
     // TODO turn these into labeled args
@@ -135,12 +136,12 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
             "whether each variable in position is positive or not, 1 or 0", 1,
             "var_is_positive");
     if (argc > 0 && std::string(argv[1]) == "factor") {
-      cmd_->add(text2bin_factor_func_id_);
-      cmd_->add(text2bin_factor_arity_);
-      cmd_->add(text2bin_factor_variables_should_equal_to_);
+      cmd_.add(text2bin_factor_func_id_);
+      cmd_.add(text2bin_factor_arity_);
+      cmd_.add(text2bin_factor_variables_should_equal_to_);
     }
 
-    cmd_->parse(argc, argv);
+    cmd_.parse(argc, argv);
 
     text2bin_mode = text2bin_mode_.getValue();
     text2bin_input = text2bin_input_.getValue();
@@ -154,30 +155,30 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
     }
 
   } else if (app_name == "bin2text") {
-    cmd_ = new TCLAP::CmdLine("DimmWitted bin2text", ' ', DimmWittedVersion);
+    TCLAP::CmdLine cmd_("DimmWitted bin2text", ' ', DimmWittedVersion);
 
-    fg_file_ = new TCLAP::ValueArg<std::string>("m", "fg_meta",
-                                                "factor graph metadata file",
-                                                false, "", "string", *cmd_);
-    variable_file_ = new TCLAP::ValueArg<std::string>(
-        "v", "variables", "variables file", false, "", "string", *cmd_);
-    factor_file_ = new TCLAP::ValueArg<std::string>(
-        "f", "factors", "factors file", false, "", "string", *cmd_);
-    weight_file_ = new TCLAP::ValueArg<std::string>(
-        "w", "weights", "weights file", false, "", "string", *cmd_);
-    output_folder_ = new TCLAP::ValueArg<std::string>(
-        "o", "outputFile", "Output Folder", false, "", "string", *cmd_);
-    domain_file_ = new TCLAP::ValueArg<std::string>(
-        "", "domains", "Categorical domains", false, "", "string", *cmd_);
+    TCLAP::ValueArg<std::string> fg_file_("m", "fg_meta",
+                                          "factor graph metadata file", false,
+                                          "", "string", cmd_);
+    TCLAP::ValueArg<std::string> variable_file_(
+        "v", "variables", "variables file", false, "", "string", cmd_);
+    TCLAP::ValueArg<std::string> factor_file_("f", "factors", "factors file",
+                                              false, "", "string", cmd_);
+    TCLAP::ValueArg<std::string> weight_file_("w", "weights", "weights file",
+                                              false, "", "string", cmd_);
+    TCLAP::ValueArg<std::string> output_folder_(
+        "o", "outputFile", "Output Folder", false, "", "string", cmd_);
+    TCLAP::ValueArg<std::string> domain_file_(
+        "", "domains", "Categorical domains", false, "", "string", cmd_);
 
-    cmd_->parse(argc, argv);
+    cmd_.parse(argc, argv);
 
-    fg_file = fg_file_->getValue();
-    variable_file = variable_file_->getValue();
-    factor_file = factor_file_->getValue();
-    weight_file = weight_file_->getValue();
-    output_folder = output_folder_->getValue();
-    domain_file = domain_file_->getValue();
+    fg_file = fg_file_.getValue();
+    variable_file = variable_file_.getValue();
+    factor_file = factor_file_.getValue();
+    weight_file = weight_file_.getValue();
+    output_folder = output_folder_.getValue();
+    domain_file = domain_file_.getValue();
 
   } else {
     if (argc > 0) std::cerr << app_name << ": Unrecognized MODE" << std::endl;

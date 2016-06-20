@@ -109,7 +109,7 @@ void load_factor(
   std::string array_piece;
   while (getline(fin, line)) {
     std::string field;
-    istringstream ss(line);
+    std::istringstream ss(line);
     vids.clear();
     // factor type
     write_be<uint16_t>(fout, funcid);
@@ -126,7 +126,7 @@ void load_factor(
       // try parsing as an array first
       // FIXME remove this?  parsing vid arrays is probably broken since this
       // doesn't create a cross product of factors but simply widens the arity
-      istringstream fieldinput(field);
+      std::istringstream fieldinput(field);
       if (parse_pgarray(fieldinput, parse_variableid) == UNDEFINED_COUNT) {
         // otherwise, parse it as a single variable
         parse_variableid(field);
@@ -152,7 +152,7 @@ void load_factor(
         // TODO: hard coding cid length (4) for now
         for (factor_arity_t i = 0; i < arity; ++i) {
           getline(ss, array_piece, field_delim);
-          istringstream ass(array_piece);
+          std::istringstream ass(array_piece);
           parse_pgarray_or_die(
               ass, [&vals_and_weights](const std::string &element) {
                 variable_value_t cid = atoi(element.c_str());
@@ -193,7 +193,7 @@ void load_domain(std::string input_filename, std::string output_filename) {
   std::ofstream fout(output_filename, std::ios::binary | std::ios::out);
   std::string line;
   while (getline(fin, line)) {
-    istringstream line_input(line);
+    std::istringstream line_input(line);
     variable_id_t vid;
     num_variable_values_t cardinality;
     std::string domain;
@@ -201,7 +201,7 @@ void load_domain(std::string input_filename, std::string output_filename) {
     write_be(fout, vid);
     write_be(fout, cardinality);
     // an array of domain values
-    istringstream domain_input(domain);
+    std::istringstream domain_input(domain);
     parse_pgarray_or_die(domain_input, [&fout](const std::string &subfield) {
       variable_value_t value = atoi(subfield.c_str());
       write_be(fout, value);
