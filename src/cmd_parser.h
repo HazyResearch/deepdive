@@ -23,16 +23,9 @@ class CmdParser {
   std::string fg_file;
   std::string variable_file;
   std::string factor_file;
-  std::string edge_file;
   std::string weight_file;
   std::string output_folder;
   std::string domain_file;
-
-  std::string original_folder;
-  std::string delta_folder;
-
-  std::string graph_snapshot_file;
-  std::string weights_snapshot_file;
 
   num_epochs_t n_learning_epoch;
   num_samples_t n_samples_per_learning_epoch;
@@ -45,7 +38,6 @@ class CmdParser {
   double reg_param;
   enum regularization regularization;
 
-  bool should_use_snapshot;
   bool should_be_quiet;
   bool should_sample_evidence;
   bool should_learn_non_evidence;
@@ -68,18 +60,12 @@ class CmdParser {
  private:
   TCLAP::ValueArg<std::string> *fg_file_;
 
-  TCLAP::ValueArg<std::string> *original_folder_;
-  TCLAP::ValueArg<std::string> *delta_folder_;
-
   TCLAP::ValueArg<std::string> *edge_file_;
   TCLAP::ValueArg<std::string> *weight_file_;
   TCLAP::ValueArg<std::string> *variable_file_;
   TCLAP::ValueArg<std::string> *factor_file_;
   TCLAP::ValueArg<std::string> *output_folder_;
   TCLAP::ValueArg<std::string> *domain_file_;
-
-  TCLAP::ValueArg<std::string> *graph_snapshot_file_;
-  TCLAP::ValueArg<std::string> *weights_snapshot_file_;
 
   TCLAP::MultiArg<int> *n_learning_epoch_;
   TCLAP::MultiArg<int> *n_samples_per_learning_epoch_;
@@ -93,7 +79,6 @@ class CmdParser {
   TCLAP::MultiArg<double> *reg_param_;
   TCLAP::MultiArg<int> *burn_in_;
 
-  TCLAP::MultiSwitchArg *use_snapshot_;
   TCLAP::MultiSwitchArg *quiet_;
   TCLAP::MultiSwitchArg *sample_evidence_;
   TCLAP::MultiSwitchArg *learn_non_evidence_;

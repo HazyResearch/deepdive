@@ -33,29 +33,12 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
         "v", "variables", "variables file", false, "", "string", *cmd_);
     factor_file_ = new TCLAP::ValueArg<std::string>(
         "f", "factors", "factors file", false, "", "string", *cmd_);
-    edge_file_ = new TCLAP::ValueArg<std::string>("e", "edges", "edges file",
-                                                  false, "", "string", *cmd_);
     weight_file_ = new TCLAP::ValueArg<std::string>(
         "w", "weights", "weights file", false, "", "string", *cmd_);
     output_folder_ = new TCLAP::ValueArg<std::string>(
         "o", "outputFile", "Output Folder", false, "", "string", *cmd_);
     domain_file_ = new TCLAP::ValueArg<std::string>(
         "", "domains", "Categorical domains", false, "", "string", *cmd_);
-
-    original_folder_ = new TCLAP::ValueArg<std::string>(
-        "r", "ori_folder", "Folder of original factor graph", false, "",
-        "string", *cmd_);
-    delta_folder_ = new TCLAP::ValueArg<std::string>(
-        "j", "delta_folder", "Folder of delta factor graph", false, "",
-        "string", *cmd_);
-
-    graph_snapshot_file_ = new TCLAP::ValueArg<std::string>(
-        "", "graph_snapshot_file", "Binary file containing graph snapshot",
-        false, "", "string", *cmd_);
-    weights_snapshot_file_ = new TCLAP::ValueArg<std::string>(
-        "", "weight_snapshot_file",
-        "Binary file containing snapshot of weight values", false, "", "string",
-        *cmd_);
 
     n_learning_epoch_ = new TCLAP::MultiArg<int>("l", "n_learning_epoch",
                                                  "Number of Learning Epochs",
@@ -86,9 +69,6 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
         "", "regularization", "Regularization (l1 or l2)", false, "string",
         *cmd_);
 
-    use_snapshot_ = new TCLAP::MultiSwitchArg(
-        "u", "use_snapshot",
-        "resume computation from snapshotted graph and weights", *cmd_);
     quiet_ = new TCLAP::MultiSwitchArg("q", "quiet", "quiet output", *cmd_);
     sample_evidence_ = new TCLAP::MultiSwitchArg(
         "", "sample_evidence", "also sample evidence variables in inference",
@@ -102,13 +82,9 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
     fg_file = fg_file_->getValue();
     variable_file = variable_file_->getValue();
     factor_file = factor_file_->getValue();
-    edge_file = edge_file_->getValue();
     weight_file = weight_file_->getValue();
     output_folder = output_folder_->getValue();
     domain_file = domain_file_->getValue();
-
-    delta_folder = delta_folder_->getValue();
-    original_folder = original_folder_->getValue();
 
     n_learning_epoch = getLastValueOrDefault(n_learning_epoch_, -1);
     n_samples_per_learning_epoch =
@@ -128,7 +104,6 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
             ? REG_L1
             : REG_L2;
 
-    should_use_snapshot = use_snapshot_->getValue() > 0;
     should_be_quiet = quiet_->getValue() > 0;
     should_sample_evidence = sample_evidence_->getValue() > 0;
     should_learn_non_evidence = learn_non_evidence_->getValue() > 0;
