@@ -27,11 +27,12 @@ class CompactFactor {
  public:
   factor_id_t id;                  // factor id
   factor_function_type_t func_id;  // function type id
-  size_t n_variables;              // number of variables in the factor
-  size_t n_start_i_vif;  // the id of the first variable.  the variables of a
-                         // factor
-                         // have sequential ids starting from n_start_i_vif to
-                         // n_start_i_vif+num_variables-1
+  factor_arity_t n_variables;      // number of variables in the factor
+  num_edges_t
+      n_start_i_vif;  // the id of the first variable.  the variables of a
+                      // factor
+                      // have sequential ids starting from n_start_i_vif to
+                      // n_start_i_vif+num_variables-1
 
   /**
    * Default constructor
@@ -118,7 +119,7 @@ class CompactFactor {
     const bool firstsat = is_variable_satisfied(vif, vid, var_values, proposal);
 
     /* Iterate over the factor variables */
-    for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables;
+    for (num_edges_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables;
          ++i_vif) {
       const VariableInFactor &vif = vifs[i_vif];
       const bool satisfied =
@@ -136,7 +137,7 @@ class CompactFactor {
    */
   DEFINE_POTENTIAL_FOR(FUNC_AND) {
     /* Iterate over the factor variables */
-    for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables;
+    for (num_edges_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables;
          ++i_vif) {
       const VariableInFactor &vif = vifs[i_vif];
       const bool satisfied =
@@ -154,7 +155,7 @@ class CompactFactor {
    */
   DEFINE_POTENTIAL_FOR(FUNC_OR) {
     /* Iterate over the factor variables */
-    for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables;
+    for (num_edges_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables;
          ++i_vif) {
       const VariableInFactor &vif = vifs[i_vif];
       const bool satisfied =
@@ -180,8 +181,8 @@ class CompactFactor {
   DEFINE_POTENTIAL_FOR(FUNC_IMPLY_MLN) {
     /* Compute the value of the body of the rule */
     bool bBody = true;
-    for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables - 1;
-         ++i_vif) {
+    for (num_edges_t i_vif = n_start_i_vif;
+         i_vif < n_start_i_vif + n_variables - 1; ++i_vif) {
       const VariableInFactor &vif = vifs[i_vif];
       // If it is the proposal variable, we use the truth value of the proposal
       bBody &= is_variable_satisfied(vif, vid, var_values, proposal);
@@ -215,8 +216,8 @@ class CompactFactor {
   DEFINE_POTENTIAL_FOR(FUNC_IMPLY_neg1_1) {
     /* Compute the value of the body of the rule */
     bool bBody = true;
-    for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables - 1;
-         ++i_vif) {
+    for (num_edges_t i_vif = n_start_i_vif;
+         i_vif < n_start_i_vif + n_variables - 1; ++i_vif) {
       const VariableInFactor &vif = vifs[i_vif];
       // If it is the proposal variable, we use the truth value of the proposal
       bBody &= is_variable_satisfied(vif, vid, var_values, proposal);
@@ -244,8 +245,8 @@ class CompactFactor {
     bool bHead = is_variable_satisfied(vifs[n_start_i_vif + n_variables - 1],
                                        vid, var_values, proposal);
     /* Compute the value of the body of the rule */
-    for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables - 1;
-         ++i_vif) {
+    for (num_edges_t i_vif = n_start_i_vif;
+         i_vif < n_start_i_vif + n_variables - 1; ++i_vif) {
       const VariableInFactor &vif = vifs[i_vif];
       const bool satisfied =
           is_variable_satisfied(vif, vid, var_values, proposal);
@@ -263,8 +264,8 @@ class CompactFactor {
     bool bHead = is_variable_satisfied(vifs[n_start_i_vif + n_variables - 1],
                                        vid, var_values, proposal);
     /* Compute the value of the body of the rule */
-    for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables - 1;
-         ++i_vif) {
+    for (num_edges_t i_vif = n_start_i_vif;
+         i_vif < n_start_i_vif + n_variables - 1; ++i_vif) {
       const VariableInFactor &vif = vifs[i_vif];
       const bool satisfied =
           is_variable_satisfied(vif, vid, var_values, proposal);
@@ -280,8 +281,8 @@ class CompactFactor {
     bool bHead = is_variable_satisfied(vifs[n_start_i_vif + n_variables - 1],
                                        vid, var_values, proposal);
     /* Compute the value of the body of the rule */
-    for (size_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables - 1;
-         ++i_vif) {
+    for (num_edges_t i_vif = n_start_i_vif;
+         i_vif < n_start_i_vif + n_variables - 1; ++i_vif) {
       const VariableInFactor &vif = vifs[i_vif];
       const bool satisfied =
           is_variable_satisfied(vif, vid, var_values, proposal);
@@ -310,7 +311,7 @@ class Factor {
   factor_function_type_t func_id;  // factor function id
   factor_arity_t n_variables;      // number of variables
 
-  size_t n_start_i_vif;  // start variable id
+  num_edges_t n_start_i_vif;  // start variable id
 
   static constexpr factor_id_t INVALID_ID = -1;
   static constexpr factor_function_type_t INVALID_FUNC_ID = FUNC_UNDEFINED;

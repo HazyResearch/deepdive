@@ -21,24 +21,25 @@ class FactorGraphDescriptor {
  public:
   FactorGraphDescriptor();
 
-  FactorGraphDescriptor(size_t num_variables, size_t num_factors,
-                        size_t num_weights, size_t num_edges);
+  FactorGraphDescriptor(num_variables_t num_variables,
+                        num_factors_t num_factors, num_weights_t num_weights,
+                        num_edges_t num_edges);
 
   /** number of all variables */
-  size_t num_variables;
+  num_variables_t num_variables;
 
   /** number of factors */
-  size_t num_factors;
+  num_factors_t num_factors;
   /** number of edges */
-  size_t num_edges;
+  num_edges_t num_edges;
 
   /** number of all weights */
-  size_t num_weights;
+  num_weights_t num_weights;
 
   /** number of evidence variables */
-  size_t num_variables_evidence;
+  num_variables_t num_variables_evidence;
   /** number of query variables */
-  size_t num_variables_query;
+  num_variables_t num_variables_query;
 };
 
 std::ostream& operator<<(std::ostream& stream,

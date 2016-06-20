@@ -70,7 +70,7 @@ void FactorGraph::load_variables(const std::string &filename) {
   variable_id_t count = 0;
   variable_id_t id;
   variable_value_t initial_value;
-  variable_cardinality_t cardinality;
+  num_variable_values_t cardinality;
   while (file.good()) {
     // read fields
     file.read((char *)&id, 8);
@@ -124,7 +124,7 @@ void FactorGraph::load_factors(const std::string &filename) {
   variable_id_t variable_id;
   weight_id_t weightid;
   variable_value_t value_id;
-  short type;
+  int16_t type;
   factor_arity_t arity;
   variable_value_t should_equal_to;
   while (file.good()) {
@@ -137,7 +137,7 @@ void FactorGraph::load_factors(const std::string &filename) {
     factors[size.num_factors] =
         RawFactor(size.num_factors, -1, (factor_function_type_t)type, arity);
 
-    for (size_t position = 0; position < arity; ++position) {
+    for (factor_arity_t position = 0; position < arity; ++position) {
       file.read((char *)&variable_id, 8);
       file.read((char *)&should_equal_to, 4);
       variable_id = be64toh(variable_id);
@@ -208,7 +208,7 @@ void FactorGraph::load_domains(const std::string &filename) {
     id = be64toh(id);
     RawVariable &variable = variables[id];
 
-    variable_cardinality_t domain_size;
+    num_variable_values_t domain_size;
     file.read((char *)&domain_size, 4);
     domain_size = be32toh(domain_size);
 
@@ -216,16 +216,16 @@ void FactorGraph::load_domains(const std::string &filename) {
 
     std::vector<int> domain_list(domain_size);
     variable.domain_map.reset(
-        new std::unordered_map<variable_value_t, size_t>());
+        new std::unordered_map<variable_value_t, variable_value_index_t>());
 
-    for (size_t i = 0; i < domain_size; ++i) {
+    for (variable_value_index_t i = 0; i < domain_size; ++i) {
       file.read((char *)&value, 4);
       value = be32toh(value);
       domain_list[i] = value;
     }
 
     std::sort(domain_list.begin(), domain_list.end());
-    for (size_t i = 0; i < domain_size; ++i) {
+    for (variable_value_index_t i = 0; i < domain_size; ++i) {
       (*variable.domain_map)[domain_list[i]] = i;
     }
 

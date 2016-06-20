@@ -23,7 +23,7 @@ constexpr char field_delim = '\t';  // tsv file delimiter
 
 void dump_variables(const FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
-  for (size_t i = 0; i < fg.size.num_variables; ++i) {
+  for (variable_id_t i = 0; i < fg.size.num_variables; ++i) {
     Variable &v = fg.variables[i];
     // variable id
     fout << v.id;
@@ -52,7 +52,7 @@ void dump_variables(const FactorGraph &fg, const std::string &filename) {
 
 void dump_domains(const FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
-  for (size_t i = 0; i < fg.size.num_variables; ++i) {
+  for (variable_id_t i = 0; i < fg.size.num_variables; ++i) {
     Variable &v = fg.variables[i];
     if (v.domain_map) {
       fout << v.id;
@@ -100,11 +100,11 @@ void dump_factors(const FactorGraph &fg, const std::string &filename) {
         for (const auto &item : ordered) {
           factor_weight_key_t key = item.first;
           weight_id_t wid = item.second;
-          for (size_t k = f.n_variables; k > 0;) {
+          for (factor_arity_t k = f.n_variables; k > 0;) {
             --k;  // turning it into a correct index
             variable_id_t vid = f.tmp_variables.at(k).vid;
             Variable &var = fg.variables[vid];
-            size_t val_idx = key % var.cardinality;
+            variable_value_t val_idx = key % var.cardinality;
             variable_value_t val = var.get_domain_value_at(val_idx);
             key = key / var.cardinality;
             vals[w * f.n_variables + k] = val;
@@ -116,7 +116,7 @@ void dump_factors(const FactorGraph &fg, const std::string &filename) {
         fout << f.weight_ids->size();
         fout << field_delim;
         // output values per var
-        for (size_t k = 0; k < f.n_variables; ++k) {
+        for (factor_arity_t k = 0; k < f.n_variables; ++k) {
           fout << "{";
           for (factor_weight_key_t j = 0; j < f.weight_ids->size(); ++j) {
             if (j > 0) fout << ",";

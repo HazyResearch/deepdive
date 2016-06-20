@@ -14,7 +14,7 @@ InferenceResult::InferenceResult(const CompactFactorGraph &fg,
       ntallies(0),
       categorical_tallies(),
       agg_means(new variable_value_t[nvars]),
-      agg_nsamples(new size_t[nvars]),
+      agg_nsamples(new num_samples_t[nvars]),
       assignments_free(new variable_value_t[nvars]),
       assignments_evid(new variable_value_t[nvars]),
       weight_values(new weight_value_t[nweights]),
@@ -39,7 +39,7 @@ InferenceResult::InferenceResult(const CompactFactorGraph &fg,
     }
   }
 
-  categorical_tallies.reset(new size_t[ntallies]);
+  categorical_tallies.reset(new num_samples_t[ntallies]);
 
   clear_variabletally();
 }
@@ -59,8 +59,8 @@ InferenceResult::InferenceResult(const InferenceResult &other)
          sizeof(*weights_isfixed.get()) * nweights);
 
   ntallies = other.ntallies;
-  categorical_tallies.reset(new size_t[ntallies]);
-  for (size_t i = 0; i < ntallies; ++i) {
+  categorical_tallies.reset(new num_samples_t[ntallies]);
+  for (num_tallies_t i = 0; i < ntallies; ++i) {
     categorical_tallies[i] = other.categorical_tallies[i];
   }
 }
@@ -101,7 +101,7 @@ void InferenceResult::copy_weights_to(InferenceResult &other) const {
 
 void InferenceResult::show_weights_snippet(std::ostream &output) const {
   output << "LEARNING SNIPPETS (QUERY WEIGHTS):" << std::endl;
-  size_t ct = 0;
+  num_weights_t ct = 0;
   for (weight_id_t j = 0; j < nweights; ++j) {
     ++ct;
     output << "   " << j << " " << weight_values[j] << std::endl;
@@ -123,7 +123,7 @@ void InferenceResult::clear_variabletally() {
     agg_means[i] = 0.0;
     agg_nsamples[i] = 0.0;
   }
-  for (size_t i = 0; i < ntallies; ++i) {
+  for (num_tallies_t i = 0; i < ntallies; ++i) {
     categorical_tallies[i] = 0;
   }
 }
@@ -137,14 +137,14 @@ void InferenceResult::aggregate_marginals_from(const InferenceResult &other) {
     agg_means[variable.id] += other.agg_means[variable.id];
     agg_nsamples[variable.id] += other.agg_nsamples[variable.id];
   }
-  for (size_t j = 0; j < other.ntallies; ++j) {
+  for (num_tallies_t j = 0; j < other.ntallies; ++j) {
     categorical_tallies[j] += other.categorical_tallies[j];
   }
 }
 
 void InferenceResult::show_marginal_snippet(std::ostream &output) const {
   output << "INFERENCE SNIPPETS (QUERY VARIABLES):" << std::endl;
-  size_t ct = 0;
+  num_variables_t ct = 0;
   for (variable_id_t j = 0; j < fg.size.num_variables; ++j) {
     const Variable &variable = fg.variables[j];
     if (!variable.is_evid || opts.should_sample_evidence) {
@@ -160,7 +160,8 @@ void InferenceResult::show_marginal_snippet(std::ostream &output) const {
 
         case DTYPE_CATEGORICAL: {
           const auto &print_snippet = [this, &output, variable](
-              variable_value_t domain_value, size_t domain_index) {
+              variable_value_t domain_value,
+              variable_value_index_t domain_index) {
             output << "        @ " << domain_value << " -> EXP="
                    << 1.0 * categorical_tallies[variable.n_start_i_tally +
                                                 domain_index] /
@@ -171,7 +172,7 @@ void InferenceResult::show_marginal_snippet(std::ostream &output) const {
             for (const auto &entry : *variable.domain_map)
               print_snippet(entry.first, entry.second);
           } else {  // dense case
-            for (size_t j = 0; j < variable.cardinality; ++j)
+            for (variable_value_index_t j = 0; j < variable.cardinality; ++j)
               print_snippet(j, j);
           }
           break;
@@ -192,11 +193,11 @@ void InferenceResult::show_marginal_snippet(std::ostream &output) const {
 void InferenceResult::show_marginal_histogram(std::ostream &output) const {
   // show a histogram of inference results
   output << "INFERENCE CALIBRATION (QUERY BINS):" << std::endl;
-  std::vector<size_t> abc;
+  std::vector<num_variables_t> abc;
   for (int i = 0; i <= 10; ++i) {
     abc.push_back(0);
   }
-  size_t bad = 0;
+  num_variables_t bad = 0;
   for (variable_id_t j = 0; j < nvars; ++j) {
     const Variable &variable = fg.variables[j];
     if (!opts.should_sample_evidence && variable.is_evid) {
@@ -235,7 +236,8 @@ void InferenceResult::dump_marginals_in_text(std::ostream &text_output) const {
 
       case DTYPE_CATEGORICAL: {
         const auto &print_result = [this, &text_output, variable](
-            variable_value_t domain_value, size_t domain_index) {
+            variable_value_t domain_value,
+            variable_value_index_t domain_index) {
           text_output
               << variable.id << " " << domain_value << " "
               << (1.0 *
@@ -246,8 +248,9 @@ void InferenceResult::dump_marginals_in_text(std::ostream &text_output) const {
         if (variable.domain_map) {  // sparse
           for (const auto &entry : *variable.domain_map)
             print_result(entry.first, entry.second);
-        } else {  // dense
-          for (size_t k = 0; k < variable.cardinality; ++k) print_result(k, k);
+        } else {  // dense // TODO remove
+          for (variable_value_index_t k = 0; k < variable.cardinality; ++k)
+            print_result(k, k);
         }
         break;
       }

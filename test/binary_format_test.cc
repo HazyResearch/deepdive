@@ -59,7 +59,7 @@ TEST(BinaryFormatTest, read_weights) {
 
 // test read domains
 TEST(BinaryFormatTest, read_domains) {
-  size_t num_variables = 3;
+  num_variables_t num_variables = 3;
   int domain_sizes[] = {1, 2, 3};
   FactorGraph fg({num_variables, 1, 1, 1});
 

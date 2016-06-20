@@ -124,7 +124,7 @@ DimmWitted::DimmWitted(std::unique_ptr<CompactFactorGraph> p_cfg,
 }
 
 void DimmWitted::inference() {
-  const size_t n_epoch = compute_n_epochs(opts.n_inference_epoch);
+  const num_epochs_t n_epoch = compute_n_epochs(opts.n_inference_epoch);
   const variable_id_t nvar = samplers[0].fg.size.num_variables;
   const bool should_show_progress = !opts.should_be_quiet;
   Timer t_total, t;
@@ -132,7 +132,7 @@ void DimmWitted::inference() {
   for (auto &sampler : samplers) sampler.infrs.clear_variabletally();
 
   // inference epochs
-  for (size_t i_epoch = 0; i_epoch < n_epoch; ++i_epoch) {
+  for (num_epochs_t i_epoch = 0; i_epoch < n_epoch; ++i_epoch) {
     if (should_show_progress) {
       std::cout << std::setprecision(2) << "INFERENCE EPOCH "
                 << i_epoch * n_numa_nodes << "~"
@@ -163,7 +163,7 @@ void DimmWitted::inference() {
 void DimmWitted::learn() {
   InferenceResult &infrs = samplers[0].infrs;
 
-  const size_t n_epoch = compute_n_epochs(opts.n_learning_epoch);
+  const num_epochs_t n_epoch = compute_n_epochs(opts.n_learning_epoch);
   const variable_id_t nvar = infrs.nvars;
   const weight_id_t nweight = infrs.nweights;
   const double decay = opts.decay;
@@ -175,7 +175,7 @@ void DimmWitted::learn() {
   COPY_ARRAY(infrs.weight_values.get(), nweight, prev_weights.get());
 
   // learning epochs
-  for (size_t i_epoch = 0; i_epoch < n_epoch; ++i_epoch) {
+  for (num_epochs_t i_epoch = 0; i_epoch < n_epoch; ++i_epoch) {
     if (should_show_progress) {
       std::cout << std::setprecision(2) << "LEARNING EPOCH "
                 << i_epoch * n_numa_nodes << "~"
@@ -260,7 +260,7 @@ void DimmWitted::aggregate_results_and_dump() {
 }
 
 // compute number of NUMA-aware epochs for learning or inference
-size_t DimmWitted::compute_n_epochs(size_t n_epoch) {
+num_epochs_t DimmWitted::compute_n_epochs(num_epochs_t n_epoch) {
   return std::ceil((double)n_epoch / n_numa_nodes);
 }
 

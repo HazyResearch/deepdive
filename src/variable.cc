@@ -6,7 +6,7 @@ Variable::Variable()
     : Variable(INVALID_ID, DTYPE_BOOLEAN, false, 2, 0, 0, false) {}
 
 Variable::Variable(variable_id_t id, variable_domain_type_t domain_type,
-                   bool is_evidence, variable_cardinality_t cardinality,
+                   bool is_evidence, num_variable_values_t cardinality,
                    variable_value_t init_value, variable_value_t current_value,
                    bool is_observation)
     : id(id),
@@ -35,7 +35,8 @@ Variable &Variable::operator=(const Variable &other) {
   n_start_i_tally = other.n_start_i_tally;
   domain_map.reset(
       other.domain_map
-          ? new std::unordered_map<variable_value_t, size_t>(*other.domain_map)
+          ? new std::unordered_map<variable_value_t, variable_value_index_t>(
+                *other.domain_map)
           : nullptr);
   return *this;
 }
@@ -43,7 +44,7 @@ Variable &Variable::operator=(const Variable &other) {
 RawVariable::RawVariable() : Variable() {}
 
 RawVariable::RawVariable(variable_id_t id, variable_domain_type_t domain_type,
-                         bool is_evidence, variable_cardinality_t cardinality,
+                         bool is_evidence, num_variable_values_t cardinality,
                          variable_value_t init_value,
                          variable_value_t current_value, bool is_observation)
     : Variable(id, domain_type, is_evidence, cardinality, init_value,
@@ -56,7 +57,7 @@ bool VariableInFactor::satisfiedUsing(variable_value_t value) const {
 VariableInFactor::VariableInFactor()
     : VariableInFactor(Variable::INVALID_ID, -1, Variable::INVALID_VALUE) {}
 
-VariableInFactor::VariableInFactor(variable_id_t vid, size_t n_position,
+VariableInFactor::VariableInFactor(variable_id_t vid, factor_arity_t n_position,
                                    variable_value_t equal_to)
     : vid(vid), n_position(n_position), equal_to(equal_to) {}
 

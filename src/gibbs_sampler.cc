@@ -15,7 +15,7 @@ GibbsSampler::GibbsSampler(std::unique_ptr<CompactFactorGraph> _pfg,
     workers.push_back(GibbsSamplerThread(fg, infrs, i, nthread, opts));
 }
 
-void GibbsSampler::sample(size_t i_epoch) {
+void GibbsSampler::sample(num_epochs_t i_epoch) {
   numa_run_on_node(nodeid);
   for (auto &worker : workers) {
     threads.push_back(std::thread([&worker]() { worker.sample(); }));
@@ -44,10 +44,10 @@ GibbsSamplerThread::GibbsSamplerThread(CompactFactorGraph &fg,
       sample_evidence(opts.should_sample_evidence),
       learn_non_evidence(opts.should_learn_non_evidence) {
   set_random_seed(rand(), rand(), rand());
-  size_t nvar = fg.size.num_variables;
+  num_variables_t nvar = fg.size.num_variables;
   // calculates the start and end id in this partition
-  start = ((size_t)(nvar / n_shards) + 1) * ith_shard;
-  end = ((size_t)(nvar / n_shards) + 1) * (ith_shard + 1);
+  start = ((num_variables_t)(nvar / n_shards) + 1) * ith_shard;
+  end = ((num_variables_t)(nvar / n_shards) + 1) * (ith_shard + 1);
   end = end > nvar ? nvar : end;
 }
 
@@ -60,11 +60,11 @@ void GibbsSamplerThread::set_random_seed(unsigned short seed0,
 }
 
 void GibbsSamplerThread::sample() {
-  for (size_t vid = start; vid < end; ++vid) sample_single_variable(vid);
+  for (variable_id_t vid = start; vid < end; ++vid) sample_single_variable(vid);
 }
 
 void GibbsSamplerThread::sample_sgd(double stepsize) {
-  for (size_t vid = start; vid < end; ++vid)
+  for (variable_id_t vid = start; vid < end; ++vid)
     sample_sgd_single_variable(vid, stepsize);
 }
 

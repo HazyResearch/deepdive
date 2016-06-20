@@ -26,7 +26,7 @@ void load_var(std::string input_filename, std::string output_filename) {
   short type;
   variable_id_t vid;
   variable_value_t initial_value;
-  variable_cardinality_t cardinality;
+  num_variable_values_t cardinality;
 
   while (fin >> vid >> is_evidence >> initial_value >> type >> cardinality) {
     // endianess
@@ -119,7 +119,7 @@ void load_factor(std::string input_filename, std::string output_filename,
   std::ifstream fin(input_filename.c_str());
   std::ofstream fout(output_filename.c_str(), std::ios::binary | std::ios::out);
 
-  size_t total_edges = 0;
+  num_edges_t total_edges = 0;
 
   weight_id_t weightid = 0;
   std::vector<variable_id_t> variables;
@@ -235,7 +235,7 @@ void load_domain(std::string input_filename, std::string output_filename) {
   while (getline(fin, line)) {
     istringstream line_input(line);
     variable_id_t vid;
-    variable_cardinality_t cardinality, cardinality_be;
+    num_variable_values_t cardinality, cardinality_be;
     std::string domain;
     assert(line_input >> vid >> cardinality >> domain);
 

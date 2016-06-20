@@ -23,14 +23,14 @@ class Variable {
                         // DTYPE_CATEGORICAL
   bool is_evid;         // whether the variable is evidence
   bool is_observation;  // observed variable (fixed)
-  variable_cardinality_t cardinality;  // cardinality
+  num_variable_values_t cardinality;  // cardinality
 
   variable_value_t assignment_evid;  // assignment, while keeping evidence
                                      // variables unchanged
   variable_value_t assignment_free;  // assignment, free to change any variable
 
-  size_t n_factors;          // number of factors the variable connects to
-  size_t n_start_i_factors;  // id of the first factor
+  num_edges_t n_factors;          // number of factors the variable connects to
+  num_edges_t n_start_i_factors;  // id of the first factor
 
   /*
    * The values of categorical variables are stored in an array that looks
@@ -43,10 +43,11 @@ class Variable {
    */
 
   // n_start_i_tally is the start position for the variable values in the array
-  size_t n_start_i_tally;
+  num_samples_t n_start_i_tally;
 
   // map from value to index in the domain vector
-  std::unique_ptr<std::unordered_map<variable_value_t, size_t>> domain_map;
+  std::unique_ptr<std::unordered_map<variable_value_t, variable_value_index_t>>
+      domain_map;
 
   /**
    * The inverse of domain_map, constructed on demand by get_domain_value_at
@@ -61,7 +62,7 @@ class Variable {
                // CompactFactorGraph::variables
 
   Variable(variable_id_t id, variable_domain_type_t domain_type,
-           bool is_evidence, variable_cardinality_t cardinality,
+           bool is_evidence, num_variable_values_t cardinality,
            variable_value_t init_value, variable_value_t current_value,
            bool is_observation);
 
@@ -73,12 +74,12 @@ class Variable {
   Variable& operator=(const Variable& variable);
 
   // get the index of the value
-  inline size_t get_domain_index(variable_value_t v) const {
+  inline variable_value_index_t get_domain_index(variable_value_t v) const {
     return domain_map ? domain_map->at(v) : v;
   }
 
   // inverse of get_domain_index
-  inline variable_value_t get_domain_value_at(size_t idx) {
+  inline variable_value_t get_domain_value_at(variable_value_index_t idx) {
     if (!domain_list && domain_map) {
       domain_list.reset(new std::vector<variable_value_t>(domain_map->size()));
       for (const auto& item : *domain_map) {
@@ -104,7 +105,7 @@ class RawVariable : public Variable {
   RawVariable();  // default constructor, necessary for FactorGraph::variables
 
   RawVariable(variable_id_t id, variable_domain_type_t domain_type,
-              bool is_evidence, variable_cardinality_t cardinality,
+              bool is_evidence, num_variable_values_t cardinality,
               variable_value_t init_value, variable_value_t current_value,
               bool is_observation);
 
@@ -118,8 +119,8 @@ class RawVariable : public Variable {
  */
 class VariableInFactor {
  public:
-  variable_id_t vid;  // variable id
-  size_t n_position;  // position of the variable inside factor
+  variable_id_t vid;          // variable id
+  factor_arity_t n_position;  // position of the variable inside factor
   // the variable's predicate value. A variable is "satisfied" if its value
   // equals equal_to
   variable_value_t equal_to;
@@ -131,7 +132,7 @@ class VariableInFactor {
 
   VariableInFactor();
 
-  VariableInFactor(variable_id_t vid, size_t n_position,
+  VariableInFactor(variable_id_t vid, factor_arity_t n_position,
                    variable_value_t equal_to);
 };
 

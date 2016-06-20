@@ -9,8 +9,10 @@ namespace dd {
 FactorGraphDescriptor::FactorGraphDescriptor()
     : FactorGraphDescriptor(0, 0, 0, 0) {}
 
-FactorGraphDescriptor::FactorGraphDescriptor(size_t n_var, size_t n_fac,
-                                             size_t n_wgt, size_t n_edg)
+FactorGraphDescriptor::FactorGraphDescriptor(num_variables_t n_var,
+                                             num_factors_t n_fac,
+                                             num_weights_t n_wgt,
+                                             num_edges_t n_edg)
     : num_variables(n_var),
       num_factors(n_fac),
       num_edges(n_edg),
@@ -46,7 +48,7 @@ FactorGraph::FactorGraph(const FactorGraphDescriptor &capacity)
 
 CompactFactorGraph::CompactFactorGraph(const FactorGraph &fg)
     : CompactFactorGraph(fg.size) {
-  size_t i_edge = 0;
+  num_edges_t i_edge = 0;
 
   // For each factor, put the variables sorted within each factor in an array.
   for (factor_id_t i = 0; i < fg.size.num_factors; ++i) {
@@ -72,7 +74,7 @@ CompactFactorGraph::CompactFactorGraph(const FactorGraph &fg)
 
   // For each variable, lay the factors sequentially in an array as well.
   i_edge = 0;
-  size_t ntallies = 0;
+  num_tallies_t ntallies = 0;
   for (variable_id_t i = 0; i < fg.size.num_variables; ++i) {
     const RawVariable &rv = fg.variables[i];
     variables[i] = rv;
@@ -163,7 +165,7 @@ weight_id_t CompactFactorGraph::get_categorical_weight_id(
    */
   factor_weight_key_t key = 0;
   // for each variable in the factor
-  for (size_t i = fs.n_start_i_vif; i < fs.n_start_i_vif + fs.n_variables;
+  for (num_edges_t i = fs.n_start_i_vif; i < fs.n_start_i_vif + fs.n_variables;
        ++i) {
     const VariableInFactor &vif = vifs[i];
     const Variable &variable = variables[vif.vid];
@@ -192,7 +194,7 @@ void CompactFactorGraph::update_weight(const Variable &variable,
   const weight_id_t *const ws =
       &compact_factors_weightids[variable.n_start_i_factors];
   // for each factor
-  for (size_t i = 0; i < variable.n_factors; ++i) {
+  for (num_edges_t i = 0; i < variable.n_factors; ++i) {
     // boolean variable
     switch (variable.domain_type) {
       case DTYPE_BOOLEAN: {

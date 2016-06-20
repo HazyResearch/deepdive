@@ -84,7 +84,7 @@ class DimmWitted {
   void dump_weights();
 
  private:
-  size_t compute_n_epochs(size_t n_epoch);
+  num_epochs_t compute_n_epochs(num_epochs_t n_epoch);
 };
 
 }  // namespace dd

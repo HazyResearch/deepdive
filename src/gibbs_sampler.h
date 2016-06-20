@@ -40,7 +40,7 @@ class GibbsSampler {
   /**
    * Performs sample
    */
-  void sample(size_t i_epoch);
+  void sample(num_epochs_t i_epoch);
 
   /**
    * Performs SGD
@@ -59,7 +59,7 @@ class GibbsSampler {
 class GibbsSamplerThread {
  private:
   // shard and variable id range assigned to this one
-  size_t start, end;
+  variable_id_t start, end;
 
   // RNG seed
   unsigned short p_rand_seed[3];
@@ -230,8 +230,10 @@ inline variable_value_t GibbsSamplerThread::draw_sample(
         COMPUTE_PROPOSAL((const auto &entry
                           : *variable.domain_map),
                          entry.first, entry.second);
-      } else {  // dense case
-        COMPUTE_PROPOSAL((size_t i = 0; i < variable.cardinality; ++i), i, i);
+      } else {  // dense case // TODO remove
+        COMPUTE_PROPOSAL(
+            (variable_value_index_t i = 0; i < variable.cardinality; ++i), i,
+            i);
       }
 
       assert(proposal != Variable::INVALID_VALUE);

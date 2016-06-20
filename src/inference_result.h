@@ -20,16 +20,17 @@ class InferenceResult {
   size_t weight_values_normalizer;
 
  public:
-  variable_id_t nvars;   // number of variables
-  weight_id_t nweights;  // number of weights
-  size_t ntallies;
+  num_variables_t nvars;   // number of variables
+  num_weights_t nweights;  // number of weights
+  num_tallies_t ntallies;
 
-  std::unique_ptr<size_t[]> categorical_tallies;  // this might be slow...
+  std::unique_ptr<num_samples_t[]>
+      categorical_tallies;  // this might be slow...
 
   // array of sum of samples for each variable
   std::unique_ptr<variable_value_t[]> agg_means;
   // array of number of samples for each variable
-  std::unique_ptr<size_t[]> agg_nsamples;
+  std::unique_ptr<num_samples_t[]> agg_nsamples;
   // assignment to variables, see variable.h for more detail
   std::unique_ptr<variable_value_t[]> assignments_free;
   std::unique_ptr<variable_value_t[]> assignments_evid;
