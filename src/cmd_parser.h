@@ -2,12 +2,9 @@
 #define DIMMWITTED_CMD_PARSER_H_
 
 #include "common.h"
-#include "factor.h"
 
-#include <algorithm>
-#include <assert.h>
-#include <iostream>
 #include <string>
+#include <vector>
 
 namespace dd {
 
