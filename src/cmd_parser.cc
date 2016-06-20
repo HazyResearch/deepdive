@@ -149,7 +149,7 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
     // TODO turn these into labeled args
     TCLAP::UnlabeledValueArg<int> text2bin_factor_func_id_(
         "func_id",
-        "factor function id (See: enum FACTOR_FUCNTION_TYPE in "
+        "factor function id (See: enum FACTOR_FUNCTION_TYPE in "
         "https://github.com/HazyResearch/sampler/blob/master/src/common.h)",
         true, 0, "func_id");
     TCLAP::UnlabeledValueArg<int> text2bin_factor_arity_(
@@ -173,8 +173,8 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
     text2bin_mode = text2bin_mode_.getValue();
     text2bin_input = text2bin_input_.getValue();
     text2bin_output = text2bin_output_.getValue();
-    text2bin_factor_func_id =
-        static_cast<FACTOR_FUCNTION_TYPE>(text2bin_factor_func_id_.getValue());
+    text2bin_factor_func_id = static_cast<factor_function_type_t>(
+        text2bin_factor_func_id_.getValue());
     text2bin_factor_arity = text2bin_factor_arity_.getValue();
     for (int positive_or_not : text2bin_factor_positives_or_not_.getValue()) {
       text2bin_factor_positives_or_not.push_back(positive_or_not != 0);

@@ -82,7 +82,7 @@ class CompactFactor {
       RETURN_POTENTIAL_FOR(FUNC_LOGICAL);
 #undef RETURN_POTENTIAL_FOR
       default:
-        std::cout << "Unsupported FACTOR_FUCNTION_TYPE = " << func_id
+        std::cout << "Unsupported FACTOR_FUNCTION_TYPE = " << func_id
                   << std::endl;
         std::abort();
     }

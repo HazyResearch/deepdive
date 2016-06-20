@@ -54,7 +54,7 @@ class CmdParser {
   std::string text2bin_mode;
   std::string text2bin_input;
   std::string text2bin_output;
-  FACTOR_FUCNTION_TYPE text2bin_factor_func_id;
+  factor_function_type_t text2bin_factor_func_id;
   factor_arity_t text2bin_factor_arity;
   std::vector<bool> text2bin_factor_positives_or_not;
 
