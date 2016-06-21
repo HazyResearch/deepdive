@@ -63,7 +63,7 @@ def convert_type_func(ty, ty_rest = ""):
         "timestamp": timestamp,
         "int"     : int,
         "float"   : float,
-        "text"    : lambda x: x,
+        "text"    : lambda x: x.decode('unicode_escape'),
         "boolean" : lambda x: x == "t",
         }
     # find the convert function with normalized type name
@@ -101,6 +101,17 @@ def unescape_postgres_text_format(s):
   # unescape PostgreSQL text format
   return re.sub(r"\\(.|0[0-7]{1,2}|x[0-9A-Fa-f]{1,2})", decode_pg_text_escapes, s)
 
+def utf_8_encoder(unicode_csv_data):
+    for line in unicode_csv_data:
+        yield line.encode('utf-8')
+
+def unicode_csv_reader(unicode_csv_data, **kwargs):
+    # csv.py doesn't do Unicode; encode temporarily as UTF-8:
+    csv_reader = csv.reader(utf_8_encoder(unicode_csv_data), **kwargs)
+    for row in csv_reader:
+        # decode UTF-8 back to Unicode, cell by cell:
+        yield [unicode(cell, 'utf-8') for cell in row]
+
 def main():
   # parse column names and types from arguments
   def parseArg(arg):
@@ -115,13 +126,13 @@ def main():
   # See: http://grokbase.com/t/python/python-ideas/131b0eaykx/csv-dialect-enhancement
   # See: http://stackoverflow.com/questions/11379300/python-csv-reader-behavior-with-none-and-empty-string
   # See: https://github.com/JoshClose/CsvHelper/issues/252
-  reader = csv.reader(sys.stdin, delimiter='\t', quotechar=None, quoting=csv.QUOTE_NONE)
+  reader = unicode_csv_reader(sys.stdin, delimiter='\t', quotechar=None, quoting=csv.QUOTE_NONE)
   for line in reader:
     obj = {}
     for (name, convert), field in zip(names_converters, line):
         obj[name] = None if field == "\\N" \
                          else convert(unescape_postgres_text_format(field))
-    print json.dumps(obj)
+    print json.dumps(obj, ensure_ascii=False).encode('utf-8')
 
 if __name__ == "__main__":
   main()
