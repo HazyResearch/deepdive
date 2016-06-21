@@ -42,7 +42,7 @@ def convert_type_func(ty, ty_rest = ""):
         return re.sub(r"\\(.)", lambda m: '""' if m.group(1) is '"' else m.group(1), s)
     if ty_el == "text":
       def convert_text_array(value):
-        arr = csv.reader([backslashes_to_csv_escapes(value[1:-1])], delimiter=',', quotechar='"').next()
+        arr = csv.reader([backslashes_to_csv_escapes(value[1:-1])], delimiter=',', quotechar='"', escapechar='\\').next()
         return map(convert, arr)
       return convert_text_array
     else:
@@ -63,7 +63,7 @@ def convert_type_func(ty, ty_rest = ""):
         "timestamp": timestamp,
         "int"     : int,
         "float"   : float,
-        "text"    : lambda x: x.decode('unicode_escape'),
+        "text"    : lambda x: unescape_postgres_text_format(x).decode('unicode_escape'),
         "boolean" : lambda x: x == "t",
         }
     # find the convert function with normalized type name
@@ -140,7 +140,7 @@ def main():
     obj = {}
     for (name, convert), field in zip(names_converters, line):
         obj[name] = None if field == "\\N" \
-                         else convert(unescape_postgres_text_format(field))
+                         else convert(field)
     print json.dumps(obj, ensure_ascii=False).encode('utf-8')
 
 if __name__ == "__main__":
