@@ -57,12 +57,14 @@ def convert_type_func(ty, ty_rest = ""):
         "bigint"  : "int",
         "double"  : "float",
         "numeric" : "float",
+        "real"    : "float",
+        "double precision" : "float",
         "unknown" : "text",
         }
     convert_for_primitive_types = {
         "timestamp": timestamp,
-        "int"     : int,
-        "float"   : float,
+        "int"     : lambda x: None if x == 'NULL' else int(x),
+        "float"   : lambda x: None if x == 'NULL' else float(x),
         "text"    : lambda x: unescape_postgres_text_format(x).decode('unicode_escape'),
         "boolean" : lambda x: x == "t",
         }
