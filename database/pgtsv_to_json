@@ -2,8 +2,28 @@
 # A script to convert PostgreSQL's COPY TO text (tsv; tab-delimited values) lines into JSON sequence
 # Usage: pgtsv_to_json COLUMN_NAME1:TYPE1 COLUMN_NAME2:TYPE2 ...
 
-import json, sys, csv, re
+import json, sys, csv, re, codecs
 from datetime import datetime
+
+
+ESCAPE_SEQUENCE_RE = re.compile(r'''
+    ( \\U........      # 8-digit hex escapes
+    | \\u....          # 4-digit hex escapes
+    | \\x..            # 2-digit hex escapes
+    | \\[0-7]{1,3}     # Octal escapes
+    | \\N\{[^}]+\}     # Unicode characters by name
+    | \\[\\'"abfnrtv]  # Single-character escapes
+    )''', re.UNICODE | re.VERBOSE)
+
+def decode_python_escapes(s):
+  '''Decode characters matching Python escape sequences in the given UTF-8 string,
+  but leave all actual unicode alone.
+
+  Use this instead of unicode.decode('unicode_escape'). See http://stackoverflow.com/a/24519338/465511
+  '''
+  def decode_match(match):
+    return codecs.decode(match.group(0), 'unicode-escape')
+  return ESCAPE_SEQUENCE_RE.sub(decode_match, s)
 
 def timestamp(timestamp_str):
     """Given a timestamp string, return a timestamp string in ISO 8601 format to emulate
@@ -42,12 +62,12 @@ def convert_type_func(ty, ty_rest = ""):
         return re.sub(r"\\(.)", lambda m: '""' if m.group(1) is '"' else m.group(1), s)
     if ty_el == "text":
       def convert_text_array(value):
-        arr = csv.reader([backslashes_to_csv_escapes(value[1:-1])], delimiter=',', quotechar='"', escapechar='\\').next()
+        arr = unicode_csv_reader([backslashes_to_csv_escapes(value[1:-1])], delimiter=',', quotechar='"', escapechar='\\').next()
         return map(convert, arr)
       return convert_text_array
     else:
       def convert_other_array(value):
-        arr = csv.reader([value[1:-1]], delimiter=',', quotechar='"').next()
+        arr = unicode_csv_reader([value[1:-1]], delimiter=',', quotechar='"').next()
         return map(convert, arr)
       return convert_other_array
   else: # non-array, must be primitive type
@@ -63,7 +83,7 @@ def convert_type_func(ty, ty_rest = ""):
         "timestamp": timestamp,
         "int"     : int,
         "float"   : float,
-        "text"    : lambda x: unescape_postgres_text_format(x).decode('unicode_escape'),
+        "text"    : lambda x: unescape_postgres_text_format(decode_python_escapes(x)),
         "boolean" : lambda x: x == "t",
         }
     # find the convert function with normalized type name
@@ -87,16 +107,14 @@ pgTextEscapeSeqs = {
     "t": "\t",
     "v": "\v",
     }
+
 def decode_pg_text_escapes(m):
   c = m.group(1)
   if c in pgTextEscapeSeqs:
     return pgTextEscapeSeqs[c]
-  elif c.startswith("x"):
-    return chr(int(c, base=16))
-  elif c.startswith("0"):
-    return chr(int(c, base=8))
   else:
     return c
+
 def unescape_postgres_text_format(s):
   # unescape PostgreSQL text format
   return re.sub(r"\\(.|0[0-7]{1,2}|x[0-9A-Fa-f]{1,2})", decode_pg_text_escapes, s)
@@ -135,7 +153,8 @@ def main():
   # See: http://grokbase.com/t/python/python-ideas/131b0eaykx/csv-dialect-enhancement
   # See: http://stackoverflow.com/questions/11379300/python-csv-reader-behavior-with-none-and-empty-string
   # See: https://github.com/JoshClose/CsvHelper/issues/252
-  reader = unicode_csv_reader(sys.stdin, delimiter='\t', quotechar=None, quoting=csv.QUOTE_NONE)
+  utf8_reader = codecs.getreader('utf8')
+  reader = unicode_csv_reader(utf8_reader(sys.stdin), delimiter='\t', quotechar=None, quoting=csv.QUOTE_NONE)
   for line in reader:
     obj = {}
     for (name, convert), field in zip(names_converters, line):
