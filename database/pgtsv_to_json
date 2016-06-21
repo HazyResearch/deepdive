@@ -111,7 +111,7 @@ def unicode_csv_reader(unicode_csv_data, **kwargs):
 
     This function takes all the same parameters as `csv.reader`. It was copied
     directly from the documentation for that module:
-    
+
     https://docs.python.org/2/library/csv.html#examples
 
     '''
