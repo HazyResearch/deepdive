@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # A script to convert PostgreSQL's COPY TO text (tsv; tab-delimited values) lines into JSON sequence
-# Usage: pgtsv_to_json COLUMN_NAME1:TYPE1 COLUMN_NAME2:TYPE2 ...
+# Usage: pgcsv_to_json COLUMN_NAME1:TYPE1 COLUMN_NAME2:TYPE2 ...
 
 import json, sys, csv, re
 from datetime import datetime
