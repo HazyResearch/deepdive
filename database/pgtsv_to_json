@@ -48,7 +48,8 @@ def convert_type_func(ty, ty_rest = ""):
     else:
       def convert_other_array(value):
         arr = csv.reader([value[1:-1]], delimiter=',', quotechar='"').next()
-        return map(convert, arr)
+        convert_or_null = lambda x: None if x == 'NULL' else convert(x)
+        return map(convert_or_null, arr)
       return convert_other_array
   else: # non-array, must be primitive type
     normalized_type_name = {
@@ -63,8 +64,8 @@ def convert_type_func(ty, ty_rest = ""):
         }
     convert_for_primitive_types = {
         "timestamp": timestamp,
-        "int"     : lambda x: None if x == 'NULL' else int(x),
-        "float"   : lambda x: None if x == 'NULL' else float(x),
+        "int"     : int,
+        "float"   : float,
         "text"    : lambda x: unescape_postgres_text_format(x).decode('unicode_escape'),
         "boolean" : lambda x: x == "t",
         }
