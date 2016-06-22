@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # A script to convert PostgreSQL's COPY TO text (tsv; tab-delimited values) lines into JSON sequence
 # Usage: pgtsv_to_json COLUMN_NAME1:TYPE1 COLUMN_NAME2:TYPE2 ...
 
@@ -42,13 +42,13 @@ def convert_type_func(ty, ty_rest = ""):
         return re.sub(r"\\(.)", lambda m: '""' if m.group(1) is '"' else m.group(1), s)
     if ty_el == "text":
       def convert_text_array(value):
-        arr = csv.reader([backslashes_to_csv_escapes(value[1:-1])], delimiter=',', quotechar='"', escapechar='\\').next()
-        return map(convert, arr)
+        arr = next(csv.reader([backslashes_to_csv_escapes(value[1:-1])], delimiter=',', quotechar='"', escapechar='\\'))
+        return list(map(convert, arr))
       return convert_text_array
     else:
       def convert_other_array(value):
-        arr = csv.reader([value[1:-1]], delimiter=',', quotechar='"').next()
-        return map(convert, arr)
+        arr = next(csv.reader([value[1:-1]], delimiter=',', quotechar='"'))
+        return list(map(convert, arr))
       return convert_other_array
   else: # non-array, must be primitive type
     normalized_type_name = {
@@ -63,7 +63,7 @@ def convert_type_func(ty, ty_rest = ""):
         "timestamp": timestamp,
         "int"     : int,
         "float"   : float,
-        "text"    : lambda x: unescape_postgres_text_format(x).decode('unicode_escape'),
+        "text"    : lambda x: x,
         "boolean" : lambda x: x == "t",
         }
     # find the convert function with normalized type name
@@ -77,56 +77,12 @@ def convert_type_func(ty, ty_rest = ""):
     else:
       raise ValueError("Unsupported data type %s" % ty)
 
-# PostgreSQL COPY TO text Format parser
-# See: http://www.postgresql.org/docs/9.1/static/sql-copy.html#AEN64302
-pgTextEscapeSeqs = {
-    "b": "\b",
-    "f": "\f",
-    "n": "\n",
-    "r": "\r",
-    "t": "\t",
-    "v": "\v",
-    }
-def decode_pg_text_escapes(m):
-  c = m.group(1)
-  if c in pgTextEscapeSeqs:
-    return pgTextEscapeSeqs[c]
-  elif c.startswith("x"):
-    return chr(int(c, base=16))
-  elif c.startswith("0"):
-    return chr(int(c, base=8))
-  else:
-    return c
-def unescape_postgres_text_format(s):
-  # unescape PostgreSQL text format
-  return re.sub(r"\\(.|0[0-7]{1,2}|x[0-9A-Fa-f]{1,2})", decode_pg_text_escapes, s)
-
-def utf_8_encoder(unicode_csv_data):
-    for line in unicode_csv_data:
-        yield line.encode('utf-8')
-
-
-def unicode_csv_reader(unicode_csv_data, **kwargs):
-    '''A generator for unicode lines from a csv file.
-
-    This function takes all the same parameters as `csv.reader`. It was copied
-    directly from the documentation for that module:
-
-    https://docs.python.org/2/library/csv.html#examples
-
-    '''
-    # csv.py doesn't do Unicode; encode temporarily as UTF-8:
-    csv_reader = csv.reader(utf_8_encoder(unicode_csv_data), **kwargs)
-    for row in csv_reader:
-        # decode UTF-8 back to Unicode, cell by cell:
-        yield [unicode(cell, 'utf-8') for cell in row]
-
 def main():
   # parse column names and types from arguments
   def parseArg(arg):
       field_name, field_type = re.match(r"(.+):([^:]+)", arg).groups()
       return field_name, convert_type_func(field_type)
-  names_converters = map(parseArg, sys.argv[1:])
+  names_converters = list(map(parseArg, sys.argv[1:]))
 
   # read the PostgreSQL COPY TO text format
   # XXX With Python's csv.reader, it's impossible to distinguish empty strings from nulls in PostgreSQL's csv output.
@@ -135,13 +91,13 @@ def main():
   # See: http://grokbase.com/t/python/python-ideas/131b0eaykx/csv-dialect-enhancement
   # See: http://stackoverflow.com/questions/11379300/python-csv-reader-behavior-with-none-and-empty-string
   # See: https://github.com/JoshClose/CsvHelper/issues/252
-  reader = unicode_csv_reader(sys.stdin, delimiter='\t', quotechar=None, quoting=csv.QUOTE_NONE)
+  reader = csv.reader(sys.stdin)
   for line in reader:
     obj = {}
     for (name, convert), field in zip(names_converters, line):
-        obj[name] = None if field == "\\N" \
+        obj[name] = None if field == '\\N' \
                          else convert(field)
-    print json.dumps(obj, ensure_ascii=False).encode('utf-8')
+    print(json.dumps(obj))
 
 if __name__ == "__main__":
   main()
