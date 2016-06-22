@@ -49,8 +49,6 @@ env:
 #      TEST_EXCEPT: "'test/postgresql/scalatests.bats test/mysql/*.bats'"
 
 before_install:
-  - sudo apt-get update
-  - sudo apt-get install python3
   # Check coding style before performing the build and tests
   - make checkstyle
   # Decrypt credentials for util/build/update-github-tags and update-github-release-asset
