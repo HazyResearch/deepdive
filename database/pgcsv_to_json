@@ -42,7 +42,7 @@ def convert_type_func(ty, ty_rest = ""):
         return re.sub(r"\\(.)", lambda m: '""' if m.group(1) is '"' else m.group(1), s)
     if ty_el == "text":
       def convert_text_array(value):
-        arr = next(csv.reader([backslashes_to_csv_escapes(value[1:-1])], delimiter=',', quotechar='"', escapechar='\\'))
+        arr = next(csv.reader([backslashes_to_csv_escapes(value[1:-1])], delimiter=',', quotechar='"'))
         return list(map(convert, arr))
       return convert_text_array
     else:
