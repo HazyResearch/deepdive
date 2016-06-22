@@ -22,7 +22,7 @@ scala:
 jdk:
   - oraclejdk8
 python:
-  - "2.7"
+  - "3.5"
 services:
   - postgresql
 
