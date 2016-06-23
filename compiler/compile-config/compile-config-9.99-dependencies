@@ -3,19 +3,25 @@
 ##
 .deepdive_ as $deepdive
 
-# a handy map to find input data for extractors
-| ( $deepdive.execution.processes | with_entries(.value |= .output_)
+# a handy map to find outputs_ by process name
+| ( $deepdive.execution.processes | with_entries
+    (.value |= (.output_ | if type == "null"  then null
+                         elif type == "array" then .
+                         else [.] end))
   ) as $output_relation
-
 # form a dependency graph
 | .deepdive_.execution.dependencies =
 ( [ # every process/* and the processes or input data it depends on
     ( $deepdive.execution.processes | to_entries[]
-    | .value |= ((.dependencies_ // [] | map($output_relation[.] // .)) + .input_ | unique)
+    | .value |= (([.dependencies_[]? | ($output_relation[.] // [.])[]]) + .input_ | unique)
     )
-  , # every data/* and the processes that output it
-    ( $output_relation | to_entries | map(select(.value)) | group_by(.value)[]
-    | { key: .[0].value, value: map(.key) }
+  , # every output_ depends on the process that output it
+    ( $output_relation | to_entries
+    # repeat map entries for every output_
+    | [ map({ key: .key, value: .value[]? })[] ]
+    # invert the mappings
+    | group_by(.value)[]
+    | { key: (.[0].value // empty), value: map(.key) }
     )
   ]
 | from_entries
