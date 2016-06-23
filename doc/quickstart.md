@@ -67,18 +67,18 @@ app.ddlog  db.url  deepdive.conf  input/  labeling/  mindbender/  README.md  udf
 ```
 
 ### 1. Load input
+First, you have to compile the DeepDive application using the following command:
+
+```bash
+deepdive compile
+```
+Once it has compiled with no error, you can run the following ```deepdive``` commands.
 
 You can find some of our sampled datasets under `input/`.
-You can also [download the full corpus][corpus], but let's proceed with the one that has 1000 sampled articles:
-
+You can also [download the full corpus][corpus], but let's proceed with the one that has 1000 sampled articles. Run the following command to load the sampled articles into DeepDive:
 ```bash
-ln -s articles-1000.tsv.bz2 input/articles.tsv.bz2
+deepdive load articles input/articles-1000.tsv.bz2
 ```
-```bash
-deepdive do articles
-```
-
-This will load the input data into the database.
 *Note that everytime you use the `deepdive do` command, it opens a list of commands to be run in your text editor. You have to confirm it by saving and quiting the editor.*
 
 Here are a few lines from an example article in the input corpus that has been loaded.
@@ -173,7 +173,7 @@ Here are the probabilities computed for the pairs of names from the example arti
 ```bash
 deepdive sql "
     SELECT p1.mention_text, p2.mention_text, expectation
-    FROM has_spouse_label_inference i, person_mention p1, person_mention p2
+    FROM has_spouse_inference i, person_mention p1, person_mention p2
     WHERE p1_id LIKE '5beb863f-26b1-4c2f-ba64-0c3e93e72162%'
       AND p1_id = p1.mention_id AND p2_id = p2.mention_id
   "

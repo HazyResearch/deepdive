@@ -88,10 +88,15 @@ Then we compile our application, as we must do whenever we change `app.ddlog`:
 deepdive compile
 ```
 
-Finally, we tell DeepDive to execute the steps to load the `articles` table:
+Finally, we tell DeepDive to execute the steps to load the `articles` table using the `input/articles.tsv.sh` script. You must have the [full corpus](http://research.signalmedia.co/newsir16/signal-dataset.html) downloaded.
 
 ```bash
 deepdive do articles
+```
+
+Alternatively, a sample of 1000 articles can be loaded directly by issuing the following command:
+```bash
+deepdive load articles input/articles-1000.tsv.bz2
 ```
 
 DeepDive will output an execution plan, which will pop up in your default text editor.
@@ -165,7 +170,7 @@ Note that we declare a compound key of `(doc_id, sentence_index)` for each sente
 -->
 
 Next we declare a DDlog function which takes in the `doc_id` and `content` for an article and returns rows conforming to the sentences schema we just declared, using the **user-defined function (UDF)** in `udf/nlp_markup.sh`.
-This UDF is a Bash script which calls [our own wrapper around CoreNLP](https://github.com/HazyResearch/bazaar/tree/master/parser).
+This UDF is a Bash script which calls [our own wrapper around CoreNLP](https://github.com/HazyResearch/bazaar/tree/master/parser). The CoreNLP library requires Java 8 to run.
 
 ```ddlog
 function nlp_markup over (
@@ -803,7 +808,7 @@ This will ground the model based on the data in the database, learn the weights,
 Let's take a look at the probabilities inferred by DeepDive for the `has_spouse` variables.
 
 ```bash
-deepdive sql "SELECT p1_id, p2_id, expectation FROM has_spouse_label_inference ORDER BY random() LIMIT 20"
+deepdive sql "SELECT p1_id, p2_id, expectation FROM has_spouse_inference ORDER BY random() LIMIT 20"
 ```
 
 <!-- TODO Update to ddlog query once `@expectation(e) has_spouse(...)` syntax is implemented -->
@@ -853,7 +858,7 @@ deepdive do calibration-plots
 ```
 
 It will produce a file `run/model/calibration-plots/has_spouse.png` that holds three plots as shown below:
-![Calibration plot for spouse example](images/spouse/has_spouse_label.png)
+![Calibration plot for spouse example](images/spouse/has_spouse.png)
 
 Refer to the [full documentation on calibration data](calibration.md) for more detail on how to interpret the plots and take actions.
 

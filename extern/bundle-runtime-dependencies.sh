@@ -16,7 +16,10 @@ Submodule="${here#$PWD/}"/buildkit
 cd "$here"
 
 # prepare runtime dependencies to bundle
-mkdir -p .build
+[[ -d .build ]] || {
+    mkdir -p ../.build/extern
+    ln -sfnv ../.build/extern .build
+}
 PATH="$PWD"/buildkit:"$PATH"
 buildkit/depends/module.build
 

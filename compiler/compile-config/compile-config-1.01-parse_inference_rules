@@ -26,7 +26,7 @@ include "util";
             , params: (ltrimstr("?") | trimWhitespace
                 | ltrimstr("(") | rtrimstr(")") | trimWhitespace
                 | if length == 0 then [] else split("\\s*,\\s*"; "") end)
-            , init_value: 0.0
+            , init_value: 0
             }
         else
             # fixed weight
@@ -80,14 +80,19 @@ include "util";
             , and         : 2
             , equal       : 3
             , istrue      : 4
-            , multinomial : 5
             , linear      : 7
             , ratio       : 8
             , logical     : 9
             , imply3      : 11
+            , andcategorical : 12
             }[.name] //
                 error("deepdive.inference.factors.\($factorName
                     ) uses an unrecognized function: \(.name | @json)")
+
+        # finds out whether it is defined over categorical variables
+        | .isCategorical = (.name | in(
+            { andcategorical: 1
+            }))
 
         # check required/permitted number of parameters
         | if .name == "istrue" and (.variables | length) != 1
@@ -99,14 +104,9 @@ include "util";
             .name)' must be over exactly two variables but found \(.variables | length)")
         else . end
 
-        # TODO check if all .variables type are categorical for multinomial function
+        # TODO check if all .variables type are categorical for categorical function
         )
 
-    # XXX set up an exploded table to dump for multinomial factors
-    | .weightsTableForDumping =
-        if .function_.name != "multinomial" then .weightsTable
-        else "\(deepdivePrefixForMultinomialWeightsTable)\($factorName)"
-        end
 ]
 
 # create a map to make it easy to access a factor by its name

@@ -52,7 +52,9 @@ build_submodule() {
     done
     # record built commit id
     mkdir -p "$(dirname "$build_info")"
-    commit_built=$(git submodule status "$Submodule" | awk '{print $1}' | tee "$build_info")
+    commit_built=$(git submodule status "$Submodule" | awk '{print $1}')
+    $is_clean || commit_built+="+WIP"  # mark Work-In-Progress if dirty to ensure it builds once the changes are cleared
+    echo "$commit_built" >"$build_info"
     echo >&2 "# submodule $Submodule: built $commit_built"
     exit
 }

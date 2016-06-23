@@ -17,7 +17,7 @@
     | .value |= ( .dependencies_ = .dependencies
                 | .dependencies_ |= (. // [] | map("process/\(.)"))
                 | .input_ = (.input_relations // [] | map("data/\(.)"))
-                | .output_ = (.output_relation | if . then "data/\(.)" else null end)
+                | .output_ = (.output_relation | if . then ["data/\(.)"] else null end)
                 )
     )
 
@@ -27,7 +27,7 @@
     | .value |= ( .dependencies_ = .dependencies
                 | .dependencies_ |= (. // [] | map("process/\(.)"))
                 | .input_ = (.input_relations // [] | map("data/\(.)"))
-                | .output_ = (.output_relation | if . then "data/\(.)" else null end)
+                | .output_ = (.output_relation | if . then ["data/\(.)"] else null end)
                 )
     )
 

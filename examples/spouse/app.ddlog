@@ -213,6 +213,7 @@ spouse_label += supervise(
 spouse_label_resolved(p1_id, p2_id, SUM(vote)) :- spouse_label(p1_id, p2_id, vote, rule_id).
 
 # assign the resolved labels for the spouse relation
+@materialize
 has_spouse(p1_id, p2_id) = if l > 0 then TRUE
                       else if l < 0 then FALSE
                       else NULL end :- spouse_label_resolved(p1_id, p2_id, l).
@@ -224,16 +225,14 @@ has_spouse(p1_id, p2_id) = if l > 0 then TRUE
 # Features
 @weight(f)
 has_spouse(p1_id, p2_id) :-
-    spouse_candidate(p1_id, _, p2_id, _),
     spouse_feature(p1_id, p2_id, f).
 
 # Inference rule: Symmetry
 @weight(3.0)
 has_spouse(p1_id, p2_id) => has_spouse(p2_id, p1_id) :-
-    spouse_candidate(p1_id, _, p2_id, _).
+    TRUE.
 
 # Inference rule: Only one marriage
 @weight(-1.0)
 has_spouse(p1_id, p2_id) => has_spouse(p1_id, p3_id) :-
-    spouse_candidate(p1_id, _, p2_id, _),
-    spouse_candidate(p1_id, _, p3_id, _).
+    TRUE.

@@ -13,12 +13,14 @@ notifications:
     on_failure: always  # options: [always|never|change] default: always
     on_start: never     # options: [always|never|change] default: always
 language:
-  - c
-  - cpp
-  - python
   - scala
+  - cpp
+  - c
+  - python
+scala:
+  - "2.11.7"
 jdk:
-  - openjdk7
+  - oraclejdk8
 python:
   - "2.7"
 services:
@@ -26,10 +28,9 @@ services:
 
 cache:
   directories:
-    - .build/submodule
-    - extern/.build
-    - $HOME/.ivy2/cache
+    - .build
     - .github-release-assets
+    - $HOME/.ivy2/cache
 
 env:
   global:
@@ -68,11 +69,14 @@ addons:
     - libnuma-dev
     - gcc-4.8
     - g++-4.8
+      # for ddlog
+    - oracle-java8-installer
       # for mindbender
     - ed
 
 install:
 #  - make depends # XXX does not work on container-based infra
+  - jdk_switcher use oraclejdk8
   - export CXX="g++-4.8" CC="gcc-4.8" # necessary for building sampler
   - make test-build
 
