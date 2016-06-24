@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # A bash script for setting up environment for DeepDive tests that is supposed to be sourced from every .bats
 
+: ${TEST_DEBUG:=}
+
 # find out the path to the root of DeepDive's source tree
 DEEPDIVE_TEST_ROOT=$(cd "$(dirname "${BASH_SOURCE:-$0}")" && pwd)
 DEEPDIVE_SOURCE_ROOT=$(cd "$DEEPDIVE_TEST_ROOT/.." && pwd)
@@ -30,4 +32,18 @@ export \
     DEEPDIVE_HOME \
     PATH \
     CLASSPATH \
+    TEST_DEBUG \
     #
+
+
+# some BATS utilities for testing
+
+keeping_output_of() {
+    if [[ -n $TEST_DEBUG ]]; then
+        # keep output of given command when debugging
+        "$@" | tee "$BATS_TEST_FILENAME".$BATS_TEST_NUMBER.actual
+    else
+        # otherwise, just run
+        "$@"
+    fi
+}

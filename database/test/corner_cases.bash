@@ -15,7 +15,7 @@ NastySQL="
             , E'\\\\N' AS n3
             , 'N'      AS n4
             , ARRAY[1,2,3] AS num_arr
-            , ARRAY[1.2,3.45,67.890] AS float_arr
+            , ARRAY[1.2,3.45,67.89] AS float_arr
             , ARRAY[ 'easy'
                    , '123'
                    , 'abc'
@@ -31,6 +31,28 @@ NastySQL="
                    , E'\x1e \x1f'
                    , E'\x7f'
                    ] AS nonprintable
+            , ARRAY[ E'\b\b'
+                   , E'\f\f'
+                   , E'\n\n'
+                   , E'\r\r'
+                   , E'\t\t'
+                   , E'\x1c\x1c'
+                   , E'\x1d\x1d'
+                   , E'\x1e\x1e'
+                   , E'\x1f\x1f'
+                   , E'\x7f\x7f'
+                   ] AS nonprintable2
+            , ARRAY[ E'abc\bdef\bghi'
+                   , E'abc\fdef\fghi'
+                   , E'\n\n'
+                   , E'\r\r'
+                   , E'\t\t'
+                   , E'\x1c\x1c'
+                   , E'\x1d\x1d'
+                   , E'\x1e\x1e'
+                   , E'\x1f\x1f'
+                   , E'\x7f\x7f'
+                   ] AS nonprintable3
             , ARRAY[ '.'
                    , ','
                    , '.'
@@ -43,6 +65,18 @@ NastySQL="
                    , '\"'
                    , E'\\\\' -- XXX Greenplum doesn't like the simpler '\\'
                    ] AS punctuations
+            , ARRAY[ '.'
+                   , ','
+                   , '.'
+                   , '{{'
+                   , '}}'
+                   , '[['
+                   , ']]'
+                   , '(('
+                   , '))'
+                   , E'\\\"'
+                   , E'\\\\'
+                   ] AS punctuations2
             , ARRAY[ 'asdf  qwer"$'\t'"zxcv"$'\n'"1234'
                    , ''
                    , 'NULL'
@@ -70,10 +104,13 @@ TSVHeader+=$'\t''n2'               TSV+=$'\t''null'
 TSVHeader+=$'\t''n3'               TSV+=$'\t''\\N'
 TSVHeader+=$'\t''n4'               TSV+=$'\t''N'
 TSVHeader+=$'\t''num_arr'          TSV+=$'\t''{1,2,3}'
-TSVHeader+=$'\t''float_arr'        TSV+=$'\t''{1.2,3.45,67.890}'
+TSVHeader+=$'\t''float_arr'        TSV+=$'\t''{1.2,3.45,67.89}'
 TSVHeader+=$'\t''text_arr'         TSV+=$'\t''{easy,123,abc,"two words"}'
 TSVHeader+=$'\t''nonprintable'     TSV+=$'\t''{\b,"\f","\n","\r","\t",'$'\x1c'','$'\x1d'',"'$'\x1e'' '$'\x1f''",'$'\x7f''}'
+TSVHeader+=$'\t''nonprintable2'    TSV+=$'\t''{\b\b,"\f\f","\n\n","\r\r","\t\t",'$'\x1c'$'\x1c'','$'\x1d'$'\x1d'','$'\x1e'$'\x1e'','$'\x1f'$'\x1f'','$'\x7f'$'\x7f''}'
+TSVHeader+=$'\t''nonprintable3'    TSV+=$'\t''{abc\bdef\bghi,"abc\fdef\fghi","\n\n","\r\r","\t\t",'$'\x1c'$'\x1c'','$'\x1d'$'\x1d'','$'\x1e'$'\x1e'','$'\x1f'$'\x1f'','$'\x7f'$'\x7f''}'
 TSVHeader+=$'\t''punctuations'     TSV+=$'\t''{.,",",.,"{","}",[,],(,),"\\"","\\\\"}'
+TSVHeader+=$'\t''punctuations2'    TSV+=$'\t''{.,",",.,"{{","}}",[[,]],((,)),"\\"","\\\\"}'
 TSVHeader+=$'\t''torture_arr'      TSV+=$'\t''{"asdf  qwer\tzxcv\n1234"'
                                         TSV+=',""'
                                         TSV+=',"NULL"'
@@ -105,6 +142,9 @@ Types+=$'\t''text[]'
 Types+=$'\t''text[]'
 Types+=$'\t''text[]'
 Types+=$'\t''text[]'
+Types+=$'\t''text[]'
+Types+=$'\t''text[]'
+Types+=$'\t''text[]'
 Types=${Types#$'\t'}
 NastyTypes=$Types
 
@@ -125,10 +165,13 @@ CSVHeader+=,'n2'               CSV+=,'null'
 CSVHeader+=,'n3'               CSV+=,'\N'
 CSVHeader+=,'n4'               CSV+=,'N'
 CSVHeader+=,'num_arr'          CSV+=,'"{1,2,3}"'
-CSVHeader+=,'float_arr'        CSV+=,'"{1.2,3.45,67.890}"'
+CSVHeader+=,'float_arr'        CSV+=,'"{1.2,3.45,67.89}"'
 CSVHeader+=,'text_arr'         CSV+=,'"{easy,123,abc,""two words""}"'
 CSVHeader+=,'nonprintable'     CSV+=,'"{'$'\b'',""'$'\f''"",""'$'\n''"",""'$'\r''"",""'$'\t''"",'$'\x1c'','$'\x1d'',""'$'\x1e'' '$'\x1f''"",'$'\x7f''}"'
+CSVHeader+=,'nonprintable2'    CSV+=,'"{'$'\b'$'\b'',""'$'\f'$'\f''"",""'$'\n'$'\n''"",""'$'\r'$'\r''"",""'$'\t'$'\t''"",'$'\x1c'$'\x1c'','$'\x1d'$'\x1d'','$'\x1e'$'\x1e'','$'\x1f'$'\x1f'','$'\x7f'$'\x7f''}"'
+CSVHeader+=,'nonprintable3'    CSV+=,'"{abc'$'\b''def'$'\b''ghi,""abc'$'\f''def'$'\f''ghi"",""'$'\n'$'\n''"",""'$'\r'$'\r''"",""'$'\t'$'\t''"",'$'\x1c'$'\x1c'','$'\x1d'$'\x1d'','$'\x1e'$'\x1e'','$'\x1f'$'\x1f'','$'\x7f'$'\x7f''}"'
 CSVHeader+=,'punctuations'     CSV+=,'"{.,"","",.,""{"",""}"",[,],(,),""\"""",""\\""}"'
+CSVHeader+=,'punctuations2'    CSV+=,'"{.,"","",.,""{{"",""}}"",[[,]],((,)),""\"""",""\\""}"'
 CSVHeader+=,'torture_arr'      CSV+=,'"{""asdf  qwer'$'\t''zxcv'$'\n''1234""'
                                  CSV+=',""""'
                                  CSV+=',""NULL""'
@@ -182,6 +225,30 @@ NastyJSON='
             "\u001e \u001f",
             "\u007f"
           ],
+          "nonprintable2": [
+            "\b\b",
+            "\f\f",
+            "\n\n",
+            "\r\r",
+            "\t\t",
+            "\u001c\u001c",
+            "\u001d\u001d",
+            "\u001e\u001e",
+            "\u001f\u001f",
+            "\u007f\u007f"
+          ],
+          "nonprintable3": [
+            "abc\bdef\bghi",
+            "abc\fdef\fghi",
+            "\n\n",
+            "\r\r",
+            "\t\t",
+            "\u001c\u001c",
+            "\u001d\u001d",
+            "\u001e\u001e",
+            "\u001f\u001f",
+            "\u007f\u007f"
+          ],
           "punctuations": [
             ".",
             ",",
@@ -192,6 +259,19 @@ NastyJSON='
             "]",
             "(",
             ")",
+            "\"",
+            "\\"
+          ],
+          "punctuations2": [
+            ".",
+            ",",
+            ".",
+            "{{",
+            "}}",
+            "[[",
+            "]]",
+            "((",
+            "))",
             "\"",
             "\\"
           ],
