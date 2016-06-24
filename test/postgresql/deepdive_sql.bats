@@ -146,3 +146,31 @@ load ../../database/test/corner_cases
     actual=$(keeping_output_of deepdive sql eval "$NestedArraySQL" format=json)   || skip # XXX not supported by driver.postgresql/db-query
     compare_json "$NestedArrayJSON" "$actual"
 }
+
+###############################################################################
+## a case with unicode
+
+@test "$DBVARIANT deepdive sql eval (with unicode) format=tsv works" {
+    actual=$(keeping_output_of deepdive sql eval "$UnicodeSQL" format=tsv)
+    diff -u                               <(echo "$UnicodeTSV") <(echo "$actual")
+}
+
+@test "$DBVARIANT deepdive sql eval (with unicode) format=tsv header=1 works" {
+    actual=$(keeping_output_of deepdive sql eval "$UnicodeSQL" format=tsv header=1)
+    diff -u <(echo "$UnicodeTSVHeader"; echo "$UnicodeTSV") <(echo "$actual")
+}
+
+@test "$DBVARIANT deepdive sql eval (with unicode) format=csv works" {
+    actual=$(keeping_output_of deepdive sql eval "$UnicodeSQL" format=csv)
+    diff -u                               <(echo "$UnicodeCSV") <(echo "$actual")
+}
+
+@test "$DBVARIANT deepdive sql eval (with unicode) format=csv header=1 works" {
+    actual=$(keeping_output_of deepdive sql eval "$UnicodeSQL" format=csv header=1)
+    diff -u <(echo "$UnicodeCSVHeader"; echo "$UnicodeCSV") <(echo "$actual")
+}
+
+@test "$DBVARIANT deepdive sql eval (with unicode) format=json works" {
+    actual=$(keeping_output_of deepdive sql eval "$UnicodeSQL" format=json)
+    compare_json "$UnicodeJSON" "$actual"
+}
