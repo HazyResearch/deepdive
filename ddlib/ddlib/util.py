@@ -187,7 +187,7 @@ def print_pgtsv_element(x, n, t, array_nesting_depth=0):
     else:
       def escapeWithTSVBackslashes(x):
         return re.sub(r'[\b\f\n\r\t\\]', lambda m : "\\" + specialToEscapeCode[m.group(0)], x)
-      if re.search(r'^[a-zA-Z0-9_.\x1c\x1d\x1e\x1f\x7f\[\]()]+$|^[\b]$', x) \
+      if re.search(r'^[a-zA-Z0-9_.\b\x1c\x1d\x1e\x1f\x7f\[\]()]+$', x) \
           and x not in ["", "NULL", "null"]:
         # we don't need to quote the value in some special cases
         return escapeWithTSVBackslashes(x)
