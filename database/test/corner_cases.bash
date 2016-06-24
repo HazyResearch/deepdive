@@ -86,6 +86,31 @@ TSVHeader+=$'\t''torture_arr'      TSV+=$'\t''{"asdf  qwer\tzxcv\n1234"'
 TSVHeader=${TSVHeader#$'\t'}       TSV=${TSV#$'\t'}  # strip the first delimiter
 NastyTSVHeader=$TSVHeader NastyTSV=$TSV
 
+# column types
+Types=
+Types+=$'\t''int'
+Types+=$'\t''float'
+Types+=$'\t''boolean'
+Types+=$'\t''boolean'
+Types+=$'\t''text'
+Types+=$'\t''text'
+Types+=$'\t''text'
+Types+=$'\t''text'
+Types+=$'\t''text'
+Types+=$'\t''text'
+Types+=$'\t''text'
+Types+=$'\t''int[]'
+Types+=$'\t''float[]'
+Types+=$'\t''text[]'
+Types+=$'\t''text[]'
+Types+=$'\t''text[]'
+Types+=$'\t''text[]'
+Types=${Types#$'\t'}
+NastyTypes=$Types
+
+# columns names with types
+NastyColumnTypes=$(paste <(tr '\t' '\n' <<<"$TSVHeader") <(tr '\t' '\n' <<<"$Types") | tr '\t' :)
+
 # expected CSV output and header
 CSVHeader=                     CSV=
 CSVHeader+=,'i'                CSV+=,'123'
@@ -182,6 +207,7 @@ NastyJSON='
           ]
         }
     '
+
 ###############################################################################
 ## a case where NULL is in an array
 NullInArraySQL="SELECT 1 AS i
@@ -206,6 +232,16 @@ TSVHeader+=$'\t''arr'              TSV+=$'\t''{""'
                                         TSV+='}'
 TSVHeader=${TSVHeader#$'\t'}       TSV=${TSV#$'\t'}  # strip the first delimiter
 NullInArrayTSVHeader=$TSVHeader NullInArrayTSV=$TSV
+
+# column types
+Types=
+Types+=$'\t''int'
+Types+=$'\t''text[]'
+Types=${Types#$'\t'}
+NullInArrayTypes=$Types
+
+# columns names with types
+NullInArrayColumnTypes=$(paste <(tr '\t' '\n' <<<"$TSVHeader") <(tr '\t' '\n' <<<"$Types") | tr '\t' :)
 
 # expected CSV output for NULL in arrays
 CSVHeader=                     CSV=
@@ -263,6 +299,16 @@ TSVHeader+=$'\t''text_arr_arr'     TSV+=$'\t''{{"not so easy","123 45","789 10"}
                                         TSV+='}'
 TSVHeader=${TSVHeader#$'\t'}       TSV=${TSV#$'\t'}  # strip the first delimiter
 NestedArrayTSVHeader=$TSVHeader NestedArrayTSV=$TSV
+
+# column types
+Types=
+Types+=$'\t''int'
+Types+=$'\t''text[][]'
+Types=${Types#$'\t'}
+NestedArrayTypes=$Types
+
+# columns names with types
+NestedArrayTypes=$(paste <(tr '\t' '\n' <<<"$TSVHeader") <(tr '\t' '\n' <<<"$Types") | tr '\t' :)
 
 # expected CSV output and header
 CSVHeader=                     CSV=

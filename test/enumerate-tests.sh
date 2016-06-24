@@ -8,7 +8,7 @@ list_executable_bats() {
 } 2>/dev/null
 
 {
-list_executable_bats test {shell,util,compiler,runner,inference,ddlib}/test
+list_executable_bats test {shell,util,database,compiler,runner,inference,ddlib}/test
 for testDir in test/*/env.sh; do
     testDir=${testDir%/env.sh}
     testShouldWork="$testDir"/should-work.sh
