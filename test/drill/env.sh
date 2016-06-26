@@ -11,7 +11,7 @@
 # environment variables expected by Scala test code
 export PGDATABASE=$DBNAME  # for testing to work with null settings
 export DBCONNSTRING=jdbc:drill://$PGHOST:$PGPORT/$DBNAME
-export DEEPDIVE_TEST_ENV="psql"
+export DEEPDIVE_TEST_ENV="drill"
 # for compatibility with psql/mysql generic tests. Should get rid of "PG" stuff.
 export DBHOST=$PGHOST
 export DBPORT=$PGPORT

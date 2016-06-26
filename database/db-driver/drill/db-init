@@ -5,27 +5,41 @@
 ##
 set -eu
 
+if [ ! -e "$DEEPDIVE_APP/run/database" ];then
+    mkdir "$DEEPDIVE_APP/run/database"
+fi
+if [ ! -e "$DEEPDIVE_APP/run/database/drill" ];then
+    mkdir "$DEEPDIVE_APP/run/database/drill"
+fi
+mkdir "$DRILL_WORK_DIRECTORY"
+mkdir "$DRILL_WORK_DIRECTORY/tables"
+
 # we need to send an http request to the Drill server to configure the workspace
 # but the embedded version of Drill exits right away if it's run in the 
 # background. Hence, we tell Drill to read from an empty FIFO which prevents it
 # from closing while we send the http request
-blockingPipe=/tmp/deepdiveBlockingPipe
-if [[ -p "$blockingPipe" ]]; then
-    rm "$blockingPipe"
-fi
-mkfifo "$blockingPipe"
+if [ "$DISTRIBUTED" = false ];then
+    blockingPipe=/tmp/deepdiveBlockingPipe
+    if [[ -p "$blockingPipe" ]]; then
+        rm "$blockingPipe"
+    fi
+    mkfifo "$blockingPipe"
 
-"$DRILL_EXECUTABLE" -f "$blockingPipe" &
+    sqlline -u "jdbc:drill:zk=local" -f "$blockingPipe" &
+    sleep 7 # Drill takes about 7 seconds to start-up
+fi
 
 DRILL_DRIVER_PATH="$DEEPDIVE_HOME/util/db-driver/drill"
-configJSON="$( cat "$DRILL_DRIVER_PATH/drill_workspace_config_template.json" | python $DRILL_DRIVER_PATH/configure_workspace.py "$DBNAME" "$CONNECTION_TYPE" "$DEEPDIVE_WORK_DIRECTORY" )"
+WORKSPACE_CONFIG="$DEEPDIVE_APP/database/drill/workspace_config.json"
+cat "$DRILL_DRIVER_PATH/drill_workspace_config_template.json" | python $DRILL_DRIVER_PATH/configure_workspace.py "$DBNAME" "$DRILL_WORK_DIRECTORY" >"$WORKSPACE_CONFIG"
+vim "$WORKSPACE_CONFIG" 
+configJSON="$( cat "$WORKSPACE_CONFIG" )"
 
-sleep 7 # Drill takes about 7 seconds to start-up
 attempt=0
 while [[ $attempt -lt 3 ]]
 do
-    if configResultJSON="$( curl -X POST -H 'Content-Type: application/json' -d "$configJSON" "http://$ZOOKEEPER:8047/storage/$DBNAME.json" )"; then
-        configResult="$( echo ${configResultJSON//} | python -c 'import sys; import json; http_result=json.load(sys.stdin); print(http_result["result"])' )"
+    if configResultJSON="$( curl -X POST -H 'Content-Type: application/json' -d "$configJSON" "http://$DBHOST:8047/storage/$DBNAME.json" )"; then
+        configResult="$( echo "$configResultJSON" | python -c 'import sys; import json; http_result=json.load(sys.stdin); print(http_result["result"])' )"
         if [[ "$configResult" = 'success' ]]; then
             break
         fi
@@ -34,19 +48,19 @@ do
     sleep 1
 done
 
-# this doesn't work if the connection fails
-# echo '!quit' >"$blockingPipe"
+if [ "$DISTRIBUTED" = false ];then
+    # this doesn't work if the connection fails
+    # echo '!quit' >"$blockingPipe"
 
-# kill Drill server
-kill -9 "$!"
+    # kill Drill server
+    kill -9 "$!"
+fi
 
 if [[ $attempt -ge 3 ]]; then
     echo 'Drill workspace configuration failed'
     exit 1
 fi
 
-mkdir "$DEEPDIVE_WORK_DIRECTORY"
-mkdir "$DEEPDIVE_WORK_DIRECTORY/tables"
 exit 0
 
 if [[ $# -gt 0 ]]; then

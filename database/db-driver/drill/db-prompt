@@ -4,10 +4,7 @@
 # > db-prompt
 ##
 set -eu
-echo EXECUTING DB-PROMPT
-echo "$@"
-exit 1
-exec "$CONFIGURED_DRILL_EXECUTABLE" -f <(echo "$@")
+exec "$CONFIGURED_DRILL_EXECUTABLE"
 
 #PGPASSWORD="$DBPASSWORD" \
 #exec psql -h "$DBHOST" -p "$DBPORT" -U "$DBUSER" -d "$DBNAME" "$@"

@@ -18,7 +18,7 @@ replaceClause=
 if [ -z "$CREATE_IF_NOT_EXISTS" ]; then
     replaceClause=' OR REPLACE '
 else
-    if [ -e "$DEEPDIVE_WORK_DIRECTORY/$View.view.drill" ]; then
+    if [ -e "$DRILL_WORK_DIRECTORY/$View.view.drill" ]; then
         exit 0
     fi
 

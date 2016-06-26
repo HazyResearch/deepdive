@@ -43,13 +43,13 @@ sentences(
     sentence_index int,
     @searchable
     sentence_text  text,
-    tokens         text[],
-    lemmas         text[],
-    pos_tags       text[],
-    ner_tags       text[],
-    doc_offsets    int[],
-    dep_types      text[],
-    dep_tokens     int[]
+    tokens         json,
+    lemmas         json,
+    pos_tags       json,
+    ner_tags       json,
+    doc_offsets    json,
+    dep_types      json,
+    dep_tokens     json
 ).
 
 function nlp_markup over (

@@ -14,7 +14,6 @@ table="$table${columns:+($columns)}"
 
 # load in parallel from multiple sources
 do_load() {
-    local sql=$1; shift
     local nsources=$#
     if [[ $nsources -gt 1 ]]; then
         local i=1
@@ -32,16 +31,19 @@ do_load() {
         #head -n 20 "$source"
         #exit 1
         #exec show_progress input_to "loading $table" -- \
-        cat "$source" >$( mktemp --suffix=.tsv "$DEEPDIVE_WORK_DIRECTORY/tables/$table"/data-XXXXXX )
+        cat "$source" >$( mktemp --suffix=."$format" "$DRILL_WORK_DIRECTORY/tables/$table"/data-XXXXXX )
     fi
 }
 
 case $format in
     tsv)
-        do_load "\COPY $table FROM PSTDIN" "$@"
+        do_load "$@"
+        ;;
+    tsj)
+        do_load "$@"
         ;;
     csv)
-        do_load "\COPY $table FROM PSTDIN CSV" "$@"
+        do_load "$@"
         ;;
     *) error "$format: unsupported format by Drill driver" ;;
 esac

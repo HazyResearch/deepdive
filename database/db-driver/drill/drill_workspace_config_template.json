@@ -3,7 +3,7 @@
     "config": {
         "type": "file",
         "enabled": true,
-        "connection": "",
+        "connection": "file:///",
         "workspaces": {
             "default": {
                 "location": "",

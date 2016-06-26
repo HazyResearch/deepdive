@@ -1,1 +1,1 @@
-drill://localhost/deepdive_spouse_$USER
+drill://meehanb:deepdiveisawesome@localhost/deepdive_spouse_$USER?distributed=false&zk=centos12,centos15
