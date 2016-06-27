@@ -5,7 +5,7 @@ from collections import namedtuple
 
 SpouseLabel = namedtuple('SpouseLabel', 'p1_id, p2_id, label, type')
 
-@tsv_extractor
+@tsj_extractor
 @returns(lambda
         p1_id   = "text",
         p2_id   = "text",

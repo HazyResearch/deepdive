@@ -4,6 +4,7 @@ import sys
 from inspect import isgeneratorfunction,getargspec
 import csv
 from io import StringIO
+import json
 
 def print_error(err_string):
   """Function to write to stderr"""
@@ -256,15 +257,7 @@ def format_decorator(attrName):
 over    = format_decorator("input_format")
 returns = format_decorator("output_format")
 
-# decorators that initiate the main extractor loop
-def tsv_extractor(generator):
-  """
-  When a generator function is decorated with this (i.e., @tsv_extractor
-  preceding the def line), standard input is parsed as Postgres-style TSV
-  (PGTSV) input rows, the function is applied to generate output rows, and then
-  checks that each line of this generator is in the output format before
-  printing back as PGTSV rows.
-  """
+def get_generator_format(generator):
   # Expects the input and output formats to have been decorated with @over and @returns
   try:
     # @over has precedence over default values of function arguments
@@ -282,6 +275,19 @@ def tsv_extractor(generator):
   if not isgeneratorfunction(generator):
     raise ValueError("The function must be a *generator*, i.e., use yield not return")
 
+  return input_format, output_format
+
+# decorators that initiate the main extractor loop
+def tsv_extractor(generator):
+  """
+  When a generator function is decorated with this (i.e., @tsv_extractor
+  preceding the def line), standard input is parsed as Postgres-style TSV
+  (PGTSV) input rows, the function is applied to generate output rows, and then
+  checks that each line of this generator is in the output format before
+  printing back as PGTSV rows.
+  """
+  input_format, output_format = get_generator_format(generator)
+
   # Create the input parser
   parser = PGTSVParser(input_format)
 
@@ -291,3 +297,43 @@ def tsv_extractor(generator):
   for row in parser.parse_stdin():
     for out_row in generator(**row._asdict()):
       printer.write(out_row)
+
+
+def tsj_extractor(generator):
+  """
+  When a generator function is decorated with this (i.e., @tsj_extractor
+  preceding the def line), each standard input line is parsed as
+  tab-separated JSON (TSJ) values, then the function is applied to the parsed
+  array to generate output rows, and each output row expected to be an array
+  is formatted as TSJ.
+  """
+  input_format, output_format = get_generator_format(generator)
+  input_names  = [name for name,t in input_format]
+  num_input_values = len(input_format)
+  num_input_splits = num_input_values - 1
+  num_output_values = len(output_format)
+
+  def parse_json(column_index, json_value):
+    try:
+      return json.loads(json_value)
+    except ValueError as exc:
+      raise ValueError("JSON parse error in column %d (%s):\n  %s\n" % (column_index, exc, json_value))
+
+  for line in sys.stdin:
+    try:
+      columns = line.rstrip("\n").split("\t", num_input_splits)
+      assert len(columns) == num_input_values
+      values_in = (parse_json(i,v) for i,v in enumerate(columns))
+      input_dict = dict(zip(input_names, values_in))
+    except ValueError as exc:
+      raise ValueError("could not parse TSJ line:\n  %s\ndue to %s" % (line, exc))
+    for values_out in generator(**input_dict):
+      if len(values_out) == num_output_values:
+        for i,v in enumerate(values_out):
+          if i > 0: sys.stdout.write("\t")
+          sys.stdout.write(json.dumps(v))
+        sys.stdout.writeln()
+      else:
+        raise ValueError("Expected %d values but got %d\n  input: %s\n output: %s" % (
+          num_output_values, len(values_out),
+          json.dumps(values_in), json.dumps(values_out)))
