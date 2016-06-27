@@ -18,6 +18,6 @@
                , cmd: "deepdive create table \(.key | @sh) && deepdive load \(.key | @sh)"
                , dependencies_: [ "process/init/app" ]
                , output_relation: .key
-               , output_: "data/\(.key)"
+               , output_: ["data/\(.key)"]
                } }
     ] | from_entries )

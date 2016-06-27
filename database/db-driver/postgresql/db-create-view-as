@@ -17,6 +17,14 @@ Query=$1; shift
 
 viewDef=" AS $Query"
 
-[[ -n $CREATE_IF_NOT_EXISTS ]] || db-execute "DROP $DROP_TABLE_TYPE TABLE $View CASCADE" &>/dev/null || true
-[[ -n $CREATE_IF_NOT_EXISTS ]] || db-execute "DROP $DROP_VIEW_TYPE  VIEW  $View CASCADE" &>/dev/null || true
-exec db-execute "CREATE $CREATE_VIEW_TYPE VIEW ${CREATE_IF_NOT_EXISTS:+IF NOT EXISTS} $View $viewDef $CREATE_VIEW_EXTRA_CLAUSES"
+if db-execute '\d '"$View"; then
+    ! [[ -n $CREATE_IF_NOT_EXISTS ]] ||
+        # exit if view or table with same name already exists
+        exit 0
+    # unconditionally drop existing table and view
+    db-execute "DROP $DROP_VIEW_TYPE  VIEW  $View CASCADE" &>/dev/null || true
+    db-execute "DROP $DROP_TABLE_TYPE TABLE $View CASCADE" &>/dev/null || true
+fi
+
+# unconditionally create a new view
+exec db-execute "CREATE $CREATE_VIEW_TYPE VIEW $View $viewDef $CREATE_VIEW_EXTRA_CLAUSES"

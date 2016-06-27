@@ -5,47 +5,59 @@
 def nodeId: sub("/"; "/\n");
 def nodeType: sub("/.*$"; "");
 
-# node attributes by type
-{ data     : "shape=box3d    color=\"#2222cc\" style=solid"
-, process  : "shape=ellipse  color=\"#cc2222\" style=solid"
-, model    : "shape=septagon color=\"#ffffff\" style=filled fillcolor=\"#cc22cc\""
-} as $nodeAttr |
+(.deepdive_.execution.dot // {}) as $deepdiveDotConfig |
+
+# Graphviz attrs (See: http://www.graphviz.org/doc/info/attrs.html#k:style)
+# graph attributes
+(
+    "rankdir=BT  # bottom-to-top drawing (or RL/right-to-left may also make sense)
+    \($deepdiveDotConfig.graph_attrs // "")"
+) as $graph_attrs |
+# node attributes by [type]
+(
+    { ""       : "shape=box
+                 ,style=dotted
+                 ,fontsize=10
+                 ,fontname=\"Ubuntu Mono,Envy Code R,Oxygen Mono,Consolas,Menlo,Monaco,Andale Mono\"
+                 "
+    , data     : "shape=box3d    color=\"#2222cc\" style=solid"
+    , process  : "shape=ellipse  color=\"#cc2222\" style=solid"
+    , model    : "shape=septagon color=\"#ffffff\" style=filled fillcolor=\"#cc22cc\""
+    } * ($deepdiveDotConfig.node_attrs // {})
+) as $node_attrs |
+# edge attributes by [srcType][dstType]
+(
+    { ""       : { "": "color=\"#999999\"" }
+    , pipeline : { "": "style=dotted arrowhead=odiamond" }
+    } * ($deepdiveDotConfig.edge_attrs // {})
+) as $edge_attrs |
 
 .deepdive_.execution.dependencies |
 { path: "dataflow.dot", content: [
 "
 digraph \"\(env.DEEPDIVE_APP | sub(".*/"; "")) data flow\" {
-    graph[rankdir=BT  # bottom-to-top drawing (or RL/right-to-left may also make sense)
+    graph[\($graph_attrs)
     ];
-    node [shape=box
-         ,style=dotted
-         ,fontsize=10
-         ,fontname=\"Ubuntu Mono,Envy Code R,Oxygen Mono,Consolas,Menlo,Monaco,Andale Mono\"
+    node [\(try ($node_attrs[""]     // "") catch "")
     ];
-    edge [color=\"#999999\"];
+    edge [\(try ($edge_attrs[""][""] // "") catch "")
+    ];
 
 ", ( to_entries[]
-
-# process nodes
+# process and data nodes
 | "
-\"\(.key | nodeId)\" [\($nodeAttr[.key | nodeType] // "")];
+\"\(.key | nodeId)\" [\($node_attrs[.key | nodeType] // "")];
 "
 
 # dependency edges
-, "
-\"\(.value[] | nodeId)\" -> \"\(.key | nodeId)\" [
-label=\"\"
-\(
-# TODO different edge style by nodeType, e.g., dotted line to pipeline/
-# See: http://www.graphviz.org/doc/info/attrs.html#k:style
-if (.key | nodeType) == "pipeline" then
-    "style=dotted arrowhead=odiamond"
-else
-    ""
-end
-)
+, ( { from: .value[], to: .key } | "
+\"\(.from | nodeId)\" -> \"\(.to | nodeId)\" [
+    label=\"\"
+    \(try ($edge_attrs[.from | nodeType] // $edge_attrs[""]) as $edge_attrs_from
+        | $edge_attrs_from[.to | nodeType] // $edge_attrs_from[""] // "" # TODO don't repeat $edge_attrs[""][""]
+      catch "")
 ];
-"
+" )
 
 ), "
 
