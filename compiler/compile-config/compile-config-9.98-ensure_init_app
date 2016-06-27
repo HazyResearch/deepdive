@@ -13,7 +13,7 @@
             #  there's a cycle in the dependency.)
             ( if (.dependencies_ | length) > 0
               or (.input_ | length) > 0 then .
-            else .dependencies_ = ["process/init/app"]
+            else .dependencies_ += ["process/init/app"]
             end)
     end
 )

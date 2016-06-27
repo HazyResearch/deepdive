@@ -9,7 +9,7 @@
 # Generated: 2015-06-19
 set -eu
 
-if [ -z "${DEEPDIVE_SHELL:-}" ]; then
+if ! [[ "${DEEPDIVE_SHELL:-}" -ef "$0" ]]; then
     Self=$(readlink -f "$0" 2>/dev/null || {
         # XXX readlink -f is only available in GNU coreutils
         cd $(dirname -- "$0")

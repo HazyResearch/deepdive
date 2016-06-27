@@ -7,8 +7,8 @@ set -eu
 
 # locate application root
 at_deepdive_app_root() {
-    # recognize an app directory as defined in ../doc/doc/advanced/deepdiveapp.md
-    [[ ( -e app.ddlog || ( -e deepdive.conf && ( -e schema.sql || -e schema.json ) ) ) && -e db.url ]]
+    # recognize an app directory as defined in ../doc/deepdiveapp.md
+    [[ ( -e app.ddlog || -e deepdive.conf ) ]]
 }
 
 if [[ -d "${DEEPDIVE_APP:-}" ]]; then
@@ -16,7 +16,7 @@ if [[ -d "${DEEPDIVE_APP:-}" ]]; then
     if at_deepdive_app_root; then
         echo "$DEEPDIVE_APP"
     else
-        error "$DEEPDIVE_APP: \$DEEPDIVE_APP does not point to a DeepDive application: deepdive.conf, db.url, and schema.sql should be all present"
+        error "$DEEPDIVE_APP: \$DEEPDIVE_APP does not point to a DeepDive application: either app.ddlog or deepdive.conf should be present"
     fi
 else
     PWD_orig=$PWD
@@ -27,6 +27,6 @@ else
     if at_deepdive_app_root; then
         pwd
     else
-        error "$PWD_orig: Not inside a DeepDive application: deepdive.conf, db.url, and schema.sql should be all present in a parent directory"
+        error "$PWD_orig: Not inside a DeepDive application: either app.ddlog or deepdive.conf should be present in a parent directory"
     fi
 fi

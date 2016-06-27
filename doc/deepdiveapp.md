@@ -26,6 +26,7 @@ See the [Configuration Reference](configuration.md) for full details.
 ## db.url
 
 A URL representing the database configuration is supposed to be stored in this file.
+Environment variable `$DEEPDIVE_DB_URL` overrides the URL stored this file.
 For example, the following URL can be the line stored in it:
 
 ```

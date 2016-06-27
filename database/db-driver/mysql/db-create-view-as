@@ -1,1 +1,22 @@
-../postgresql/db-create-view-as
+#!/usr/bin/env bash
+# db-create-view-as -- Creates a view with given SELECT query, coping with existing ones
+# $ export CREATE_VIEW_TYPE=... CREATE_VIEW_EXTRA_CLAUSES=...
+# $ export CREATE_IF_NOT_EXISTS=1
+# $ export DROP_VIEW_TYPE=... DROP_TABLE_TYPE=...
+# $ db-create-view-as VIEW SELECT_QUERY
+##
+set -euo pipefail
+: ${CREATE_IF_NOT_EXISTS:=}
+: ${CREATE_VIEW_TYPE:=} ${CREATE_VIEW_EXTRA_CLAUSES:=}
+: ${DROP_VIEW_TYPE:=} ${DROP_TABLE_TYPE:=}
+
+[[ $# -gt 0 ]] || usage "$0" "Missing VIEW name"
+View=$1; shift
+[[ $# -gt 0 ]] || usage "$0" "Missing SELECT_QUERY"
+Query=$1; shift
+
+viewDef=" AS $Query"
+
+[[ -n $CREATE_IF_NOT_EXISTS ]] || db-execute "DROP $DROP_TABLE_TYPE TABLE $View CASCADE" &>/dev/null || true
+[[ -n $CREATE_IF_NOT_EXISTS ]] || db-execute "DROP $DROP_VIEW_TYPE  VIEW  $View CASCADE" &>/dev/null || true
+exec db-execute "CREATE $CREATE_VIEW_TYPE VIEW ${CREATE_IF_NOT_EXISTS:+IF NOT EXISTS} $View $viewDef $CREATE_VIEW_EXTRA_CLAUSES"
