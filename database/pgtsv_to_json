@@ -40,11 +40,9 @@ def convert_type_func(ty, ty_rest = ""):
     # csv array starts and ends with curly braces
     ty_el = ty[:-2]
     convert = convert_type_func(ty_el, ty_rest=ty[-2:])
-    def backslashes_to_csv_escapes(s):
-        return re.sub(r"\\(.)", lambda m: '""' if m.group(1) is '"' else m.group(1), s)
     if ty_el == "text":
       def convert_text_array(value):
-        arr = unicode_csv_reader([backslashes_to_csv_escapes(value[1:-1])], delimiter=',', quotechar='"', escapechar='\\').next()
+        arr = unicode_csv_reader([value[1:-1]], delimiter=',', quotechar='"').next()
         convert_or_null = lambda x: None if x == 'NULL' else convert(x)
         return map(convert_or_null, arr)
       return convert_text_array
