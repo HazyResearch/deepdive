@@ -62,6 +62,7 @@ addons:
     sources:
     - ubuntu-toolchain-r-test  # for gcc 4.8
     packages:
+    - bash
     - python3
     - gnuplot
     - bc
