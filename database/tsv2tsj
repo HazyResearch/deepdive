@@ -51,57 +51,18 @@ perlHandlerForSqlType() {
 # from given types for columns, compose some lines of Perl that maps PostgreSQL TSV format to JSON
 plStmts=
 for ColumnType; do
-    plStmts+='print "\t"; 
+    plStmts+='print "\t";
         print '"$(perlHandlerForSqlType "$(tr a-z A-Z <<<"$ColumnType")")"' shift;
         '
 done
-plStmts=${plStmts#'print "\t"; '}
+plStmts=${plStmts#'print "\t";'}
 
-exec perl -Mstrict -e '
-sub map_pgtsv_escape_seqs_to_json($) {
-    my $v = shift;
-    # map octal \OOO and hexadecimal \xHH escape sequences to JSON \uXXXX
-    $v =~ s/(?<!\\)((?:\\\\)*)\\([0-3][0-7]{2})/"$1\\u00".(sprintf "%02x", oct($2))/ge;
-    $v =~ s/(?<!\\)((?:\\\\)*)\\x([0-9a-fA-F]{2})/$1\\u00$2/g;
-    # backslash double quotes
-    $v =~ s/"/\\"/g;
-    # and backslash and the rest of control characters are already escaped
-    $v
-}
-sub json_string($) {
-    my $v = shift;
-    if ($v eq "\\N") { "null" }
-    else { '\''"'\''. (map_pgtsv_escape_seqs_to_json $v) .'\''"'\'' }
-}
-sub json_boolean($) {
-    my $v = shift;
-    if ($v eq "\\N") { "null" }
-    elsif ($v eq "t") { "true" }
-    elsif ($v eq "f") { "false" }
-    else { die "Cannot parse PostgreSQL Boolean in TSV: $v" }
-}
-sub json_value($) {
-    my $v = shift;
-    if ($v eq "\\N") { "null" }
-    else { $v }
-}
-sub json_array($$) {
-    my $parse_element = shift;
-    my $v = shift;
-    if ((substr $v, 0, 1) eq "{" and (substr $v, -1, 1) eq "}") {
-        my @json;
-        my $csv = substr $v, 1, -1;
-        for my $el (split ",", $csv) {
-            # FIXME correct CSV parsing
-            push @json, $parse_element->($el);
-        }
-        "[".join(",", @json)."]"
-    } else { die "Cannot parse PostgreSQL ARRAY in TSV: $v" }
-}
-while ( <> ) {
-    chomp;
-    @ARGV = split "\t";
-    '"$plStmts"'
-    print "\n";
-}
-'
+exec perl -Mstrict <(cat "$0".pl; echo '
+    while ( <> ) {
+        chomp;
+        @ARGV = split "\t";
+        '"$plStmts"'
+        print "\n";
+    }
+    '
+)

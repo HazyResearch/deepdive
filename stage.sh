@@ -116,6 +116,7 @@ stage database/partition_id_range                                 util/
 stage database/tsj2fmt                                            util/
 stage database/pgtsv_to_json                                      util/
 stage database/tsv2tsj                                            util/
+stage database/tsv2tsj.pl                                         util/
 stage database/tsv2json                                           util/
 stage util/partition_integers                                     util/
 

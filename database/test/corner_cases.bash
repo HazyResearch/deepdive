@@ -75,13 +75,17 @@ NastySQL="
                    , '(('
                    , '))'
                    , E'\\\"'
+                   , E'\\\\\"'
+                   , E'\\\\\\\\\"'
                    , E'\\\\'
                    ] AS punctuations2
             , ARRAY[ 'asdf  qwer"$'\t'"zxcv"$'\n'"1234'
                    , ''
+                   , NULL
                    , 'NULL'
                    , 'null'
                    , E'\\\\N'
+                   , E'\\\\\\\\N'
                    , 'N'
                    , '\"I''m your father,\" said Darth Vader.'
                    , E'"'{"csv in a json": "a,b c,\\",\\",\\"line '\'\''1'\'\'$'\n''bogus,NULL,null,\\\\N,N,line \\"\\"2\\"\\"",  "foo":123,'$'\n''"bar":45.678, "null": "\\\\N"}'"'
@@ -110,12 +114,14 @@ TSVHeader+=$'\t''nonprintable'     TSV+=$'\t''{\b,"\f","\n","\r","\t",'$'\x1c'',
 TSVHeader+=$'\t''nonprintable2'    TSV+=$'\t''{\b\b,"\f\f","\n\n","\r\r","\t\t",'$'\x1c'$'\x1c'','$'\x1d'$'\x1d'','$'\x1e'$'\x1e'','$'\x1f'$'\x1f'','$'\x7f'$'\x7f''}'
 TSVHeader+=$'\t''nonprintable3'    TSV+=$'\t''{abc\bdef\bghi,"abc\fdef\fghi","\n\n","\r\r","\t\t",'$'\x1c'$'\x1c'','$'\x1d'$'\x1d'','$'\x1e'$'\x1e'','$'\x1f'$'\x1f'','$'\x7f'$'\x7f''}'
 TSVHeader+=$'\t''punctuations'     TSV+=$'\t''{.,",",.,"{","}",[,],(,),"\\"","\\\\"}'
-TSVHeader+=$'\t''punctuations2'    TSV+=$'\t''{.,",",.,"{{","}}",[[,]],((,)),"\\"","\\\\"}'
+TSVHeader+=$'\t''punctuations2'    TSV+=$'\t''{.,",",.,"{{","}}",[[,]],((,)),"\\"","\\\\\\"","\\\\\\\\\\"","\\\\"}'
 TSVHeader+=$'\t''torture_arr'      TSV+=$'\t''{"asdf  qwer\tzxcv\n1234"'
                                         TSV+=',""'
+                                        TSV+=',NULL'
                                         TSV+=',"NULL"'
                                         TSV+=',"null"'
                                         TSV+=',"\\\\N"'
+                                        TSV+=',"\\\\\\\\N"'
                                         TSV+=',N'
                                         TSV+=',"\\"I'\''m your father,\\" said Darth Vader."'
                                         TSV+=',"{\\"csv in a json\\": \\"a,b c,\\\\\\",\\\\\\",\\\\\\"line '\''1'\''\nbogus,NULL,null,\\\\\\\\N,N,line \\\\\\"\\\\\\"2\\\\\\"\\\\\\"\\",  \\"foo\\":123,\n\\"bar\\":45.678, \\"null\\": \\"\\\\\\\\N\\"}"'
@@ -171,12 +177,14 @@ CSVHeader+=,'nonprintable'     CSV+=,'"{'$'\b'',""'$'\f''"",""'$'\n''"",""'$'\r'
 CSVHeader+=,'nonprintable2'    CSV+=,'"{'$'\b'$'\b'',""'$'\f'$'\f''"",""'$'\n'$'\n''"",""'$'\r'$'\r''"",""'$'\t'$'\t''"",'$'\x1c'$'\x1c'','$'\x1d'$'\x1d'','$'\x1e'$'\x1e'','$'\x1f'$'\x1f'','$'\x7f'$'\x7f''}"'
 CSVHeader+=,'nonprintable3'    CSV+=,'"{abc'$'\b''def'$'\b''ghi,""abc'$'\f''def'$'\f''ghi"",""'$'\n'$'\n''"",""'$'\r'$'\r''"",""'$'\t'$'\t''"",'$'\x1c'$'\x1c'','$'\x1d'$'\x1d'','$'\x1e'$'\x1e'','$'\x1f'$'\x1f'','$'\x7f'$'\x7f''}"'
 CSVHeader+=,'punctuations'     CSV+=,'"{.,"","",.,""{"",""}"",[,],(,),""\"""",""\\""}"'
-CSVHeader+=,'punctuations2'    CSV+=,'"{.,"","",.,""{{"",""}}"",[[,]],((,)),""\"""",""\\""}"'
+CSVHeader+=,'punctuations2'    CSV+=,'"{.,"","",.,""{{"",""}}"",[[,]],((,)),""\"""",""\\\"""",""\\\\\"""",""\\""}"'
 CSVHeader+=,'torture_arr'      CSV+=,'"{""asdf  qwer'$'\t''zxcv'$'\n''1234""'
                                  CSV+=',""""'
+                                 CSV+=',NULL'
                                  CSV+=',""NULL""'
                                  CSV+=',""null""'
                                  CSV+=',""\\N""'
+                                 CSV+=',""\\\\N""'
                                  CSV+=',N'
                                  CSV+=',""\""I'\''m your father,\"" said Darth Vader.""'
                                  CSV+=',""{\""csv in a json\"": \""a,b c,\\\"",\\\"",\\\""line '\''1'\'$'\n''bogus,NULL,null,\\\\N,N,line \\\""\\\""2\\\""\\\""\"",  \""foo\"":123,'$'\n''\""bar\"":45.678, \""null\"": \""\\\\N\""}""'
@@ -273,14 +281,18 @@ NastyJSON='
             "((",
             "))",
             "\"",
+            "\\\"",
+            "\\\\\"",
             "\\"
           ],
           "torture_arr": [
             "asdf  qwer\tzxcv\n1234",
             "",
+            null,
             "NULL",
             "null",
             "\\N",
+            "\\\\N",
             "N",
             "\"I'\''m your father,\" said Darth Vader.",
             "{\"csv in a json\": \"a,b c,\\\",\\\",\\\"line '\''1'\''\nbogus,NULL,null,\\\\N,N,line \\\"\\\"2\\\"\\\"\",  \"foo\":123,\n\"bar\":45.678, \"null\": \"\\\\N\"}"
