@@ -610,11 +610,11 @@ UnicodeCSV=$(
   echo -n "I Can Eat Glass"
   for s in "${ICanEatGlass[@]}"; do
       case $s in
-          *,*) echo -n ',"'"$s"'"'
+          *,*\) echo -n ',"'"$s"'"'
               ;;
-          *) echo -n ",$s"
+          *\) echo -n ",$s"
               ;;
-      esac;
+      esac
   done
 )
 
