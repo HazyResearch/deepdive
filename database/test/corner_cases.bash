@@ -618,4 +618,11 @@ UnicodeCSV=$(
   done
 )
 
-UnicodeJSON='{ "t": "I Can Eat Glass" '"$(i=1; for s in "${ICanEatGlass[@]}"; do s=${s//\"/\\\"}; echo ", \"l$i\": \"$s\""; let ++i; done)}"
+UnicodeJSON='{ "t": "I Can Eat Glass" '"$(
+  i=1
+  for s in "${ICanEatGlass[@]}"; do
+    s=${s//\"/\\\"}
+    echo ", \"l$i\": \"$s\""
+    let ++i
+  done
+)}"
