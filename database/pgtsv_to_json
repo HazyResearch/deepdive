@@ -5,7 +5,7 @@
 import json, sys, csv, re, argparse
 from datetime import datetime
 
-NULL_STRINGS=('\\N', 'NULL')
+ARRAY_NULL_STRING=u'NULL'
 
 def timestamp(timestamp_str):
     """Given a timestamp string, return a timestamp string in ISO 8601 format to emulate
@@ -43,13 +43,13 @@ def convert_type_func(ty, ty_rest = ""):
     if ty_el == "text":
       def convert_text_array(value):
         arr = unicode_csv_reader([value[1:-1]], delimiter=',', quotechar='"').next()
-        convert_or_null = lambda x: None if x == 'NULL' else convert(x)
+        convert_or_null = lambda x: None if x == ARRAY_NULL_STRING else convert(x)
         return map(convert_or_null, arr)
       return convert_text_array
     else:
       def convert_other_array(value):
         arr = unicode_csv_reader([value[1:-1]], delimiter=',', quotechar='"').next()
-        convert_or_null = lambda x: None if x == 'NULL' else convert(x)
+        convert_or_null = lambda x: None if x == ARRAY_NULL_STRING else convert(x)
         return map(convert_or_null, arr)
       return convert_other_array
   else: # non-array, must be primitive type
@@ -122,7 +122,11 @@ def unicode_csv_reader(unicode_csv_data, **kwargs):
         # decode UTF-8 back to Unicode, cell by cell:
         yield [unicode(cell, 'utf-8') for cell in row]
 
-def main(in_file, schema):
+def main(in_file, schema, null_string=None):
+
+  if null_string is None:
+      null_string = u'\\N'
+
   # parse column names and types from arguments
   def parseArg(arg):
       if arg.startswith("'") and arg.endswith("'"):
@@ -143,7 +147,7 @@ def main(in_file, schema):
   for line in reader:
     obj = {}
     for (name, convert), field in zip(names_converters, line):
-        obj[name] = None if field in NULL_STRINGS \
+        obj[name] = None if field == null_string \
                          else convert(field)
     print json.dumps(obj, ensure_ascii=False).encode('utf-8')
 
