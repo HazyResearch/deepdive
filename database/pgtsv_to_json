@@ -2,7 +2,7 @@
 # A script to convert PostgreSQL's COPY TO text (tsv; tab-delimited values) lines into JSON sequence
 # Usage: pgtsv_to_json COLUMN_NAME1:TYPE1 COLUMN_NAME2:TYPE2 ...
 
-import json, sys, csv, re, codecs
+import json, sys, csv, re, codecs, argparse
 from datetime import datetime
 
 NULL_STRINGS=('\\N', 'NULL')
@@ -126,12 +126,12 @@ def unicode_csv_reader(unicode_csv_data, **kwargs):
         # decode UTF-8 back to Unicode, cell by cell:
         yield [unicode(cell, 'utf-8') for cell in row]
 
-def main():
+def main(in_file, schema):
   # parse column names and types from arguments
   def parseArg(arg):
-      field_name, field_type = re.match(r"(.+):([^:]+)", arg).groups()
+      field_name, field_type = re.match(r"'(.+):([^:]+)'", arg).groups()
       return field_name, convert_type_func(field_type)
-  names_converters = map(parseArg, sys.argv[1:])
+  names_converters = map(parseArg, schema)
 
   # read the PostgreSQL COPY TO text format
   # XXX With Python's csv.reader, it's impossible to distinguish empty strings from nulls in PostgreSQL's csv output.
@@ -150,5 +150,16 @@ def main():
     print json.dumps(obj, ensure_ascii=False).encode('utf-8')
 
 if __name__ == "__main__":
-  main()
+  
+  parser = argparse.ArgumentParser()
+  parser.add_argument('--input_path', default=sys.stdin)
+  parser.add_argument('schema', nargs="+")
+  args = parser.parse_args()
+
+  if hasattr(args.input_path, 'read'):
+      input_file = args.input_path
+  else:
+      input_file = open(args.input_path)
+
+  main(input_file, args.schema)
 
