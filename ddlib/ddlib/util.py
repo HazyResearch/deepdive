@@ -332,7 +332,7 @@ def tsj_extractor(generator):
         for i,v in enumerate(values_out):
           if i > 0: sys.stdout.write("\t")
           sys.stdout.write(json.dumps(v))
-        sys.stdout.writeln()
+        sys.stdout.write("\n")
       else:
         raise ValueError("Expected %d values but got %d\n  input: %s\n output: %s" % (
           num_output_values, len(values_out),

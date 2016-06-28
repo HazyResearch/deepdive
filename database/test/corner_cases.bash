@@ -288,6 +288,14 @@ NastyJSON='
         }
     '
 
+tsjFromJsonAndHeader() {
+    local json=$1; shift
+    local columnNames="$*" columnName=
+    local jqColumns=; for columnName in $columnNames; do jqColumns+=", .$columnName"; done
+    jq -r '['"${jqColumns#, }"'] | map(@json) | join("\t")' <<<"$json"
+}
+NastyTSJ=$(tsjFromJsonAndHeader "$NastyJSON" "$NastyTSVHeader")
+
 ###############################################################################
 ## a case where NULL is in an array
 NullInArraySQL="SELECT 1 AS i
@@ -347,6 +355,7 @@ NullInArrayJSON='
             "N"
         ] }
     '
+NullInArrayTSJ=$(tsjFromJsonAndHeader "$NullInArrayJSON" "$NullInArrayTSVHeader")
 
 ###############################################################################
 ## a case with nested array
@@ -422,4 +431,5 @@ NestedArrayJSON='
           ]
         }
     '
+NestedArrayTSJ=$(tsjFromJsonAndHeader "$NestedArrayJSON" "$NestedArrayTSVHeader")
 

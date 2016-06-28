@@ -4,12 +4,12 @@
 
 load ../../database/test/corner_cases
 
-@test "Python @tsv_extractor decorator parser/formatter work correctly" {
+@test "Python @tsj_extractor decorator parser/formatter work correctly" {
     cd "$BATS_TEST_DIRNAME"
     # use an identity UDF to see if the nasty input gets parsed correctly and output correctly
     diff -u \
-        <(echo "$NastyTSV"                                                       | tr '\t' '\n') \
-        <(echo "$NastyTSV" | deepdive env python ./tsv_extractor_identity_udf.py | tr '\t' '\n') \
+        <(echo "$NastyTSJ"                                                       | jq -c .) \
+        <(echo "$NastyTSJ" | deepdive env python ./tsj_extractor_identity_udf.py | jq -c .) \
         #
 }
 
