@@ -114,7 +114,7 @@ load ../../database/test/corner_cases
 
 @test "$DBVARIANT deepdive sql eval (with null in arrays) format=json works" {
     actual=$(keeping_output_of deepdive sql eval "$NullInArraySQL" format=json)
-    compare_json "$NullInArrayJSON" "$actual"   || skip # XXX not supported by pgcsv_to_json
+    compare_json "$NullInArrayJSON" "$actual"   || skip # XXX not supported by pgtsv_to_json
 }
 
 
