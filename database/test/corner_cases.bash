@@ -606,6 +606,16 @@ UnicodeTypes=$Types
 UnicodeColumnTypes=$(paste <(tr '\t' '\n' <<<"$TSVHeader") <(tr '\t' '\n' <<<"$Types") | tr '\t' :)
 
 UnicodeCSVHeader=${UnicodeTSVHeader//$'\t'/,}
-UnicodeCSV=$(echo -n "I Can Eat Glass"; for s in "${ICanEatGlass[@]}"; do case $s in *,*) echo -n ',"'"$s"'"';; *) echo -n ",$s"; esac; done)
+UnicodeCSV=$(
+  echo -n "I Can Eat Glass"
+  for s in "${ICanEatGlass[@]}"; do
+      case $s in
+          *,*) echo -n ',"'"$s"'"'
+              ;;
+          *) echo -n ",$s"
+              ;;
+      esac
+  done
+)
 
 UnicodeJSON='{ "t": "I Can Eat Glass" '"$(i=1; for s in "${ICanEatGlass[@]}"; do s=${s//\"/\\\"}; echo ", \"l$i\": \"$s\""; let ++i; done)}"
