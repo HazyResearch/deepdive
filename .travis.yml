@@ -1,4 +1,5 @@
-sudo: false  # to use container-based infra, see: http://docs.travis-ci.com/user/migrating-from-legacy/
+sudo: required  # to use container-based infra, see: http://docs.travis-ci.com/user/migrating-from-legacy/
+dist: trusty
 notifications:
   email:
     - deepdive-notifications@cs.stanford.edu
@@ -62,7 +63,6 @@ addons:
     sources:
     - ubuntu-toolchain-r-test  # for gcc 4.8
     packages:
-    - bash
     - python3
     - gnuplot
     - bc
