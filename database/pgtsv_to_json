@@ -129,7 +129,10 @@ def unicode_csv_reader(unicode_csv_data, **kwargs):
 def main(in_file, schema):
   # parse column names and types from arguments
   def parseArg(arg):
-      field_name, field_type = re.match(r"'(.+):([^:]+)'", arg).groups()
+      if arg.startswith("'") and arg.endswith("'"):
+          # if enclosed in single quotes, remove them
+          arg = arg[1:-1]
+      field_name, field_type = arg.split(':')
       return field_name, convert_type_func(field_type)
   names_converters = map(parseArg, schema)
 
