@@ -614,7 +614,7 @@ UnicodeCSV=$(
               ;;
           *) echo -n ",$s"
               ;;
-      esac
+      esac;
   done
 )
 
