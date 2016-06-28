@@ -84,7 +84,7 @@ install:
 
 script:
   # Run all tests
-  - make test
+  - dist/stage/bin/deepdive env make test
 
   # Check broken links in documentation
   # TODO check only when doc/ has changed
