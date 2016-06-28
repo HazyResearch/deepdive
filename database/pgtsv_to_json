@@ -90,16 +90,14 @@ pgTextEscapeSeqs = {
     "t": "\t",
     "v": "\v",
     }
+
 def decode_pg_text_escapes(m):
   c = m.group(1)
   if c in pgTextEscapeSeqs:
     return pgTextEscapeSeqs[c]
-  elif c.startswith("x"):
-    return chr(int(c, base=16))
-  elif c.startswith("0"):
-    return chr(int(c, base=8))
   else:
     return c
+
 def unescape_postgres_text_format(s):
   # unescape PostgreSQL text format
   return re.sub(r"\\(.|0[0-7]{1,2}|x[0-9A-Fa-f]{1,2})", decode_pg_text_escapes, s)
