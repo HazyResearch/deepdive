@@ -609,12 +609,7 @@ UnicodeCSVHeader=${UnicodeTSVHeader//$'\t'/,}
 UnicodeCSV=$(
   echo -n "I Can Eat Glass"
   for s in "${ICanEatGlass[@]}"; do
-      case $s in
-          *,*\) echo -n ',"'"$s"'"'
-              ;;
-          *\) echo -n ",$s"
-              ;;
-      esac
+      case $s in *,*) echo -n ',"'"$s"'"' ;; *) echo -n ",$s" ;; esac
   done
 )
 
