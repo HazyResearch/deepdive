@@ -8,6 +8,8 @@ setup() {
     db-execute "SELECT 1" &>/dev/null || db-init
 }
 
+tab2nl() { tr '\t' '\n' <<<"$1"; }
+
 @test "$DBVARIANT deepdive sql works" {
     result=$(deepdive sql "
         CREATE TEMP TABLE foo(a INT);
@@ -63,19 +65,25 @@ load ../../database/test/corner_cases
 ###############################################################################
 ## a nasty SQL input to test output formatters
 
+@test "$DBVARIANT deepdive sql eval format=tsj works" {
+    tab2nl "$NastyColumnTypes"
+    actual=$(keeping_output_of deepdive sql eval "$NastySQL" format=tsj)
+    diff -u                           <(tab2nl "$NastyTSJ") <(tab2nl "$actual")
+}
+
 @test "$DBVARIANT deepdive sql eval format=tsv works" {
     actual=$(keeping_output_of deepdive sql eval "$NastySQL" format=tsv)
-    diff -u <(echo "$NastyTSV")                         <(echo "$actual")
+    diff -u                           <(tab2nl "$NastyTSV") <(tab2nl "$actual")
 }
 
 @test "$DBVARIANT deepdive sql eval format=tsv header=1 works" {
     actual=$(keeping_output_of deepdive sql eval "$NastySQL" format=tsv header=1)
-    diff -u <(echo "$NastyTSVHeader"; echo "$NastyTSV") <(echo "$actual")
+    diff -u <(tab2nl "$NastyTSVHeader"; tab2nl "$NastyTSV") <(tab2nl "$actual")
 }
 
 @test "$DBVARIANT deepdive sql eval format=csv works" {
     actual=$(keeping_output_of deepdive sql eval "$NastySQL" format=csv)
-    diff -u <(echo "$NastyCSV")                         <(echo "$actual")
+    diff -u                         <(echo "$NastyCSV") <(echo "$actual")
 }
 
 @test "$DBVARIANT deepdive sql eval format=csv header=1 works" {
@@ -88,24 +96,24 @@ load ../../database/test/corner_cases
     compare_json "$NastyJSON" "$actual"
 }
 
-@test "$DBVARIANT deepdive sql eval format=json works" {
-    jq 'values' <<<"$NastyJSON"
-    actual=$(deepdive sql eval "$NastySQL" format=json)
-    compare_json "$NastyJSON" "$actual"
-}
-
 
 ###############################################################################
 ## a case where NULL is in an array
 
+@test "$DBVARIANT deepdive sql eval (with null in arrays) format=tsj works" {
+    tab2nl "$NullInArrayColumnTypes"
+    actual=$(keeping_output_of deepdive sql eval "$NullInArraySQL" format=tsj)
+    diff -u                                 <(tab2nl "$NullInArrayTSJ") <(tab2nl "$actual")
+}
+
 @test "$DBVARIANT deepdive sql eval (with null in arrays) format=tsv works" {
     actual=$(keeping_output_of deepdive sql eval "$NullInArraySQL" format=tsv)
-    diff -u                               <(echo "$NullInArrayTSV") <(echo "$actual")
+    diff -u                                 <(tab2nl "$NullInArrayTSV") <(tab2nl "$actual")
 }
 
 @test "$DBVARIANT deepdive sql eval (with null in arrays) format=tsv header=1 works" {
     actual=$(keeping_output_of deepdive sql eval "$NullInArraySQL" format=tsv header=1)
-    diff -u <(echo "$NullInArrayTSVHeader"; echo "$NullInArrayTSV") <(echo "$actual")
+    diff -u <(tab2nl "$NullInArrayTSVHeader"; tab2nl "$NullInArrayTSV") <(tab2nl "$actual")
 }
 
 @test "$DBVARIANT deepdive sql eval (with null in arrays) format=csv works" {
@@ -127,15 +135,21 @@ load ../../database/test/corner_cases
 ###############################################################################
 ## a case with nested array
 
+@test "$DBVARIANT deepdive sql eval (with nested arrays) format=tsj works" {
+    tab2nl "$NestedArrayColumnTypes"
+    actual=$(keeping_output_of deepdive sql eval "$NestedArraySQL" format=tsj)
+    diff -u                                 <(tab2nl "$NestedArrayTSJ") <(tab2nl "$actual")
+}
+
 @test "$DBVARIANT deepdive sql eval (with nested arrays) format=tsv works" {
     actual=$(keeping_output_of deepdive sql eval "$NestedArraySQL" format=tsv)
-    diff -u                               <(echo "$NestedArrayTSV") <(echo "$actual")
+    diff -u                                 <(tab2nl "$NestedArrayTSV") <(tab2nl "$actual")
 }
 
 @test "$DBVARIANT deepdive sql eval (with nested arrays) format=tsv header=1 works" {
     skip  # XXX psql does not support HEADER for FORMAT text
     actual=$(keeping_output_of deepdive sql eval "$NestedArraySQL" format=tsv header=1)
-    diff -u <(echo "$NestedArrayTSVHeader"; echo "$NestedArrayTSV") <(echo "$actual")
+    diff -u <(tab2nl "$NestedArrayTSVHeader"; tab2nl "$NestedArrayTSV") <(tab2nl "$actual")
 }
 
 @test "$DBVARIANT deepdive sql eval (with nested arrays) format=csv works" {
