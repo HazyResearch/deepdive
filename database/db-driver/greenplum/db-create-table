@@ -23,4 +23,5 @@ else
     db-execute "DROP $DROP_VIEW_TYPE  VIEW  $Table CASCADE" &>/dev/null || true
     db-execute "DROP $DROP_TABLE_TYPE TABLE $Table CASCADE" &>/dev/null || true
 fi
+db-execute "CREATE DOMAIN json AS TEXT;" || true
 exec db-execute "CREATE $CREATE_TABLE_TYPE TABLE $Table $TableDef $CREATE_TABLE_EXTRA_CLAUSES"
