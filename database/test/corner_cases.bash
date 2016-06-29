@@ -318,6 +318,18 @@ NullInArraySQL="SELECT 1 AS i
                             , E'\\\\N'
                             , 'N'
                             ] AS arr
+                     , ARRAY[ NULL
+                            , 0
+                            , NULL
+                            , 1
+                            ] AS int_arr
+                     , ARRAY[ NULL
+                            , 0.1
+                            , NULL
+                            , 2.34
+                            , NULL
+                            , 5.678
+                            ] AS float_arr
     "
 
 # expected TSV output for NULL in arrays
@@ -329,6 +341,18 @@ TSVHeader+=$'\t''arr'              TSV+=$'\t''{""'
                                         TSV+=',"null"'
                                         TSV+=',"\\\\N"'
                                         TSV+=',N'
+                                        TSV+='}'
+TSVHeader+=$'\t''int_arr'          TSV+=$'\t''{NULL'
+                                        TSV+=',0'
+                                        TSV+=',NULL'
+                                        TSV+=',1'
+                                        TSV+='}'
+TSVHeader+=$'\t''float_arr'        TSV+=$'\t''{NULL'
+                                        TSV+=',0.1'
+                                        TSV+=',NULL'
+                                        TSV+=',2.34'
+                                        TSV+=',NULL'
+                                        TSV+=',5.678'
                                         TSV+='}'
 TSVHeader=${TSVHeader#$'\t'}       TSV=${TSV#$'\t'}  # strip the first delimiter
 NullInArrayTSVHeader=$TSVHeader NullInArrayTSV=$TSV
@@ -353,6 +377,18 @@ CSVHeader+=,'arr'              CSV+=,'"{""""'
                                  CSV+=',""\\N""'
                                  CSV+=',N'
                                  CSV+='}"'
+CSVHeader+=,'int_arr'          CSV+=,'"{NULL'
+                                 CSV+=',0'
+                                 CSV+=',NULL'
+                                 CSV+=',1'
+                                 CSV+='}"'
+CSVHeader+=,'float_arr'        CSV+=,'"{NULL'
+                                 CSV+=',0.1'
+                                 CSV+=',NULL'
+                                 CSV+=',2.34'
+                                 CSV+=',NULL'
+                                 CSV+=',5.678'
+                                 CSV+='}"'
 CSVHeader=${CSVHeader#,}       CSV=${CSV#,}  # strip the first delimiter
 NullInArrayCSVHeader=$CSVHeader NullInArrayCSV=$CSV
 
@@ -365,6 +401,20 @@ NullInArrayJSON='
             "null",
             "\\N",
             "N"
+        ],
+        "int_arr": [
+            null,
+            0,
+            null,
+            1
+        ],
+        "float_arr": [
+            null,
+            0.1,
+            null,
+            2.34,
+            null,
+            5.678
         ] }
     '
 NullInArrayTSJ=$(tsjFromJsonAndHeader "$NullInArrayJSON" "$NullInArrayTSVHeader")

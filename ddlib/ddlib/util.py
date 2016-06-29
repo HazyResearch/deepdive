@@ -68,16 +68,20 @@ def parse_pgtsv_element(s, t, array_nesting_depth=0):
       s = re.sub(r'\\(.)', lambda m : '""' if m.group(1) == '"' else m.group(1), s) # XXX quotes and backslashes in arrays are escaped another time
       values = []
       v = None
+      is_quoted = False
       while len(s) > 0:
         if s[0] == ',':  # found the end of a value
+          if v == 'NULL' and not is_quoted: v = None
           values.append(v)
           v = None
+          is_quoted = False
           s = s[1:]
         elif s[0] == '"': # found a quote
           # TODO is_quoted = True and error checking if quoting mixed
           # e.g.: 1,this"is an error",2,3
           if v is None:  # this is a new value
             v = ""
+            is_quoted = True
           else:  # this an escaped quote, append to the current value
             v += '"'
           # find the other end of the quote and consume
@@ -94,6 +98,7 @@ def parse_pgtsv_element(s, t, array_nesting_depth=0):
           else: # or consume the rest of the string as the value
             v = s
           s = s[len(v):]
+      if v == 'NULL' and not is_quoted: v = None
       values.append(v)
       split = values
     else:
@@ -161,6 +166,8 @@ def print_pgtsv_element(x, n, t, array_nesting_depth=0):
   if x is None:
     if array_nesting_depth == 0:
       return r'\N'
+    elif t == 'text':
+      return 'NULL'
     else:
       return ''
 
