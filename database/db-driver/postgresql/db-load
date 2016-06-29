@@ -16,28 +16,43 @@ table="$table${columns:+($columns)}"
 # load in parallel from multiple sources
 do_load() {
     local sql=$1; shift
+    local mkloadingexpr=$1; shift
     local nsources=$#
     if [[ $nsources -gt 1 ]]; then
         local i=1
         for source; do
             show_progress input_to "loading $table [$i/$nsources]" -- \
-            db-execute "$sql" <"$source" &
+            bash -euc 'sql=$1; exec db-execute "$sql" <'"$("$mkloadingexpr" /dev/stdin)" -- "$sql" <"$source" &
             let ++i
         done
         wait
     else
         source=$1; shift
         exec show_progress input_to "loading $table" -- \
-        db-execute "$sql" <"$source"
+        bash -euc 'sql=$1; exec db-execute "$sql" <'"$("$mkloadingexpr" /dev/stdin)" -- "$sql" <"$source"
     fi
 }
 
+copy_option=
+mkloadingexpr=escape4sh
 case $format in
     tsv)
-        do_load "\COPY $table FROM PSTDIN" "$@"
+        ;;
+    tsj)
+        copy_option+=" CSV"  # CSV is better for distinguishing NULLs from empty strings
+        mkloadingexpr=primitive_type_handlers
+        primitive_type_handlers() {
+            local s=$1; shift
+            echo " <($(eval escape4sh exec tsj2fmt csv "$(
+                db-execute "$(IFS+=,; sql_for_column_types "$table" $columns)" |
+                tr a-z A-Z | escape4sh
+            )") <$(escape4sh "$s"))"
+        }
         ;;
     csv)
-        do_load "\COPY $table FROM PSTDIN CSV" "$@"
+        copy_option+="CSV"
         ;;
     *) error "$format: unsupported format by PostgreSQL driver" ;;
 esac
+
+do_load "\COPY $table FROM PSTDIN${copy_option:+ $copy_option}" "$mkloadingexpr" "$@"

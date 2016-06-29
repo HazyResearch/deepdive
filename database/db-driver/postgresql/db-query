@@ -11,6 +11,15 @@ header=${1:?No HEADER given}; shift
 
 copy_option=
 case $format in
+    tsj)
+        # Tab-Separated-JSONs format, assuming all column values are already in JSON
+        types=$(db-execute "
+            CREATE TEMP TABLE __dd_to_tsj_temp AS SELECT * FROM ($sql) result LIMIT 0;
+            $(sql_for_column_types __dd_to_tsj_temp)
+        " -v QUIET=1 | tr a-z A-Z | escape4sh)
+        db-query "$sql" tsv "$header" "$@" | eval "tsv2tsj $types"
+        exit $?  # all done, no need to go further
+        ;;
     tsv)
         case $header in
             0) ;;
@@ -24,7 +33,7 @@ case $format in
         esac
         ;;
     csv)
-        copy_option+=" csv"
+        copy_option+=" CSV"
         case $header in
             0) ;;
             1) copy_option+=" HEADER" ;;
@@ -52,9 +61,7 @@ case $format in
                        AND NOT attisdropped
                      ORDER BY attnum
                 ) TO STDOUT
-            " -v QUIET=1 |
-            # quote each line
-            sed "s/'/'\\''/g; s/^/'/; s/\$/'/" | tr '\n' ' ')
+            " -v QUIET=1 | escape4sh)
             # next, use our conversion script to transform to valid JSON object per line
             db-execute "COPY ($sql) TO STDOUT" | eval "pgtsv_to_json $namesAndTypes"
         fi

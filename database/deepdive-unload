@@ -13,8 +13,8 @@
 # is set to a proper URL, or under a DeepDive application where the URL is set
 # in the db.url file.
 #
-# The format of each SINK is determined by the filename extension, such as
-# `.tsv` or `.csv`.  Defining the DEEPDIVE_LOAD_FORMAT environment to tsv, csv,
+# The format of each SINK is determined by the filename extension, such as `.tsj`
+# `.tsv` or `.csv`.  Defining the DEEPDIVE_LOAD_FORMAT environment to tsj, tsv, csv,
 # or sql assumes a particular format, ignoring the filename.  Defining
 # DEEPDIVE_LOAD_FORMAT_DEFAULT environment will fallback to the specified
 # format when it cannot be determined from the filename.
@@ -56,7 +56,7 @@ if [[ $# -eq 0 ]]; then
 
     cd "$DEEPDIVE_APP"
     # search under input/RELATION.*
-    for Path in input/"$Relation".{tsv,csv}{,.bz2,.gz}; do
+    for Path in input/"$Relation".{tsj,tsv,csv}{,.bz2,.gz}; do
         [[ -e "$Path" ]] || continue
         break
     done
@@ -114,6 +114,7 @@ for path; do
     # determine the format
     if [[ -z "$DEEPDIVE_LOAD_FORMAT" ]]; then
         case $path in
+            *.tsj|*.tsj.*)           format=tsj      ;;
             *.tsv|*.tsv.*)           format=tsv      ;;
             *.csv|*.csv.*)           format=csv      ;;
             *)

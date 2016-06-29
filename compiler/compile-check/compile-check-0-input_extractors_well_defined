@@ -5,6 +5,7 @@
 { cmd_extractor: ["cmd"]
 , sql_extractor: ["sql"]
 , tsv_extractor: ["input", "udf", "output_relation"]
+, tsj_extractor: ["input", "udf", "output_relation"]
 #, json_extractor: ["input", "udf", "output_relation"] # TODO
 } as $requiredFieldsByExtractorStyle |
 

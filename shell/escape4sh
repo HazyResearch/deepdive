@@ -6,15 +6,18 @@
 ##
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-24
-[[ $# -eq 0 ]] || {
+if [[ $# -gt 0 ]]; then
     # construct a jq expression that applies shell escaping for each given argument
-    i=0 jqExpr=
-    for a; do
+    args=() i=0 jqExpr=
+    while [[ $# -gt 0 ]]; do
         let ++i
-        argsExpr+=' --arg a'$i' "$'$i'"'
-        jqExpr+='($a'$i' | @sh), '
+        args+=(--arg "a$i" "$1"); shift
+        jqExpr+='($a'$i'|@sh), '
     done
     jqExpr=${jqExpr%, }
     # then run it
-    eval "jq --null-input --raw-output $argsExpr '[$jqExpr] | join(\" \")'"
-}
+    eval 'jq -n -r "${args[@]}" '\'"[$jqExpr]"' | join(" ")'\'
+else
+    # without any arguments, escape each line in STDIN
+    sed "s/'/'\\\\''/g; s/^/'/; s/\$/'/" | tr '\n' ' ' | sed 's/ $//'
+fi
