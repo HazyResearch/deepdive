@@ -28,8 +28,8 @@ setup() {
 @test "$DBVARIANT spouse example load corpus" {
     # XXX skip testing NLP parser processes
     deepdive create table sentences
-    DEEPDIVE_LOAD_FORMAT=tsv \
-    deepdive load sentences <(bzcat input/sentences-1000.tsv.bz2 | head -$SUBSAMPLE_NUM_SENTENCES)
+    DEEPDIVE_LOAD_FORMAT=tsj \
+    deepdive load sentences <(bzcat input/sentences-1000.tsj.bz2 | head -$SUBSAMPLE_NUM_SENTENCES)
     deepdive mark done data/sentences
     deepdive mark new data/sentences
 }
@@ -57,8 +57,8 @@ setup() {
 @test "$DBVARIANT spouse example load larger corpus" {
     # load larger corpus
     deepdive create table sentences
-    DEEPDIVE_LOAD_FORMAT=tsv \
-    deepdive load sentences <(bzcat input/sentences-1000.tsv.bz2 | head -$((2 * $SUBSAMPLE_NUM_SENTENCES)))
+    DEEPDIVE_LOAD_FORMAT=tsj \
+    deepdive load sentences <(bzcat input/sentences-1000.tsj.bz2 | head -$((2 * $SUBSAMPLE_NUM_SENTENCES)))
     deepdive mark done data/sentences
     deepdive mark new data/sentences
 }
