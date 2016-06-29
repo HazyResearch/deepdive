@@ -25,14 +25,14 @@ if [ "$DISTRIBUTED" = false ];then
     fi
     mkfifo "$blockingPipe"
 
-    sqlline -u "jdbc:drill:zk=local" -f "$blockingPipe" &
+    sqlline -u 'jdbc:drill:zk=local' -f "$blockingPipe" &
     sleep 7 # Drill takes about 7 seconds to start-up
 fi
 
 DRILL_DRIVER_PATH="$DEEPDIVE_HOME/util/db-driver/drill"
-WORKSPACE_CONFIG="$DEEPDIVE_APP/database/drill/workspace_config.json"
+WORKSPACE_CONFIG="$DEEPDIVE_APP/run/database/drill/workspace_config.json"
 cat "$DRILL_DRIVER_PATH/drill_workspace_config_template.json" | python $DRILL_DRIVER_PATH/configure_workspace.py "$DBNAME" "$DRILL_WORK_DIRECTORY" >"$WORKSPACE_CONFIG"
-vim "$WORKSPACE_CONFIG" 
+#vim "$WORKSPACE_CONFIG" 
 configJSON="$( cat "$WORKSPACE_CONFIG" )"
 
 attempt=0

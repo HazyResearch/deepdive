@@ -134,6 +134,7 @@ for path; do
     if [[ -z "$DEEPDIVE_LOAD_FORMAT" ]]; then
         case $path in
             *.tsv|*.tsv.*)           format=tsv      ;;
+            *.tsj|*.tsj.*)           format=tsj      ;;
             *.csv|*.csv.*)           format=csv      ;;
             *.json-seq|*.json-seq.*) format=json-seq ;;
             *.sql|*.sql.*)           format=sql      ;;

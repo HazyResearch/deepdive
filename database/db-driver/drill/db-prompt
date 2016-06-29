@@ -4,7 +4,9 @@
 # > db-prompt
 ##
 set -eu
-exec "$CONFIGURED_DRILL_EXECUTABLE"
 
-#PGPASSWORD="$DBPASSWORD" \
-#exec psql -h "$DBHOST" -p "$DBPORT" -U "$DBUSER" -d "$DBNAME" "$@"
+if [ "$DISTRIBUTED" = true ];then
+    exec sqlline -u 'jdbc:drill:schema='"$DBNAME"';zk='"$ZOOKEEPERS" -n "$DBUSER" -p "$DBPASSWORD"
+else
+    exec sqlline -u 'jdbc:drill:zk=local' -n "$DBUSER" -p "$DBPASSWORD"
+fi
