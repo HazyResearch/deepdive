@@ -48,8 +48,6 @@ Description of each schema:
 
 - `[TABLE]_[VARIABLE]_inference`: a view that maps variables with their inference results. It is commonly used for error analysis.
 
-- `[TABLE]_[VARIABLE]_inference_bucketed`: a table that maps variables with their inference results, with expectations separated into 10 buckets. It is used for generating calibration plots.
-
 - `[TABLE]_[VARIABLE]_calibration`: a view that has calibration statistics of a variable. Used in generating calibration plots.
 
 - `dd_categories_[TABLE]`: a view that records the cardinality series of given variable. For example if the domain of a variable is {1,2,3} the cardinality is 3.

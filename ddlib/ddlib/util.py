@@ -2,7 +2,9 @@ from collections import namedtuple,OrderedDict
 import re
 import sys
 from inspect import isgeneratorfunction,getargspec
-from StringIO import StringIO
+import csv
+from io import StringIO
+import json
 
 def print_error(err_string):
   """Function to write to stderr"""
@@ -63,19 +65,23 @@ def parse_pgtsv_element(s, t, array_nesting_depth=0):
         c = matches.group(1)
         return escapeCodeToSpecial[c] if c in escapeCodeToSpecial else c
       s = re.sub(r'\\(.)', unescapeTSVBackslashes, s)
-      s = re.sub(r'\\(.)', lambda(m): '""' if m.group(1) == '"' else m.group(1), s) # XXX quotes and backslashes in arrays are escaped another time
+      s = re.sub(r'\\(.)', lambda m : '""' if m.group(1) == '"' else m.group(1), s) # XXX quotes and backslashes in arrays are escaped another time
       values = []
       v = None
+      is_quoted = False
       while len(s) > 0:
         if s[0] == ',':  # found the end of a value
+          if v == 'NULL' and not is_quoted: v = None
           values.append(v)
           v = None
+          is_quoted = False
           s = s[1:]
         elif s[0] == '"': # found a quote
           # TODO is_quoted = True and error checking if quoting mixed
           # e.g.: 1,this"is an error",2,3
           if v is None:  # this is a new value
             v = ""
+            is_quoted = True
           else:  # this an escaped quote, append to the current value
             v += '"'
           # find the other end of the quote and consume
@@ -92,6 +98,7 @@ def parse_pgtsv_element(s, t, array_nesting_depth=0):
           else: # or consume the rest of the string as the value
             v = s
           s = s[len(v):]
+      if v == 'NULL' and not is_quoted: v = None
       values.append(v)
       split = values
     else:
@@ -158,7 +165,9 @@ def print_pgtsv_element(x, n, t, array_nesting_depth=0):
   # Handle NULLs first
   if x is None:
     if array_nesting_depth == 0:
-      return '\N'
+      return r'\N'
+    elif t == 'text':
+      return 'NULL'
     else:
       return ''
 
@@ -184,13 +193,13 @@ def print_pgtsv_element(x, n, t, array_nesting_depth=0):
       return x
     else:
       def escapeWithTSVBackslashes(x):
-        return re.sub(r'[\b\f\n\r\t\\]', lambda(m): "\\" + specialToEscapeCode[m.group(0)], x)
-      if re.search(r'^[a-zA-Z0-9_.\x1c\x1d\x1e\x1f\x7f\[\]()]+$|^[\b]$', x) \
+        return re.sub(r'[\b\f\n\r\t\\]', lambda m : "\\" + specialToEscapeCode[m.group(0)], x)
+      if re.search(r'^[a-zA-Z0-9_.\b\x1c\x1d\x1e\x1f\x7f\[\]()]+$', x) \
           and x not in ["", "NULL", "null"]:
         # we don't need to quote the value in some special cases
         return escapeWithTSVBackslashes(x)
       else: # otherwise, surround value with quotes
-        x = re.sub(r'[\\"]', lambda(m): '\\' +  m.group(0), x) # XXX quotes and backslashes in arrays are escaped another time
+        x = re.sub(r'[\\"]', lambda m : '\\' +  m.group(0), x) # XXX quotes and backslashes in arrays are escaped another time
         return '"%s"' % escapeWithTSVBackslashes(x) # then, the TSV escaping
   elif t == 'boolean':
     return 't' if x else 'f'
@@ -212,7 +221,7 @@ class PGTSVPrinter:
         num_rows_declared=len(self.fields), num_rows_found=len(out), row=out,
       ))
     else:
-      print '\t'.join(print_pgtsv_element(x, n, t) for x,(n,t) in zip(out, self.fields))
+      print('\t'.join(print_pgtsv_element(x, n, t) for x,(n,t) in zip(out, self.fields)))
 
 
 # how to get types specified as default values of a function
@@ -255,15 +264,7 @@ def format_decorator(attrName):
 over    = format_decorator("input_format")
 returns = format_decorator("output_format")
 
-# decorators that initiate the main extractor loop
-def tsv_extractor(generator):
-  """
-  When a generator function is decorated with this (i.e., @tsv_extractor
-  preceding the def line), standard input is parsed as Postgres-style TSV
-  (PGTSV) input rows, the function is applied to generate output rows, and then
-  checks that each line of this generator is in the output format before
-  printing back as PGTSV rows.
-  """
+def get_generator_format(generator):
   # Expects the input and output formats to have been decorated with @over and @returns
   try:
     # @over has precedence over default values of function arguments
@@ -281,6 +282,19 @@ def tsv_extractor(generator):
   if not isgeneratorfunction(generator):
     raise ValueError("The function must be a *generator*, i.e., use yield not return")
 
+  return input_format, output_format
+
+# decorators that initiate the main extractor loop
+def tsv_extractor(generator):
+  """
+  When a generator function is decorated with this (i.e., @tsv_extractor
+  preceding the def line), standard input is parsed as Postgres-style TSV
+  (PGTSV) input rows, the function is applied to generate output rows, and then
+  checks that each line of this generator is in the output format before
+  printing back as PGTSV rows.
+  """
+  input_format, output_format = get_generator_format(generator)
+
   # Create the input parser
   parser = PGTSVParser(input_format)
 
@@ -290,3 +304,45 @@ def tsv_extractor(generator):
   for row in parser.parse_stdin():
     for out_row in generator(**row._asdict()):
       printer.write(out_row)
+
+
+def tsj_extractor(generator):
+  """
+  When a generator function is decorated with this (i.e., @tsj_extractor
+  preceding the def line), each standard input line is parsed as
+  tab-separated JSON (TSJ) values, then the function is applied to the parsed
+  array to generate output rows, and each output row expected to be an array
+  is formatted as TSJ.
+  """
+  reload(sys).setdefaultencoding("utf8")  # to avoid UnicodeEncodeError of JSON values during conversion by str()
+
+  input_format, output_format = get_generator_format(generator)
+  input_names  = [name for name,t in input_format]
+  num_input_values = len(input_format)
+  num_input_splits = num_input_values - 1
+  num_output_values = len(output_format)
+
+  def parse_json(column_index, json_value):
+    try:
+      return json.loads(json_value)
+    except ValueError as exc:
+      raise ValueError("JSON parse error in column %d (%s):\n  %s\n" % (column_index, exc, json_value))
+
+  for line in sys.stdin:
+    try:
+      columns = line.rstrip("\n").split("\t", num_input_splits)
+      assert len(columns) == num_input_values
+      values_in = (parse_json(i,v) for i,v in enumerate(columns))
+      input_dict = dict(zip(input_names, values_in))
+    except ValueError as exc:
+      raise ValueError("could not parse TSJ line:\n  %s\ndue to %s" % (line, exc))
+    for values_out in generator(**input_dict):
+      if len(values_out) == num_output_values:
+        for i,v in enumerate(values_out):
+          if i > 0: sys.stdout.write("\t")
+          sys.stdout.write(json.dumps(v))
+        sys.stdout.write("\n")
+      else:
+        raise ValueError("Expected %d values but got %d\n  input: %s\n output: %s" % (
+          num_output_values, len(values_out),
+          json.dumps(values_in), json.dumps(values_out)))

@@ -26,8 +26,10 @@ def unpack_words(input_dict, character_offset_begin=None, character_offset_end=N
                 dep_tree[child] = {"parent":parent, "label":label}
                 if parent not in dep_tree: dep_tree[parent] = {"parent":-1, "label":"ROOT"}
 
-        ziped_tags = map(None, array_character_offset_begin, array_character_offset_end, array_lemma,
-                array_pos, array_ner, array_words)
+        # workaround for making `map(None, a, b, ...)` work consistently with Python 2 and 3
+        zip_with_None = lambda *ls: (tuple(l[i] if i < len(l) else None for l in ls) for i in range(max(map(len, ls))))
+        ziped_tags = list(zip_with_None(array_character_offset_begin, array_character_offset_end, array_lemma,
+                array_pos, array_ner, array_words))
         wordobjs = []
         for i in range(0,len(ziped_tags)):
                 if i not in dep_tree : dep_tree[i] = {"parent":-1, "label":"ROOT"}

@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# torque/compute-setup -- Undoes tasks performed by compute-setup.
+# $ compute-setup
+#
+##
+set -euo pipefail
+
+# load compute configuration
+eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \
+    num_processes='.num_processes' \
+    ssh_user='.ssh_user' \
+    ssh_host='.ssh_host' \
+    remote_deepdive_app_base='.remote_deepdive_app_base' \
+    remote_deepdive_transient_base='.remote_deepdive_transient_base' \
+    poll_period_secs='.poll_period_secs' \
+    excludes='.excludes | join("\t")' \
+    additional_paths='.additional_paths | join("\t")' \
+    #
+)"
+
+# declare all input arguments
+declare -- "$@"
+
+export SSH_INFO="${ssh_user}@${ssh_host}"
+export LOCAL_USER="$(whoami)"
+export KRB_DIR=${krb_dir:-"/tmp/krb5cc_${ssh_user}_deepdive"}
+
+ssh $SSH_INFO "rm -rfv $(dirname $(deepdive whereis installed .))"
+
+ssh $SSH_INFO "rm -rfv $KRB_DIR"
+
+echo "Teardown complete!"

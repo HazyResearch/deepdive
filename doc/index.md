@@ -151,7 +151,7 @@ and
 
 <!-- Toy Examples -->
 - [Cancer/Smoke/Friends: a classical toy example for MLNs](example-smoke.md)
-- [Text chunking with Multinomial](example-chunking.md)
+- [Text chunking with categorical variables](example-chunking.md)
 
 
 #### Advanced topics
@@ -161,6 +161,8 @@ and
     - [Using DeepDive with GreenPlum](using-greenplum.md)
     - [Using DeepDive with Postgres-XL](using-pgxl.md)
     - [Using DeepDive on Amazon EC2](using-ec2.md)
+- Using DeepDive with Various Compute Clusters
+    - [Using DeepDive with the Torque scheduler](using-torque.md)
 - References
     - [`deepdive.conf` Reference](configuration.md)
     - [Generic features library](gen_feats.md)

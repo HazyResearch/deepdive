@@ -7,21 +7,28 @@ set -eu
 [[ $# -gt 0 ]] || usage "$0" "Missing TABLE"
 Table=$1; shift
 
+sqlForColumnNamesAndTypes="
+    SELECT attname                          AS columnName
+         , format_type(atttypid, atttypmod) AS columnType
+      FROM pg_attribute
+     WHERE attrelid = '$Table'::regclass
+       AND attnum > 0
+       AND NOT attisdropped
+     ORDER BY attnum
+    "
+
 if [[ $# -gt 0 ]]; then
     for Column; do
         echo "COPY (
-            SELECT data_type
-            FROM information_schema.columns
-            WHERE table_name = '$Table'
-              AND column_name = '$Column'
+            SELECT columnType
+            FROM ($sqlForColumnNamesAndTypes) columnNamesAndTypes
+            WHERE columnName = '$Column'
         ) TO STDOUT;"
     done
 else
     echo "COPY (
-        SELECT data_type
-        FROM information_schema.columns
-        WHERE table_name = '$Table'
-        ORDER BY ordinal_position
+        SELECT columnType
+        FROM ($sqlForColumnNamesAndTypes) columnNamesAndTypes
     ) TO STDOUT;"
 fi
 # TODO escaping each output line may be desirable

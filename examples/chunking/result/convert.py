@@ -1,7 +1,5 @@
 #! /usr/bin/env python
 
-tagNames = ['NP', 'VP', 'PP', 'ADJP', 'ADVP', 'SBAR', 'O', 'PRT', 'CONJP', 'INTJ', 'LST', 'B', '']
-
 fin = open('result', 'r')
 fout = open('output', 'w')
 
@@ -18,12 +16,12 @@ for line in fin:
     continue
 
   # normal word
-  tag = tagNames[int(tokens[3])]
+  tag = tokens[3]
   if tag != 'O':
     if lastTag == tag:
       tag = 'I-' + tag
     else:
       tag = 'B-' + tag
-  lastTag = tagNames[int(tokens[3])]
+  lastTag = tokens[3]
   tokens[3] = tag
   fout.write(' '.join(tokens) + '\n')

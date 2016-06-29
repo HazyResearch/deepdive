@@ -173,7 +173,7 @@ Here are the probabilities computed for the pairs of names from the example arti
 ```bash
 deepdive sql "
     SELECT p1.mention_text, p2.mention_text, expectation
-    FROM has_spouse_label_inference i, person_mention p1, person_mention p2
+    FROM has_spouse_inference i, person_mention p1, person_mention p2
     WHERE p1_id LIKE '5beb863f-26b1-4c2f-ba64-0c3e93e72162%'
       AND p1_id = p1.mention_id AND p2_id = p2.mention_id
   "

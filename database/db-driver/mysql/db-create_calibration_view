@@ -2,46 +2,45 @@
 # db-create_calibration_view -- Creates a variable's *_calibration view in a MySQL database
 # > eval "$(db-parse "$url")"
 # > export DEEPDIVE_CALIBRATION_NUM_BUCKETS=10
-# > db-create_calibration_view TABLE COLUMN
+# > db-create_calibration_view TABLE
 ##
 set -euo pipefail
 
 table=${1:?The TABLE holding the variable must be given, e.g., has_spouse}
-column=${2:?The COLUMN holding the variable must be given, e.g., is_true}
 
 : ${DEEPDIVE_CALIBRATION_NUM_BUCKETS:=10}
 num_buckets=$DEEPDIVE_CALIBRATION_NUM_BUCKETS
 
-db-create-view-as "dd_bucketed_${table}_${column}_inference" "
-    SELECT ${column} AS label
+db-create-view-as "dd_bucketed_${table}_inference" "
+    SELECT dd_label AS label
          , CASE
              WHEN expectation = 1 THEN $(($num_buckets - 1))
              ELSE FLOOR(expectation * ${num_buckets})
            END AS bucket
-    FROM ${table}_${column}_inference
+    FROM ${table}_inference
 "
 
-db-create-view-as "dd_bucketed_${table}_${column}_inference_all" "
+db-create-view-as "dd_bucketed_${table}_inference_all" "
     SELECT bucket, COUNT(*) AS count
-      FROM dd_bucketed_${table}_${column}_inference
+      FROM dd_bucketed_${table}_inference
      GROUP BY bucket
 "
 
-db-create-view-as "dd_bucketed_${table}_${column}_inference_positive" "
+db-create-view-as "dd_bucketed_${table}_inference_positive" "
     SELECT bucket, COUNT(*) AS count
-      FROM dd_bucketed_${table}_${column}_inference
+      FROM dd_bucketed_${table}_inference
      WHERE label = true
      GROUP BY bucket
 "
 
-db-create-view-as "dd_bucketed_${table}_${column}_inference_negative" "
+db-create-view-as "dd_bucketed_${table}_inference_negative" "
     SELECT bucket, COUNT(*) AS count
-      FROM dd_bucketed_${table}_${column}_inference
+      FROM dd_bucketed_${table}_inference
      WHERE label = false
      GROUP BY bucket
 "
 
-db-create-view-as "${table}_${column}_calibration" "
+db-create-view-as "${table}_calibration" "
     SELECT universe.bucket                             AS bucket
          , universe.count                              AS num_variables
          , COALESCE(positive.count, 0)                 AS num_correct
@@ -55,8 +54,8 @@ db-create-view-as "${table}_${column}_calibration" "
          , COALESCE(positive.count, 0) +
            COALESCE(negative.count, 0)                 AS num_predictions_test
          , universe.count                              AS num_predictions_whole
-      FROM dd_bucketed_${table}_${column}_inference_all universe
-      LEFT JOIN dd_bucketed_${table}_${column}_inference_positive positive ON universe.bucket = positive.bucket
-      LEFT JOIN dd_bucketed_${table}_${column}_inference_negative negative ON universe.bucket = negative.bucket
+      FROM dd_bucketed_${table}_inference_all universe
+      LEFT JOIN dd_bucketed_${table}_inference_positive positive ON universe.bucket = positive.bucket
+      LEFT JOIN dd_bucketed_${table}_inference_negative negative ON universe.bucket = negative.bucket
      ORDER BY universe.bucket
 "

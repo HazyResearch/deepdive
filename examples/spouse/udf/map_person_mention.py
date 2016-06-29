@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from deepdive import *
 
-@tsv_extractor
+@tsj_extractor
 @returns(lambda
         mention_id       = "text",
         mention_text     = "text",

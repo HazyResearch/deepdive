@@ -2,7 +2,7 @@
 from deepdive import *
 import ddlib
 
-@tsv_extractor
+@tsj_extractor
 @returns(lambda
         p1_id   = "text",
         p2_id   = "text",

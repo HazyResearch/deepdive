@@ -7,10 +7,16 @@
 | .deepdive_.execution.processes +=
     { "process/init/app":
         { style: "cmd_extractor"
-        , cmd: "
+        , cmd: (
+        # allow overriding app initialization steps
+        (try .deepdive_.execution.commands.init_app catch null) // "
+        cd \"$DEEPDIVE_APP\"
+
+        # run a top-level init executable
+        ! [[ -x init ]] || ./init
+
         deepdive db init
 
-        cd \"$DEEPDIVE_APP\"
         # run legacy schema.sql
         if [[ -r schema.sql ]]; then
             deepdive db prompt <schema.sql
@@ -19,8 +25,5 @@
         if [[ -x input/init.sh ]]; then
             input/init.sh
         fi
-        "
-        }
+        ") }
     }
-
-# TODO connect all extractors and factors with no dependency to init/app
