@@ -1,13 +1,23 @@
 #!/usr/bin/env bash
 # deepdive-corenlp -- DeepDive's interface to CoreNLP
 #
-# First, choose a unique port number for the CoreNLP HTTP server:
+# 1. Before anything, CoreNLP must be downloaded and installed properly:
+# $ deepdive corenlp install
+#
+# A port number can be explicitly specified for the CoreNLP HTTP server:
 # $ export CORENLP_PORT=...
+# Also, the CoreNLP annotators to use can be specified:
+# $ export CORENLP_ANNOTATORS=...
+# Otherwise, it defaults to: tokenize ssplit pos lemma depparse
 #
-# Keep a CoreNLP HTTP server running in the background:
-# $ deepdive corenlp server &
+# ----
 #
-# Then stream documents for parsing into the CoreNLP server:
+# 2. Now, let's keep a CoreNLP HTTP server running in the background:
+# $ deepdive corenlp start
+#
+# ----
+#
+# 3. Then stream documents for parsing into the CoreNLP server:
 # $ deepdive corenlp parse \
 # $     <TSJ_INPUT   COLUMN1_TO_DROP \
 # $                  COLUMN2_TO_KEEP \
@@ -28,8 +38,10 @@
 # - NLP result columns hold the raw JSON returned by CoreNLP intact.
 # - Output columns can be reordered in any way.
 #
-# Finally, the raw CoreNLP results in a verbose JSON can be transformed into a
-# simpler schema ("sentence" table) that is easier for use with DeepDive:
+# ----
+#
+# 4. Finally, the raw CoreNLP results in a verbose JSON can be transformed into
+# a simpler schema ("sentence" table) that is easier for use with DeepDive:
 # $ deepdive corenlp sentences \
 # $     <TSJ_OUTPUT     COLUMN4_TO_KEEP \
 # $                     COLUMN2_TO_KEEP \
@@ -42,8 +54,27 @@
 # Note that similar to the `parse` operator, columns can be kept or dropped
 # and only one NLP result JSON can be unnested into a few columns for a row per
 # sentence.
-# 
+#
+# ----
+#
+# 5. After final use, the CoreNLP HTTP server can be stopped:
+# $ deepdive corenlp stop
 ##
 set -euo pipefail
 
-TODO
+# Shared environment variables
+: ${CORENLP_HOME:=$DEEPDIVE_HOME/lib/stanford-corenlp/corenlp}
+: ${CORENLP_BASEPORT:=9000}  # TODO randomize per $USER
+: ${CORENLP_PORT:=$(($CORENLP_BASEPORT + ${DEEPDIVE_CURRENT_PROCESS_INDEX:-0}))}
+
+[[ $# -gt 0 ]] || usage "$0" "Missing command"
+
+Cmd=$1; shift
+handler=deepdive-corenlp-"$Cmd"
+if type "$handler" &>/dev/null; then
+    export CORENLP_HOME
+    export CORENLP_PORT
+    exec "$handler" "$@"
+else
+    usage "$0" "$Cmd: Unknown command"
+fi

@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# deepdive-corenlp-start -- Starts CoreNLP HTTP server for use with DeepDive
+# $ deepdive corenlp start PORT
+#
+# $ export CORENLP_PORT=PORT
+# $ deepdive corenlp start
+##
+set -euo pipefail
+
+: ${CORENLP_HOME:?} ${CORENLP_PORT:?}
+: ${CORENLP_JAVAOPTS:=}
+: ${CORENLP_START_DELAY:=120} # wait for a minute on average
+
+deepdive-corenlp-installed
+
+# override CORENLP_PORT if argument is given
+[[ $# -eq 0 ]] || CORENLP_PORT=$1
+
+# don't start a new one when already running
+pid_file="$CORENLP_HOME"/server-port"$CORENLP_PORT".pid
+if [[ -s "$pid_file" ]]; then
+    if deepdive-corenlp-curl --data-raw 'ping' &>/dev/null; then
+        warning "CoreNLP server at CORENLP_PORT=$CORENLP_PORT already running (PID $(cat "$pid_file"))"
+    else
+        # pid file seems stale
+        rm -f "$pid_file"
+    fi
+fi
+
+# start CoreNLP server
+if ! [[ -s "$pid_file" ]]; then
+    echo >&2 "CoreNLP server at CORENLP_PORT=$CORENLP_PORT starting..."
+    touch "$pid_file"
+    # XXX CoreNLP ObjectInputStream uses all cores while loading models no matter what -t flag we pass
+    # TODO taskset on Linux
+    # TODO find a way to limit JVM threads on Mac
+    java ${CORENLP_JAVAOPTS} -cp "$CORENLP_HOME/*" edu.stanford.nlp.pipeline.StanfordCoreNLPServer --port $CORENLP_PORT &
+    echo $! >"$pid_file"
+fi
+
+# wait for CoreNLP server to boot up
+CORENLP_SERVER_ENDPOINT=$(deepdive-corenlp-server-url)
+export CORENLP_SERVER_ENDPOINT
+while ! deepdive-corenlp-curl --data-raw 'ping' &>/dev/null
+do sleep 0.$((1 + $RANDOM % 9))
+    let --CORENLP_START_DELAY ||
+        error "CoreNLP server at CORENLP_PORT=$CORENLP_PORT still not ready"
+done
+echo >&2 "CoreNLP server at CORENLP_PORT=$CORENLP_PORT ready"

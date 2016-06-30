@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# deepdive-corenlp-installed -- Checks whether CoreNLP is already installed or not
+# $ deepdive corenlp install
+##
+set -euo pipefail
+
+: ${CORENLP_HOME:?}
+
+[[ -x "$CORENLP_HOME"/corenlp.sh ]] ||
+    error "No CoreNLP installed at $CORENLP_HOME" "Try: deepdive corenlp install"

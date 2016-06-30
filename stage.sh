@@ -137,6 +137,11 @@ generate-wrapper-for-libdirs          "$STAGE_DIR"/util/sampler-$cmd \
 done
 stage inference/deepdive-model                                    util/
 
+# Stanford CoreNLP utilities
+for nlp_util in util/nlp/deepdive-corenlp*
+do stage "$nlp_util"                                              util/
+done
+
 # DeepDive utilities
 stage extern/buildkit/fetch-verify                                util/
 stage util/draw_calibration_plot                                  util/

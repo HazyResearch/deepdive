@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# deepdive-corenlp-curl -- Hits CoreNLP HTTP server URL with curl
+# $ export CORENLP_PORT=PORT
+# $ deepdive corenlp curl CURL_OPTS...
+##
+set -euo pipefail
+
+: ${CORENLP_SERVER_ENDPOINT:=$(deepdive-corenlp-server-url)}
+
+exec curl -fsSL --globoff "$CORENLP_SERVER_ENDPOINT" "$@"
