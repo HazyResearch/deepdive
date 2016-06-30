@@ -81,8 +81,8 @@ person_mention(
 function map_person_mention over (
         doc_id text,
         sentence_index int,
-        tokens text[],
-        ner_tags text[]
+        tokens json,
+        ner_tags json
     ) returns rows like person_mention
     implementation "udf/map_person_mention.py" handles tsj lines.
 
@@ -134,12 +134,12 @@ function extract_spouse_features over (
         p2_end_index int,
         doc_id text,
         sent_index int,
-        tokens text[],
-        lemmas text[],
-        pos_tags text[],
-        ner_tags text[],
-        dep_types text[],
-        dep_tokens int[]
+        tokens json,
+        lemmas json,
+        pos_tags json,
+        ner_tags json,
+        dep_types json,
+        dep_tokens json
     ) returns rows like spouse_feature
     implementation "udf/extract_spouse_features.py" handles tsj lines.
 
@@ -184,12 +184,12 @@ function supervise over (
         doc_id         text,
         sentence_index int,
         sentence_text  text,
-        tokens         text[],
-        lemmas         text[],
-        pos_tags       text[],
-        ner_tags       text[],
-        dep_types      text[],
-        dep_tokens    int[]
+        tokens         json,
+        lemmas         json,
+        pos_tags       json,
+        ner_tags       json,
+        dep_types      json,
+        dep_tokens    json
     ) returns (
         p1_id text, p2_id text, label int, rule_id text
     )

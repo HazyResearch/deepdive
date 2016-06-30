@@ -22,10 +22,10 @@
 # For example:
 #
 # > deepdive unload sentences
-# unloads table 'sentences' to input/sentences.tsv.
+# unloads table 'sentences' to input/sentences.tsj.
 #
-# > deepdive unload sentences path/to/sentences.tsv
-# unloads table 'sentences' to path/to/sentences.tsv.
+# > deepdive unload sentences path/to/sentences.tsj
+# unloads table 'sentences' to path/to/sentences.tsj.
 #
 # > deepdive unload sentences sentences.csv.bz2
 # unloads table 'sentences' to a compressed CSV file.
@@ -61,7 +61,7 @@ if [[ $# -eq 0 ]]; then
         break
     done
     [[ -e "$Path" ]] ||
-        Path="input/$Relation.${DEEPDIVE_LOAD_FORMAT:-${DEEPDIVE_LOAD_FORMAT_DEFAULT:-tsv}}"
+        Path="input/$Relation.${DEEPDIVE_LOAD_FORMAT:-${DEEPDIVE_LOAD_FORMAT_DEFAULT:-tsj}}"
     # use the found path
     set -- "$Path"
 else

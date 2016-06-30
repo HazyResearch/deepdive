@@ -22,11 +22,11 @@
 # For example:
 #
 # > deepdive load sentences
-# creates table 'sentences' and loads data from input/sentences.tsv if there
+# creates table 'sentences' and loads data from input/sentences.tsj if there
 # is one.
 #
-# > deepdive load sentences path/to/sentences.tsv
-# creates table 'sentences' and loads data from path/to/sentences.tsv.
+# > deepdive load sentences path/to/sentences.tsj
+# creates table 'sentences' and loads data from path/to/sentences.tsj.
 #
 # > deepdive load sentences sentences.csv.bz2
 # creates table 'sentences' and loads from a compressed CSV file.
