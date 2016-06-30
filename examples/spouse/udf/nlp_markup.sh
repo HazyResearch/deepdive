@@ -8,6 +8,8 @@ cd "$(dirname "$0")"
 
 deepdive corenlp start
 deepdive corenlp parse-tsj docid+ content=nlp -- docid nlp |
+deepdive corenlp sentences-tsj docid nlp \
+                            -- docid nlp.{index,word,lemma,pos,ner,characterOffsetBegin,dep,governor}
 
 jq -r '
 # TODO doc metadata

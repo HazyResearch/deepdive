@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+# deepdive-corenlp-sentences-tsj -- Transforms raw CoreNLP results
+#
+# Turns raw CoreNLP results encoded in TSJ (tab-separated JSONs) into a simpler
+# "sentences table" form suitable for use with DeepDive.
+#
+# $ deepdive corenlp parse-tsj <TSJ_INPUT ... -- docid nlp |
+# $ deepdive corenlp sentences-tsj docid nlp=s \
+# $              -- >SENTENCES_TSJ docid s.word s.lemma s.pos ...
+##
+set -euo pipefail
+
+: ${CORENLP_HOME:?} ${CORENLP_PORT:?}
+
+deepdive-corenlp-installed
+
+# TODO
+# # parse specification for input column, input column to NLP, output column mapping
+# seeingInputColumns=true
+# InputColumnNames=() NlpColumnNames=() OutputColumnNames=()
+# inputColumnOrdinalsToDisplay=()
+# inputColumnOrdinalsToNlp=()
+# i=0
+# for columnSpec; do
+#     case $columnSpec in
+#         *"+") # an input column to display in progress and error messages
+#             $seeingInputColumns || usage "$0" "$columnSpec: Only input columns can be marked to be displayed"
+#             inputColumnOrdinalsToDisplay+=($i)
+#             columnSpec=${columnSpec%+}
+#     esac
+#     case $columnSpec in
+#         *"="*) # an argument for input columns to be parsed
+#             $seeingInputColumns || usage "$0" "$columnSpec: Only input columns can be mark to be parsed with CoreNLP"
+#             columnName=${columnSpec%%=*}
+#             nlpResultName=${columnSpec#$columnName=}
+#             InputColumnNames+=("$columnName")
+#             NlpColumnNames+=("$nlpResultName")
+#             inputColumnOrdinalsToNlp+=($i)
+#             ;;
+# 
+#         --) # an input/output separator
+#             $seeingInputColumns || usage "$0" "$columnSpec: Input/output separator must appear only once"
+#             seeingInputColumns=false
+#             ;;
+# 
+#         *) # just a column name, either input/output depending on whether it comes before/after the separator
+#             if $seeingInputColumns; then
+#                 InputColumnNames+=("$columnSpec")
+#             else
+#                 OutputColumnNames+=("$columnSpec")
+#             fi
+#     esac
+#     let ++i
+# done
+# [[ ${#OutputColumnNames[@]} -gt 0 ]] || usage "$0" "Missing output columns"
+# 
+# # convert symbols into ordinals
+# indexOf() {
+#     local i=0 hay= needle=$1; shift
+#     for hay; do
+#         if [[ $hay = $needle ]]; then
+#             echo $i
+#             return 0
+#         fi
+#         let ++i
+#     done
+#     false
+# }
+# numInputColumns=${#InputColumnNames[@]}
+# outputColumnOrdinals=()
+# numNlpColumnsInOutput=0
+# for outColumn in "${OutputColumnNames[@]}"; do
+#     # convert output column name to an ordinal
+#     # NOTE names referring to NLP results are assigned ordinals after all input columns
+#     ordinal=$(indexOf "$outColumn" "${InputColumnNames[@]}" "${NlpColumnNames[@]}") ||
+#         usage "$0" "$outColumn: Unknown input or NLP column name"
+#     outputColumnOrdinals+=($ordinal)
+#     # count how many are NLP results
+#     [[ $ordinal -lt $numInputColumns ]] || let ++numNlpColumnsInOutput
+# done
+# [[ $numNlpColumnsInOutput -gt 0 ]] || usage "$0" "At least one NLP results must be output"
+# # TODO maybe it's wiser to abort or optimize here if any of the NLP results are dropped
+# [[ ${#outputColumnOrdinals[@]} -gt 0 ]] || usage "$0" "Missing output columns"
+
+# TODO compile something like:
+ jq -R -r '
+def withtsv(f) : split("\t") | f | join("\t");
+def withjson(f):    fromjson | f | tojson    ;
+
+withtsv(
+    . as $row |
+    ($row[1] | fromjson) as $_nlp |
+    $_nlp.sentences[] |
+    ( .["collapsed-dependencies"]
+    | ( map({ key: ((.dependent-1) | tostring)
+            , value: { dep_token: (.governor)
+                     , dep: .dep
+                     }
+            }) | from_entries ) as $deps
+    | [ range(length) | $deps[tostring] ] ) as $dep |
+        [ $row[0]
+        , (.index                           | tojson)
+        , ([.tokens[].word]                 | tojson)
+        , ([.tokens[].lemma]                | tojson)
+        , ([.tokens[].pos]                  | tojson)
+        , ([.tokens[].ner]                  | tojson)
+        , ([.tokens[].characterOffsetBegin] | tojson)
+        , ([$dep[].dep] | tojson)
+        , ([$dep[].dep_token] | tojson)
+        ]
+)'
