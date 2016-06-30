@@ -56,7 +56,7 @@ function nlp_markup over (
         doc_id text,
         content text
     ) returns rows like sentences
-    implementation "udf/nlp_markup.sh" handles tsv lines.
+    implementation "udf/nlp_markup.sh" handles tsj lines.
 
 sentences += nlp_markup(doc_id, content) :-
     articles(doc_id, content).
