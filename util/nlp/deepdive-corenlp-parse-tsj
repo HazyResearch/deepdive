@@ -1,0 +1,165 @@
+#!/usr/bin/env bash
+# deepdive-corenlp-parse-tsj -- Parses text columns in TSJ stream with CoreNLP
+#
+# Multiple parts of documents encoded as TSJ (tab-separated JSONs) can be
+# parsed using CoreNLP in a streaming fashion.
+#
+# $ deepdive corenlp start
+# $ deepdive corenlp parse-tsj <TSJ_INPUT   C1+ C2=NLP1 C3 C4=NLP2 ... \
+# $                         -- >TSJ_OUTPUT  C1 C3 NLP1 NLP2 ...
+# $ deepdive corenlp stop
+#
+# - C1, C2, C3, C4 that appear before the separator (--) are input column names.
+# - Input column names followed by an equal sign (=) and a second name indicates
+#   the column is to be parsed with CoreNLP whose result may be referred to as
+#   the second name later.
+# - C1, C3, NLP1, NLP2 that appear after the separator (--) decide the order of
+#   the columns in the output, each of which refer to either an input column or
+#   an NLP result.  Input columns not mentioned are simply dropped from the
+#   output.
+# - Zero or more input columns can be suffixed with a plus sign (+) to have it
+#   displayed in the progress and error messages, e.g., document identifier.
+#   Otherwise, line numbers are used instead.
+##
+set -euo pipefail
+
+: ${CORENLP_HOME:?} ${CORENLP_PORT:?}
+
+deepdive-corenlp-installed
+
+# parse specification for input column, input column to NLP, output column mapping
+seeingInputColumns=true
+InputColumnNames=() NlpColumnNames=() OutputColumnNames=()
+inputColumnOrdinalsToDisplay=()
+inputColumnOrdinalsToNlp=()
+i=0
+for columnSpec; do
+    case $columnSpec in
+        *"+") # an input column to display in progress and error messages
+            $seeingInputColumns || usage "$0" "$columnSpec: Only input columns can be marked to be displayed"
+            inputColumnOrdinalsToDisplay+=($i)
+            columnSpec=${columnSpec%+}
+    esac
+    case $columnSpec in
+        *"="*) # an argument for input columns to be parsed
+            $seeingInputColumns || usage "$0" "$columnSpec: Only input columns can be mark to be parsed with CoreNLP"
+            columnName=${columnSpec%%=*}
+            nlpResultName=${columnSpec#$columnName=}
+            InputColumnNames+=("$columnName")
+            NlpColumnNames+=("$nlpResultName")
+            inputColumnOrdinalsToNlp+=($i)
+            ;;
+
+        --) # an input/output separator
+            $seeingInputColumns || usage "$0" "$columnSpec: Input/output separator must appear only once"
+            seeingInputColumns=false
+            ;;
+
+        *) # just a column name, either input/output depending on whether it comes before/after the separator
+            if $seeingInputColumns; then
+                InputColumnNames+=("$columnSpec")
+            else
+                OutputColumnNames+=("$columnSpec")
+            fi
+    esac
+    let ++i
+done
+[[ ${#OutputColumnNames[@]} -gt 0 ]] || usage "$0" "Missing output columns"
+
+# convert symbols into ordinals
+indexOf() {
+    local i=0 hay= needle=$1; shift
+    for hay; do
+        if [[ $hay = $needle ]]; then
+            echo $i
+            return 0
+        fi
+        let ++i
+    done
+    false
+}
+numInputColumns=${#InputColumnNames[@]}
+outputColumnOrdinals=()
+numNlpColumnsInOutput=0
+for outColumn in "${OutputColumnNames[@]}"; do
+    # convert output column name to an ordinal
+    # NOTE names referring to NLP results are assigned ordinals after all input columns
+    ordinal=$(indexOf "$outColumn" "${InputColumnNames[@]}" "${NlpColumnNames[@]}") ||
+        usage "$0" "$outColumn: Unknown input or NLP column name"
+    outputColumnOrdinals+=($ordinal)
+    # count how many are NLP results
+    [[ $ordinal -lt $numInputColumns ]] || let ++numNlpColumnsInOutput
+done
+[[ $numNlpColumnsInOutput -gt 0 ]] || usage "$0" "At least one NLP results must be output"
+# TODO maybe it's wiser to abort or optimize here if any of the NLP results are dropped
+[[ ${#outputColumnOrdinals[@]} -gt 0 ]] || usage "$0" "Missing output columns"
+
+
+# now, turn each input TSJ line into one or more HTTP requests against CoreNLP server
+# and output the raw NLP results in TSJ according to the command-line arguments
+exec perl -e '
+use v5.10;
+use strict;
+use utf8; binmode $_, ":encoding(UTF-8)" for *STDIN, *STDOUT, *STDERR;
+select(STDERR); $| = 1; select(STDOUT); # auto flush STDERR
+use feature q(say);
+use LWP::UserAgent;
+use JSON;
+use Encode;
+
+# parse command-line arguments
+our $CORENLP_SERVER_ENDPOINT          =              shift @ARGV;
+our $num_input_columns                =              shift @ARGV;
+our @input_column_ordinals_to_display = split /\s+/, shift @ARGV;
+our @input_column_ordinals_to_nlp     = split /\s+/, shift @ARGV;
+our @output_column_ordinals           =                    @ARGV;
+
+# prepare things
+my $json = JSON->new->allow_nonref;
+my $ua = LWP::UserAgent->new;
+my $req = HTTP::Request->new( POST => $CORENLP_SERVER_ENDPOINT );
+
+my $generate_line_id = sub { join("\t", @{$_[0]}[@input_column_ordinals_to_display]) };
+if (@input_column_ordinals_to_display eq 0) {
+    # use line numbers if no id columns were specified
+    my $line_no = 0; $generate_line_id = sub { ++$line_no; "L$line_no" };
+}
+
+while ( <STDIN> ) {
+    # parse input TSJ line
+    chomp; my @input_columns = split "\t", $_, $num_input_columns;
+    my $line_id = $generate_line_id->(\@input_columns);
+    say STDERR "Parsing $line_id";
+
+    # ask CoreNLP to parse the requested columns
+    my @nlp_results;
+    for my $json_text (@input_columns[@input_column_ordinals_to_nlp]) {
+        $req->content( Encode::encode_utf8($json->decode($json_text)) );
+        # send HTTP request
+        my $resp = $ua->request($req);
+        if ($resp->is_success) {
+            # and output result
+            my $json_result = $resp->decoded_content;
+            $json_result =~ s/\0//g; # XXX drop NULs inject by CoreNLP HTTP server
+            push @nlp_results, $json_result;
+        } else {
+            # or show error message and keep a null result
+            say STDERR "Parsing $line_id failed due to ERROR ", $resp->code, " ",
+                $resp->message, ": ", $resp->decoded_content;
+            push @nlp_results, "null";
+        }
+    }
+
+    # output requested columns and NLP results in a TSJ line
+    my @input_and_nlp_columns = (@input_columns, @nlp_results);
+    my @output_columns = @input_and_nlp_columns[@output_column_ordinals];
+    print shift @output_columns;
+    print "\t", $_ foreach @output_columns;
+    print "\n";
+}
+' "$(deepdive-corenlp-server-url)" \
+    $numInputColumns \
+    "${inputColumnOrdinalsToDisplay[*]:-}" \
+    "${inputColumnOrdinalsToNlp[*]}" \
+    "${outputColumnOrdinals[@]}" \
+    #

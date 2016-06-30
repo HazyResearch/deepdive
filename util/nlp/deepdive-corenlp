@@ -18,7 +18,7 @@
 # ----
 #
 # 3. Then stream documents for parsing into the CoreNLP server:
-# $ deepdive corenlp parse \
+# $ deepdive corenlp parse-tsj \
 # $     <TSJ_INPUT   COLUMN1_TO_DROP \
 # $                  COLUMN2_TO_KEEP \
 # $                  COLUMN3_TO_PARSE=NLP_OUTPUT1 \
