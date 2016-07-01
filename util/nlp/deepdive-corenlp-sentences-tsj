@@ -123,7 +123,7 @@ withtsv( . as $row | '"$(
         printf '"%s" as $nlpResultColumnName |' "${InputColumnNames[$i]}"
         echo
         # parse CoreNLP result in JSON and unnest all sentences
-        printf '$row[%d] | fromjson | .sentences[] |' $i
+        printf '$row[%d] | fromjson | .sentences[]? |' $i
         echo
         # convert any necessary CoreNLP dependencies into compact representations
         [[ ${#usingDependenciesFields[@]} -eq 0 ]] ||
