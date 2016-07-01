@@ -65,7 +65,8 @@ set -euo pipefail
 # Shared environment variables
 : ${CORENLP_HOME:=$DEEPDIVE_HOME/lib/stanford-corenlp/corenlp}
 : ${CORENLP_BASEPORT:=9000}  # TODO randomize per $USER
-: ${CORENLP_PORT:=$(($CORENLP_BASEPORT + ${DEEPDIVE_CURRENT_PROCESS_INDEX:-0}))}
+CORENLP_PORT_SET=false; [[ -z ${CORENLP_PORT:-} ]] || CORENLP_PORT_SET=true
+: ${CORENLP_PORT:=$(($CORENLP_BASEPORT + ${DEEPDIVE_CURRENT_PROCESS_INDEX:-1} - 1))}
 
 [[ $# -gt 0 ]] || usage "$0" "Missing command"
 
@@ -73,7 +74,7 @@ Cmd=$1; shift
 handler=deepdive-corenlp-"$Cmd"
 if type "$handler" &>/dev/null; then
     export CORENLP_HOME
-    export CORENLP_PORT
+    export CORENLP_PORT CORENLP_PORT_SET
     exec "$handler" "$@"
 else
     usage "$0" "$Cmd: Unknown command"

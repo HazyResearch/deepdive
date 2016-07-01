@@ -46,9 +46,36 @@ if $is_elected; then
     if ! [[ -s "$pid_file" ]]; then
         echo >&2 "CoreNLP server at CORENLP_PORT=$CORENLP_PORT starting..."
         touch "$pid_file"
-        # XXX CoreNLP ObjectInputStream uses all cores while loading models no matter what -t flag we pass
-        # TODO taskset on Linux
-        # TODO find a way to limit JVM threads on Mac
+        # cope with thrashing issue when many CoreNLP servers are loading all at the same time
+        # unless a particular CoreNLP server port is being explicitly set
+        # or CoreNLP server is started outside of DeepDive's UDF
+        if ! $CORENLP_PORT_SET && [[ -n ${DEEPDIVE_CURRENT_PROCESS_INDEX:-} ]]; then
+            # XXX CoreNLP ObjectInputStream uses all cores while loading models no matter what -t flag we pass
+            # which can be devastating when multiple UDFs try to launch many servers at once
+            # so we must cope with the impact of simulateneous loading somehow
+            if type taskset &>/dev/null; then
+                # On Linux, limit number of cores JVM can see with taskset(1)
+                java() { taskset $DEEPDIVE_CURRENT_PROCESS_INDEX java "$@"; }
+            else
+                # On Mac and other platforms, serialize the loading process by
+                # waiting until the previous one becomes ready
+                # TODO find a way to limit JVM threads on Mac
+                case $DEEPDIVE_CURRENT_PROCESS_INDEX in
+                    1)
+                        : # the first process should just proceed
+                        ;;
+                    *)
+                        # others should wait on the previous one
+                        portToWaitOn=$(($CORENLP_PORT - 1))
+                        num_retries=1200
+                        while ! CORENLP_PORT=$portToWaitOn deepdive-corenlp-curl --data-raw 'ping' &>/dev/null
+                        do sleep 0.$((1 + $RANDOM % 9))
+                            let --num_retries || break
+                        done
+                esac
+            fi
+        fi
+        # now, actually launch the JVM running CoreNLP server
         java ${CORENLP_JAVAOPTS} -cp "$CORENLP_HOME/*" \
             edu.stanford.nlp.pipeline.StanfordCoreNLPServer \
             --port $CORENLP_PORT >/dev/null &
