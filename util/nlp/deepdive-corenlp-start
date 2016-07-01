@@ -8,6 +8,7 @@
 set -euo pipefail
 
 : ${CORENLP_HOME:?} ${CORENLP_PORT:?}
+: ${CORENLP_TIMEOUT:=86400000} # wait for a day to parse a single document and give up
 : ${CORENLP_JAVAOPTS:=}
 : ${CORENLP_START_DELAY:=120} # wait for a minute on average
 
@@ -62,7 +63,7 @@ if $is_elected; then
         # now, actually launch the JVM running CoreNLP server
         java ${CORENLP_JAVAOPTS} -cp "$CORENLP_HOME/*" \
             edu.stanford.nlp.pipeline.StanfordCoreNLPServer \
-            --port $CORENLP_PORT >/dev/null &
+            --port $CORENLP_PORT --timeout $CORENLP_TIMEOUT >/dev/null &
         echo $! >"$pid_file"
     fi
     rm -f "$pid_file".launching
