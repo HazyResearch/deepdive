@@ -16,26 +16,45 @@ deepdive-corenlp-installed
 # override CORENLP_PORT if argument is given
 [[ $# -eq 0 ]] || CORENLP_PORT=$1
 
-# don't start a new one when already running
 pid_file="$CORENLP_HOME"/server-port"$CORENLP_PORT".pid
+
+# emulate a lock to elect a single process to actually launch CoreNLP when there's contention
+set -o noclobber
+{ echo $$ >"$pid_file".launching; } 2>/dev/null || {
+    if pid=$(cat "$pid_file".launching 2>/dev/null) && ! ps -p "$pid" &>/dev/null; then
+        # but take over stale locks
+        set +o noclobber
+        echo $$ >"$pid_file".launching
+        sleep 0.$RANDOM
+    fi
+}
+set +o noclobber
+is_elected=true; [[ $(cat "$pid_file".launching 2>/dev/null) = $$ ]] || is_elected=false
+
+# don't start a new one when something's already running
 if [[ -s "$pid_file" ]]; then
     if deepdive-corenlp-curl --data-raw 'ping' &>/dev/null; then
         warning "CoreNLP server at CORENLP_PORT=$CORENLP_PORT already running (PID $(cat "$pid_file"))"
-    else
+    elif $is_elected; then
         # pid file seems stale
         rm -f "$pid_file"
     fi
 fi
 
 # start CoreNLP server
-if ! [[ -s "$pid_file" ]]; then
-    echo >&2 "CoreNLP server at CORENLP_PORT=$CORENLP_PORT starting..."
-    touch "$pid_file"
-    # XXX CoreNLP ObjectInputStream uses all cores while loading models no matter what -t flag we pass
-    # TODO taskset on Linux
-    # TODO find a way to limit JVM threads on Mac
-    java ${CORENLP_JAVAOPTS} -cp "$CORENLP_HOME/*" edu.stanford.nlp.pipeline.StanfordCoreNLPServer --port $CORENLP_PORT &
-    echo $! >"$pid_file"
+if $is_elected; then
+    if ! [[ -s "$pid_file" ]]; then
+        echo >&2 "CoreNLP server at CORENLP_PORT=$CORENLP_PORT starting..."
+        touch "$pid_file"
+        # XXX CoreNLP ObjectInputStream uses all cores while loading models no matter what -t flag we pass
+        # TODO taskset on Linux
+        # TODO find a way to limit JVM threads on Mac
+        java ${CORENLP_JAVAOPTS} -cp "$CORENLP_HOME/*" \
+            edu.stanford.nlp.pipeline.StanfordCoreNLPServer \
+            --port $CORENLP_PORT >/dev/null &
+        echo $! >"$pid_file"
+    fi
+    rm -f "$pid_file".launching
 fi
 
 # wait for CoreNLP server to boot up
