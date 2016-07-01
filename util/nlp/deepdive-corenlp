@@ -8,7 +8,7 @@
 # $ export CORENLP_PORT=...
 # Also, the CoreNLP annotators to use can be specified:
 # $ export CORENLP_ANNOTATORS=...
-# Otherwise, it defaults to: tokenize ssplit pos lemma depparse
+# Otherwise, it defaults to: tokenize ssplit pos ner lemma depparse
 #
 # ----
 #
@@ -42,7 +42,7 @@
 #
 # 4. Finally, the raw CoreNLP results in a verbose JSON can be transformed into
 # a simpler schema ("sentence" table) that is easier for use with DeepDive:
-# $ deepdive corenlp sentences \
+# $ deepdive corenlp sentences-tsj \
 # $     <TSJ_OUTPUT     COLUMN4_TO_KEEP \
 # $                     COLUMN2_TO_KEEP \
 # $                     NLP_OUTPUT2=SENTENCES1 \
@@ -63,6 +63,7 @@
 set -euo pipefail
 
 # Shared environment variables
+export PATH="$DEEPDIVE_HOME"/util/nlp:"$PATH"
 : ${CORENLP_HOME:=$DEEPDIVE_HOME/lib/stanford-corenlp/corenlp}
 : ${CORENLP_BASEPORT:=$(deepdive-corenlp-unique-port)}
 CORENLP_PORT_SET=false; [[ -z ${CORENLP_PORT:-} ]] || CORENLP_PORT_SET=true
