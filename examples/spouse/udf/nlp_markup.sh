@@ -19,17 +19,27 @@ cd "$(dirname "$0")"
         lemma
         depparse
     "}
-
 export CORENLP_PORT
 export CORENLP_BASEPORT CORENLP_JAVAOPTS
-deepdive corenlp start
-
 export CORENLP_ANNOTATORS
+
+# XXX due to a performance issue during launch, sharing a single CoreNLP server
+# is a better idea unless there's a way to use taskset(1) to limit the impact
+type taskset &>/dev/null || CORENLP_PORT=$(deepdive corenlp unique-port)
+
+# start CoreNLP server unless CORENLP_PORT for a shared server was given
+[[ -n ${CORENLP_PORT:-} ]] || deepdive corenlp start
+deepdive corenlp is-running || {
+    echo >&2 "PLEASE MAKE SURE YOU HAVE RUN: deepdive corenlp start $CORENLP_PORT"
+    echo >&2 "OR, SPECIFY THE CORRECT PORT: export CORENLP_PORT=$CORENLP_PORT"
+    false
+}
+
+# parse input with CoreNLP and output a row for every sentence
 deepdive corenlp parse-tsj docid+ content=nlp -- docid nlp |
 deepdive corenlp sentences-tsj docid content:nlp \
                             -- docid nlp.{index,tokens.{word,lemma,pos,ner,characterOffsetBegin}} \
                                      nlp.collapsed-dependencies.{dep_type,dep_token}
 
-[[ -n ${CORENLP_PORT:-} && $DEEPDIVE_CURRENT_PROCESS_INDEX -ne 1 ]] ||
-    # stop when it's safe to do so
-    deepdive corenlp stop
+# stop the CoreNLP server unless CORENLP_PORT for a shared server was given
+[[ -n ${CORENLP_PORT:-} ]] || deepdive corenlp stop

@@ -14,6 +14,7 @@ deepdive-corenlp-installed
 
 # override CORENLP_PORT if argument is given
 [[ $# -eq 0 ]] || CORENLP_PORT=$1
+export CORENLP_PORT
 
 # terminate the server
 pid_file="$CORENLP_HOME"/server-port"$CORENLP_PORT".pid
@@ -29,7 +30,7 @@ fi
 # wait until CoreNLP server tears down
 CORENLP_SERVER_ENDPOINT=$(deepdive-corenlp-server-url)
 export CORENLP_SERVER_ENDPOINT
-while deepdive-corenlp-curl --data-raw 'ping' &>/dev/null
+while deepdive-corenlp-is-running &>/dev/null
 do sleep 0.$((1 + $RANDOM % 9))
     let --CORENLP_STOP_DELAY ||
         error "CoreNLP server at CORENLP_PORT=$CORENLP_PORT still not stopped yet"

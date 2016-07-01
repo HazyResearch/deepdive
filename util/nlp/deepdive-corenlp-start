@@ -15,6 +15,7 @@ deepdive-corenlp-installed
 
 # override CORENLP_PORT if argument is given
 [[ $# -eq 0 ]] || CORENLP_PORT=$1
+export CORENLP_PORT
 
 pid_file="$CORENLP_HOME"/server-port"$CORENLP_PORT".pid
 
@@ -33,7 +34,7 @@ is_elected=true; [[ $(cat "$pid_file".launching 2>/dev/null) = $$ ]] || is_elect
 
 # don't start a new one when something's already running
 if [[ -s "$pid_file" ]]; then
-    if deepdive-corenlp-curl --data-raw 'ping' &>/dev/null; then
+    if deepdive-corenlp-is-running &>/dev/null; then
         warning "CoreNLP server at CORENLP_PORT=$CORENLP_PORT already running (PID $(cat "$pid_file"))"
     elif $is_elected; then
         # pid file seems stale
@@ -56,23 +57,6 @@ if $is_elected; then
             if type taskset &>/dev/null; then
                 # On Linux, limit number of cores JVM can see with taskset(1)
                 java() { taskset $DEEPDIVE_CURRENT_PROCESS_INDEX java "$@"; }
-            else
-                # On Mac and other platforms, serialize the loading process by
-                # waiting until the previous one becomes ready
-                # TODO find a way to limit JVM threads on Mac
-                case $DEEPDIVE_CURRENT_PROCESS_INDEX in
-                    1)
-                        : # the first process should just proceed
-                        ;;
-                    *)
-                        # others should wait on the previous one
-                        portToWaitOn=$(($CORENLP_PORT - 1))
-                        num_retries=1200
-                        while ! CORENLP_PORT=$portToWaitOn deepdive-corenlp-curl --data-raw 'ping' &>/dev/null
-                        do sleep 0.$((1 + $RANDOM % 9))
-                            let --num_retries || break
-                        done
-                esac
             fi
         fi
         # now, actually launch the JVM running CoreNLP server
@@ -85,9 +69,10 @@ if $is_elected; then
 fi
 
 # wait for CoreNLP server to boot up
+export CORENLP_START_DELAY
 CORENLP_SERVER_ENDPOINT=$(deepdive-corenlp-server-url)
 export CORENLP_SERVER_ENDPOINT
-while ! deepdive-corenlp-curl --data-raw 'ping' &>/dev/null
+while ! deepdive-corenlp-is-running &>/dev/null
 do sleep 0.$((1 + $RANDOM % 9))
     let --CORENLP_START_DELAY ||
         error "CoreNLP server at CORENLP_PORT=$CORENLP_PORT still not ready"

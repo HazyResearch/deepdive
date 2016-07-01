@@ -64,7 +64,7 @@ set -euo pipefail
 
 # Shared environment variables
 : ${CORENLP_HOME:=$DEEPDIVE_HOME/lib/stanford-corenlp/corenlp}
-: ${CORENLP_BASEPORT:=9000}  # TODO randomize per $USER
+: ${CORENLP_BASEPORT:=$(deepdive-corenlp-unique-port)}
 CORENLP_PORT_SET=false; [[ -z ${CORENLP_PORT:-} ]] || CORENLP_PORT_SET=true
 : ${CORENLP_PORT:=$(($CORENLP_BASEPORT + ${DEEPDIVE_CURRENT_PROCESS_INDEX:-1} - 1))}
 
