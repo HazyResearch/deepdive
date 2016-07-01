@@ -7,5 +7,5 @@ set -euo pipefail
 
 : ${CORENLP_PORT:?}
 
-deepdive-corenlp-curl --data-raw 'ping' &>/dev/null ||
+deepdive-corenlp-curl --data 'ping' &>/dev/null ||
     error "CoreNLP server at CORENLP_PORT=$CORENLP_PORT not running"

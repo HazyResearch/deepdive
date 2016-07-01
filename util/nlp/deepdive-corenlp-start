@@ -56,7 +56,7 @@ if $is_elected; then
             # so we must cope with the impact of simulateneous loading somehow
             if type taskset &>/dev/null; then
                 # On Linux, limit number of cores JVM can see with taskset(1)
-                java() { taskset $DEEPDIVE_CURRENT_PROCESS_INDEX java "$@"; }
+                java() { taskset -c $(( $DEEPDIVE_CURRENT_PROCESS_INDEX - 1 )) java "$@"; }
             fi
         fi
         # now, actually launch the JVM running CoreNLP server
