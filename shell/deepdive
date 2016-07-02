@@ -38,12 +38,16 @@ if ! [[ "${DEEPDIVE_SHELL:-}" -ef "$0" ]]; then
     # Setup environment
     unset CDPATH
     export DEEPDIVE_HOME=${Here%/bin}
+    DEEPDIVE_BUNDLED_PREFIX="$DEEPDIVE_HOME"/lib/bundled/.all
     #  make sure DeepDive utilities are on PATH
-    PATH="$DEEPDIVE_HOME/util:$DEEPDIVE_HOME/bin:$DEEPDIVE_HOME/lib/bundled/.all/bin:$PATH"
+    PATH="$DEEPDIVE_HOME/util:$DEEPDIVE_HOME/bin:$DEEPDIVE_BUNDLED_PREFIX/bin:$PATH"
     export PATH
     #  make sure ddlib in Python is available
     PYTHONPATH="$DEEPDIVE_HOME"/lib/python:"${PYTHONPATH:+:$PYTHONPATH}"
     export PYTHONPATH
+
+    #  make sure bundled Perl modules are available via local::lib
+    eval $(perl -I"$DEEPDIVE_BUNDLED_PREFIX"/lib/perl5 -Mlocal::lib="$DEEPDIVE_BUNDLED_PREFIX" 2>/dev/null || true)
 
     export DEEPDIVE_SHELL=$0
 fi
