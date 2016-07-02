@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
-# Run CoreNLP over documents passed as tab-separated JSONs input
+# Parse documents in tab-separated JSONs input stream with CoreNLP
 #
+# $ deepdive corenlp install
+# $ deepdive corenlp start
 # $ deepdive env udf/nlp_markup.sh
+# $ deepdive corenlp stop
 ##
 set -euo pipefail
 cd "$(dirname "$0")"
 
 # some configuration knobs for CoreNLP
-: ${CORENLP_PORT:=}      # specify a port to launch only one CoreNLP server or share an already running one
-: ${CORENLP_BASEPORT:=}  # specify the base port to launch many CoreNLP servers
-: ${CORENLP_JAVAOPTS:=}  # specify any custom JVM flags to use
+: ${CORENLP_PORT:=$(deepdive corenlp unique-port)}  # a CoreNLP server started ahead of time is shared across parallel UDF processes
 # See: http://stanfordnlp.github.io/CoreNLP/annotators.html
 : ${CORENLP_ANNOTATORS:="
         tokenize
@@ -20,18 +21,11 @@ cd "$(dirname "$0")"
         depparse
     "}
 export CORENLP_PORT
-export CORENLP_BASEPORT CORENLP_JAVAOPTS
 export CORENLP_ANNOTATORS
 
-# XXX due to a performance issue during launch, sharing a single CoreNLP server
-# is a better idea unless there's a way to use taskset(1) to limit the impact
-type taskset &>/dev/null || CORENLP_PORT=$(deepdive corenlp unique-port)
-
-# start CoreNLP server unless CORENLP_PORT for a shared server was given
-[[ -n ${CORENLP_PORT:-} ]] || deepdive corenlp start
+# make sure CoreNLP server is available
 deepdive corenlp is-running || {
-    echo >&2 "PLEASE MAKE SURE YOU HAVE RUN: deepdive corenlp start $CORENLP_PORT"
-    echo >&2 "OR, SPECIFY THE CORRECT PORT: export CORENLP_PORT=$CORENLP_PORT"
+    echo >&2 "PLEASE MAKE SURE YOU HAVE RUN: deepdive corenlp start"
     false
 }
 
@@ -40,6 +34,3 @@ deepdive corenlp parse-tsj docid+ content=nlp -- docid nlp |
 deepdive corenlp sentences-tsj docid content:nlp \
                             -- docid nlp.{index,tokens.{word,lemma,pos,ner,characterOffsetBegin}} \
                                      nlp.collapsed-dependencies.{dep_type,dep_token}
-
-# stop the CoreNLP server unless CORENLP_PORT for a shared server was given
-[[ -n ${CORENLP_PORT:-} ]] || deepdive corenlp stop
