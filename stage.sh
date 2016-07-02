@@ -139,7 +139,7 @@ stage inference/deepdive-model                                    util/
 
 # Stanford CoreNLP utilities
 stage util/nlp/deepdive-corenlp                                   util/
-for nlp_util in util/nlp/deepdive-corenlp-*
+for nlp_util in util/nlp/*
 do stage "$nlp_util"                                              util/nlp/
 done
 
