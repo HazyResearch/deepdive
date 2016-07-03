@@ -53,13 +53,13 @@ TEST_F(SamplerTest, sample_sgd_single_variable) {
   sampler->set_random_seed(1, 1, 1);
 
   sampler->sample_sgd_single_variable(0, 0.1);
-  EXPECT_EQ(infrs->weight_values[0], 0.1);
+  EXPECT_EQ(infrs->weight_values[0], 0.2);
 
   sampler->sample_sgd_single_variable(0, 0.1);
-  EXPECT_EQ(infrs->weight_values[0], 0.1);
+  EXPECT_EQ(infrs->weight_values[0], 0.2);
 
   sampler->sample_sgd_single_variable(0, 0.1);
-  EXPECT_EQ(infrs->weight_values[0], 0.1);
+  EXPECT_EQ(infrs->weight_values[0], 0.2);
 }
 
 // test for sample_single_variable

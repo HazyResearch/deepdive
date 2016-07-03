@@ -70,8 +70,8 @@ typedef variable_value_t variable_value_index_t;  // an alias to disambiguate
 
 // enumeration for factor function types
 typedef enum FACTOR_FUNCTION_TYPE {
-  FUNC_IMPLY_MLN = 0,
-  FUNC_IMPLY_neg1_1 = 11,
+  FUNC_IMPLY_MLN = 13,
+  FUNC_IMPLY_NATURAL = 0,
   FUNC_OR = 1,
   FUNC_AND = 2,
   FUNC_EQUAL = 3,

@@ -72,7 +72,7 @@ class CompactFactor {
     RETURN_POTENTIAL_FOR(func_id)
     switch (func_id) {
       RETURN_POTENTIAL_FOR(FUNC_IMPLY_MLN);
-      RETURN_POTENTIAL_FOR(FUNC_IMPLY_neg1_1);
+      RETURN_POTENTIAL_FOR(FUNC_IMPLY_NATURAL);
       RETURN_POTENTIAL_FOR2(FUNC_AND, FUNC_ISTRUE);
       RETURN_POTENTIAL_FOR(FUNC_OR);
       RETURN_POTENTIAL_FOR(FUNC_EQUAL);
@@ -125,9 +125,9 @@ class CompactFactor {
       const bool satisfied =
           is_variable_satisfied(vif, vid, var_values, proposal);
       /* Early return as soon as we find a mismatch */
-      if (satisfied != firstsat) return 0.0;
+      if (satisfied != firstsat) return -1;
     }
-    return 1.0;
+    return 1;
   }
 
   /** Return the value of the logical AND of the variables in the factor, with
@@ -143,9 +143,9 @@ class CompactFactor {
       const bool satisfied =
           is_variable_satisfied(vif, vid, var_values, proposal);
       /* Early return as soon as we find a variable that is not satisfied */
-      if (!satisfied) return 0.0;
+      if (!satisfied) return -1;
     }
-    return 1.0;
+    return 1;
   }
 
   /** Return the value of the logical OR of the variables in the factor, with
@@ -161,9 +161,9 @@ class CompactFactor {
       const bool satisfied =
           is_variable_satisfied(vif, vid, var_values, proposal);
       /* Early return as soon as we find a variable that is satisfied */
-      if (satisfied) return 1.0;
+      if (satisfied) return 1;
     }
-    return 0.0;
+    return -1;
   }
 
   /** Return the value of the 'imply (MLN version)' of the variables in the
@@ -190,14 +190,14 @@ class CompactFactor {
 
     if (!bBody) {
       // Early return if the body is not satisfied
-      return 1.0;
+      return 1;
     } else {
       // Compute the value of the head of the rule
       const VariableInFactor &vif = vifs[n_start_i_vif + n_variables -
                                          1];  // encoding of the head, should
                                               // be more structured.
       const bool bHead = is_variable_satisfied(vif, vid, var_values, proposal);
-      return bHead ? 1.0 : 0.0;
+      return bHead ? 1 : 0;
     }
   }
 
@@ -213,7 +213,7 @@ class CompactFactor {
    *  return 0.0 if the body is not satisfied.
    *
    */
-  DEFINE_POTENTIAL_FOR(FUNC_IMPLY_neg1_1) {
+  DEFINE_POTENTIAL_FOR(FUNC_IMPLY_NATURAL) {
     /* Compute the value of the body of the rule */
     bool bBody = true;
     for (num_edges_t i_vif = n_start_i_vif;
@@ -225,14 +225,14 @@ class CompactFactor {
 
     if (!bBody) {
       // Early return if the body is not satisfied
-      return 0.0;
+      return 0;
     } else {
       // Compute the value of the head of the rule */
       const VariableInFactor &vif = vifs[n_start_i_vif + n_variables -
                                          1];  // encoding of the head, should
                                               // be more structured.
       bool bHead = is_variable_satisfied(vif, vid, var_values, proposal);
-      return bHead ? 1.0 : -1.0;
+      return bHead ? 1 : -1;
     }
   }
 
