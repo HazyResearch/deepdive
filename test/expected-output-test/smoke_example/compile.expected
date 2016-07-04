@@ -1,3 +1,5 @@
+deepdive.schema {"relations" : {"person_smokes" : {"columns" : {"person_id" : {"type" : "bigint", "index" : 0}, "smokes" : {"type" : "boolean", "index" : 1}}}, "smoke" : {"columns" : {"person_id" : {"type" : "bigint", "index" : 0}}, "variable_type" : "boolean"}, "cancer" : {"columns" : {"person_id" : {"type" : "bigint", "index" : 0}}, "variable_type" : "boolean"}, "friends" : {"columns" : {"person_id" : {"type" : "bigint", "index" : 0}, "friend_id" : {"type" : "bigint", "index" : 1}}}, "person_has_cancer" : {"columns" : {"person_id" : {"type" : "bigint", "index" : 0}, "has_cancer" : {"type" : "boolean", "index" : 1}}}, "person" : {"columns" : {"person_id" : {"type" : "bigint", "index" : 0}, "name" : {"type" : "text", "index" : 1}}}}}
+
 deepdive.schema.variables {
 smoke.dd_label: Boolean
 cancer.dd_label: Boolean

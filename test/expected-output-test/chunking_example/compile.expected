@@ -1,3 +1,5 @@
+deepdive.schema {"relations" : {"chunk" : {"columns" : {"sent_id" : {"type" : "bigint", "index" : 0, "annotations" : [{"name" : "key"}]}, "word_id" : {"type" : "bigint", "index" : 1, "annotations" : [{"name" : "key"}]}, "tag" : {"type" : "text", "index" : 2}}, "variable_type" : "categorical"}, "word_features" : {"columns" : {"sent_id" : {"type" : "bigint", "index" : 0}, "word_id" : {"type" : "bigint", "index" : 1}, "feature" : {"type" : "text", "index" : 2}}}, "words_raw" : {"columns" : {"word_id" : {"type" : "bigint", "index" : 1}, "pos" : {"type" : "text", "index" : 3}, "true_tag" : {"type" : "text", "index" : 4}, "sent_id" : {"type" : "bigint", "index" : 0}, "word" : {"type" : "text", "index" : 2}}}, "tags" : {"columns" : {"tag" : {"type" : "text", "index" : 0}}}, "words" : {"columns" : {"tag" : {"type" : "text", "index" : 5}, "word_id" : {"type" : "bigint", "index" : 1}, "pos" : {"type" : "text", "index" : 3}, "true_tag" : {"type" : "text", "index" : 4}, "sent_id" : {"type" : "bigint", "index" : 0}, "word" : {"type" : "text", "index" : 2}}}}}
+
 deepdive.schema.variables {
 chunk {
 tag: Categorical
@@ -11,7 +13,7 @@ sql: """
 SELECT R0.sent_id AS column_0
      , R0.word_id AS column_1
      , R1.tag AS column_2
-     ,
+     , 
 CASE WHEN R1.tag = R0.tag THEN true
      ELSE NULL
 END AS column_3
@@ -35,7 +37,7 @@ SELECT R0.sent_id AS column_0
      , R0.word AS column_2
      , R0.pos AS column_3
      , R0.true_tag AS column_4
-     ,
+     , 
 CASE WHEN R0.true_tag = 'B-UCP' THEN NULL
      WHEN R0.true_tag = 'I-UCP' THEN NULL
      WHEN strpos(R0.true_tag, '-') > 0 THEN split_part(R0.true_tag, '-', 2)

@@ -1,3 +1,5 @@
+deepdive.schema {"relations" : {"T" : {"columns" : {"x" : {"type" : "text", "index" : 0}}}, "TQ" : {"columns" : {"x" : {"type" : "text", "index" : 0}}, "variable_type" : "boolean"}, "V" : {"columns" : {"x" : {"type" : "text", "index" : 0}}}, "VQ" : {"columns" : {"x" : {"type" : "text", "index" : 0}}, "variable_type" : "boolean"}, "D" : {"columns" : {"x" : {"type" : "text", "index" : 0}}}, "S" : {"columns" : {"x" : {"type" : "text", "index" : 0}}, "annotations" : [{"name" : "materialize"}]}}}
+
 deepdive.schema.variables {
 VQ.dd_label: Boolean
 TQ.dd_label: Boolean

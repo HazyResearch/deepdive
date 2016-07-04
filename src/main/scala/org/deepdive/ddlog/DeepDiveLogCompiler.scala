@@ -662,7 +662,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     // compile the program into blocks of deepdive.conf
     val blocks = compiler.compile()
 
-    // codegen HOCON
+    // how to codegen HOCON
     def codegenValue(value: Any): String = value match {
       case QuotedString(s) => // multi-line string
         s"""\"\"\"${s replaceAll("\"\"\"", "\\\"\\\"\\\"")}\"\"\""""
@@ -691,6 +691,12 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
 
     }
 
+    // include the schema declarations before the compiled HOCON
+    print("deepdive.schema ")
+    DeepDiveLogSchemaExporter.run(parsedProgram, config)
+    println()
+
+    // codegen HOCON
     blocks foreach { case (key, value) => println(codegen(key, value)) }
   }
 

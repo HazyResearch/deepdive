@@ -1,3 +1,5 @@
+deepdive.schema {"relations" : {"data" : {"columns" : {"x" : {"type" : "int", "index" : 0}, "y" : {"type" : "int", "index" : 1}}}, "P" : {"columns" : {"x" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}, "Q" : {"columns" : {"x" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}}}
+
 deepdive.schema.variables {
 P.dd_label: Boolean
 Q.dd_label: Boolean

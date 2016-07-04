@@ -1,3 +1,5 @@
+deepdive.schema {"relations" : {"S_2" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "T___1" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "T" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "S_1" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "T_2" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "T___2" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "Q" : {"columns" : {"x" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}, "T___3" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "S_0" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "T__3" : {"type" : "view", "columns" : {"column_0" : {"type" : "UNKNOWN", "index" : 0}}}, "T___0" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "R" : {"columns" : {"a" : {"type" : "int", "index" : 0}, "b" : {"type" : "int", "index" : 1}}}, "S" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}}}
+
 deepdive.schema.variables {
 Q.dd_label: Boolean
 
