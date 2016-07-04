@@ -40,8 +40,7 @@ void NumaNodes::swap(NumaNodes& other) {
 }
 
 struct bitmask* NumaNodes::numa_nodemask() {
-  if (!numa_nodemask_)
-    numa_nodemask_ = numa_parse_nodestring(nodestring_.c_str());
+  if (!numa_nodemask_) numa_nodemask_ = numa_parse_nodestring(&nodestring_[0]);
   return numa_nodemask_;
 }
 void NumaNodes::bind() { numa_bind(numa_nodemask()); }
