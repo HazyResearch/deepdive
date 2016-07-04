@@ -87,6 +87,7 @@ stage runner/format_timestamp                                     util/
 stage runner/reset_timestamp                                      util/
 stage runner/restore_timestamp                                    util/
 stage runner/mark_done                                            util/
+stage runner/deepdive-do-getopts.sh                               util/
 stage runner/resolve-args-to-do.sh                                util/
 stage runner/show_progress                                        util/
 stage runner/ps_descendants                                       util/

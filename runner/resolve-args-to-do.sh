@@ -2,13 +2,15 @@
 # resolve-run-targets.sh -- Resolves unqualified names to do into run/Makefile targets
 ##
 
+: ${DEEPDIVE_APP_CHECKED_COMPILED:=false}
+
 DEEPDIVE_APP=$(find-deepdive-app)
 export DEEPDIVE_APP
 
 # check if already fully compiled first
-if ${DEEPDIVE_APP_COMPILED:=false} || app-has-been-compiled; then
+if $DEEPDIVE_APP_CHECKED_COMPILED || app-has-been-compiled; then
     # mark in the environment so redundant checks in subprocesses can be skipped
-    export DEEPDIVE_APP_COMPILED=true
+    export DEEPDIVE_APP_CHECKED_COMPILED=true
 else
     false
 fi

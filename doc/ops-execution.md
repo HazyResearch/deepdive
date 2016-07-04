@@ -350,9 +350,14 @@ There are several environment variables that can be tweaked to influence the exe
     By default, it is `DEEPDIVE_AUTOCOMPILE=true`, i.e., automatically compiling to reduce the friction of manually running `deepdive compile`.
     However, it can be set to `DEEPDIVE_AUTOCOMPILE=false` to prevent unexpected recompilations.
 
+* `DEEPDIVE_INTERACTIVE`
+
+    Controls whether `deepdive do` should be interactive or not, asking to review the execution plan and allow editing before actual execution.
+    By default, it is `DEEPDIVE_INTERACTIVE=false`, not asking whether to recompile the app upon source change, nor providing a chance to review or edit the execution plan.
+
 * `DEEPDIVE_PLAN_EDIT`
 
-    Controls whether a chance to edit the execution plan is provided (when set to `true`) or not (when `false`).
+    Controls whether a chance to edit the execution plan is provided (when set to `true`) or not (when `false`) in interactive mode.
 
 * `VISUAL` and `EDITOR`
 
