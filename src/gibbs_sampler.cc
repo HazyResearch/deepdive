@@ -3,10 +3,11 @@
 namespace dd {
 
 GibbsSampler::GibbsSampler(std::unique_ptr<CompactFactorGraph> _pfg,
-                           const Weight weights[], size_t nthread,
-                           size_t nodeid, const CmdParser &opts)
+                           const Weight weights[], const NumaNodes &numa_nodes,
+                           size_t nthread, size_t nodeid, const CmdParser &opts)
     : pfg(std::move(_pfg)),
       pinfrs(new InferenceResult(*pfg, weights, opts)),
+      numa_nodes_(numa_nodes),
       fg(*pfg),
       infrs(*pinfrs),
       nthread(nthread),
@@ -16,14 +17,14 @@ GibbsSampler::GibbsSampler(std::unique_ptr<CompactFactorGraph> _pfg,
 }
 
 void GibbsSampler::sample(num_epochs_t i_epoch) {
-  numa_run_on_node(nodeid);
+  numa_nodes_.bind();
   for (auto &worker : workers) {
     threads.push_back(std::thread([&worker]() { worker.sample(); }));
   }
 }
 
 void GibbsSampler::sample_sgd(double stepsize) {
-  numa_run_on_node(nodeid);
+  numa_nodes_.bind();
   for (auto &worker : workers) {
     threads.push_back(
         std::thread([&worker, stepsize]() { worker.sample_sgd(stepsize); }));
