@@ -29,7 +29,6 @@ class SamplerTest : public testing::Test {
         "-o",      ".",
         "-l",      "100",
         "-i",      "100",
-        "-s",      "1",
         "--alpha", "0.1",
     };
     CmdParser cmd_parser(sizeof(argv) / sizeof(*argv), argv);

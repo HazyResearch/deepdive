@@ -63,9 +63,6 @@ CmdParser::CmdParser(int argc, const char* const argv[]) : num_errors_(0) {
     TCLAP::MultiArg<num_epochs_t> n_learning_epoch_("l", "n_learning_epoch",
                                                     "Number of Learning Epochs",
                                                     true, "int", cmd_);
-    TCLAP::MultiArg<num_samples_t> n_samples_per_learning_epoch_(
-        "s", "n_samples_per_learning_epoch",
-        "Number of Samples per Leraning Epoch", true, "int", cmd_);
     TCLAP::MultiArg<num_epochs_t> n_inference_epoch_(
         "i", "n_inference_epoch", "Number of Samples for Inference", true,
         "int", cmd_);
