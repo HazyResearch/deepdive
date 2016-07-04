@@ -34,7 +34,10 @@ std::ostream& CmdParser::check(bool condition) {
   }
 }
 
-CmdParser::CmdParser(int argc, const char* const argv[]) : num_errors_(0) {
+CmdParser::CmdParser(
+    int argc, const char* const argv[],
+    const std::map<std::string, int (*)(const CmdParser&)>& modes)
+    : num_errors_(0) {
   const char* arg0 = argv[0];
   app_name = argc > 1 ? argv[1] : "";
   ++argv;
@@ -44,7 +47,7 @@ CmdParser::CmdParser(int argc, const char* const argv[]) : num_errors_(0) {
   // http://tclap.sourceforge.net/manual.html#FUNDAMENTAL_CLASSES
 
   if (app_name == "gibbs") {
-    TCLAP::CmdLine cmd_("DimmWitted GIBBS", ' ', DimmWittedVersion);
+    TCLAP::CmdLine cmd_("DimmWitted gibbs", ' ', DimmWittedVersion);
 
     TCLAP::ValueArg<std::string> fg_file_("m", "fg_meta",
                                           "factor graph metadata file", false,
@@ -225,9 +228,15 @@ CmdParser::CmdParser(int argc, const char* const argv[]) : num_errors_(0) {
     output_folder = output_folder_.getValue();
     domain_file = domain_file_.getValue();
 
-  } else {
+  } else if (argc == 0 || modes.find(app_name) == modes.cend()) {
+    ++num_errors_;
+    std::cout << "DimmWitted (https://github.com/HazyResearch/sampler)"
+              << std::endl;
+    std::cout << "Usage: " << arg0 << " MODE [ARG...]" << std::endl;
+    for (const auto mode : modes) {
+      std::cout << "  " << arg0 << " " << mode.first << std::endl;
+    }
     if (argc > 0) std::cerr << app_name << ": Unrecognized MODE" << std::endl;
-    std::cerr << "Usage: " << arg0 << " [ gibbs | bin2text ]" << std::endl;
   }
 }
 

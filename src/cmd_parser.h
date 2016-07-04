@@ -5,6 +5,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 #include <ostream>
 
 namespace dd {
@@ -60,7 +61,9 @@ class CmdParser {
   /**
    * Constructs by parsing the given command line arguments
    */
-  CmdParser(int argc, const char *const argv[]);
+  CmdParser(
+      int argc, const char *const argv[],
+      const std::map<std::string, int (*)(const CmdParser &)> &modes = {});
 };
 
 std::ostream &operator<<(std::ostream &stream, const CmdParser &cmd_parser);
