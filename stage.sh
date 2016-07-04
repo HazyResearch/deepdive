@@ -65,6 +65,7 @@ stage shell/deepdive_bash_completion.sh                           etc/
 stage compiler/deepdive-compile                                   util/
 stage compiler/deepdive-check                                     util/
 stage compiler/app-has-been-compiled                              util/
+stage compiler/app-has-nothing-to-compile                         util/
 stage compiler/deepdive-default.conf                              etc/
 stage compiler/compile-config                                     util/
 stage compiler/compile-check                                      util/
