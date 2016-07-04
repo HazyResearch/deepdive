@@ -76,22 +76,3 @@ input_relations: [
 
 }
 
-deepdive.pipeline.run: ${PIPELINE}
-
-deepdive.pipeline.pipelines.extraction: [
-  ext_q1
-  ext_q2
-]
-
-deepdive.pipeline.pipelines.inference: [
-  inf_istrue_q1
-  inf_istrue_q2
-]
-
-deepdive.pipeline.pipelines.endtoend: [
-  ext_q1
-  ext_q2
-  inf_istrue_q1
-  inf_istrue_q2
-]
-

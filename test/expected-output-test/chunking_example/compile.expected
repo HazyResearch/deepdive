@@ -199,26 +199,3 @@ input_relations: [
 
 }
 
-deepdive.pipeline.run: ${PIPELINE}
-
-deepdive.pipeline.pipelines.extraction: [
-  ext_chunk
-  ext_words
-  ext_word_features_by_ext_features
-]
-
-deepdive.pipeline.pipelines.inference: [
-  inf_istrue_chunk
-  inf_and_chunk_chunk
-  inf1_and_chunk_chunk
-]
-
-deepdive.pipeline.pipelines.endtoend: [
-  ext_chunk
-  ext_words
-  ext_word_features_by_ext_features
-  inf_istrue_chunk
-  inf_and_chunk_chunk
-  inf1_and_chunk_chunk
-]
-

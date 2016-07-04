@@ -602,19 +602,6 @@ class QueryCompiler(cq : ConjunctiveQuery, hackFrom: List[String] = Nil, hackWhe
     case _ => sys.error(s"Compiler does not recognize statement: ${stmt}")
   }
 
-  // generate application.conf pipelines
-  def compilePipelines(): CompiledBlocks = {
-    val run = List("deepdive.pipeline.run" -> "${PIPELINE}")
-    val extraction = statements filter(representativeStatements contains _) map resolveExtractorBlockName
-    val extraction_pipeline = if (extraction nonEmpty) List("deepdive.pipeline.pipelines.extraction" -> extraction) else List.empty
-    val inference = inferenceRules map resolveInferenceBlockName
-    val inference_pipeline = if (inference nonEmpty) List("deepdive.pipeline.pipelines.inference" -> inference) else List.empty
-    val endtoend = extraction ++ inference
-    val endtoend_pipeline = if (endtoend nonEmpty) List("deepdive.pipeline.pipelines.endtoend" -> endtoend) else List.empty
-
-    run ++ extraction_pipeline ++ inference_pipeline ++ endtoend_pipeline
-  }
-
   // generate variable schema statements
   def compileVariableSchema(): CompiledBlocks = {
     // generate the statements.
@@ -632,8 +619,6 @@ class QueryCompiler(cq : ConjunctiveQuery, hackFrom: List[String] = Nil, hackWhe
     compileVariableSchema()
     ++
     (statements flatMap compile)
-    ++
-    compilePipelines()
   )
 
 }

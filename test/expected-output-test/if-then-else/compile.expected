@@ -69,17 +69,3 @@ materialize: false
 
 }
 
-deepdive.pipeline.run: ${PIPELINE}
-
-deepdive.pipeline.pipelines.extraction: [
-  ext_q
-  ext_p
-  ext_labels_resolved
-]
-
-deepdive.pipeline.pipelines.endtoend: [
-  ext_q
-  ext_p
-  ext_labels_resolved
-]
-

@@ -87,22 +87,3 @@ input_relations: [
 
 }
 
-deepdive.pipeline.run: ${PIPELINE}
-
-deepdive.pipeline.pipelines.extraction: [
-  ext_smoke
-  ext_cancer
-]
-
-deepdive.pipeline.pipelines.inference: [
-  inf_imply_smoke_cancer
-  inf_imply_smoke_smoke
-]
-
-deepdive.pipeline.pipelines.endtoend: [
-  ext_smoke
-  ext_cancer
-  inf_imply_smoke_cancer
-  inf_imply_smoke_smoke
-]
-

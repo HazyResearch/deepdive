@@ -82,21 +82,3 @@ materialize: true
 
 }
 
-deepdive.pipeline.run: ${PIPELINE}
-
-deepdive.pipeline.pipelines.extraction: [
-  ext_V
-  ext_VQ
-  ext_T
-  ext_TQ
-  ext_S
-]
-
-deepdive.pipeline.pipelines.endtoend: [
-  ext_V
-  ext_VQ
-  ext_T
-  ext_TQ
-  ext_S
-]
-

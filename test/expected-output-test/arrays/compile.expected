@@ -40,15 +40,3 @@ materialize: false
 
 }
 
-deepdive.pipeline.run: ${PIPELINE}
-
-deepdive.pipeline.pipelines.extraction: [
-  ext_T
-  ext_U
-]
-
-deepdive.pipeline.pipelines.endtoend: [
-  ext_T
-  ext_U
-]
-
