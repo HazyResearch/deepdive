@@ -1,4 +1,5 @@
 #include "cmd_parser.h"
+#include "numa_nodes.h"
 
 #define HAVE_LONG_LONG  // necessary for uint64_t arg parsing
 #include <tclap/CmdLine.h>
@@ -16,7 +17,24 @@ static inline const T& getLastValueOrDefault(TCLAP::MultiArg<T>& arg,
   return arg.getValue().empty() ? defaultValue : arg.getValue().back();
 }
 
-CmdParser::CmdParser(int argc, const char* const argv[]) {
+// a way to emulate a /dev/null buffer
+class NullBuffer : public std::streambuf {
+ public:
+  int overflow(int c) { return c; }
+};
+static NullBuffer nullbuf;
+static std::ostream nullstream(&nullbuf);
+
+std::ostream& CmdParser::check(bool condition) {
+  if (condition) {
+    return nullstream;
+  } else {
+    ++num_errors_;
+    return std::cerr;
+  }
+}
+
+CmdParser::CmdParser(int argc, const char* const argv[]) : num_errors_(0) {
   const char* arg0 = argv[0];
   app_name = argc > 1 ? argv[1] : "";
   ++argv;
@@ -95,9 +113,33 @@ CmdParser::CmdParser(int argc, const char* const argv[]) {
         getLastValueOrDefault(n_learning_epoch_, (num_epochs_t)0);
     n_inference_epoch =
         getLastValueOrDefault(n_inference_epoch_, (num_epochs_t)0);
+
     n_datacopy = getLastValueOrDefault(n_datacopy_, (size_t)0);
+    // ensure n_datacopy is a sane number
+    if (n_datacopy == 0) n_datacopy = NumaNodes::num_configured();
+    check(0 < n_datacopy && n_datacopy <= NumaNodes::num_configured())
+        << "n_datacopy (" << n_datacopy << ") must be in the range of [0, "
+        << NumaNodes::num_configured() << "]" << std::endl;
+    check(n_datacopy % NumaNodes::num_configured() == 0)
+        << "n_datacopy (" << n_datacopy
+        << ") must be a divisor of the number of NUMA nodes ("
+        << NumaNodes::num_configured() << ")" << std::endl;
+
     n_threads = getLastValueOrDefault(n_threads_, (size_t)0);
-    if (n_threads == 0) n_threads = sysconf(_SC_NPROCESSORS_CONF);
+    size_t NUM_AVAILABLE_THREADS = sysconf(_SC_NPROCESSORS_CONF);
+    if (n_threads == 0) n_threads = NUM_AVAILABLE_THREADS;
+    check(0 < n_threads && n_threads <= NUM_AVAILABLE_THREADS)
+        << "nthreads (" << n_threads << ") must be in the range of [0, "
+        << NUM_AVAILABLE_THREADS << "]" << std::endl;
+    // ensure each NUMA node gets at least one thread
+    check(n_threads >= n_datacopy)
+        << "n_threads (" << n_threads
+        << ") must be greater than or equal to n_datacopy (" << n_datacopy
+        << "), so each copy can have at least one thread" << std::endl;
+    check(n_threads % n_datacopy == 0) << "n_threads (" << n_threads
+                                       << ") must be multiples of n_datacopy ("
+                                       << n_datacopy << ")" << std::endl;
+
     burn_in = getLastValueOrDefault(burn_in_, (num_epochs_t)0);
     stepsize = getLastValueOrDefault(stepsize_, 0.01);
     stepsize2 = getLastValueOrDefault(stepsize2_, 0.01);
@@ -205,6 +247,7 @@ std::ostream& operator<<(std::ostream& stream, const CmdParser& args) {
   stream << "# decay              : " << args.decay << std::endl;
   stream << "# regularization     : " << args.reg_param << std::endl;
   stream << "# burn_in            : " << args.burn_in << std::endl;
+  stream << "# n_datacopy         : " << args.n_datacopy << std::endl;
   stream << "# n_threads          : " << args.n_threads << std::endl;
   stream << "# learn_non_evidence : " << args.should_learn_non_evidence
          << std::endl;

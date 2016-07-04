@@ -5,6 +5,7 @@
 
 #include <string>
 #include <vector>
+#include <ostream>
 
 namespace dd {
 
@@ -12,6 +13,14 @@ namespace dd {
  * Command line argument parser
  */
 class CmdParser {
+ private:
+  size_t num_errors_;
+
+  /**
+   * A handy way to check conditions, record errors, and produce error messages.
+   */
+  std::ostream &check(bool condition);
+
  public:
   // all the arguments are defined in cmd_parser.cpp
   std::string app_name;
@@ -45,6 +54,8 @@ class CmdParser {
   factor_function_type_t text2bin_factor_func_id;
   factor_arity_t text2bin_factor_arity;
   std::vector<variable_value_t> text2bin_factor_variables_should_equal_to;
+
+  size_t num_errors() { return num_errors_; }
 
   /**
    * Constructs by parsing the given command line arguments

@@ -25,18 +25,14 @@ int gibbs(const CmdParser& cmd_parser);
  * Note the factor graph is copied on each NUMA node.
  */
 class DimmWitted {
+ private:
+  const size_t n_samplers_;
+
  public:
   const Weight* const weights;  // TODO clarify ownership
 
   // command line parser
   const CmdParser& opts;  // TODO clarify ownership
-
-  // the highest node number available
-  // actually, number of NUMA nodes = n_numa_nodes + 1
-  size_t n_numa_nodes;
-
-  // number of threads per NUMA node
-  size_t n_thread_per_numa;
 
   // factor graph copies per NUMA node
   std::vector<GibbsSampler> samplers;

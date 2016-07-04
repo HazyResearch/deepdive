@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "factor_graph.h"
+#include "numa_nodes.h"
 #include "timer.h"
 #include <stdlib.h>
 #include <thread>
@@ -18,6 +19,7 @@ class GibbsSampler {
  private:
   std::unique_ptr<CompactFactorGraph> pfg;
   std::unique_ptr<InferenceResult> pinfrs;
+  NumaNodes numa_nodes_;
   std::vector<GibbsSamplerThread> workers;
   std::vector<std::thread> threads;
 
@@ -35,7 +37,8 @@ class GibbsSampler {
    * node id.
    */
   GibbsSampler(std::unique_ptr<CompactFactorGraph> pfg, const Weight weights[],
-               size_t nthread, size_t nodeid, const CmdParser &opts);
+               const NumaNodes &numa_nodes, size_t nthread, size_t nodeid,
+               const CmdParser &opts);
 
   /**
    * Performs sample

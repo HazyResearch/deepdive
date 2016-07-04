@@ -1,6 +1,7 @@
 #include "inference_result.h"
 #include "factor_graph.h"
 #include <iostream>
+#include <memory>
 
 namespace dd {
 
@@ -46,23 +47,16 @@ InferenceResult::InferenceResult(const CompactFactorGraph &fg,
 
 InferenceResult::InferenceResult(const InferenceResult &other)
     : InferenceResult(other.fg, other.opts) {
-  memcpy(assignments_evid.get(), other.assignments_evid.get(),
-         sizeof(*assignments_evid.get()) * nvars);
-  memcpy(agg_means.get(), other.agg_means.get(),
-         sizeof(*agg_means.get()) * nvars);
-  memcpy(agg_nsamples.get(), other.agg_nsamples.get(),
-         sizeof(*agg_nsamples.get()) * nvars);
+  COPY_ARRAY_UNIQUE_PTR_MEMBER(assignments_evid, nvars);
+  COPY_ARRAY_UNIQUE_PTR_MEMBER(agg_means, nvars);
+  COPY_ARRAY_UNIQUE_PTR_MEMBER(agg_nsamples, nvars);
 
-  memcpy(weight_values.get(), other.weight_values.get(),
-         sizeof(*weight_values.get()) * nweights);
-  memcpy(weights_isfixed.get(), other.weights_isfixed.get(),
-         sizeof(*weights_isfixed.get()) * nweights);
+  COPY_ARRAY_UNIQUE_PTR_MEMBER(weight_values, nweights);
+  COPY_ARRAY_UNIQUE_PTR_MEMBER(weights_isfixed, nweights);
 
   ntallies = other.ntallies;
   categorical_tallies.reset(new num_samples_t[ntallies]);
-  for (num_tallies_t i = 0; i < ntallies; ++i) {
-    categorical_tallies[i] = other.categorical_tallies[i];
-  }
+  COPY_ARRAY_UNIQUE_PTR_MEMBER(categorical_tallies, ntallies);
 }
 
 void InferenceResult::merge_weights_from(const InferenceResult &other) {
