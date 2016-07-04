@@ -41,28 +41,19 @@ PATH="$DEEPDIVE_HOME"/util/compile-config:"$PATH"
 PATH="$DEEPDIVE_HOME"/util/compile-code:"$PATH"
 export DEEPDIVE_ERROR_PREFIX="[ERROR] "
 
+###############################################################################
 ## compile a full deepdive.conf from source code
 if ! [[ -e $DEEPDIVE_COMPILE_INPUT_JSON ]]; then
 STEP "Parsing DeepDive application ($DEEPDIVE_APP) to generate:"
-STEP " run/compiled/schema.json"
-# compile schema in JSON
-touch run/"$compileDir"/schema.json run/"$compileDir"/deepdive.conf
-if [[ -r app.ddlog ]]; then
-    STEP "  from app.ddlog"
-    ddlog export-schema app.ddlog
-else
-    echo '{}'
-fi |
-if [[ -r schema.json && -s schema.json ]]; then
-    # merge user's schema.json
-    STEP "  from schema.json"
-    SCHEMA_JSON="$(cat)" \
-    jq '(env.SCHEMA_JSON | fromjson) + .' schema.json
-else
-    cat
-fi >run/"$compileDir"/schema.json
 STEP " run/compiled/deepdive.conf"
+touch run/"$compileDir"/deepdive.conf
 {
+# user's schema.json
+if [[ -r schema.json && -s schema.json ]]; then
+    STEP "  from schema.json"
+    echo -n 'deepdive.schema '
+    cat schema.json
+fi
 # compile DDlog rules
 if [[ -r app.ddlog ]]; then
     STEP "  from app.ddlog"
@@ -78,10 +69,9 @@ if [[ -n "$DEEPDIVE_CONFIG_EXTRA" ]]; then
     STEP "  from \$DEEPDIVE_CONFIG_EXTRA"
     echo "$DEEPDIVE_CONFIG_EXTRA"
 fi
-# include the schema as well
-echo -n "deepdive.schema "
-cat run/"$compileDir"/schema.json
 } >run/"$compileDir"/deepdive.conf
+
+###############################################################################
 cd run/"$compileDir"
 # produce a JSON from compiled deepdive.conf
 STEP " run/compiled/deepdive.conf.json"
@@ -103,9 +93,9 @@ STEP "Loading precompiled DeepDive application from $DEEPDIVE_COMPILE_INPUT_JSON
 STEP " run/compiled/deepdive.conf.json"
 cp -pf "$DEEPDIVE_COMPILE_INPUT_JSON" run/"$compileDir"/deepdive.conf.json
 cd run/"$compileDir"
-# TODO STEP " run/compiled/schema.json"
 fi
 
+###############################################################################
 STEP "Performing sanity checks on run/compiled/deepdive.conf.json:"
 deepdive-check -a -c "$PWD"/deepdive.conf.json 'input_*' 2>&1 | sed 's/^/ /' >&2
 
@@ -126,6 +116,7 @@ ln -sfn "$config" config.json
 STEP "Validating run/compiled/config.json:"
 deepdive-check -a -c "$PWD"/config.json 'compiled_*' 2>&1 | sed 's/^/ /' >&2
 
+###############################################################################
 STEP "Compiling executable code into:"
 # compile extractors and factors under process/ and factor/
 for cc in "$DEEPDIVE_HOME"/util/compile-code/compile-code-*; do
@@ -143,6 +134,7 @@ done
 # mark everything compiled as read-only
 chmod a-w *
 
+###############################################################################
 if [[ -z $DEEPDIVE_COMPILE_SKIP_CODEGEN ]]; then
 # generate actual code under run/
 cd "$DEEPDIVE_APP"/run
@@ -162,6 +154,7 @@ STEP "  (file://$(pwd -P)/dataflow.svg)"  # XXX a handy file: URL for opening in
 fi
 fi
 
+###############################################################################
 # point to the successfully compiled one, leaving the previous one as backup
 {
     cd "$DEEPDIVE_APP"
