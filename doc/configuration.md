@@ -441,10 +441,10 @@ The available directive are:
 
     ```
     deepdive {
-      sampler.sampler_args: "-l 1000 -s 1 -i 1000 --alpha 0.01"
+      sampler.sampler_args: "-l 1000 -i 1000 --alpha 0.01"
     }
     ```
-    The default `sampler_args` are: `"-l 300 -s 1 -i 500 --alpha 0.1"`.
+    The default `sampler_args` are: `"-l 300 -i 500 --alpha 0.1"`.
 
     For a list and the meaning of the arguments, please refer to the
     [documentation of our DimmWitted sampler](sampler.md).

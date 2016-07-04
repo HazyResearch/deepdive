@@ -33,9 +33,10 @@ arguments to the sampler executable can be used:
         Quiet output
 
     -c <int>,  --n_datacopy <int> (Linux only)
-        Number of data copies. Each NUMA node has a copy of factor graph. This
-        argument specifies number of NUMA nodes to use. Default is using all
-        NUMA nodes.
+        Number of data copies.  One or more NUMA nodes can hold a copy of the
+        factor graph and their CPU cores run the threads.  This argument
+        specifies how many partitions the NUMA nodes should be grouped into.
+        Default is to keep a copy of the factor graph in every NUMA node.
 
     -w <weightsFile> | --weights <weightsFile>
         Weights file (required)
@@ -62,9 +63,6 @@ arguments to the sampler executable can be used:
 
     -l <learningNumIterations> | --n_learning_epoch <learningNumIterations>
         Number of iterations (epochs) during weight learning (required)
-
-    -s <learningNumSamples> | --n_samples_per_learning_epoch <learningNumSamples>
-        Number of samples per iteration during weight learning (required)
 
     -a <learningRate> | --alpha <learningRate> | --stepsize <learningRate>
         The learning rate for gradient descent (default: 0.1)
