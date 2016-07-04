@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# deepdive-alter -- Changes the definition of the specified data structure in the database
+#
+# > deepdive alter table TABLE rename-to NEW_TABLE 
+# renames the original table
+##
+set -euo pipefail
+
+# parse database settings and load the driver
+. load-db-driver.sh
+
+[[ $# -gt 0 ]] || usage "$0" "What to modify (table or view) must be given"
+What=$1; shift
+
+[[ $# -gt 0 ]] || usage "$0" "Missing TABLE name"
+Table=$1; shift
+
+[[ $# -gt 0 ]] || usage "$0" "Missing action"
+
+case $What in
+    table|view)
+        exec db-alter $What $Table "$@"
+        ;;
+
+    # recognize table-if-exists
+    table-if-exists)
+        ALTER_IF_EXISTS=1 exec "$0" "${What%-if-exists}" "$Table" "$@"
+        ;;
+
+    *)
+        error "$What cannot be altered: Only 'table' or 'view' can be altered"
+esac

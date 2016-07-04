@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# deepdive-drop -- Drops a table/view in the database
+#
+# > deepdive drop table TABLE
+# Attempts to drop table
+#
+# > deepdive drop table-if-exists TABLE
+# Drops table if it exists in the database.
+##
+set -euo pipefail
+
+# parse database settings and load the driver
+. load-db-driver.sh
+
+[[ $# -gt 0 ]] || usage "$0" "What to drop (table or view) must be given"
+What=$1; shift
+
+[[ $# -gt 0 ]] || usage "$0" "Missing TABLE name"
+Table=$1; shift
+# TODO double quote table names and column names?
+
+case $What in
+    table|view)
+        exec db-drop $What $Table
+        ;;
+
+    # recognize table-if-exists
+    table-if-exists)
+        DROP_IF_EXISTS=1 exec "$0" "${What%-if-not-exists}" "$Table" "$@"
+        ;;
+
+    *)
+        error "$What cannot be dropped: Only 'table' or 'view' can be dropped"
+esac

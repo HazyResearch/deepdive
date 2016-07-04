@@ -10,7 +10,5 @@ sql=${sql//\"/\`}
 if [ "$DISTRIBUTED" = true ];then
     exec sqlline -u 'jdbc:drill:schema='"$DBNAME"';zk='"$ZOOKEEPERS" -n "$DBUSER" -p "$DBPASSWORD" -f <(echo "$sql")
 else
-    sql="use $DBNAME;
-        $sql"
-    exec sqlline -u 'jdbc:drill:zk=local' -n "$DBUSER" -p "$DBPASSWORD" -f <(echo "$sql")
+    exec sqlline -u 'jdbc:drill:schema='"$DBNAME"';zk=local' -n "$DBUSER" -p "$DBPASSWORD" -f <(echo "$sql")
 fi

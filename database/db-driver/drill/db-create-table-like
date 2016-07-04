@@ -14,4 +14,4 @@ AnotherTable=$1; shift
 
 mkdir "$DRILL_WORK_DIRECTORY/tables/$Table"
 
-exec python -c 'import json;f=open("'"$DRILL_WORK_DIRECTORY/$AnotherTable.view.drill"'","r");view=json.load(f);f.close();view["name"]="'"$Table"'";print(json.dumps(view))' >"$DRILL_WORK_DIRECTORY/$Table.view.drill"
+exec python -c 'import json;import re;f=open("'"$DRILL_WORK_DIRECTORY/$AnotherTable.view.drill"'","r");view=json.load(f);f.close();view["name"]="'"$Table"'";view["sql"]=re.sub("(?<=/tables/)'"$AnotherTable"'","'"$Table"'",view["sql"]);print(json.dumps(view))' >"$DRILL_WORK_DIRECTORY/$Table.view.drill"

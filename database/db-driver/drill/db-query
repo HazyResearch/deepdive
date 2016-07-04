@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# db-query -- Evaluates given SQL query against the PostgreSQL database configured for a DeepDive application
+# db-query -- Evaluates given SQL query against the Drill database configured for a DeepDive application
 # > eval "$(db-parse "$url")"
 # > db-query SQL FORMAT HEADER
 ##
@@ -11,7 +11,11 @@ header=${1:?No HEADER given}; shift
 
 copy_option=
 case $format in
+    tsj)
+        drillFormat='tsv'
+        ;;
     tsv)
+        drillFormat='tsv'
         case $header in
             0) ;;
             1)
@@ -24,7 +28,7 @@ case $format in
         esac
         ;;
     csv)
-        copy_option+=" csv"
+        drillFormat='csv'
         case $header in
             0) ;;
             1) copy_option+=" HEADER" ;;
@@ -63,6 +67,6 @@ case $format in
     *) error "$format: unsupported format by PostgreSQL driver" ;; # TODO
 esac
 
-sql="!set outputFormat $format
+sql="!set outputFormat $drillFormat
      $sql;"
-exec db-execute "$sql" "$@"
+exec db-execute "$sql" "$@" | tail -n +2 | sed "s/'	'/	/g;s/^'\(.*\)'$/\1/"

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# deepdive-insert-into -- Inserts values or result of the query into the given table in the database
+#
+# > deepdive insert-into TABLE "SELECT ..."
+# Inserts result of query into TABLE
+#
+# > deepdive insert-into TABLE values VALUES
+# Inserts given values into TABLE
+##
+set -euo pipefail
+
+# parse database settings and load the driver
+. load-db-driver.sh
+
+[[ $# -gt 0 ]] || usage "$0" "Missing TABLE name"
+Table=$1; shift
+
+exec db-insert-into "$Table" "$@"

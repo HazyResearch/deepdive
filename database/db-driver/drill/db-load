@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# db-load -- Loads file to the PostgreSQL database configured for a DeepDive application
+# db-load -- Loads file to the Drill database configured for a DeepDive application
 # > db-load TABLE COLUMNS FORMAT [SOURCE...]
 ##
 set -eu

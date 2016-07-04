@@ -8,5 +8,5 @@ set -eu
 if [ "$DISTRIBUTED" = true ];then
     exec sqlline -u 'jdbc:drill:schema='"$DBNAME"';zk='"$ZOOKEEPERS" -n "$DBUSER" -p "$DBPASSWORD"
 else
-    exec sqlline -u 'jdbc:drill:zk=local' -n "$DBUSER" -p "$DBPASSWORD"
+    exec sqlline -u 'jdbc:drill:schema='"$DBNAME"';zk=local' -n "$DBUSER" -p "$DBPASSWORD"
 fi
