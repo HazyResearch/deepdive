@@ -124,7 +124,7 @@ CmdParser::CmdParser(
     check(0 < n_datacopy && n_datacopy <= NumaNodes::num_configured())
         << "n_datacopy (" << n_datacopy << ") must be in the range of [0, "
         << NumaNodes::num_configured() << "]" << std::endl;
-    check(n_datacopy % NumaNodes::num_configured() == 0)
+    check(NumaNodes::num_configured() % n_datacopy == 0)
         << "n_datacopy (" << n_datacopy
         << ") must be a divisor of the number of NUMA nodes ("
         << NumaNodes::num_configured() << ")" << std::endl;
