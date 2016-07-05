@@ -1,3 +1,5 @@
+deepdive.schema {"relations" : {"e" : {"columns" : {"k" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}, "f" : {"columns" : {"k" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}, "a" : {"columns" : {"k" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}, "b" : {"columns" : {"k" : {"type" : "int", "index" : 0}, "p" : {"type" : "int", "index" : 1}, "q" : {"type" : "text", "index" : 2}}}, "c" : {"columns" : {"k" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}, "d" : {"columns" : {"k" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}}}
+
 deepdive.schema.variables {
 f.dd_label: Boolean
 c.dd_label: Boolean
@@ -104,22 +106,4 @@ input_relations: [
 ]
 
 }
-
-deepdive.pipeline.run: ${PIPELINE}
-
-deepdive.pipeline.pipelines.inference: [
-  inf_istrue_a
-  inf_istrue_c
-  inf_istrue_d
-  inf_istrue_e
-  inf_istrue_f
-]
-
-deepdive.pipeline.pipelines.endtoend: [
-  inf_istrue_a
-  inf_istrue_c
-  inf_istrue_d
-  inf_istrue_e
-  inf_istrue_f
-]
 

@@ -1,3 +1,5 @@
+deepdive.schema {"relations" : {"label1" : {"columns" : {"wid" : {"type" : "INT", "index" : 0}, "val" : {"type" : "BOOLEAN", "index" : 1}}}, "features" : {"columns" : {"id" : {"type" : "BIGSERIAL", "index" : 0}, "word_id" : {"type" : "INT", "index" : 1}, "feature_id" : {"type" : "INT", "index" : 2}, "feature_val" : {"type" : "BOOLEAN", "index" : 3}}}, "label2" : {"columns" : {"wid" : {"type" : "INT", "index" : 0}, "val" : {"type" : "BOOLEAN", "index" : 1}}}, "q1" : {"columns" : {"wid" : {"type" : "INT", "index" : 0}}, "variable_type" : "boolean"}, "q2" : {"columns" : {"wid" : {"type" : "INT", "index" : 0}}, "variable_type" : "boolean"}}}
+
 deepdive.schema.variables {
 q1.dd_label: Boolean
 q2.dd_label: Boolean
@@ -73,23 +75,4 @@ input_relations: [
 ]
 
 }
-
-deepdive.pipeline.run: ${PIPELINE}
-
-deepdive.pipeline.pipelines.extraction: [
-  ext_q1
-  ext_q2
-]
-
-deepdive.pipeline.pipelines.inference: [
-  inf_istrue_q1
-  inf_istrue_q2
-]
-
-deepdive.pipeline.pipelines.endtoend: [
-  ext_q1
-  ext_q2
-  inf_istrue_q1
-  inf_istrue_q2
-]
 

@@ -1,3 +1,5 @@
+deepdive.schema {"relations" : {"R" : {"columns" : {"a" : {"type" : "int", "index" : 0}, "b" : {"type" : "int", "index" : 1}, "c" : {"type" : "int", "index" : 2}}}, "S" : {"columns" : {"x" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}, "Q" : {"columns" : {"x" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}}}
+
 deepdive.schema.variables {
 S.dd_label: Boolean
 Q.dd_label: Boolean
@@ -55,16 +57,4 @@ input_relations: [
 ]
 
 }
-
-deepdive.pipeline.run: ${PIPELINE}
-
-deepdive.pipeline.pipelines.inference: [
-  inf_imply_Q_Q
-  inf_equal_Q_not_Q
-]
-
-deepdive.pipeline.pipelines.endtoend: [
-  inf_imply_Q_Q
-  inf_equal_Q_not_Q
-]
 
