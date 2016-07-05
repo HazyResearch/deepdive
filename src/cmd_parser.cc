@@ -34,6 +34,10 @@ std::ostream& CmdParser::check(bool condition) {
   }
 }
 
+std::ostream& CmdParser::recommend(bool condition) {
+  return condition ? nullstream : std::cerr;
+}
+
 CmdParser::CmdParser(
     int argc, const char* const argv[],
     const std::map<std::string, int (*)(const CmdParser&)>& modes)
@@ -136,9 +140,9 @@ CmdParser::CmdParser(
         << "n_threads (" << n_threads
         << ") must be greater than or equal to n_datacopy (" << n_datacopy
         << "), so each copy can have at least one thread" << std::endl;
-    check(n_threads % n_datacopy == 0) << "n_threads (" << n_threads
-                                       << ") must be multiples of n_datacopy ("
-                                       << n_datacopy << ")" << std::endl;
+    recommend(n_threads % n_datacopy == 0)
+        << "n_threads (" << n_threads << ") should be multiples of n_datacopy ("
+        << n_datacopy << ") or some CPU cores will stay idle" << std::endl;
 
     burn_in = getLastValueOrDefault(burn_in_, (num_epochs_t)0);
     stepsize = getLastValueOrDefault(stepsize_, 0.01);

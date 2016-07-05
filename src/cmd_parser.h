@@ -21,6 +21,10 @@ class CmdParser {
    * A handy way to check conditions, record errors, and produce error messages.
    */
   std::ostream &check(bool condition);
+  /**
+   * A handy way to generate warning messages but don't count them as errors.
+   */
+  std::ostream &recommend(bool condition);
 
  public:
   // all the arguments are defined in cmd_parser.cpp
