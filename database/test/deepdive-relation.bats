@@ -19,7 +19,7 @@
 @test "deepdive relation spouse example" {
     cd "$DEEPDIVE_SOURCE_ROOT"/examples/spouse
     deepdive compile
-    deepdive relation list | diff -u - <(
+    deepdive relation list | diff -u <(
         echo articles
         echo has_spouse
         echo num_people
@@ -31,34 +31,46 @@
         echo spouse_label__0
         echo spouse_label_resolved
         echo spouses_dbpedia
-    )
-    deepdive relation columns articles | diff -u - <(
+    ) -
+    deepdive relation columns articles | diff -u <(
+        echo id
+        echo content
+    ) -
+    deepdive relation column-types articles | diff -u <(
         echo id:text
         echo content:text
-    )
-    deepdive relation columns has_spouse | diff -u - <(
+    ) -
+    deepdive relation column-types has_spouse | diff -u <(
         echo p1_id:text
         echo p2_id:text
-        echo label:boolean
-    )
+        echo dd_label:BOOLEAN
+    ) -
 }
 
 @test "deepdive relation chunking example" {
     cd "$DEEPDIVE_SOURCE_ROOT"/examples/chunking
     deepdive compile
-    deepdive relation list | diff -u - <(
-        echo tag
+    deepdive relation list | diff -u <(
+        echo chunk
         echo tags
         echo word_features
         echo words
         echo words_raw
-    )
-    deepdive relation columns words | diff -u - <(
+    ) -
+    deepdive relation columns words | diff -u <(
+        echo sent_id
+        echo word_id
+        echo word
+        echo pos
+        echo true_tag
+        echo tag
+    ) -
+    deepdive relation column-types words | diff -u <(
         echo sent_id:bigint
         echo word_id:bigint
         echo word:text
         echo pos:text
         echo true_tag:text
-        echo tag:int
-    )
+        echo tag:text
+    ) -
 }
