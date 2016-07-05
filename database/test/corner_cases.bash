@@ -708,19 +708,23 @@ UnicodeTSJ=$(tsjFromJsonAndHeader "$UnicodeJSON" "$UnicodeTSVHeader")
 
 ###############################################################################
 ## a case with timestamps
-ts="2016-06-17 20:10:37.9293"
-tsISO="2016-06-17T20:10:37.929300"
+ts="2016-06-17 20:10:37"
+tsus="$ts.092939"
+tsISO="2016-06-17T20:10:37"
+tsISOus="$tsISO.092939"
 TimestampSQL="
-    SELECT CAST('$ts' AS TIMESTAMP) AS ts
-         , CAST('$ts' AS TIMESTAMP WITHOUT TIME ZONE) AS tswotz
-         , CAST('$ts' AS TIMESTAMP(4) WITHOUT TIME ZONE) AS tswotz4
+    SELECT CAST('$tsus' AS TIMESTAMP) AS ts
+         , CAST('$tsus' AS TIMESTAMP WITHOUT TIME ZONE) AS tswotz
+         , CAST('$tsus' AS TIMESTAMP(6) WITHOUT TIME ZONE) AS tswotz6
+         , CAST('$tsus' AS TIMESTAMP(0) WITHOUT TIME ZONE) AS tswotz0
     "
 
 # expected TSV output
 TSVHeader=                          TSV=
-TSVHeader+=$'\t''ts'                TSV+=$'\t'"$ts"
-TSVHeader+=$'\t''tswotz'            TSV+=$'\t'"$ts"
-TSVHeader+=$'\t''tswotz4'           TSV+=$'\t'"$ts"
+TSVHeader+=$'\t''ts'                TSV+=$'\t'"$tsus"
+TSVHeader+=$'\t''tswotz'            TSV+=$'\t'"$tsus"
+TSVHeader+=$'\t''tswotz6'           TSV+=$'\t'"$tsus"
+TSVHeader+=$'\t''tswotz0'           TSV+=$'\t'"$ts"
 TSVHeader=${TSVHeader#$'\t'}        TSV=${TSV#$'\t'}  # strip the first delimiter
 TimestampTSVHeader=$TSVHeader TimestampTSV=$TSV
 
@@ -728,7 +732,8 @@ TimestampTSVHeader=$TSVHeader TimestampTSV=$TSV
 Types=
 Types+=$'\t''timestamp'
 Types+=$'\t''timestamp without time zone'
-Types+=$'\t''timestamp(4) without time zone'
+Types+=$'\t''timestamp(6) without time zone'
+Types+=$'\t''timestamp(0) without time zone'
 Types=${Types#$'\t'}
 TimestampTypes=$Types
 
@@ -737,18 +742,20 @@ TimestampColumnTypes=$(namesAndTypes "$TSVHeader" "$Types")
 
 # expected CSV output and header
 CSVHeader=                     CSV=
-CSVHeader+=,'ts'               CSV+=,"$ts"
-CSVHeader+=,'tswotz'           CSV+=,"$ts"
-CSVHeader+=,'tswotz4'          CSV+=,"$ts"
+CSVHeader+=,'ts'               CSV+=,"$tsus"
+CSVHeader+=,'tswotz'           CSV+=,"$tsus"
+CSVHeader+=,'tswotz6'          CSV+=,"$tsus"
+CSVHeader+=,'tswotz0'          CSV+=,"$ts"
 CSVHeader=${CSVHeader#,}       CSV=${CSV#,}  # strip the first delimiter
 TimestampCSVHeader=$CSVHeader TimestampCSV=$CSV
 
 # expected JSON output
 TimestampJSON='
         {
-          "ts": "'"$tsISO"'",
-          "tswotz": "'"$tsISO"'",
-          "tswotz4": "'"$tsISO"'"
+          "ts": "'"$tsISOus"'",
+          "tswotz": "'"$tsISOus"'",
+          "tswotz6": "'"$tsISOus"'",
+          "tswotz0": "'"$tsISO"'"
         }
     '
 TimestampTSJ=$(tsjFromJsonAndHeader "$TimestampJSON" "$TimestampTSVHeader")

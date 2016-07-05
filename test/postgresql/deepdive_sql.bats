@@ -201,3 +201,38 @@ load ../../database/test/corner_cases
     actual=$(keeping_output_of deepdive sql eval "$UnicodeSQL" format=json)
     compare_json "$UnicodeJSON" "$actual"
 }
+
+###############################################################################
+## a case with timestamps
+
+@test "$DBVARIANT deepdive sql eval (with timestamp) format=tsj works" {
+    skip "NOT SUPPORTED YET" # TODO
+    tab2nl "$TimestampColumnTypes"
+    actual=$(keeping_output_of deepdive sql eval "$TimestampSQL" format=tsj)
+    diff -u                             <(tab2nl "$TimestampTSJ") <(jq -c . <<<"$actual")
+}
+
+@test "$DBVARIANT deepdive sql eval (with timestamp) format=tsv works" {
+    actual=$(keeping_output_of deepdive sql eval "$TimestampSQL" format=tsv)
+    diff -u                             <(tab2nl "$TimestampTSV") <(tab2nl "$actual")
+}
+
+@test "$DBVARIANT deepdive sql eval (with timestamp) format=tsv header=1 works" {
+    actual=$(keeping_output_of deepdive sql eval "$TimestampSQL" format=tsv header=1)
+    diff -u <(tab2nl "$TimestampTSVHeader"; tab2nl "$TimestampTSV") <(tab2nl "$actual")
+}
+
+@test "$DBVARIANT deepdive sql eval (with timestamp) format=csv works" {
+    actual=$(keeping_output_of deepdive sql eval "$TimestampSQL" format=csv)
+    diff -u                               <(echo "$TimestampCSV") <(echo "$actual")
+}
+
+@test "$DBVARIANT deepdive sql eval (with timestamp) format=csv header=1 works" {
+    actual=$(keeping_output_of deepdive sql eval "$TimestampSQL" format=csv header=1)
+    diff -u <(echo "$TimestampCSVHeader"; echo "$TimestampCSV") <(echo "$actual")
+}
+
+@test "$DBVARIANT deepdive sql eval (with timestamp) format=json works" {
+    actual=$(keeping_output_of deepdive sql eval "$TimestampSQL" format=json)
+    compare_json "$TimestampJSON" "$actual"
+}

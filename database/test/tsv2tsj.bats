@@ -42,3 +42,12 @@ parse_each_tab_sep_json() {
             <(echo "$actual"     | jq -c .) \
             #
 }
+
+@test "tsv2tsj works with timestamps" {
+    skip "NOT SUPPORTED YET" # TODO
+    cd "$BATS_TEST_DIRNAME"
+    actual=$(eval keeping_output_of tsv2tsj $TimestampTypes <<<"$TimestampTSV" | parse_each_tab_sep_json) \
+    diff -u <(echo "$TimestampTSJ" | jq -c .) \
+            <(echo "$actual"       | jq -c .) \
+            #
+}
