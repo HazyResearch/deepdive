@@ -35,4 +35,4 @@ pip install -r requirements.txt
 # make sure things are properly exposed
 shopt -s extglob
 symlink-under-depends-prefix lib -d prefix/lib/python*
-symlink-under-depends-prefix bin -x prefix/bin/!(activate@(|.*)|python@(|[23]*|-config)|pip@(|[23]*)|easy_install@(|-[23]*)|wheel)
+symlink-under-depends-prefix bin -x prefix/bin/!(activate@(|.*|_this.py)|python@(|[23]*|-config)|pip@(|[23]*)|easy_install@(|-[23]*)|wheel)
