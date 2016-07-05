@@ -93,6 +93,8 @@ CANONICAL_TYPE_BY_REGEX = {
   }
 def normalize_type_name(ty):
   ty = ty.lower()
+  if ty.endswith('[]'):
+    return normalize_type_name(ty[:-2]) + '[]'
   if ty in CANONICAL_TYPE_BY_NAME:
     return CANONICAL_TYPE_BY_NAME[ty]
   else:
@@ -100,6 +102,15 @@ def normalize_type_name(ty):
       if patt.match(ty):
         return ty_canonical
   return ty
+def check_supported_type(nm, ty, array_nesting=0):
+  if ty.endswith('[]'):
+    if array_nesting == 0:
+      check_supported_type(nm, ty[:-2], array_nesting=array_nesting+1)
+    else: # XXX the parser cannot parse nested arrays correctly
+      raise TypeError("column '%s' is of unsupported nested array type: %s" % (nm, ty + '[]'))
+  elif not ty in TYPE_PARSERS:
+    raise TypeError("column '%s' is of unsupported type: %s" % (nm, ty))
+  return nm, ty
 
 def parse_pgtsv_element(s, t, array_nesting_depth=0):
   """
@@ -170,7 +181,7 @@ def parse_pgtsv_element(s, t, array_nesting_depth=0):
 
   else: # parse correct value using the parser corresponding to the type
     try:
-      parser = TYPE_PARSERS[normalize_type_name(t)]
+      parser = TYPE_PARSERS[t]
     except KeyError:
       raise Exception("Unsupported type: %s" % t)
     return parser(s)
@@ -194,7 +205,7 @@ class PGTSVParser:
   Parsed from Postgres-style TSV input lines
   """
   def __init__(self, fields):
-    self.fields = fields
+    self.fields = [check_supported_type(nm,normalize_type_name(ty)) for nm,ty in fields]
 
   def parse_line(self, line):
     row = Row()
