@@ -16,9 +16,14 @@ if ! type virtualenv &>/dev/null; then
         export PYTHONPATH="$d${PYTHONPATH:+:$PYTHONPATH}"
     done
     PATH="$PWD/bootstrap/bin:$PATH"
+    # XXX probing Travis
+    type -a pip
+    which pip
+    pip --version
+    bootstrap/bin/pip --version
     # install virtualenv locally with the local pip
     [[ -x bootstrap/bin/virtualenv ]] ||
-        pip install virtualenv --ignore-installed --prefix bootstrap
+        bootstrap/bin/pip install virtualenv --ignore-installed --prefix bootstrap
 fi
 virtualenv --always-copy prefix || virtualenv prefix
 virtualenv --relocatable prefix
