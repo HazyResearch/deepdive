@@ -602,7 +602,7 @@ ICanEatGlass+=("Arabic(2): أنا قادر على أكل الزجاج و هذا 
 ICanEatGlass+=("Japanese: 私はガラスを食べられます。それは私を傷つけません。")
 ICanEatGlass+=("Thai: ฉันกินกระจกได้ แต่มันไม่ทำให้ฉันเจ็บ")
 
-UnicodeSQL="SELECT 'I Can Eat Glass' AS t $(i=1; for s in "${ICanEatGlass[@]}"; do s=${s//\'/\'\'}; echo ", '$s' AS l$i"; let ++i; done)"
+UnicodeSQL="SELECT CAST('I Can Eat Glass' AS TEXT) AS t $(i=1; for s in "${ICanEatGlass[@]}"; do s=${s//\'/\'\'}; echo ", CAST('$s' AS TEXT) AS l$i"; let ++i; done)"
 
 TSVHeader=$({ echo t; seq ${#ICanEatGlass[@]} | sed 's/^/l/'; } | tr '\n' '\t')
 TSVHeader=${TSVHeader%$'\t'}
@@ -617,7 +617,7 @@ UnicodeCSVHeader=${UnicodeTSVHeader//$'\t'/,}
 UnicodeCSV=$(
   echo -n "I Can Eat Glass"
   for s in "${ICanEatGlass[@]}"; do
-      case $s in *,*) echo -n ',"'"$s"'"' ;; *) echo -n ",$s" ;; esac
+      case $s in (*,*) echo -n ',"'"$s"'"' ;; (*) echo -n ",$s" ;; esac
   done
 )
 
