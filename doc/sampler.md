@@ -5,24 +5,13 @@ title: High-speed Sampler
 
 # The DimmWitted high-speed sampler
 
-This document briefly presents DimmWitted, a high-speed [Gibbs
-sampler](inference.md#gibbs) for DeepDive.
+This document briefly presents [DimmWitted](https://github.com/HazyResearch/sampler), a high-speed [Gibbs sampler](inference.md#gibbs) for DeepDive.
 
+In `deepdive.conf`, you can swap the default sampler executable with something else follows:
 
-In `deepdive.conf`, you can change the sampler executable as follows:
-
-```bash
-deepdive {
-  sampler.sampler_cmd: "util/sampler-dw-mac gibbs"
-}
+```hocon
+deepdive.sampler.sampler_cmd: "/path/to/your/sampler gibbs"
 ```
-
-Use `sampler-dw-mac` or `sampler-dw-linux` depending on which type
-of system your are on.
-
-Since [version 0.03](changelog/0.03-alpha.md), DeepDive automatically
-chooses the correct executable based on the system environment, so we recommend to
-omit the `sampler_cmd` directive.
 
 ### Sampler arguments
 
@@ -38,12 +27,21 @@ arguments to the sampler executable can be used:
         specifies how many partitions the NUMA nodes should be grouped into.
         Default is to keep a copy of the factor graph in every NUMA node.
 
+    -t <int>,  --n_threads <int>
+        Number of threads to use.  Defaults to zero (0) which uses all
+        available threads.  The number of threads are equally divided and
+        assigned to each data copy when --n_datacopy is greater than 1.
+
     -w <weightsFile> | --weights <weightsFile>
         Weights file (required)
         It is a binary format file output by DeepDive.
 
     -v <variablesFile> | --variables <variablesFile>
         Variables file (required)
+        It is a binary format file output by DeepDive.
+
+    --domains <domainsFile>
+        Categorical variable domains file (optional)
         It is a binary format file output by DeepDive.
 
     -f <factorsFile> | --factors <factorsFile>
