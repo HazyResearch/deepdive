@@ -14,4 +14,4 @@ name_type_pairs = [(nm,ty) for arg in args.schema for nm, _, ty in [arg.partitio
 pgtsv_parser = PGTSVParser(name_type_pairs)
 
 for obj in pgtsv_parser.parse_stdin():
-  print json.dumps(obj._asdict(), ensure_ascii=False).encode('utf-8')
+  json.dump(obj._asdict(), sys.stdout, ensure_ascii=False)
