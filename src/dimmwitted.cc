@@ -25,7 +25,7 @@ int dw(int argc, const char *const argv[]) {
   };
 
   // parse command-line arguments
-  CmdParser cmd_parser(argc, argv);
+  CmdParser cmd_parser(argc, argv, MODES);
   if (cmd_parser.num_errors() > 0) return cmd_parser.num_errors();
 
   // dispatch to the correct function
