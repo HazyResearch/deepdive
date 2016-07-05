@@ -135,11 +135,13 @@ CmdParser::CmdParser(
     check(0 < n_threads && n_threads <= NUM_AVAILABLE_THREADS)
         << "nthreads (" << n_threads << ") must be in the range of [0, "
         << NUM_AVAILABLE_THREADS << "]" << std::endl;
-    // ensure each NUMA node gets at least one thread
-    check(n_threads >= n_datacopy)
+    // ensure each NUMA node partition gets at least one thread
+    recommend(n_threads >= n_datacopy)
         << "n_threads (" << n_threads
         << ") must be greater than or equal to n_datacopy (" << n_datacopy
         << "), so each copy can have at least one thread" << std::endl;
+    // otherwise, just cap the n_datacopy to the n_threads
+    if (n_threads < n_datacopy) n_datacopy = n_threads;
     recommend(n_threads % n_datacopy == 0)
         << "n_threads (" << n_threads << ") should be multiples of n_datacopy ("
         << n_datacopy << ") or some CPU cores will stay idle" << std::endl;
