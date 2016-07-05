@@ -2,102 +2,9 @@
 # A script to convert PostgreSQL's COPY TO text (tsv; tab-delimited values) lines into JSON sequence
 # Usage: pgtsv_to_json COLUMN_NAME1:TYPE1 COLUMN_NAME2:TYPE2 ...
 
-import json, sys, csv, re, argparse
-from datetime import datetime
-reload(sys).setdefaultencoding("utf8")
-
-
-
-
-
-
-
-# TODO migrate timestamp stuff into ddlib/util.py
-def timestamp(timestamp_str):
-    """Given a timestamp string, return a timestamp string in ISO 8601 format to emulate
-    Postgres 9.5's to_json timestamp formatting.
-
-    This supports the `timestamp without time zone` PostgreSQL type.
-
-    Time zone offsets are not supported. http://bugs.python.org/issue6641
-
-    Examples:
-
-        >>> timestamp('2016-06-17 20:10:38')
-        '2016-06-17T20:10:38'
-
-        >>> timestamp('2016-06-17 20:10:37.9293')
-        '2016-06-17T20:10:37.929300'
-
-    """
-
-    try:
-        parsed = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S.%f')
-    except ValueError:
-        parsed = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
-    except ValueError:
-        return timestamp_str
-    return parsed.isoformat()
-
-# given a column type, returns a function that takes a string input
-# and output with the correct type
-def convert_type_func(ty, ty_rest = ""):
-  if ty.endswith("[]") and ty_rest == "": # XXX nested arrays are not supported
-    # csv array starts and ends with curly braces
-    ty_el = ty[:-2]
-    convert = convert_type_func(ty_el, ty_rest=ty[-2:])
-    def backslashes_to_csv_escapes(s):
-        return re.sub(r"\\\"", r'""', s)
-    if ty_el == "text":
-      def convert_text_array(value):
-        #import pdb; pdb.set_trace()
-        arr = unicode_csv_reader([backslashes_to_csv_escapes(value[1:-1])], delimiter=',', quotechar='"').next()
-        convert_or_null = lambda x: None if x == ARRAY_NULL_STRING else convert(x)
-        return map(convert_or_null, arr)
-      return convert_text_array
-    else:
-      def convert_other_array(value):
-        arr = unicode_csv_reader([value[1:-1]], delimiter=',', quotechar='"').next()
-        convert_or_null = lambda x: None if x == ARRAY_NULL_STRING else convert(x)
-        return map(convert_or_null, arr)
-      return convert_other_array
-  else: # non-array, must be primitive type
-    normalized_type_name = {
-        "timestamp without time zone": "timestamp",
-        "integer" : "int",
-        "bigint"  : "int",
-        "double"  : "float",
-        "double precision"  : "float",
-        "numeric" : "float",
-        "unknown" : "text",
-        }
-    convert_for_primitive_types = {
-        "timestamp": timestamp,
-        "int"     : int,
-        "float"   : float,
-        "text"    : lambda x: unescape_postgres_text_format(x),
-        "boolean" : lambda x: x == "t",
-        }
-    # find the convert function with normalized type name
-    ty = ty.lower()
-    if re.match('timestamp(\(\d\))? without time zone', ty):
-      ty = 'timestamp without time zone'
-    if ty in normalized_type_name:
-      ty = normalized_type_name[ty]
-    if ty in convert_for_primitive_types:
-      return convert_for_primitive_types[ty]
-    else:
-      raise ValueError("Unsupported data type %s" % ty)
-
-
-
-
-
-
-
-
-
 from ddlib.util import PGTSVParser
+import json, sys, argparse
+reload(sys).setdefaultencoding("utf8")
 
 parser = argparse.ArgumentParser()
 parser.add_argument('schema', nargs="+")
@@ -108,4 +15,3 @@ pgtsv_parser = PGTSVParser(name_type_pairs)
 
 for obj in pgtsv_parser.parse_stdin():
   print json.dumps(obj._asdict(), ensure_ascii=False).encode('utf-8')
-

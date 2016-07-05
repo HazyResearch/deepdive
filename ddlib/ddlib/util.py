@@ -4,6 +4,7 @@ import sys
 from inspect import isgeneratorfunction,getargspec
 import csv
 from io import StringIO
+from datetime import datetime
 
 def print_error(err_string):
   """Function to write to stderr"""
@@ -44,13 +45,61 @@ BOOL_PARSER = {
   '\\N' : None
 }
 
+def timestamp(timestamp_str):
+    """Given a timestamp string, return a timestamp string in ISO 8601 format to emulate
+    Postgres 9.5's to_json timestamp formatting.
+
+    This supports the `timestamp without time zone` PostgreSQL type.
+
+    Time zone offsets are not supported. http://bugs.python.org/issue6641
+
+    Examples:
+
+        >>> timestamp('2016-06-17 20:10:38')
+        '2016-06-17T20:10:38'
+
+        >>> timestamp('2016-06-17 20:10:37.9293')
+        '2016-06-17T20:10:37.929300'
+
+    """
+
+    try:
+        parsed = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S.%f')
+    except ValueError:
+        parsed = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+    except ValueError:
+        return timestamp_str
+    return parsed.isoformat()
+
 TYPE_PARSERS = {
   'text' : lambda x : str(x),
   'int' : lambda x : int(x.strip()),
   'float' : lambda x : float(x.strip()),
-  'boolean' : lambda x : BOOL_PARSER[x.lower().strip()]
+  'boolean' : lambda x : BOOL_PARSER[x.lower().strip()],
+  'timestamp': timestamp,
 }
 
+# how to normalize type names
+CANONICAL_TYPE_BY_NAME = {
+  'integer'          : 'int',
+  'bigint'           : 'int',
+  'double'           : 'float',
+  'double precision' : 'float',
+  'numeric'          : 'float',
+  'unknown'          : 'text',
+  }
+CANONICAL_TYPE_BY_REGEX = {
+  re.compile(r'timestamp(\(\d\))? without time zone'): 'timestamp',
+  }
+def normalize_type_name(ty):
+  ty = ty.lower()
+  if ty in CANONICAL_TYPE_BY_NAME:
+    return CANONICAL_TYPE_BY_NAME[ty]
+  else:
+    for patt,ty_canonical in CANONICAL_TYPE_BY_REGEX.iteritems():
+      if patt.match(ty):
+        return ty_canonical
+  return ty
 
 def parse_pgtsv_element(s, t, array_nesting_depth=0):
   """
@@ -121,7 +170,7 @@ def parse_pgtsv_element(s, t, array_nesting_depth=0):
 
   else: # parse correct value using the parser corresponding to the type
     try:
-      parser = TYPE_PARSERS[t]
+      parser = TYPE_PARSERS[normalize_type_name(t)]
     except KeyError:
       raise Exception("Unsupported type: %s" % t)
     return parser(s)
@@ -168,7 +217,8 @@ TYPE_CHECKERS = {
   'text' : lambda x : type(x) == str,
   'int' : lambda x : type(x) == int,
   'float' : lambda x : type(x) == float,
-  'boolean' : lambda x : type(x) == bool
+  'boolean' : lambda x : type(x) == bool,
+  # TODO timestamp
 }
 
 def print_pgtsv_element(x, n, t, array_nesting_depth=0):
@@ -213,6 +263,7 @@ def print_pgtsv_element(x, n, t, array_nesting_depth=0):
         return '"%s"' % escapeWithTSVBackslashes(x) # then, the TSV escaping
   elif t == 'boolean':
     return 't' if x else 'f'
+  # TODO timestamp
   else:
     return str(x)
 

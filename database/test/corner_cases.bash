@@ -1,5 +1,13 @@
 # a collection of SQL, PG TSV, CSV, and JSON data that can test a lot of corner case handling
 
+# a shorthand to zip column names and types with ':' and proper escapes for shell (types can have spaces!)
+namesAndTypes() {
+    local TSVHeader=$1 Types=$2
+    paste <(tr '\t' '\n' <<<"$TSVHeader") <(tr '\t' '\n' <<<"$Types") |
+    tr '\t' : |
+    sed "s/^/'/g; s/\$/'/g"
+}
+
 ###############################################################################
 ## a nasty SQL input to test output formatters
 NastySQL="
@@ -149,7 +157,7 @@ Types=${Types#$'\t'}
 NastyTypes=$Types
 
 # columns names with types
-NastyColumnTypes=$(paste <(tr '\t' '\n' <<<"$TSVHeader") <(tr '\t' '\n' <<<"$Types") | tr '\t' :)
+NastyColumnTypes=$(namesAndTypes "$TSVHeader" "$Types")
 
 # expected CSV output and header
 CSVHeader=                     CSV=
@@ -321,7 +329,7 @@ Types=${Types#$'\t'}
 NullInArrayTypes=$Types
 
 # columns names with types
-NullInArrayColumnTypes=$(paste <(tr '\t' '\n' <<<"$TSVHeader") <(tr '\t' '\n' <<<"$Types") | tr '\t' :)
+NullInArrayColumnTypes=$(namesAndTypes "$TSVHeader" "$Types")
 
 # expected CSV output for NULL in arrays
 CSVHeader=                     CSV=
@@ -388,7 +396,7 @@ Types=${Types#$'\t'}
 NestedArrayTypes=$Types
 
 # columns names with types
-NestedArrayColumnTypes=$(paste <(tr '\t' '\n' <<<"$TSVHeader") <(tr '\t' '\n' <<<"$Types") | tr '\t' :)
+NestedArrayColumnTypes=$(namesAndTypes "$TSVHeader" "$Types")
 
 # expected CSV output and header
 CSVHeader=                     CSV=
@@ -603,7 +611,7 @@ UnicodeTSV=$(echo -n "I Can Eat Glass"; for s in "${ICanEatGlass[@]}"; do echo -
 
 Types=$(echo "text"; yes "text" | head -n ${#ICanEatGlass[@]})
 UnicodeTypes=$Types
-UnicodeColumnTypes=$(paste <(tr '\t' '\n' <<<"$TSVHeader") <(tr '\t' '\n' <<<"$Types") | tr '\t' :)
+UnicodeColumnTypes=$(namesAndTypes "$TSVHeader" "$Types")
 
 UnicodeCSVHeader=${UnicodeTSVHeader//$'\t'/,}
 UnicodeCSV=$(
@@ -621,3 +629,50 @@ UnicodeJSON='{ "t": "I Can Eat Glass" '"$(
     let ++i
   done
 )}"
+
+
+###############################################################################
+## a case with timestamps
+ts="2016-06-17 20:10:37.9293"
+tsISO="2016-06-17T20:10:37.929300"
+TimestampSQL="
+    SELECT CAST('$ts' AS TIMESTAMP) AS ts
+         , CAST('$ts' AS TIMESTAMP WITHOUT TIME ZONE) AS tswotz
+         , CAST('$ts' AS TIMESTAMP(4) WITHOUT TIME ZONE) AS tswotz4
+    "
+
+# expected TSV output
+TSVHeader=                          TSV=
+TSVHeader+=$'\t''ts'                TSV+=$'\t'"$ts"
+TSVHeader+=$'\t''tswotz'            TSV+=$'\t'"$ts"
+TSVHeader+=$'\t''tswotz4'           TSV+=$'\t'"$ts"
+TSVHeader=${TSVHeader#$'\t'}        TSV=${TSV#$'\t'}  # strip the first delimiter
+TimestampTSVHeader=$TSVHeader TimestampTSV=$TSV
+
+# column types
+Types=
+Types+=$'\t''timestamp'
+Types+=$'\t''timestamp without time zone'
+Types+=$'\t''timestamp(4) without time zone'
+Types=${Types#$'\t'}
+TimestampTypes=$Types
+
+# columns names with types
+TimestampColumnTypes=$(namesAndTypes "$TSVHeader" "$Types")
+
+# expected CSV output and header
+CSVHeader=                     CSV=
+CSVHeader+=,'ts'               CSV+=,"$ts"
+CSVHeader+=,'tswotz'           CSV+=,"$ts"
+CSVHeader+=,'tswotz4'          CSV+=,"$ts"
+CSVHeader=${CSVHeader#,}       CSV=${CSV#,}  # strip the first delimiter
+TimestampCSVHeader=$CSVHeader TimestampCSV=$CSV
+
+# expected JSON output
+TimestampJSON='
+        {
+          "ts": "'"$tsISO"'",
+          "tswotz": "'"$tsISO"'",
+          "tswotz4": "'"$tsISO"'"
+        }
+    '
