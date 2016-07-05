@@ -4,12 +4,15 @@ import sys
 from inspect import isgeneratorfunction,getargspec
 import csv
 from io import StringIO
+from datetime import datetime
 import json
 
 def print_error(err_string):
   """Function to write to stderr"""
   sys.stderr.write("ERROR[UDF]: " + str(err_string) + "\n")
 
+# PostgreSQL COPY TO text Format parser
+# See: http://www.postgresql.org/docs/9.1/static/sql-copy.html#AEN64302
 escapeCodeToSpecial = {
   '\\': '\\',
   'b': '\b',
@@ -17,8 +20,24 @@ escapeCodeToSpecial = {
   'r': '\r',
   't': '\t',
   'n': '\n',
+  'v': '\v',
 }
 specialToEscapeCode = {v: k for k, v in escapeCodeToSpecial.items()}
+
+def decode_pg_text_escapes(m):
+  c = m.group(1)
+  if c in escapeCodeToSpecial:
+    return escapeCodeToSpecial[c]
+  elif c.startswith("x"):
+    return chr(int(c, base=16))
+  elif c.startswith("0"):
+    return chr(int(c, base=8))
+  else:
+    return c
+
+def unescape_postgres_text_format(s):
+  # unescape PostgreSQL text format
+  return re.sub(r"\\(.|0[0-7]{1,2}|x[0-9A-Fa-f]{1,2})", decode_pg_text_escapes, s)
 
 BOOL_PARSER = {
   't' : True,
@@ -27,13 +46,72 @@ BOOL_PARSER = {
   '\\N' : None
 }
 
+def timestamp(timestamp_str):
+    """Given a timestamp string, return a timestamp string in ISO 8601 format to emulate
+    Postgres 9.5's to_json timestamp formatting.
+
+    This supports the `timestamp without time zone` PostgreSQL type.
+
+    Time zone offsets are not supported. http://bugs.python.org/issue6641
+
+    Examples:
+
+        >>> timestamp('2016-06-17 20:10:38')
+        '2016-06-17T20:10:38'
+
+        >>> timestamp('2016-06-17 20:10:37.9293')
+        '2016-06-17T20:10:37.929300'
+
+    """
+
+    try:
+        parsed = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S.%f')
+    except ValueError:
+        parsed = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+    except ValueError:
+        return timestamp_str
+    return parsed.isoformat()
+
 TYPE_PARSERS = {
   'text' : lambda x : str(x),
   'int' : lambda x : int(x.strip()),
   'float' : lambda x : float(x.strip()),
-  'boolean' : lambda x : BOOL_PARSER[x.lower().strip()]
+  'boolean' : lambda x : BOOL_PARSER[x.lower().strip()],
+  'timestamp': timestamp,
 }
 
+# how to normalize type names
+CANONICAL_TYPE_BY_NAME = {
+  'integer'          : 'int',
+  'bigint'           : 'int',
+  'double'           : 'float',
+  'double precision' : 'float',
+  'numeric'          : 'float',
+  'unknown'          : 'text',
+  }
+CANONICAL_TYPE_BY_REGEX = {
+  re.compile(r'timestamp(\(\d\))? without time zone'): 'timestamp',
+  }
+def normalize_type_name(ty):
+  ty = ty.lower()
+  if ty.endswith('[]'):
+    return normalize_type_name(ty[:-2]) + '[]'
+  if ty in CANONICAL_TYPE_BY_NAME:
+    return CANONICAL_TYPE_BY_NAME[ty]
+  else:
+    for patt,ty_canonical in CANONICAL_TYPE_BY_REGEX.iteritems():
+      if patt.match(ty):
+        return ty_canonical
+  return ty
+def check_supported_type(nm, ty, array_nesting=0):
+  if ty.endswith('[]'):
+    if array_nesting == 0:
+      check_supported_type(nm, ty[:-2], array_nesting=array_nesting+1)
+    else: # XXX the parser cannot parse nested arrays correctly
+      raise TypeError("column '%s' is of unsupported nested array type: %s" % (nm, ty + '[]'))
+  elif not ty in TYPE_PARSERS:
+    raise TypeError("column '%s' is of unsupported type: %s" % (nm, ty))
+  return nm, ty
 
 def parse_pgtsv_element(s, t, array_nesting_depth=0):
   """
@@ -43,21 +121,17 @@ def parse_pgtsv_element(s, t, array_nesting_depth=0):
   if s is None:
     return s
 
-  if array_nesting_depth > 0:
-    # Quoting only will occur within a psql array with strings
-    quoted = (len(s) > 1 and s[0] == '"' and s[-1] == '"')
-    if quoted:
-      if t == 'text':
-        s = s[1:-1]
-      else:
-        raise Exception("Type mismatch with quoted array element:\n%s" % s)
+  if array_nesting_depth == 0:
+    if s == '\\N':
+      # NULLs outside arrays are represented as \N
+      # unless specified otherwise in the SQL statement (COPY ... NULL ...)
+      return None
+    elif not t.endswith('[]'):
+      # Need to handle PG TSV escape sequences for primitive types here,
+      # escapes for array elements are handled during array parsing
+      s = unescape_postgres_text_format(s)
 
-  if s == '\\N' and array_nesting_depth == 0:
-    # Interpret nulls correctly according to postgres convention
-    # Note for arrays: {,} --> NULLS, {"",""} --> empty strings
-    return None
-
-  elif '[]' in t: # Handle lists recursively
+  if t.endswith('[]'): # Handle lists recursively
     if s[0] == '{' and s[-1] == '}':
       s_orig = s
       s = s[1:-1] # to strip curly braces
@@ -69,25 +143,24 @@ def parse_pgtsv_element(s, t, array_nesting_depth=0):
       values = []
       v = None
       is_quoted = False
+      def null_or_itself(v): return None if not is_quoted and v == 'NULL' else v
       while len(s) > 0:
         if s[0] == ',':  # found the end of a value
-          if v == 'NULL' and not is_quoted: v = None
-          values.append(v)
+          values.append(null_or_itself(v))
           v = None
           is_quoted = False
           s = s[1:]
         elif s[0] == '"': # found a quote
-          # TODO is_quoted = True and error checking if quoting mixed
           # e.g.: 1,this"is an error",2,3
           if v is None:  # this is a new value
             v = ""
-            is_quoted = True
           else:  # this an escaped quote, append to the current value
             v += '"'
           # find the other end of the quote and consume
           m = re.match(r'^"([^"]*)"', s)
           if m:
             v += m.group(1)
+            is_quoted = True # TODO error if quoting mixed
             s = s[len(m.group(0)):]
           else:
             raise Exception("Unterminated quote in '%s'" % s_orig)
@@ -98,8 +171,7 @@ def parse_pgtsv_element(s, t, array_nesting_depth=0):
           else: # or consume the rest of the string as the value
             v = s
           s = s[len(v):]
-      if v == 'NULL' and not is_quoted: v = None
-      values.append(v)
+      values.append(null_or_itself(v))
       split = values
     else:
       raise Exception("Surrounding curly braces ({...}) expected for array type %(type)s but found: '%(value)s'" % dict(
@@ -134,7 +206,7 @@ class PGTSVParser:
   Parsed from Postgres-style TSV input lines
   """
   def __init__(self, fields):
-    self.fields = fields
+    self.fields = [check_supported_type(nm,normalize_type_name(ty)) for nm,ty in fields]
 
   def parse_line(self, line):
     row = Row()
@@ -157,7 +229,8 @@ TYPE_CHECKERS = {
   'text' : lambda x : type(x) == str,
   'int' : lambda x : type(x) == int,
   'float' : lambda x : type(x) == float,
-  'boolean' : lambda x : type(x) == bool
+  'boolean' : lambda x : type(x) == bool,
+  # TODO timestamp
 }
 
 def print_pgtsv_element(x, n, t, array_nesting_depth=0):
@@ -189,11 +262,12 @@ def print_pgtsv_element(x, n, t, array_nesting_depth=0):
     ))
   if t == 'text':
     x = str(x)
+    def escapeWithTSVBackslashes(x):
+      return re.sub(r'[\b\f\n\r\t\\]', lambda m : "\\" + specialToEscapeCode[m.group(0)], x)
     if array_nesting_depth == 0:
-      return x
+      # primitive types just need TSV escaping
+      return escapeWithTSVBackslashes(x)
     else:
-      def escapeWithTSVBackslashes(x):
-        return re.sub(r'[\b\f\n\r\t\\]', lambda m : "\\" + specialToEscapeCode[m.group(0)], x)
       if re.search(r'^[a-zA-Z0-9_.\b\x1c\x1d\x1e\x1f\x7f\[\]()]+$', x) \
           and x not in ["", "NULL", "null"]:
         # we don't need to quote the value in some special cases
@@ -203,6 +277,7 @@ def print_pgtsv_element(x, n, t, array_nesting_depth=0):
         return '"%s"' % escapeWithTSVBackslashes(x) # then, the TSV escaping
   elif t == 'boolean':
     return 't' if x else 'f'
+  # TODO timestamp
   else:
     return str(x)
 
