@@ -62,6 +62,7 @@ addons:
     sources:
     - ubuntu-toolchain-r-test  # for gcc 4.8
     packages:
+    - python3
     - gnuplot
     - bc
     - bzip2
@@ -82,7 +83,7 @@ install:
 
 script:
   # Run all tests
-  - make test
+  - dist/stage/bin/deepdive env make test
 
   # Check broken links in documentation
   # TODO check only when doc/ has changed
