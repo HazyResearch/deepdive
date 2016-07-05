@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <map>
 #include <unistd.h>
+#include <algorithm>
 
 namespace dd {
 
@@ -97,8 +98,8 @@ int gibbs(const CmdParser &args) {
 DimmWitted::DimmWitted(std::unique_ptr<CompactFactorGraph> p_cfg,
                        const Weight weights[], const CmdParser &opts)
     : n_samplers_(opts.n_datacopy), weights(weights), opts(opts) {
-  size_t n_thread_per_numa = opts.n_threads / opts.n_datacopy;
-  assert(n_thread_per_numa > 0);
+  size_t n_thread_per_numa =
+      std::max(size_t(1), opts.n_threads / opts.n_datacopy);
 
   // copy factor graphs and create samplers
   size_t i = 0;
