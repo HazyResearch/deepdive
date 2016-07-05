@@ -143,8 +143,8 @@ load ../../database/test/corner_cases
 }
 
 @test "$DBVARIANT deepdive sql eval (with nested arrays) format=json works" {
-    actual=$(keeping_output_of deepdive sql eval "$NestedArraySQL" format=json)   || skip # XXX not supported by driver.postgresql/db-query
-    compare_json "$NestedArrayJSON" "$actual"
+    actual=$(keeping_output_of deepdive sql eval "$NestedArraySQL" format=json)   || skip "rejected conversion"  # XXX not supported by pgtsv_to_json
+    compare_json "$NestedArrayJSON" "$actual"                                     || skip "incorrect conversion" # XXX not supported by pgtsv_to_json
 }
 
 ###############################################################################
