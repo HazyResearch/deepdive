@@ -3,8 +3,26 @@ set -euo pipefail
 
 unset PYTHONPATH  # existing PYTHONPATH can interfere
 
-# install Python virtualenv
-virtualenv prefix || exit $?
+( # install a Python virtualenv
+if ! type virtualenv &>/dev/null; then
+    # if virtualenv isn't available, install it locally with pip
+    [[ -x bootstrap/bin/pip ]] || {
+        curl -RLO https://bootstrap.pypa.io/get-pip.py &&
+        python get-pip.py --prefix bootstrap
+    }
+    # set up environment to use for bootstrapping
+    for d in "$PWD"/bootstrap/lib/python*/site-packages; do
+        [[ -d "$d" ]] || continue
+        export PYTHONPATH="$d${PYTHONPATH:+:$PYTHONPATH}"
+    done
+    PATH="$PWD/bootstrap/bin:$PATH"
+    # install virtualenv locally with the local pip
+    [[ -x bootstrap/bin/virtualenv ]] ||
+        pip install virtualenv --ignore-installed --prefix bootstrap
+fi
+virtualenv --always-copy --relocatable prefix
+)
+
 # turn these off and on here since Python virtualenv scripts are too brittle to run in strict mode
 set +euo pipefail
 source prefix/bin/activate
