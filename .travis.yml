@@ -1,5 +1,4 @@
-sudo: required  # to use container-based infra, see: http://docs.travis-ci.com/user/migrating-from-legacy/
-dist: trusty
+sudo: false  # to use container-based infra, see: http://docs.travis-ci.com/user/migrating-from-legacy/
 notifications:
   email:
     - deepdive-notifications@cs.stanford.edu

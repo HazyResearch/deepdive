@@ -388,7 +388,7 @@ Types=${Types#$'\t'}
 NestedArrayTypes=$Types
 
 # columns names with types
-NestedArrayTypes=$(paste <(tr '\t' '\n' <<<"$TSVHeader") <(tr '\t' '\n' <<<"$Types") | tr '\t' :)
+NestedArrayColumnTypes=$(paste <(tr '\t' '\n' <<<"$TSVHeader") <(tr '\t' '\n' <<<"$Types") | tr '\t' :)
 
 # expected CSV output and header
 CSVHeader=                     CSV=

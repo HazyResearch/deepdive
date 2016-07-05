@@ -4,9 +4,15 @@
 
 import json, sys, csv, re, argparse
 from datetime import datetime
+reload(sys).setdefaultencoding("utf8")
 
-ARRAY_NULL_STRING=u'NULL'
 
+
+
+
+
+
+# TODO migrate timestamp stuff into ddlib/util.py
 def timestamp(timestamp_str):
     """Given a timestamp string, return a timestamp string in ISO 8601 format to emulate
     Postgres 9.5's to_json timestamp formatting.
@@ -83,88 +89,23 @@ def convert_type_func(ty, ty_rest = ""):
     else:
       raise ValueError("Unsupported data type %s" % ty)
 
-# PostgreSQL COPY TO text Format parser
-# See: http://www.postgresql.org/docs/9.1/static/sql-copy.html#AEN64302
-pgTextEscapeSeqs = {
-    "b": "\b",
-    "f": "\f",
-    "n": "\n",
-    "r": "\r",
-    "t": "\t",
-    "v": "\v",
-    }
-
-def decode_pg_text_escapes(m):
-  c = m.group(1)
-  if c in pgTextEscapeSeqs:
-    return pgTextEscapeSeqs[c]
-  else:
-    return c
-
-def unescape_postgres_text_format(s):
-  # unescape PostgreSQL text format
-  return re.sub(r"\\(.|0[0-7]{1,2}|x[0-9A-Fa-f]{1,2})", decode_pg_text_escapes, s)
-
-def utf_8_encoder(unicode_csv_data):
-    for line in unicode_csv_data:
-        yield line.encode('utf-8')
 
 
-def unicode_csv_reader(unicode_csv_data, **kwargs):
-    '''A generator for unicode lines from a csv file.
 
-    This function takes all the same parameters as `csv.reader`. It was copied
-    directly from the documentation for that module:
 
-    https://docs.python.org/2/library/csv.html#examples
 
-    '''
-    # csv.py doesn't do Unicode; encode temporarily as UTF-8:
-    csv_reader = csv.reader(utf_8_encoder(unicode_csv_data), **kwargs)
-    for row in csv_reader:
-        # decode UTF-8 back to Unicode, cell by cell:
-        yield [unicode(cell, 'utf-8') for cell in row]
 
-def main(in_file, schema, null_string=None):
 
-  if null_string is None:
-      null_string = u'\\N'
 
-  # parse column names and types from arguments
-  def parseArg(arg):
-      if arg.startswith("'") and arg.endswith("'"):
-          # if enclosed in single quotes, remove them
-          arg = arg[1:-1]
-      field_name, field_type = arg.split(':')
-      return field_name, convert_type_func(field_type)
-  names_converters = map(parseArg, schema)
+from ddlib.util import PGTSVParser
 
-  # read the PostgreSQL COPY TO text format
-  # XXX With Python's csv.reader, it's impossible to distinguish empty strings from nulls in PostgreSQL's csv output.
-  # In PostgreSQL's csv output, `1,,2.34` means 1, null, 2.34, whereas `1,"",2.34` means 1, empty string, 2.34.
-  # csv.reader provides no formatter option to handle this.
-  # See: http://grokbase.com/t/python/python-ideas/131b0eaykx/csv-dialect-enhancement
-  # See: http://stackoverflow.com/questions/11379300/python-csv-reader-behavior-with-none-and-empty-string
-  # See: https://github.com/JoshClose/CsvHelper/issues/252
-  reader = unicode_csv_reader(in_file, delimiter='\t', quotechar=None, quoting=csv.QUOTE_NONE)
-  for line in reader:
-    obj = {}
-    for (name, convert), field in zip(names_converters, line):
-        obj[name] = None if field == null_string \
-                         else convert(field)
-    print json.dumps(obj, ensure_ascii=False).encode('utf-8')
+parser = argparse.ArgumentParser()
+parser.add_argument('schema', nargs="+")
+args = parser.parse_args()
 
-if __name__ == "__main__":
+name_type_pairs = [(nm,ty) for arg in args.schema for nm, _, ty in [arg.partition(':')]]
+pgtsv_parser = PGTSVParser(name_type_pairs)
 
-  parser = argparse.ArgumentParser()
-  parser.add_argument('--input_path', default=sys.stdin)
-  parser.add_argument('schema', nargs="+")
-  args = parser.parse_args()
-
-  if hasattr(args.input_path, 'read'):
-      input_file = args.input_path
-  else:
-      input_file = open(args.input_path)
-
-  main(input_file, args.schema)
+for obj in pgtsv_parser.parse_stdin():
+  print json.dumps(obj._asdict(), ensure_ascii=False).encode('utf-8')
 
