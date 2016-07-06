@@ -119,13 +119,15 @@ deepdive-check -a -c "$PWD"/config.json 'compiled_*' 2>&1 | sed 's/^/ /' >&2
 ###############################################################################
 STEP "Compiling executable code into:"
 # compile extractors and factors under process/ and factor/
+pids=()
 for cc in "$DEEPDIVE_HOME"/util/compile-code/compile-code-*; do
     [[ -x "$cc" ]] || continue
     cc=${cc##*/}
     name=${cc#compile-code-}
     STEP " run/compiled/code-$name.json"
-    "$cc" config.json >code-$name.json
+    "$cc" config.json >code-$name.json & pids+=($!)
 done
+wait "${pids[@]}"
 
 #STEP "Validating run/compiled/code-*.json:"
 #deepdive-check -a -c "$PWD"/code-\*.json 'codegen_*' 2>&1 | sed 's/^/ /' >&2
@@ -142,16 +144,18 @@ STEP "Generating files:"
 cat "$compileDir"/code-*.json |
 compile-codegen
 # some postprocessing over generated files
+pids=()
 if dot -Tpdf -o /dev/null <<<"digraph {}"; then
-dot -Tpdf -o dataflow.pdf <dataflow.dot
+dot -Tpdf -o dataflow.pdf <dataflow.dot & pids+=($!)
 STEP " run/dataflow.pdf"
 STEP "  (file://$(pwd -P)/dataflow.pdf)"  # XXX a handy file: URL for opening in a browser
 fi
 if dot -Tsvg -o /dev/null <<<"digraph {}"; then
-dot -Tsvg -o dataflow.svg <dataflow.dot
+dot -Tsvg -o dataflow.svg <dataflow.dot & pids+=($!)
 STEP " run/dataflow.svg"
 STEP "  (file://$(pwd -P)/dataflow.svg)"  # XXX a handy file: URL for opening in a browser
 fi
+wait "${pids[@]}"
 fi
 
 ###############################################################################
