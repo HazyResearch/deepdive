@@ -100,7 +100,7 @@ run_all_checkers() {
         resolve_checker_paths chkrs "$@"
         set -- "${chkrs[@]}"
     fi
-    local pids=; pids=()
+    local pids=; pids=(--)
     for chkr; do
         [[ -x "$chkr" ]] || continue
         local name=${chkr##"$DEEPDIVE_CHECK_HOME"/}
@@ -112,7 +112,8 @@ run_all_checkers() {
     # TODO check if all inference rules had required fields
     # TODO check if all compiled processes have required fields
     # TODO check if all udfs tsv_extractor test fires correctly
-    wait "${pids[@]}"  # fail if any checker has failed
+    waitall() { shift; local pid=; for pid; do wait $pid; done; }
+    waitall "${pids[@]}"  # fail if any checker has failed
 }
 
 # how to enumerate all available checkers

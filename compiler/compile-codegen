@@ -4,7 +4,7 @@
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2015-12-05
 set -euo pipefail
-pids=()
+pids=(--)
 eval "$(jq -r '
 @sh "
 (
@@ -32,4 +32,5 @@ end)
 ) & pids+=($!)  # run each codegen asynchronously
 "
 ')"
-wait "${pids[@]}"
+waitall() { shift; local pid=; for pid; do wait $pid; done; }
+waitall "${pids[@]}"  # ensure every process exits with zero status

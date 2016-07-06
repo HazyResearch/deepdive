@@ -22,6 +22,8 @@ mkdir -p "run/$compileDir"
 # log all the compilation steps and stderr with timestamps
 exec 3>&2 2> >(logging-with-ts run/"$compileDir"/compile.log >&2)
 STEP() { echo "$@"; } >&2
+# a shorthand for waiting and checking exit status of child processes
+waitall() { shift; local pid=; for pid; do wait $pid; done; }
 # bookkeep some symlinks
 cleanup() {
     cd "$DEEPDIVE_APP"
@@ -119,7 +121,7 @@ deepdive-check -a -c "$PWD"/config.json 'compiled_*' 2>&1 | sed 's/^/ /' >&2
 ###############################################################################
 STEP "Compiling executable code into:"
 # compile extractors and factors under process/ and factor/
-pids=()
+pids=(--)
 for cc in "$DEEPDIVE_HOME"/util/compile-code/compile-code-*; do
     [[ -x "$cc" ]] || continue
     cc=${cc##*/}
@@ -127,7 +129,7 @@ for cc in "$DEEPDIVE_HOME"/util/compile-code/compile-code-*; do
     STEP " run/compiled/code-$name.json"
     "$cc" config.json >code-$name.json & pids+=($!)
 done
-wait "${pids[@]}"
+waitall "${pids[@]}"
 
 #STEP "Validating run/compiled/code-*.json:"
 #deepdive-check -a -c "$PWD"/code-\*.json 'codegen_*' 2>&1 | sed 's/^/ /' >&2
@@ -144,7 +146,7 @@ STEP "Generating files:"
 cat "$compileDir"/code-*.json |
 compile-codegen
 # some postprocessing over generated files
-pids=()
+pids=(--)
 if dot -Tpdf -o /dev/null <<<"digraph {}"; then
 dot -Tpdf -o dataflow.pdf <dataflow.dot & pids+=($!)
 STEP " run/dataflow.pdf"
@@ -155,7 +157,7 @@ dot -Tsvg -o dataflow.svg <dataflow.dot & pids+=($!)
 STEP " run/dataflow.svg"
 STEP "  (file://$(pwd -P)/dataflow.svg)"  # XXX a handy file: URL for opening in a browser
 fi
-wait "${pids[@]}"
+waitall "${pids[@]}"
 fi
 
 ###############################################################################
