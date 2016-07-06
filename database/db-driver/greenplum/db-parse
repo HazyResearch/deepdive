@@ -1,1 +1,12 @@
-../postgresql/db-parse
+#!/usr/bin/env bash
+# db-parse -- Parses URL for Greenplum database and does sanity check
+# > db-parse "$url"
+set -eu
+
+# ensure the psql client is actually Greenplum's
+psql --help | head -1 | grep -q Greenplum ||
+    # or refuse to continue since the rest of the db-driver depends on it
+    error "$(type -p psql) is not a Greenplum client" "Set up your PATH correctly for Greenplum"
+
+# delegate to postgresql driver for the real thing
+. "$(dirname "$BASH_SOURCE")"/../postgresql/db-parse
