@@ -216,7 +216,7 @@ install_run_deepdive_tests() {
     run_installer_for deepdive_examples_tests
     set -x
     PATH="$PREFIX/bin:$PATH" \
-    deepdive-${RELEASE#v}/test/test-installed.sh
+    deepdive env deepdive-${RELEASE#v}/test/test-installed.sh
 }
 ################################################################################
 
