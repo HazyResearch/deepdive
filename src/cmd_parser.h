@@ -5,6 +5,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 #include <ostream>
 
 namespace dd {
@@ -20,6 +21,10 @@ class CmdParser {
    * A handy way to check conditions, record errors, and produce error messages.
    */
   std::ostream &check(bool condition);
+  /**
+   * A handy way to generate warning messages but don't count them as errors.
+   */
+  std::ostream &recommend(bool condition);
 
  public:
   // all the arguments are defined in cmd_parser.cpp
@@ -60,7 +65,9 @@ class CmdParser {
   /**
    * Constructs by parsing the given command line arguments
    */
-  CmdParser(int argc, const char *const argv[]);
+  CmdParser(
+      int argc, const char *const argv[],
+      const std::map<std::string, int (*)(const CmdParser &)> &modes = {});
 };
 
 std::ostream &operator<<(std::ostream &stream, const CmdParser &cmd_parser);

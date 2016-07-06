@@ -12,6 +12,7 @@ GibbsSampler::GibbsSampler(std::unique_ptr<CompactFactorGraph> _pfg,
       infrs(*pinfrs),
       nthread(nthread),
       nodeid(nodeid) {
+  assert(nthread > 0);
   for (size_t i = 0; i < nthread; ++i)
     workers.push_back(GibbsSamplerThread(fg, infrs, i, nthread, opts));
 }

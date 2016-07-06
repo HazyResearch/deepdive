@@ -34,7 +34,14 @@ std::ostream& CmdParser::check(bool condition) {
   }
 }
 
-CmdParser::CmdParser(int argc, const char* const argv[]) : num_errors_(0) {
+std::ostream& CmdParser::recommend(bool condition) {
+  return condition ? nullstream : std::cerr;
+}
+
+CmdParser::CmdParser(
+    int argc, const char* const argv[],
+    const std::map<std::string, int (*)(const CmdParser&)>& modes)
+    : num_errors_(0) {
   const char* arg0 = argv[0];
   app_name = argc > 1 ? argv[1] : "";
   ++argv;
@@ -44,7 +51,7 @@ CmdParser::CmdParser(int argc, const char* const argv[]) : num_errors_(0) {
   // http://tclap.sourceforge.net/manual.html#FUNDAMENTAL_CLASSES
 
   if (app_name == "gibbs") {
-    TCLAP::CmdLine cmd_("DimmWitted GIBBS", ' ', DimmWittedVersion);
+    TCLAP::CmdLine cmd_("DimmWitted gibbs", ' ', DimmWittedVersion);
 
     TCLAP::ValueArg<std::string> fg_file_("m", "fg_meta",
                                           "factor graph metadata file", false,
@@ -63,9 +70,6 @@ CmdParser::CmdParser(int argc, const char* const argv[]) : num_errors_(0) {
     TCLAP::MultiArg<num_epochs_t> n_learning_epoch_("l", "n_learning_epoch",
                                                     "Number of Learning Epochs",
                                                     true, "int", cmd_);
-    TCLAP::MultiArg<num_samples_t> n_samples_per_learning_epoch_(
-        "s", "n_samples_per_learning_epoch",
-        "Number of Samples per Leraning Epoch", true, "int", cmd_);
     TCLAP::MultiArg<num_epochs_t> n_inference_epoch_(
         "i", "n_inference_epoch", "Number of Samples for Inference", true,
         "int", cmd_);
@@ -120,7 +124,7 @@ CmdParser::CmdParser(int argc, const char* const argv[]) : num_errors_(0) {
     check(0 < n_datacopy && n_datacopy <= NumaNodes::num_configured())
         << "n_datacopy (" << n_datacopy << ") must be in the range of [0, "
         << NumaNodes::num_configured() << "]" << std::endl;
-    check(n_datacopy % NumaNodes::num_configured() == 0)
+    check(NumaNodes::num_configured() % n_datacopy == 0)
         << "n_datacopy (" << n_datacopy
         << ") must be a divisor of the number of NUMA nodes ("
         << NumaNodes::num_configured() << ")" << std::endl;
@@ -131,14 +135,16 @@ CmdParser::CmdParser(int argc, const char* const argv[]) : num_errors_(0) {
     check(0 < n_threads && n_threads <= NUM_AVAILABLE_THREADS)
         << "nthreads (" << n_threads << ") must be in the range of [0, "
         << NUM_AVAILABLE_THREADS << "]" << std::endl;
-    // ensure each NUMA node gets at least one thread
-    check(n_threads >= n_datacopy)
+    // ensure each NUMA node partition gets at least one thread
+    recommend(n_threads >= n_datacopy)
         << "n_threads (" << n_threads
         << ") must be greater than or equal to n_datacopy (" << n_datacopy
         << "), so each copy can have at least one thread" << std::endl;
-    check(n_threads % n_datacopy == 0) << "n_threads (" << n_threads
-                                       << ") must be multiples of n_datacopy ("
-                                       << n_datacopy << ")" << std::endl;
+    // otherwise, just cap the n_datacopy to the n_threads
+    if (n_threads < n_datacopy) n_datacopy = n_threads;
+    recommend(n_threads % n_datacopy == 0)
+        << "n_threads (" << n_threads << ") should be multiples of n_datacopy ("
+        << n_datacopy << ") or some CPU cores will stay idle" << std::endl;
 
     burn_in = getLastValueOrDefault(burn_in_, (num_epochs_t)0);
     stepsize = getLastValueOrDefault(stepsize_, 0.01);
@@ -228,9 +234,15 @@ CmdParser::CmdParser(int argc, const char* const argv[]) : num_errors_(0) {
     output_folder = output_folder_.getValue();
     domain_file = domain_file_.getValue();
 
-  } else {
+  } else if (argc == 0 || modes.find(app_name) == modes.cend()) {
+    ++num_errors_;
+    std::cout << "DimmWitted (https://github.com/HazyResearch/sampler)"
+              << std::endl;
+    std::cout << "Usage: " << arg0 << " MODE [ARG...]" << std::endl;
+    for (const auto mode : modes) {
+      std::cout << "  " << arg0 << " " << mode.first << std::endl;
+    }
     if (argc > 0) std::cerr << app_name << ": Unrecognized MODE" << std::endl;
-    std::cerr << "Usage: " << arg0 << " [ gibbs | bin2text ]" << std::endl;
   }
 }
 
