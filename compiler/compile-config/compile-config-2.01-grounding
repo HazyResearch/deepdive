@@ -379,23 +379,15 @@ def factorWeightDescriptionSqlExpr:
                 { SELECT:
                     [ ( .function_.variables[] | { table: "F", column: .columnId } )
                     # TODO: assuming categorical factors' heads have categorical vars only
-                    , ( .function_ | select(.isCategorical) | .variables[] |
-                        { table: "C\(.ordinal)", column: "cid", alias: "\(.columnPrefix)\(deepdiveVariableInternalLabelColumn)" } )
-                    , ( .weight_.params[]      | { table: "F", column: . } )
+                    , ( .function_ | select(.isCategorical) | .variables[]
+                      | .columnPrefix as $prefix
+                      | .schema.variablesCategoryColumns[]
+                      | { table: "F", column: "\($prefix)\(.)" } )
+                    , ( .weight_.params[] | { table: "F", column: . } )
                     ]
                 , FROM: [
                     { alias: "F", sql: "\(.input_query)" }
                     ]
-                , JOIN: [(.function_ | select(.isCategorical) | .variables[]
-                    | "C\(.ordinal)" as $ctable
-                    | .columnPrefix as $prefix
-                    | { INNER: { alias: $ctable, table: .schema.variablesCategoriesTable }
-                      , ON: { and: [ .schema.variablesCategoryColumns[]
-                             | { eq: [ { table: $ctable, column: "_\(.)" }
-                                     , { table: "F", column: "\($prefix)\(.)" }
-                                     ] }
-                             ] } }
-                    )]
                 } | asSql | asPrettySqlArg)
 
             # find distinct weights for the factors into a separate table
@@ -541,9 +533,9 @@ def factorWeightDescriptionSqlExpr:
                     # Assuming all var tables are categorical; TODO: Support mixed head.
                     echo \(
                         # Order for parallel ARRAY_AGG expressions
-                        ( [ .function_.variables[] |
-                        "\(.columnPrefix)\(deepdiveVariableInternalLabelColumn)" | asSqlIdent
-                        ] | join(", ")) as $valueOrder
+                        ( [ .function_.variables[]
+                          | { table: "C\(.ordinal)", column: "cid" } | asSqlExpr
+                          ] | join(", ")) as $valueOrder
                     |
                     { SELECT:
                         [ ( .function_.variables[]
@@ -552,14 +544,24 @@ def factorWeightDescriptionSqlExpr:
                         # arrays below are parallel (ensured by $valueOrder)
                         , ( .function_.variables[]
                         | { alias: "c\(.ordinal)_ids",
-                            table: "f",
-                            expr: "ARRAY_AGG(\"\(.columnPrefix)\(deepdiveVariableInternalLabelColumn)\" ORDER BY \($valueOrder))" } )
+                            expr: "ARRAY_AGG(\({ table: "C\(.ordinal)", column: "cid"
+                                               } | asSqlExpr) ORDER BY \($valueOrder))" } )
                         , { alias: "weight_ids" , expr: "ARRAY_AGG(w.wid ORDER BY \($valueOrder))" }
                         ]
                     , FROM:
                         [ { alias: "w", table: .weightsTable }
                         , { alias: "f", table: .factorsTable }
                         ]
+                    , JOIN: [(.function_.variables[]
+                        | "C\(.ordinal)" as $ctable
+                        | .columnPrefix as $prefix
+                        | { INNER: { alias: $ctable, table: .schema.variablesCategoriesTable }
+                          , ON: { and: [ .schema.variablesCategoryColumns[]
+                                 | { eq: [ { table: $ctable, column: "_\(.)" }
+                                         , { table: "f", column: "\($prefix)\(.)" }
+                                         ] }
+                                 ] } }
+                        )]
                     , WHERE:
                         [ ( .weight_.params[]
                         | { eq: [ { table: "w", column: . }
