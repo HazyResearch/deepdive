@@ -8,18 +8,18 @@ set -eu
 
 # check results
 
-# all weights should be around 2.1
+# all weights should be around 1.0
 awk <inference_result.out.weights.text '{
     id=$1; weight=$2;
-    expected=2.1
+    expected=1.0
     eps=0.1
     if ((weight > expected + eps) || (weight < expected - eps)) {
-        print "weight " id " not around " 2.1
+        print "weight " id " not around " 1.0
         exit(1)
     }
 }'
 
-# all probabilities should be around 0.89
+# all probabilities should be around 0.89 (e ^ w / (e ^ w + e ^ -w))
 awk <inference_result.out.text '{
     id=$1; e=$2; prob=$3;
     expected=0.89

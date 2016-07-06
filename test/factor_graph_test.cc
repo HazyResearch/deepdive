@@ -53,13 +53,13 @@ TEST_F(FactorGraphTest, update_weight) {
 
   cfg->update_weight(cfg->variables[0], *infrs, 0.1);
   std::cout << "The weight value is: " << infrs->weight_values[0] << std::endl;
-  EXPECT_EQ(infrs->weight_values[0], 0.1);
+  EXPECT_EQ(infrs->weight_values[0], 0.2);
 
   cfg->update_weight(cfg->variables[10], *infrs, 0.1);
-  EXPECT_EQ(infrs->weight_values[0], 0.1);
+  EXPECT_EQ(infrs->weight_values[0], 0.2);
 
   cfg->update_weight(cfg->variables[10], *infrs, 0.1);
-  EXPECT_EQ(infrs->weight_values[0], 0.1);
+  EXPECT_EQ(infrs->weight_values[0], 0.2);
 }
 
 }  // namespace dd
