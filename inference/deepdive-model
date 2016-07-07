@@ -21,6 +21,8 @@
 ##
 set -euo pipefail
 
+DEEPDIVE_WEIGHTS_VERSION=1  # the version tag placed on the weights kept by this
+
 DEEPDIVE_APP=$(find-deepdive-app)
 export DEEPDIVE_APP
 
@@ -102,6 +104,7 @@ case $Command in
                                  WHERE wo.wid = wi.wid
                                    AND weight <> 0
                             " format=tsv | pbzip2 >"$dest"/dd_weights.tsv.bz2
+                            echo version=$DEEPDIVE_WEIGHTS_VERSION >"$dest"/dd_weights.metadata
                         fi
                         ;;
                 esac
@@ -143,6 +146,12 @@ case $Command in
                                 weightsReuseFlag="$DEEPDIVE_APP"/run/model/grounding/factor/weights.reuse
                                 deepdive create table "$weightTableName" "description:TEXT" "weight:DOUBLE PRECISION"
                                 rm -f "$weightsReuseFlag"
+                                # check if the kept weights are compatible
+                                weightsVersion=$(. "$src"/dd_weights.metadata && echo $version)
+                                case $weightsVersion in
+                                    "$DEEPDIVE_WEIGHTS_VERSION") ;;
+                                    *) error "$src: version=$weightsVersion is incompatible with $DEEPDIVE_WEIGHTS_VERSION"
+                                esac
                                 for weightFile in "$src"/dd_weights.tsv.bz2; do
                                     [[ -e "$weightFile" ]] || continue
                                     # TODO parallel load

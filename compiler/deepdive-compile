@@ -22,6 +22,8 @@ mkdir -p "run/$compileDir"
 # log all the compilation steps and stderr with timestamps
 exec 3>&2 2> >(logging-with-ts run/"$compileDir"/compile.log >&2)
 STEP() { echo "$@"; } >&2
+# a shorthand for waiting and checking exit status of child processes
+waitall() { shift; local pid=; for pid; do wait $pid; done; }
 # bookkeep some symlinks
 cleanup() {
     cd "$DEEPDIVE_APP"
@@ -41,28 +43,19 @@ PATH="$DEEPDIVE_HOME"/util/compile-config:"$PATH"
 PATH="$DEEPDIVE_HOME"/util/compile-code:"$PATH"
 export DEEPDIVE_ERROR_PREFIX="[ERROR] "
 
+###############################################################################
 ## compile a full deepdive.conf from source code
 if ! [[ -e $DEEPDIVE_COMPILE_INPUT_JSON ]]; then
 STEP "Parsing DeepDive application ($DEEPDIVE_APP) to generate:"
-STEP " run/compiled/schema.json"
-# compile schema in JSON
-touch run/"$compileDir"/schema.json run/"$compileDir"/deepdive.conf
-if [[ -r app.ddlog ]]; then
-    STEP "  from app.ddlog"
-    ddlog export-schema app.ddlog
-else
-    echo '{}'
-fi |
-if [[ -r schema.json && -s schema.json ]]; then
-    # merge user's schema.json
-    STEP "  from schema.json"
-    SCHEMA_JSON="$(cat)" \
-    jq '(env.SCHEMA_JSON | fromjson) + .' schema.json
-else
-    cat
-fi >run/"$compileDir"/schema.json
 STEP " run/compiled/deepdive.conf"
+touch run/"$compileDir"/deepdive.conf
 {
+# user's schema.json
+if [[ -r schema.json && -s schema.json ]]; then
+    STEP "  from schema.json"
+    echo -n 'deepdive.schema '
+    cat schema.json
+fi
 # compile DDlog rules
 if [[ -r app.ddlog ]]; then
     STEP "  from app.ddlog"
@@ -78,10 +71,9 @@ if [[ -n "$DEEPDIVE_CONFIG_EXTRA" ]]; then
     STEP "  from \$DEEPDIVE_CONFIG_EXTRA"
     echo "$DEEPDIVE_CONFIG_EXTRA"
 fi
-# include the schema as well
-echo -n "deepdive.schema "
-cat run/"$compileDir"/schema.json
 } >run/"$compileDir"/deepdive.conf
+
+###############################################################################
 cd run/"$compileDir"
 # produce a JSON from compiled deepdive.conf
 STEP " run/compiled/deepdive.conf.json"
@@ -103,9 +95,9 @@ STEP "Loading precompiled DeepDive application from $DEEPDIVE_COMPILE_INPUT_JSON
 STEP " run/compiled/deepdive.conf.json"
 cp -pf "$DEEPDIVE_COMPILE_INPUT_JSON" run/"$compileDir"/deepdive.conf.json
 cd run/"$compileDir"
-# TODO STEP " run/compiled/schema.json"
 fi
 
+###############################################################################
 STEP "Performing sanity checks on run/compiled/deepdive.conf.json:"
 deepdive-check -a -c "$PWD"/deepdive.conf.json 'input_*' 2>&1 | sed 's/^/ /' >&2
 
@@ -126,15 +118,18 @@ ln -sfn "$config" config.json
 STEP "Validating run/compiled/config.json:"
 deepdive-check -a -c "$PWD"/config.json 'compiled_*' 2>&1 | sed 's/^/ /' >&2
 
+###############################################################################
 STEP "Compiling executable code into:"
 # compile extractors and factors under process/ and factor/
+pids=(--)
 for cc in "$DEEPDIVE_HOME"/util/compile-code/compile-code-*; do
     [[ -x "$cc" ]] || continue
     cc=${cc##*/}
     name=${cc#compile-code-}
     STEP " run/compiled/code-$name.json"
-    "$cc" config.json >code-$name.json
+    "$cc" config.json >code-$name.json & pids+=($!)
 done
+waitall "${pids[@]}"
 
 #STEP "Validating run/compiled/code-*.json:"
 #deepdive-check -a -c "$PWD"/code-\*.json 'codegen_*' 2>&1 | sed 's/^/ /' >&2
@@ -143,6 +138,7 @@ done
 # mark everything compiled as read-only
 chmod a-w *
 
+###############################################################################
 if [[ -z $DEEPDIVE_COMPILE_SKIP_CODEGEN ]]; then
 # generate actual code under run/
 cd "$DEEPDIVE_APP"/run
@@ -150,18 +146,21 @@ STEP "Generating files:"
 cat "$compileDir"/code-*.json |
 compile-codegen
 # some postprocessing over generated files
+pids=(--)
 if dot -Tpdf -o /dev/null <<<"digraph {}"; then
-dot -Tpdf -o dataflow.pdf <dataflow.dot
+dot -Tpdf -o dataflow.pdf <dataflow.dot & pids+=($!)
 STEP " run/dataflow.pdf"
 STEP "  (file://$(pwd -P)/dataflow.pdf)"  # XXX a handy file: URL for opening in a browser
 fi
 if dot -Tsvg -o /dev/null <<<"digraph {}"; then
-dot -Tsvg -o dataflow.svg <dataflow.dot
+dot -Tsvg -o dataflow.svg <dataflow.dot & pids+=($!)
 STEP " run/dataflow.svg"
 STEP "  (file://$(pwd -P)/dataflow.svg)"  # XXX a handy file: URL for opening in a browser
 fi
+waitall "${pids[@]}"
 fi
 
+###############################################################################
 # point to the successfully compiled one, leaving the previous one as backup
 {
     cd "$DEEPDIVE_APP"

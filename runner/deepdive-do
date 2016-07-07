@@ -4,12 +4,12 @@
 ##
 set -euo pipefail
 
-: ${DEEPDIVE_PLAN_EDIT:=true} ${VISUAL:=${EDITOR:=vi}}
 : ${DEEPDIVE_PROGRESS_FD:=}  # file descriptor used by our show_progress(1) command, set by any nesting deepdive-do command
 
 # record present working directory so processes can optionally recover it
 export DEEPDIVE_PWD="$PWD"
 
+. deepdive-do-getopts.sh
 targets="$*"
 . resolve-args-to-do.sh
 cd "$DEEPDIVE_APP"

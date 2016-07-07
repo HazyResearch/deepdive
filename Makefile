@@ -124,11 +124,6 @@ build-dimmwitted:
 	@util/build/build-submodule-if-needed inference/dimmwitted dw
 build: build-dimmwitted
 
-.PHONY: build-hocon2json
-build-hocon2json:
-	@util/build/build-submodule-if-needed compiler/hocon2json hocon2json.sh target/scala-2.10/hocon2json-assembly-0.1-SNAPSHOT.jar
-build: build-hocon2json
-
 .PHONY: build-mindbender
 build-mindbender:
 	@util/build/build-submodule-if-needed util/mindbender @prefix@/

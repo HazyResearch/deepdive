@@ -66,7 +66,7 @@ install__deepdive_build_deps() {
         unzip
         jdk
     )
-    error "Please make sure the following packages are available on your system: $(
+    error "Please make sure the following packages are available on your system:$(
         printf '\n  %s' "${deps[@]}")" ||
             [[ ! -t 1 ]] || read -p "# Continue? " || true
 }
@@ -143,6 +143,12 @@ install_deepdive_from_release() {
     timeout_or_select_release "to install" \
         eval 'echo "# Installing DeepDive release $RELEASE..."'
     local os=$(uname)
+    local arch=$(uname -m)
+    case $os-$arch in
+        Darwin-x86_64|\
+        Linux-x86_64) ;; # we publish binaries for x86 (64bit) only
+        *) error "$os-$arch: No binary release available for your OS" "DeepDive must be installed from source"
+    esac
     local tarball="deepdive-${RELEASE}-${os}.tar.gz"
     local url="https://github.com/HazyResearch/deepdive/releases/download/${RELEASE}/$tarball"
     (
@@ -210,7 +216,7 @@ install_run_deepdive_tests() {
     run_installer_for deepdive_examples_tests
     set -x
     PATH="$PREFIX/bin:$PATH" \
-    deepdive-${RELEASE#v}/test/test-installed.sh
+    deepdive env deepdive-${RELEASE#v}/test/test-installed.sh
 }
 ################################################################################
 
