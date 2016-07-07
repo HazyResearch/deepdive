@@ -28,7 +28,7 @@ if ! [[ "${DEEPDIVE_SHELL:-}" -ef "$0" ]]; then
     Here=$(dirname "$Self")
 
     # Keep a backup of some environment variables
-    for v in PATH LANG LC_ALL LC_COLLATE LC_CTYPE LC_MESSAGES LC_MONETARY LC_NUMERIC LC_TIME
+    for v in PATH LANGUAGE LANG LC_ALL LC_COLLATE LC_CTYPE LC_MESSAGES LC_MONETARY LC_NUMERIC LC_TIME
     do  vbak=DEEPDIVE_ORIG_$v
           declare -p $v    &>/dev/null || continue
         ! declare -p $vbak &>/dev/null || continue
@@ -41,10 +41,10 @@ if ! [[ "${DEEPDIVE_SHELL:-}" -ef "$0" ]]; then
 
     #  ensure the user's language/locale setting have minimal impact on
     #  DeepDive's behavior (Ideally, something like C.UTF-8 should be used, but
-    #  there's no such thing yet, so emulate something similar.
+    #  there's no such thing yet, so here's American imperialism: en_US.UTF-8
     #  See: https://sourceware.org/glibc/wiki/Proposals/C.UTF-8)
-    export LANG=C LC_CTYPE=UTF-8
-    unset LC_ALL LC_COLLATE LC_MESSAGES LC_MONETARY LC_NUMERIC LC_TIME
+    unset LANGUAGE LANG LC_COLLATE LC_MESSAGES LC_MONETARY LC_NUMERIC LC_TIME
+    export LC_ALL=en_US.UTF-8
 
     #  make sure DeepDive utilities are on PATH
     PATH="$DEEPDIVE_HOME/util:$DEEPDIVE_HOME/bin:$DEEPDIVE_HOME/lib/bundled/.all/bin:$PATH"
