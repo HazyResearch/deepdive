@@ -8,16 +8,20 @@
     deepdive compile
     deepdive redo process/init/app data/model/{weights,probabilities}
 
-    # weight should be around log(#positive) / log(#negative) ~= 2.1
-    [[ $(deepdive sql eval "
-            select count(*)
-            from dd_inference_result_weights
-            where weight <= 1.9 or weight >= 2.3
-        ") -eq 0 ]]
+    # weight should be around ~= 1.0
+    num_unexpected_weights=$(deepdive sql eval "
+            SELECT *
+            FROM dd_inference_result_weights
+            WHERE weight <= 0.9 OR weight >= 1.1
+        " | tee /dev/stderr | wc -l)
+    echo num_unexpected_weights=$num_unexpected_weights
+    [[ $num_unexpected_weights -eq 0 ]]
     # probability should be around 8/9
-    [[ $(deepdive sql eval "
-            select count(*)
-            from dd_inference_result_variables
-            where expectation > 0.94 or expectation < 0.84
-        ") -eq 0 ]]
+    num_unexpected_prob=$(deepdive sql eval "
+            SELECT *
+            FROM dd_inference_result_variables
+            WHERE expectation > 0.94 OR expectation < 0.84
+        " | tee /dev/stderr | wc -l)
+    echo num_unexpected_prob=$num_unexpected_prob
+    [[ $num_unexpected_prob -eq 0 ]]
 }
