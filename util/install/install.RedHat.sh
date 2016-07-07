@@ -59,6 +59,7 @@ install__deepdive_runtime_deps() {
         java
         gnuplot
         libtool-ltdl # for graphviz
+        perl-Time-HiRes
     )
     sudo yum install -y "${runtime_deps[@]}"
     sudo localedef -f UTF-8 -i en_US en_US.UTF-8
