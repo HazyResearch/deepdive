@@ -51,9 +51,7 @@ if ! [[ "${DEEPDIVE_SHELL:-}" -ef "$0" ]]; then
     export PATH
 
     #  make sure virtualenv in Python is available
-    PS1=
-    source "$DEEPDIVE_HOME/lib/bundled/python-virtualenv/prefix/bin/activate"
-    unset PS1
+    PATH="$DEEPDIVE_HOME/lib/bundled/python-virtualenv/prefix/bin:$PATH"
 
     #  make sure ddlib in Python is available
     PYTHONPATH="$DEEPDIVE_HOME"/lib/python:"${PYTHONPATH:+:$PYTHONPATH}"
