@@ -65,6 +65,7 @@ stage shell/deepdive_bash_completion.sh                           etc/
 stage compiler/deepdive-compile                                   util/
 stage compiler/deepdive-check                                     util/
 stage compiler/app-has-been-compiled                              util/
+stage compiler/app-has-nothing-to-compile                         util/
 stage compiler/deepdive-default.conf                              etc/
 stage compiler/compile-config                                     util/
 stage compiler/compile-check                                      util/
@@ -73,8 +74,7 @@ stage compiler/compile-codegen                                    util/
 
 stage compiler/ddlog-wrapper.sh                                   bin/ddlog
 stage .build/submodule/compiler/ddlog/target/scala-2.11/ddlog-assembly-0.1-SNAPSHOT.jar  lib/ddlog.jar
-stage .build/submodule/compiler/hocon2json/hocon2json.sh                                util/hocon2json
-stage .build/submodule/compiler/hocon2json/target/scala-2.10/hocon2json-assembly-*.jar  util/hocon2json.jar
+stage compiler/hocon2json                                         util/
 
 # DeepDive execution planner and runner
 stage runner/deepdive-run                                         util/
@@ -87,6 +87,7 @@ stage runner/format_timestamp                                     util/
 stage runner/reset_timestamp                                      util/
 stage runner/restore_timestamp                                    util/
 stage runner/mark_done                                            util/
+stage runner/deepdive-do-getopts.sh                               util/
 stage runner/resolve-args-to-do.sh                                util/
 stage runner/show_progress                                        util/
 stage runner/ps_descendants                                       util/

@@ -51,17 +51,13 @@ env:
 before_install:
   # Check coding style before performing the build and tests
   - make checkstyle
-  # Decrypt credentials for util/build/update-github-tags and update-github-release-asset
-  - openssl aes-256-cbc -K $encrypted_54046ad4fea4_key -iv $encrypted_54046ad4fea4_iv -in .travis.tar.enc -out .travis.tar -d
-  - tar xpvf .travis.tar
-  - ln -sfnv "$PWD"/.travis/.{netrc,gist} ~/
-  - chmod go= ~/.{netrc,gist}
 
 addons:
   apt:
     sources:
     - ubuntu-toolchain-r-test  # for gcc 4.8
     packages:
+    - python3
     - gnuplot
     - bc
     - bzip2
@@ -82,7 +78,7 @@ install:
 
 script:
   # Run all tests
-  - make test
+  - dist/stage/bin/deepdive env make test
 
   # Check broken links in documentation
   # TODO check only when doc/ has changed
@@ -91,14 +87,14 @@ script:
 # update GitHub releases for some select branches (master and v*.*.x)
 deploy:
   - provider: script
-    script: util/build/update-github-release-asset
+    script: util/build/decrypt-travis-then-update-github-releases
     skip_cleanup: true
     on:
       repo: HazyResearch/deepdive
       all_branches: true
       # TODO condition: "$TRAVIS_BRANCH = master || $TRAVIS_BRANCH = v*.*.x"
   - provider: script
-    script: util/build/update-github-release-asset
+    script: util/build/decrypt-travis-then-update-github-releases
     skip_cleanup: true
     on:
       repo: HazyResearch/deepdive

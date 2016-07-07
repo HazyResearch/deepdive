@@ -21,6 +21,8 @@
 ##
 set -euo pipefail
 
+DEEPDIVE_WEIGHTS_VERSION=1  # the version tag placed on the weights kept by this
+
 DEEPDIVE_APP=$(find-deepdive-app)
 export DEEPDIVE_APP
 
@@ -91,10 +93,7 @@ case $Command in
                             deepdive-"do" data/model/weights
                         fi
                         # dump non-zero weights for boolean factors
-                        if [[ -n $(deepdive-sql eval "
-                                SELECT 1 WHERE EXISTS (
-                                    SELECT wid FROM dd_graph_weights
-                                     WHERE categories IS NULL)") ]]; then
+                        if [[ -n $(deepdive-sql eval "SELECT 1 WHERE EXISTS (SELECT wid FROM dd_graph_weights)") ]]; then
                             # TODO parallel unload
                             show_progress output_from "$dest" -- \
                             deepdive-sql eval "
@@ -104,28 +103,8 @@ case $Command in
                                      , dd_graph_weights            wi
                                  WHERE wo.wid = wi.wid
                                    AND weight <> 0
-                                   AND categories IS NULL -- to rule out categorical
                             " format=tsv | pbzip2 >"$dest"/dd_weights.tsv.bz2
-                        fi
-                        # dump non-zero weights for categorical factors
-                        if [[ -n $(deepdive-sql eval "
-                                SELECT 1 WHERE EXISTS (
-                                    SELECT wid FROM dd_graph_weights
-                                     WHERE categories IS NOT NULL)") ]]; then
-                            # TODO parallel unload
-                            # XXX ARRAY_AGG is postgres specific
-                            show_progress output_from "$dest" -- \
-                            deepdive-sql eval "
-                                SELECT description
-                                     , ARRAY_AGG(categories::TEXT)
-                                     , ARRAY_AGG(weight)
-                                  FROM dd_inference_result_weights wo
-                                     , dd_graph_weights            wi
-                                 WHERE wo.wid = wi.wid
-                                   AND weight <> 0
-                                   AND categories IS NOT NULL -- to include categorical only
-                                 GROUP BY description
-                            " format=tsv | pbzip2 >"$dest"/dd_weights.categorical.tsv.bz2
+                            echo version=$DEEPDIVE_WEIGHTS_VERSION >"$dest"/dd_weights.metadata
                         fi
                         ;;
                 esac
@@ -165,33 +144,18 @@ case $Command in
                                 # TODO load into a unique table, then create a view with the following name
                                 weightTableName=dd_graph_weights_reuse
                                 weightsReuseFlag="$DEEPDIVE_APP"/run/model/grounding/factor/weights.reuse
-                                deepdive create table "$weightTableName" "description:TEXT" "categories:TEXT" "weight:DOUBLE PRECISION"
+                                deepdive create table "$weightTableName" "description:TEXT" "weight:DOUBLE PRECISION"
                                 rm -f "$weightsReuseFlag"
-                                for weightFile in "$src"/dd_weights{,.categorical}.tsv.bz2; do
+                                # check if the kept weights are compatible
+                                weightsVersion=$(. "$src"/dd_weights.metadata && echo $version)
+                                case $weightsVersion in
+                                    "$DEEPDIVE_WEIGHTS_VERSION") ;;
+                                    *) error "$src: version=$weightsVersion is incompatible with $DEEPDIVE_WEIGHTS_VERSION"
+                                esac
+                                for weightFile in "$src"/dd_weights.tsv.bz2; do
                                     [[ -e "$weightFile" ]] || continue
-                                    case $weightFile in
-                                        *.categorical.tsv.bz2)
-                                            # first load the grouped data from file
-                                            deepdive create table "${weightTableName}_array" "description:TEXT" "categories::TEXT[]" "weights:DOUBLE PRECISION[]"
-                                            # TODO parallel load
-                                            deepdive load "${weightTableName}_array" "$weightFile"
-                                            # explode the group
-                                            # XXX UNNEST is postgres-specific
-                                            deepdive sql "INSERT INTO $weightTableName
-                                                SELECT description
-                                                     , UNNEST(categories) AS categories
-                                                     , UNNEST(weights)    AS weight
-                                                  FROM ${weightTableName}_array
-                                            "
-                                            deepdive sql "DROP TABLE ${weightTableName}_array"
-                                            ;;
-                                        *.tsv.bz2)
-                                            # TODO parallel load
-                                            deepdive load "$weightTableName(description,weight)" "$weightFile"
-                                            ;;
-                                        *)
-                                            error "$weightFile: Unsupported weights file"
-                                    esac
+                                    # TODO parallel load
+                                    deepdive load "$weightTableName(description,weight)" "$weightFile"
                                 done
                                 # dump the new weights with corresponding id in the current factor graph
                                 mkdir -p "$(dirname "$weightsReuseFlag")"

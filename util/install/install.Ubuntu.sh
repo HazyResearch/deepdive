@@ -66,6 +66,7 @@ install__deepdive_runtime_deps() {
         libltdl7  # for graphviz
     )
     sudo apt-get install -qy "${runtime_deps[@]}"
+    sudo locale-gen en_US.UTF-8
 }
 
 install_postgres_xl() {

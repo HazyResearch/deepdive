@@ -49,7 +49,7 @@ test_multinomial(doc_id, mid1, loc_id1) ^ test_multinomial(doc_id, mid2, loc_id2
   test_bad_factor(loc_id1, loc_id2).
 ' > app.ddlog
 
-echo 'deepdive.sampler.sampler_args: "-l 0 -s 1 -i 500 --alpha 0.1 -c 0"' > deepdive.conf
+echo 'deepdive.sampler.sampler_args: "-l 0 -i 500 --alpha 0.1 -c 0"' > deepdive.conf
 
 # Create necessary files
 mkdir -p input

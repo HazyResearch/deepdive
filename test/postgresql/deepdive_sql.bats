@@ -139,7 +139,7 @@ load ../../database/test/corner_cases
     skip "NOT SUPPORTED YET" # TODO
     tab2nl "$NestedArrayColumnTypes"
     actual=$(keeping_output_of deepdive sql eval "$NestedArraySQL" format=tsj)
-    diff -u                                 <(tab2nl "$NestedArrayTSJ") <(jq -c . <<< "$actual")
+    diff -u                                 <(tab2nl "$NestedArrayTSJ") <(jq -c . <<<"$actual")
 }
 
 @test "$DBVARIANT deepdive sql eval (with nested arrays) format=tsv works" {
@@ -164,6 +164,75 @@ load ../../database/test/corner_cases
 }
 
 @test "$DBVARIANT deepdive sql eval (with nested arrays) format=json works" {
-    actual=$(keeping_output_of deepdive sql eval "$NestedArraySQL" format=json)   || skip # XXX not supported by driver.postgresql/db-query
-    compare_json "$NestedArrayJSON" "$actual"
+    actual=$(keeping_output_of deepdive sql eval "$NestedArraySQL" format=json)   || skip "rejected conversion"  # XXX not supported by pgtsv_to_json
+    compare_json "$NestedArrayJSON" "$actual"                                     || skip "incorrect conversion" # XXX not supported by pgtsv_to_json
+}
+
+###############################################################################
+## a case with unicode
+
+@test "$DBVARIANT deepdive sql eval (with unicode) format=tsj works" {
+    tab2nl "$UnicodeColumnTypes"
+    actual=$(keeping_output_of deepdive sql eval "$UnicodeSQL" format=tsj)
+    diff -u                             <(tab2nl "$UnicodeTSJ") <(jq -c . <<<"$actual")
+}
+
+@test "$DBVARIANT deepdive sql eval (with unicode) format=tsv works" {
+    actual=$(keeping_output_of deepdive sql eval "$UnicodeSQL" format=tsv)
+    diff -u                             <(tab2nl "$UnicodeTSV") <(tab2nl "$actual")
+}
+
+@test "$DBVARIANT deepdive sql eval (with unicode) format=tsv header=1 works" {
+    actual=$(keeping_output_of deepdive sql eval "$UnicodeSQL" format=tsv header=1)
+    diff -u <(tab2nl "$UnicodeTSVHeader"; tab2nl "$UnicodeTSV") <(tab2nl "$actual")
+}
+
+@test "$DBVARIANT deepdive sql eval (with unicode) format=csv works" {
+    actual=$(keeping_output_of deepdive sql eval "$UnicodeSQL" format=csv)
+    diff -u                               <(echo "$UnicodeCSV") <(echo "$actual")
+}
+
+@test "$DBVARIANT deepdive sql eval (with unicode) format=csv header=1 works" {
+    actual=$(keeping_output_of deepdive sql eval "$UnicodeSQL" format=csv header=1)
+    diff -u <(echo "$UnicodeCSVHeader"; echo "$UnicodeCSV") <(echo "$actual")
+}
+
+@test "$DBVARIANT deepdive sql eval (with unicode) format=json works" {
+    actual=$(keeping_output_of deepdive sql eval "$UnicodeSQL" format=json)
+    compare_json "$UnicodeJSON" "$actual"
+}
+
+###############################################################################
+## a case with timestamps
+
+@test "$DBVARIANT deepdive sql eval (with timestamp) format=tsj works" {
+    skip "NOT SUPPORTED YET" # TODO
+    tab2nl "$TimestampColumnTypes"
+    actual=$(keeping_output_of deepdive sql eval "$TimestampSQL" format=tsj)
+    diff -u                             <(tab2nl "$TimestampTSJ") <(jq -c . <<<"$actual")
+}
+
+@test "$DBVARIANT deepdive sql eval (with timestamp) format=tsv works" {
+    actual=$(keeping_output_of deepdive sql eval "$TimestampSQL" format=tsv)
+    diff -u                             <(tab2nl "$TimestampTSV") <(tab2nl "$actual")
+}
+
+@test "$DBVARIANT deepdive sql eval (with timestamp) format=tsv header=1 works" {
+    actual=$(keeping_output_of deepdive sql eval "$TimestampSQL" format=tsv header=1)
+    diff -u <(tab2nl "$TimestampTSVHeader"; tab2nl "$TimestampTSV") <(tab2nl "$actual")
+}
+
+@test "$DBVARIANT deepdive sql eval (with timestamp) format=csv works" {
+    actual=$(keeping_output_of deepdive sql eval "$TimestampSQL" format=csv)
+    diff -u                               <(echo "$TimestampCSV") <(echo "$actual")
+}
+
+@test "$DBVARIANT deepdive sql eval (with timestamp) format=csv header=1 works" {
+    actual=$(keeping_output_of deepdive sql eval "$TimestampSQL" format=csv header=1)
+    diff -u <(echo "$TimestampCSVHeader"; echo "$TimestampCSV") <(echo "$actual")
+}
+
+@test "$DBVARIANT deepdive sql eval (with timestamp) format=json works" {
+    actual=$(keeping_output_of deepdive sql eval "$TimestampSQL" format=json)
+    compare_json "$TimestampJSON" "$actual"
 }

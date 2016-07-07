@@ -90,7 +90,6 @@ run_one_checker() {
 
 # how to run all available checkers or the specified ones
 run_all_checkers() {
-    local allCheckPassed=true
     local chkr=
     if [[ $# -eq 0 ]]; then
         # run all checkers
@@ -101,19 +100,20 @@ run_all_checkers() {
         resolve_checker_paths chkrs "$@"
         set -- "${chkrs[@]}"
     fi
+    local pids=; pids=(--)
     for chkr; do
         [[ -x "$chkr" ]] || continue
         local name=${chkr##"$DEEPDIVE_CHECK_HOME"/}
         name=${name#compile-check-*-}
         echo "checking if $name"
-        run_one_checker_by_path "$chkr" >/dev/null ||
-            allCheckPassed=false
+        run_one_checker_by_path "$chkr" >/dev/null & pids+=($!)  # run checkers asynchronously
     done
     # TODO check if all extractor with output_relation is transitively dependent on process/init/app
     # TODO check if all inference rules had required fields
     # TODO check if all compiled processes have required fields
     # TODO check if all udfs tsv_extractor test fires correctly
-    $allCheckPassed
+    waitall() { shift; local pid=; for pid; do wait $pid; done; }
+    waitall "${pids[@]}"  # fail if any checker has failed
 }
 
 # how to enumerate all available checkers
