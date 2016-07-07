@@ -131,9 +131,8 @@ for cc in "$DEEPDIVE_HOME"/util/compile-code/compile-code-*; do
 done
 waitall "${pids[@]}"
 
-#STEP "Validating run/compiled/code-*.json:"
-#deepdive-check -a -c "$PWD"/code-\*.json 'codegen_*' 2>&1 | sed 's/^/ /' >&2
-# TODO check path name collisions in code-*.json
+STEP "Validating run/compiled/code-*.json:"
+deepdive-check -a -c <(cat code-*.json) 'codegen_*' 2>&1 | sed 's/^/ /' >&2
 
 # mark everything compiled as read-only
 chmod a-w *

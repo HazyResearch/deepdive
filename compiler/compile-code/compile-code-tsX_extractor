@@ -1,5 +1,5 @@
 #!/usr/bin/env jq
-# compile-code-tsv_extractor -- Compiles tsv_extractors in the normalized JSON into code executable by the runner
+# compile-code-tsX_extractor -- Compiles tsv and tsj_extractors in the normalized JSON into code executable by the runner
 ##
 
 include "constants";
