@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# app-has-nothing-to-compile -- Checks the DeepDive app has no updated source
+# $ app-has-nothing-to-compile
+# Checks standard DeepDive app artifacts that can change the result of
+# `deepdive compile`, such as app.ddlog, deepdive.conf, and returns 0 if
+# nothing is newer than the previously compiled `run/compiled/config.json`.
+##
+set -eu
+
+DEEPDIVE_APP=$(find-deepdive-app)
+export DEEPDIVE_APP
+cd "$DEEPDIVE_APP"
+
+# source files to check
+set -- app.ddlog deepdive.conf schema.json
+
+# check if each source file is newer than last compiled result
+num_updated=0
+for src; do
+    [[ "$src" -nt "$DEEPDIVE_APP"/run/compiled/config.json ]] || continue
+    warning "$src"': updated since last `deepdive compile`'
+    let ++num_updated
+done
+exit $num_updated

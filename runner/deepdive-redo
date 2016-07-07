@@ -4,6 +4,7 @@
 ##
 set -eu
 
+. deepdive-do-getopts.sh
 [[ $# -gt 0 ]] || usage "$0" "No TARGET to redo given"
 
 deepdive-mark todo "$@"

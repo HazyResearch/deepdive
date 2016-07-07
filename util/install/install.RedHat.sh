@@ -61,6 +61,7 @@ install__deepdive_runtime_deps() {
         libtool-ltdl # for graphviz
     )
     sudo yum install -y "${runtime_deps[@]}"
+    sudo localedef -f UTF-8 -i en_US en_US.UTF-8
 }
 
 install_postgres() {

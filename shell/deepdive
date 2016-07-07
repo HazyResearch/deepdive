@@ -28,7 +28,7 @@ if ! [[ "${DEEPDIVE_SHELL:-}" -ef "$0" ]]; then
     Here=$(dirname "$Self")
 
     # Keep a backup of some environment variables
-    for v in PATH
+    for v in PATH LANGUAGE LANG LC_ALL LC_COLLATE LC_CTYPE LC_MESSAGES LC_MONETARY LC_NUMERIC LC_TIME
     do  vbak=DEEPDIVE_ORIG_$v
           declare -p $v    &>/dev/null || continue
         ! declare -p $vbak &>/dev/null || continue
@@ -38,9 +38,21 @@ if ! [[ "${DEEPDIVE_SHELL:-}" -ef "$0" ]]; then
     # Setup environment
     unset CDPATH
     export DEEPDIVE_HOME=${Here%/bin}
+
+    #  ensure the user's language/locale setting have minimal impact on
+    #  DeepDive's behavior (Ideally, something like C.UTF-8 should be used, but
+    #  there's no such thing yet, so here's American imperialism: en_US.UTF-8
+    #  See: https://sourceware.org/glibc/wiki/Proposals/C.UTF-8)
+    unset LANGUAGE LANG LC_COLLATE LC_MESSAGES LC_MONETARY LC_NUMERIC LC_TIME
+    export LC_ALL=en_US.UTF-8
+
     #  make sure DeepDive utilities are on PATH
     PATH="$DEEPDIVE_HOME/util:$DEEPDIVE_HOME/bin:$DEEPDIVE_HOME/lib/bundled/.all/bin:$PATH"
     export PATH
+
+    #  make sure virtualenv in Python is available
+    PATH="$DEEPDIVE_HOME/lib/bundled/python-virtualenv/prefix/bin:$PATH"
+
     #  make sure ddlib in Python is available
     PYTHONPATH="$DEEPDIVE_HOME"/lib/python:"${PYTHONPATH:+:$PYTHONPATH}"
     export PYTHONPATH

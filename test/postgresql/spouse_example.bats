@@ -4,7 +4,7 @@
 . "$BATS_TEST_DIRNAME"/env.sh >&2
 : ${SUBSAMPLE_NUM_SENTENCES:=10000}
 export DEEPDIVE_CONFIG_EXTRA='
-    deepdive.sampler.sampler_args: "-l 500 -i 500 -s 1 --alpha 0.05 --diminish 0.99"
+    deepdive.sampler.sampler_args: "-l 500 -i 500 --alpha 0.05 --diminish 0.99"
 '
 
 # load helpers

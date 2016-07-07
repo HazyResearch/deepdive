@@ -8,12 +8,19 @@
 ##
 set -eu
 
+: ${DEEPDIVE_AUTOCOMPILE:=true}
+
 DEEPDIVE_APP=$(find-deepdive-app)
 export DEEPDIVE_APP
 
 [[ $# -gt 0 ]] ||
     # default set of expected compilation results
-    set -- "$DEEPDIVE_APP"/run/{compiled/{schema,config}.json,Makefile,process/}
+    set -- "$DEEPDIVE_APP"/run/{compiled/config.json,Makefile,process/}
+
+# automatically compile if necessary unless configured not to do so
+! $DEEPDIVE_AUTOCOMPILE ||
+    app-has-nothing-to-compile ||
+    deepdive-compile
 
 for path; do
     [[ -e "$path" ]] ||

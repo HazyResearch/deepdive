@@ -104,8 +104,9 @@ all_finishes_ok() {
     local pid=
     for pid in "$@"; do
         wait $pid || {
+            exit_status=$?
             kill -TERM "${pids_all[@]}"
-            error "${what:+$what: }PID $pid: finished with non-zero exit status ($?)"
+            error "${what:+$what: }PID $pid: finished with non-zero exit status ($exit_status)"
         }
     done
 }

@@ -13,7 +13,7 @@ if [[ -z "${DEEPDIVE_COMPUTER_TYPE:-}" ]]; then
     eval "$(
     DEEPDIVE_APP=$(find-deepdive-app)
     export DEEPDIVE_APP
-    hocon2json <(cat "$DEEPDIVE_APP"/computers.conf 2>/dev/null || echo '{}') "$DEEPDIVE_HOME"/util/computers-default.conf | jq2sh \
+    hocon2json <(cat "$DEEPDIVE_APP"/computers.conf 2>/dev/null || echo 'deepdive {}') "$DEEPDIVE_HOME"/util/computers-default.conf | jq2sh \
         DEEPDIVE_COMPUTER='.deepdive.computer' \
         DEEPDIVE_COMPUTER_TYPE='.deepdive.computers[.deepdive.computer].type' \
         DEEPDIVE_COMPUTER_CONFIG='.deepdive.computers[.deepdive.computer]' \
