@@ -45,7 +45,7 @@ case $What in
             # pick up any driver-specific extra options first for db-create-table e.g., @distributed_by columns
             eval "$(
                 # XXX this jq can be quite wasteful but reduces the burden on the driver side
-                Relation="$Table" jq '.deepdive_.schema.relations[env.Relation]' run/compiled/config.json |
+                Relation="$Table" jq '.deepdive_.schema.relations[env.Relation]' run/compiled/config.json 2>/dev/null |
                 db-create-table-options
             )"
             columnTypes=$(deepdive-relation column-types "$Table")
