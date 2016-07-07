@@ -7,7 +7,7 @@ set -euo pipefail
 : ${CORENLP_HOME:?}
 : ${CORENLP_BASEURL:=http://nlp.stanford.edu/software/}
 : ${CORENLP_ARCHIVE:=stanford-corenlp-full-2015-12-09.zip}
-: ${CORENLP_ARCHIVE_SHA1SUM:=55c9d653eb30ace7d5a60eb3138e424f9442e539}
+: ${CORENLP_ARCHIVE_SHA1SUM:=6038c836bbb7bba51ba88e80a38fc356f27d1514}
 
 if deepdive-corenlp-installed &>/dev/null; then
     # CoreNLP has been already installed, nothing to do
