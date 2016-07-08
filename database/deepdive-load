@@ -130,6 +130,9 @@ queue() {
 # assume a particular format when explicitly specified
 currentFormat=$DEEPDIVE_LOAD_FORMAT
 
+# use USR1 to communicate failure from process substitutions: bunzip2, gunzip, or custom data source executables
+trap false USR1
+
 # group given paths by format, and batch call to load to support parallel load
 format=$currentFormat
 for path; do
@@ -172,7 +175,7 @@ for path; do
     # queue a source expression
     if [[ -n "$decompress" ]]; then
         # wrapped with decompression process if needed
-        queue "$path" "<($decompress $(escape4sh "$path"))"
+        queue "$path" "<($decompress $(escape4sh "$path") || kill -USR1 $$)"
     else
         queue "$path" "$(escape4sh "$path")"
     fi
