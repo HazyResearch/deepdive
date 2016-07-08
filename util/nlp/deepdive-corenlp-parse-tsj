@@ -23,8 +23,6 @@
 ##
 set -euo pipefail
 
-: ${CORENLP_HOME:?} ${CORENLP_PORT:?}
-
 deepdive-corenlp-installed
 
 # parse specification for input column, input column to NLP, output column mapping

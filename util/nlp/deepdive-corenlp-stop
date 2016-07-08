@@ -7,17 +7,17 @@
 ##
 set -euo pipefail
 
-: ${CORENLP_HOME:?} ${CORENLP_PORT:?}
+: ${CORENLP_RUNDIR:?} ${CORENLP_PORT:?}
 : ${CORENLP_STOP_DELAY:=10} # wait for 5 secs on average
 
 deepdive-corenlp-installed
 
-# override CORENLP_PORT if argument is given
-[[ $# -eq 0 ]] || CORENLP_PORT=$1
+[[ $# -le 1 ]] || usage "$0" "Too many arguments"
+[[ $# -eq 0 ]] || CORENLP_PORT=$1  # command-line argument overrides CORENLP_PORT
 export CORENLP_PORT
 
 # terminate the server
-pid_file="$CORENLP_HOME"/server-port"$CORENLP_PORT".pid
+pid_file="$CORENLP_RUNDIR"/server-port"$CORENLP_PORT".pid
 if [[ -s "$pid_file" ]]; then
     echo >&2 "CoreNLP server at CORENLP_PORT=$CORENLP_PORT stopping..."
     pid=$(cat "$pid_file")
