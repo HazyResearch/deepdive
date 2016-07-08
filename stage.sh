@@ -107,6 +107,9 @@ stage database/deepdive-create                                    util/
 stage database/deepdive-relation                                  util/
 stage database/deepdive-load                                      util/
 stage database/deepdive-unload                                    util/
+stage database/deepdive-insert-into                               util/
+stage database/deepdive-alter                                     util/
+stage database/deepdive-drop                                      util/
 stage database/load-db-driver.sh                                  util/
 stage database/db-driver/postgresql                               util/db-driver/
 stage database/db-driver/greenplum                                util/db-driver/

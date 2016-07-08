@@ -26,7 +26,8 @@ case $What in
 
     # recognize table-if-exists
     table-if-exists)
-        DROP_IF_EXISTS=1 exec "$0" "${What%-if-not-exists}" "$Table" "$@"
+        export DROP_IF_EXISTS=1
+        exec db-drop "${What%-if-exists}" "$Table" "$@"
         ;;
 
     *)

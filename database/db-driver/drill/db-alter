@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# db-alter -- Changes the specified database data structure
+# > db-alter { table TABLE | view VIEW } ACTION
+##
+set -eu
+: ${ALTER_IF_EXISTS:=}
+[[ $# -gt 0 ]] || usage "$0" "What to modify (table or view) must be given"
+What=$1; shift
+
+[[ $# -gt 0 ]] || usage "$0" "Missing TABLE name"
+Table=$1; shift
+
+[[ $# -gt 0 ]] || usage "$0" "Missing action"
+
+case $What in
+    table)
+        if [[ ! -e "$DRILL_WORK_DIRECTORY/tables/$Table" ]];then
+            if [[ -n "$ALTER_IF_EXISTS" ]];then
+                exit 0
+            else
+                error "Table '$Table' doesn't exist"
+            fi
+        fi
+        case "$1" in
+            rename-to)
+                shift
+                [[ $# -gt 0 ]] || usage "$0" "Missing NEW_TABLE name"
+                newTable="$1"
+                if [[ -e "$DRILL_WORK_DIRECTORY/tables/$newTable" ]];then
+                    error "Table '$newTable' already exists"
+                fi
+                if [[ -e "$DRILL_WORK_DIRECTORY/$newTable.view.drill" ]];then
+                    error "Table '$newTable' cannot be created because it already exists as a view"
+                fi
+                db-create-table-like $newTable $Table
+                # don't need old view/schema anymore-if we replace a Drill VIEW,
+                # we need to explicitly DROP the old VIEW through the shell 
+                # because Drill otherwise saves the checksum of the old VIEW and
+                # doesn't let us load the new VIEW!
+                db-drop view "$Table"
+                # db-create-table-like creates an empty directory for the new table data, but we just want to rename the old one
+                rm -rf "$DRILL_WORK_DIRECTORY/tables/$newTable"
+                mv -f "$DRILL_WORK_DIRECTORY/tables/$Table" "$DRILL_WORK_DIRECTORY/tables/$newTable"
+                ;;
+        esac
+        ;;
+    view)
+        case "$1" in
+            rename-to)
+            shift
+            ;;
+        esac
+        ;;
+esac

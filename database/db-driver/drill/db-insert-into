@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# db-insert-into -- Inserts values or query result into the given table.
+#                   Drill does not enforce schemas so the user must make sure
+#                   they are inserting correct data
+# > db-insert-into TABLE { values VALUES | QUERY }
+##
+set -eu
+[[ $# -gt 0 ]] || usage "$0" "No TABLE given"
+table=$1; shift
+[[ $# -gt 0 ]] || usage "$0" "No VALUES or QUERY given"
+
+
+dataFile="$( ls "$DRILL_WORK_DIRECTORY/tables/$table" | head -1 )"
+format=${dataFile##*.}
+: ${format:=tsv}
+
+if [[ "${1,,}" = 'values' ]];then
+    shift
+    [[ $# -gt 0 ]] || usage "$0" "No VALUES given"
+    values="$1"
+else
+    exec db-query "$1" "$format" 0 >$( mktemp --suffix=."$format" "$DRILL_WORK_DIRECTORY/tables/$table"/data-XXXXXX )
+fi

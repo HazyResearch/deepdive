@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# db-drop -- Drops the given table/view in the Drill database
+# > db-drop { table TABLE | view VIEW }
+##
+set -eu
+: ${DROP_IF_EXISTS:=}
+[[ $# -gt 0 ]] || usage "$0" "What to modify (table or view) must be given"
+What=$1; shift
+
+[[ $# -gt 0 ]] || usage "$0" "Missing TABLE name"
+Table=$1; shift
+
+# TODO: modify to drop multiple tables?
+case $What in
+    table)
+        if [[ ! -e "$DRILL_WORK_DIRECTORY/tables/$Table" ]];then
+            if [[ -n "$DROP_IF_EXISTS" ]];then
+                exit 0
+            else
+                error "Table '$Table' doesn't exist"
+            fi
+        fi
+        # delete data
+        rm -rf "$DRILL_WORK_DIRECTORY/tables/$Table"
+        # delete corresponding Drill view/schema
+        if [[ -e "$DRILL_WORK_DIRECTORY/$Table.view.drill" ]];then
+            exec rm "$DRILL_WORK_DIRECTORY/$Table.view.drill"
+        fi
+        ;;
+    view)
+        if [[ ! -e "$DRILL_WORK_DIRECTORY/$Table.view.drill" ]];then
+            if [[ -n "$DROP_IF_EXISTS" ]];then
+                exit 0
+            else
+                error "View '$Table' doesn't exist"
+            fi
+        fi
+        # explicitly DROP VIEW through Drill shell to prevent checksum errors
+        exec db-execute "DROP VIEW $Table"
+        ;;
+esac

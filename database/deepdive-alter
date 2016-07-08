@@ -24,7 +24,8 @@ case $What in
 
     # recognize table-if-exists
     table-if-exists)
-        ALTER_IF_EXISTS=1 exec "$0" "${What%-if-exists}" "$Table" "$@"
+        export ALTER_IF_EXISTS=1 
+        exec db-alter $What $Table "$@"
         ;;
 
     *)

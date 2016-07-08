@@ -207,7 +207,7 @@ def factorWeightDescriptionSqlExpr:
             "\($deepdive.calibration.holdout_query)"
           else empty
           end
-        ] | map("deepdive insert into \(deepdiveGlobalHoldoutTable | asSqlIdent) \(@sh)") | join("\n"))
+        ] | map("deepdive insert-into \(deepdiveGlobalHoldoutTable | asSqlIdent) \(@sh)") | join("\n"))
         "
     }
 }

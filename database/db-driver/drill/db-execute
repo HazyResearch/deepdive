@@ -7,6 +7,8 @@ set -eu
 
 sql=${1:?No SQL given}; shift
 sql=${sql//\"/\`}
+sql=${sql//!=/<>}
+sql="$( echo "$sql" | python -c 'import sys;import re;lines=sys.stdin.readlines();input="".join(lines);print(re.sub(",[\n\s]*NULL", ", CAST(NULL AS ANY)", input))' )"
 if [ "$DISTRIBUTED" = true ];then
     exec sqlline -u 'jdbc:drill:schema='"$DBNAME"';zk='"$ZOOKEEPERS" -n "$DBUSER" -p "$DBPASSWORD" -f <(echo "$sql")
 else

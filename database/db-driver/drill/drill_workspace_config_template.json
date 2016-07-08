@@ -1,12 +1,12 @@
 {
-    "name": "",
+    "name": "<DO NOT EDIT>",
     "config": {
         "type": "file",
         "enabled": true,
         "connection": "file:///",
         "workspaces": {
             "default": {
-                "location": "",
+                "location": "<DO NOT EDIT>",
                 "writable": true,
                 "defaultInputFormat": null
             }
@@ -15,11 +15,26 @@
             "tsv": {
                 "type": "text",
                 "extensions": [
-                    "tsv",
+                    "tsv"
+                ],
+                "quote": "\u0000",
+                "delimiter": "\t"
+            },
+            "tsj": {
+                "type": "text",
+                "extensions": [
                     "tsj"
                 ],
-                "quote": "`",
+                "quote": "\u0000",
                 "delimiter": "\t"
+            },
+            "csv": {
+                 "type": "text",
+                 "extensions": [
+                     "csv"
+                 ],
+                "quote": "\u0000",
+                "delimiter": ","
             }
         }
     }

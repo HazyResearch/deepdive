@@ -15,4 +15,6 @@ set -euo pipefail
 [[ $# -gt 0 ]] || usage "$0" "Missing TABLE name"
 Table=$1; shift
 
+[[ $# -gt 0 ]] || usage "$0" "Missing VALUES or QUERY"
+
 exec db-insert-into "$Table" "$@"
