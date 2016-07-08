@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# deepdive-reload -- Clears and loads a given relation's data
+#
+# $ deepdive reload RELATION[(COLUMN[,COLUMN]...)] [SOURCE...]
+#
+# This is a convenient shorthand for the following two steps:
+#
+# $ deepdive create table RELATION
+# $ deepdive load RELATION[(COLUMN[,COLUMN]...)] [SOURCE...]
+##
+set -eu
+
+[[ $# -gt 0 ]] || usage "$0" "Missing RELATION to load"
+Relation=$1
+Columns=
+
+# parse optional columns following relation name
+case $Relation in
+    *"("*")")
+        # keep column names separate
+        Columns="${Relation#*"("}"
+        Columns=${Columns%")"}
+        Relation=${Relation%%"("*}
+esac
+
+deepdive-create table "$Relation"
+exec deepdive-load "$@"
