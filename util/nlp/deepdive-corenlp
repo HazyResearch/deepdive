@@ -77,6 +77,7 @@ set -euo pipefail
 # Shared environment variables
 export PATH="$DEEPDIVE_HOME"/util/nlp:"$PATH"
 : ${CORENLP_HOME:=$DEEPDIVE_HOME/lib/stanford-corenlp/corenlp}
+: ${CORENLP_RUNDIR:=$CORENLP_HOME}
 : ${CORENLP_BASEPORT:=$(deepdive-corenlp-unique-port)}
 CORENLP_PORT_SET=false; [[ -z ${CORENLP_PORT:-} ]] || CORENLP_PORT_SET=true
 : ${CORENLP_PORT:=$(($CORENLP_BASEPORT + ${DEEPDIVE_CURRENT_PROCESS_INDEX:-1} - 1))}
@@ -86,7 +87,7 @@ CORENLP_PORT_SET=false; [[ -z ${CORENLP_PORT:-} ]] || CORENLP_PORT_SET=true
 Cmd=$1; shift
 handler=deepdive-corenlp-"$Cmd"
 if type "$handler" &>/dev/null; then
-    export CORENLP_HOME
+    export CORENLP_HOME CORENLP_RUNDIR
     export CORENLP_PORT CORENLP_PORT_SET
     exec "$handler" "$@"
 else

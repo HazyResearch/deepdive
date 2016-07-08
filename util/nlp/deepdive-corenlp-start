@@ -7,18 +7,23 @@
 ##
 set -euo pipefail
 
-: ${CORENLP_HOME:?} ${CORENLP_PORT:?}
+: ${CORENLP_HOME:?} ${CORENLP_RUNDIR:?} ${CORENLP_PORT:?}
 : ${CORENLP_TIMEOUT:=86400000} # wait for a day to parse a single document and give up
 : ${CORENLP_JAVAOPTS:=}
 : ${CORENLP_START_DELAY:=120} # wait for a minute on average
 
 deepdive-corenlp-installed
 
-# override CORENLP_PORT if argument is given
-[[ $# -eq 0 ]] || CORENLP_PORT=$1
+[[ $# -le 1 ]] || usage "$0" "Too many arguments"
+[[ $# -eq 0 ]] || CORENLP_PORT=$1  # command-line argument overrides CORENLP_PORT
 export CORENLP_PORT
 
-pid_file="$CORENLP_HOME"/server-port"$CORENLP_PORT".pid
+# default log locations for stdout and stderr
+: ${CORENLP_LOG_OUT:=/dev/null}  # ignore stdout by default as all text parsed is duplicated
+: ${CORENLP_LOG_ERR:="$CORENLP_RUNDIR"/server-port"$CORENLP_PORT".log} # stderr may be useful to keep
+
+pid_file="$CORENLP_RUNDIR"/server-port"$CORENLP_PORT".pid
+mkdir -p "$CORENLP_RUNDIR"
 
 # emulate a lock to elect a single process to actually launch CoreNLP when there's contention
 set -o noclobber
@@ -47,7 +52,10 @@ fi
 if $is_elected; then
     if ! [[ -s "$pid_file" ]]; then
         echo >&2 "CoreNLP server at CORENLP_PORT=$CORENLP_PORT starting..."
-        touch "$pid_file"
+        # ensure we can create log files and PID files
+        mkdir -p "$(dirname "$CORENLP_LOG_OUT")" "$(dirname "$CORENLP_LOG_ERR")"
+        touch "$pid_file" "$CORENLP_LOG_OUT" "$CORENLP_LOG_ERR"
+        launch_with=
         # XXX it doesn't seem like a good idea to launch many CoreNLP servers,
         # but if that happens, e.g., by a UDF running in parallel, below will
         # cope with the thrashing issue in many CoreNLP servers loading at once
@@ -59,13 +67,15 @@ if $is_elected; then
             # so we must cope with the impact of simulateneous loading somehow
             if type taskset &>/dev/null; then
                 # On Linux, limit number of cores JVM can see with taskset(1)
-                java() { taskset -c $(( $DEEPDIVE_CURRENT_PROCESS_INDEX - 1 )) java "$@"; }
+                limit1core() { taskset -c $(( $DEEPDIVE_CURRENT_PROCESS_INDEX - 1 )) "$@"; }
+                launch_with=limit1core
             fi
         fi
         # now, actually launch the JVM running CoreNLP server
-        java ${CORENLP_JAVAOPTS} -cp "$CORENLP_HOME/*" \
+        $launch_with nohup java ${CORENLP_JAVAOPTS} -cp "$CORENLP_HOME/*" \
             edu.stanford.nlp.pipeline.StanfordCoreNLPServer \
-            --port $CORENLP_PORT --timeout $CORENLP_TIMEOUT >/dev/null &
+            --port $CORENLP_PORT --timeout $CORENLP_TIMEOUT \
+            </dev/null >"$CORENLP_LOG_OUT" 2>"$CORENLP_LOG_ERR" &
         echo $! >"$pid_file"
     fi
     rm -f "$pid_file".launching
@@ -82,3 +92,4 @@ do sleep 0.$((1 + $RANDOM % 9))
 done
 echo >&2 "CoreNLP server at CORENLP_PORT=$CORENLP_PORT ready."
 echo >&2 "To stop it after final use, run: deepdive corenlp stop"
+echo >&2 "To watch its log, run: deepdive corenlp watch-log"
