@@ -137,8 +137,8 @@ inline void GibbsSamplerThread::sample_sgd_single_variable(variable_id_t vid,
 
   infrs.assignments_free[variable.id] = proposal;
 
-  infrs.assignments_evid[variable.id] = (
-    variable.is_evid ? variable.assignment_evid : proposal);
+  infrs.assignments_evid[variable.id] =
+      (variable.is_evid ? variable.assignment_evid : proposal);
 
   if (!learn_non_evidence && !variable.is_evid) return;
 
