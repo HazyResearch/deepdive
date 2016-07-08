@@ -16,7 +16,7 @@ Table=$1; shift
 [[ $# -gt 0 ]] || usage "$0" "Missing TABLE_DEFINITION_SQL"
 TableDef=$1; shift
 
-if db-execute '\d '"$Table" >/dev/null; then
+if db-execute '\d '"$Table" &>/dev/null; then
     ! [[ -n $CREATE_IF_NOT_EXISTS ]] ||
         # exit if view or table with same name already exists
         exit 0
