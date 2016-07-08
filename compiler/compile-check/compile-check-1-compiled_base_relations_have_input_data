@@ -16,7 +16,7 @@ else
     # check if every base relation has a corresponding file that can be loaded by deepdive-load
     while read baseRelation; do
         dataExists=false
-        for f in "$DEEPDIVE_APP"/input/{"$baseRelation".{tsj,csv,tsv,sql}{,.sh,gz,bz2},init_"$baseRelation".sh}; do
+        for f in "$DEEPDIVE_APP"/input/{"$baseRelation".{tsj,csv,tsv,sql}{,.{sh,gz,bz2}},init_"$baseRelation".sh}; do
             [[ -e "$f" ]] || continue
             dataExists=true
             break
