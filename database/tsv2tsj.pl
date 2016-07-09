@@ -4,6 +4,12 @@ use strict;
 use utf8; binmode $_, ":encoding(UTF-8)" for *STDIN, *STDOUT, *STDERR;
 select(STDERR); $| = 1; select(STDOUT); # auto flush STDERR
 
+# XXX for higher throughput maybe we need to increase I/O buffer size?
+# See: http://stackoverflow.com/a/1251842
+#use IO::Handle '_IOLBF';
+#my $buffer;
+#STDOUT->setvbuf($buffer, _IOLBF, 0x10000);
+
 # transcode PostgreSQL TSV encoded values into JSON
 sub map_pgtsv_escape_seqs_to_json($) {
     my $v = shift;
@@ -96,3 +102,4 @@ sub json_array($$) {
         "[".join(",", @json)."]"
     } else { die "Cannot parse PostgreSQL ARRAY in TSV: $v" }
 }
+################################################################################
