@@ -39,29 +39,32 @@ mkdir -p run
 # create a fresh working directory for compiling
 compileDir=$(date +%Y%m%d/%H%M%S.%N)
 mkdir -p "run/$compileDir"
+exec 3>&2  # keep original stderr dup as fd 3
 # log all the compilation steps and stderr with timestamps
 if [[ $DEEPDIVE_LOG_LEVEL -gt 0 ]]; then
-    exec 3>&2 2> >(logging-with-ts run/"$compileDir"/compile.log >&2)
+    exec 2> >(logging-with-ts run/"$compileDir"/compile.log >&2)
 else
-    exec 3>&2 2> >(logging-with-ts run/"$compileDir"/compile.log >/dev/null)
+    exec 2> >(logging-with-ts run/"$compileDir"/compile.log >/dev/null)
 fi
 STEP() { echo "$@"; } >&2
-# a shorthand for waiting and checking exit status of child processes
-waitall() { shift; local pid=; for pid; do wait $pid; done; }
-# bookkeep some symlinks
+# bookkeep some symlinks upon exit and abort
 cleanup() {
     cd "$DEEPDIVE_APP"
     [[ ! run/RUNNING.COMPILE -ef run/"$compileDir" ]] || rm -f run/RUNNING.COMPILE
 } >&3
 abort() {
+    local exitstatus=${1:-$?}  # given or get the last command's
     cd "$DEEPDIVE_APP"
-    [[ $DEEPDIVE_LOG_LEVEL -gt 0 ]] || cat run/"$compileDir"/compile.log
-    [[ ! -e run/"$compileDir" ]] || ln -sfnv "$compileDir" run/ABORTED.COMPILE
-} >&3
+    [[ ! -e run/"$compileDir" ]] || ln -sfnv "$compileDir" run/ABORTED.COMPILE >&2
+    [[ $DEEPDIVE_LOG_LEVEL -gt 0 ]] || cat run/"$compileDir"/compile.log >&3
+    exit $exitstatus
+}
 trap cleanup EXIT
 trap abort ERR HUP QUIT INT TERM
 ln -sfnv "$compileDir" run/LATEST.COMPILE >&2
 ln -sfnv "$compileDir" run/RUNNING.COMPILE >&2
+# a shorthand for waiting and checking exit status of child processes
+waitall() { shift; local pid=; for pid; do wait $pid || abort $?; done; }
 
 # augment PATH to access compiler components
 PATH="$DEEPDIVE_HOME"/util/compile-config:"$PATH"
