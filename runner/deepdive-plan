@@ -4,7 +4,7 @@
 ##
 set -euo pipefail
 
-: ${DEEPDIVE_PLAN_PADDING:=$((132 - 11 - 25))}  # 132 columns, excluding "last done: " and timestamp
+: ${DEEPDIVE_PLAN_PADDING:=$((80 - 12))}  # 80 columns, excluding " last done: "
 
 targets="${*%.done}"
 . resolve-args-to-do.sh
@@ -23,9 +23,9 @@ list-commands() {
         echo '$(shell format_timestamp $@ $@~ 2>/dev/null)'
     }
     make -C "$DEEPDIVE_APP"/run --dry-run --silent \
-        TOUCH='mark_done $(@:.done=)' \
-        CMD_process='$(@:.done=/run.sh)'" $(hash_padding_expr "/run.sh") last done: $(timestamp_expr)" \
-        CMD_data='# $(@:.done=)'" $(hash_padding_expr "# ") last done: $(timestamp_expr)" \
+        TOUCH= \
+        CMD_process="\$(@:.done=/run.sh) $(hash_padding_expr '/run.sh') last done: $(timestamp_expr)" \
+        CMD_data="deepdive mark 'done' \$(@:.done=) $(hash_padding_expr 'deepdive mark "done" ') last done: $(timestamp_expr)" \
         "$@"
 }
 
@@ -39,6 +39,7 @@ commands=$(list-commands "$@") ||
 # display the new stuff in the context of overall what has to be executed
 {
 echo "### execution plan for $targets"
+echo
 diff \
     --old-line-format='    # %L' \
     --new-line-format='%L' \

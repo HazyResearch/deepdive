@@ -53,5 +53,7 @@ deepdive sql \"DROP TABLE IF EXISTS ${output_relation_old} CASCADE;\" 2>/dev/nul
 deepdive db analyze \"${output_relation}\"
 
 \(.after // "")
+
+deepdive mark \"done\" \(.name | @sh)
 "
 }

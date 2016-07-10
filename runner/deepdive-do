@@ -62,6 +62,8 @@ done
 cd "$DEEPDIVE_APP"/run
 {
     # some metadata
+    echo "#!/usr/bin/env bash"
+    echo "set -veu"
     echo "################################################################################"
     echo "# App: $DEEPDIVE_APP"
     echo "# Targets: $targets"
@@ -69,9 +71,10 @@ cd "$DEEPDIVE_APP"/run
     echo "# Host: $HOSTNAME"
     echo "# DeepDive: $DEEPDIVE_SHELL ($(deepdive version | head -1))"
     echo "export DEEPDIVE_PWD=$(escape4sh "$DEEPDIVE_PWD")"
+    echo "cd $(escape4sh "$PWD")"
     echo "################################################################################"
     # and the plan
-    deepdive-plan "$@"
+    deepdive-plan "$@" | tail -n +2
 } |
 tee "$runDir"/plan.orig.sh >"$runDir"/plan.sh
 # record DeepDive version
@@ -90,6 +93,9 @@ fi
 
 # remove original unless modified
 ! diff -q "$runDir"/plan{,.orig}.sh || rm -f "$runDir"/plan.orig.sh
+
+# turn it into an executable
+chmod +x "$runDir"/plan.sh
 
 # maintain a few convenience symlinks
 #  making sure we clean up upon exit
@@ -133,7 +139,7 @@ else
     tty_fd_dup_expr=
 fi
 export DEEPDIVE_ERROR_PREFIX DEEPDIVE_PROGRESS_FD DEEPDIVE_APP APP_HOME DEEPDIVE_OUTPUT DEEPDIVE_RUN_ID
-eval 'bash -veu "$runDir"/plan.sh '"$tty_fd_dup_expr"' 2>&1' |
+eval '"$runDir"/plan.sh '"$tty_fd_dup_expr"' 2>&1' |
 {
 ln -sfn run.log "$runDir"/log.txt # XXX for backward compatibility with pre-0.7.x, keep a symlink
 # keep a log with timestamps on each line
