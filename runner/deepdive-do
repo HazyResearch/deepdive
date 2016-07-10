@@ -61,17 +61,23 @@ done
 # prepare the execution plan for given targets
 cd "$DEEPDIVE_APP"/run
 {
-    echo "#!/bin/sh"
     # some metadata
-    echo "# Host: $HOSTNAME"
+    echo "################################################################################"
     echo "# App: $DEEPDIVE_APP"
     echo "# Targets: $targets"
     echo "# Plan: run/$runDir/plan.sh"
+    echo "# Host: $HOSTNAME"
+    echo "# DeepDive: $DEEPDIVE_SHELL ($(deepdive version | head -1))"
     echo "export DEEPDIVE_PWD=$(escape4sh "$DEEPDIVE_PWD")"
+    echo "################################################################################"
     # and the plan
     deepdive-plan "$@"
 } |
 tee "$runDir"/plan.orig.sh >"$runDir"/plan.sh
+# record DeepDive version
+deepdive version >"$runDir"/deepdive.version
+# record environment
+env >"$runDir"/environ
 
 # provide a chance to edit plan in a tty unless told not to ask
 if [[ -t 0 && -t 1 && $VISUAL != true && $VISUAL != : ]] && $DEEPDIVE_PLAN_EDIT; then

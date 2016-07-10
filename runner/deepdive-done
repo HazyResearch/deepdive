@@ -5,4 +5,4 @@
 ##
 set -eu
 . resolve-args-to-do.sh
-exec make -C "$DEEPDIVE_APP"/run --dry-run --silent --question "$@"
+exec make -C "$DEEPDIVE_APP"/run --dry-run --silent --question "$@" CMD_data=# CMD_process=#

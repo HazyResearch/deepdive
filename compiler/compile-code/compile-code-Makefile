@@ -14,16 +14,12 @@ def mktargets: mktargets("done");
 "
 # default commands
 define CMD_data
-# no-op
 endef
 define CMD_pipeline
-# no-op
 endef
 define CMD_process
-# no-op
 endef
 define CMD_factor
-# no-op
 endef
 define TOUCH
 endef
@@ -54,11 +50,8 @@ reset: \(keys | mktargets("reset"))
 # make target and recipe for every node in the dependency graph
 | "
 \(.key | mktarget): \(.value | mktargets)
-	## \(.key) \("#" * (78 -(.key | length) -4))
-	# Done: $(shell format_timestamp $@ $@~ 2>/dev/null)
 	$(CMD_\(.key | sub("/.*"; "")))
 	$(TOUCH)
-	##############################################################################
 
 \(.key | mktarget("reset")):
 	$(RESET) \(.key | mktarget("done"))
