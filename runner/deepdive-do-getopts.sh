@@ -53,4 +53,6 @@ else
     export DEEPDIVE_PLAN_EDIT=false
 fi
 
+# disable progress when we are supposed to be quiet
+[[ $DEEPDIVE_LOG_LEVEL -gt 0 ]] || export DEEPDIVE_SHOW_PROGRESS=false
 export DEEPDIVE_LOG_LEVEL

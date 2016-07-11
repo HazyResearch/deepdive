@@ -4,8 +4,6 @@
 ##
 set -euo pipefail
 
-: ${DEEPDIVE_PROGRESS_FD:=}  # file descriptor used by our show_progress(1) command, set by any nesting deepdive-do command
-
 # record present working directory so processes can optionally recover it
 export DEEPDIVE_PWD="$PWD"
 
@@ -134,16 +132,6 @@ ln -sfn$verboseLevel2 "$runDir" run/LATEST
 # NOTE the exec redirections to process substitution below are applied in reverse order
 # i.e., the first one gets the output already processed by the ones that follow it,
 # allowing us to produce less verbose output and do separate logging.
-
-# determine fd for tty for displaying progress
-[[ $DEEPDIVE_LOG_LEVEL -gt 0 ]] ||
-    # disable progress when we are supposed to be quiet
-    DEEPDIVE_PROGRESS_FD=false
-if [[ -z $DEEPDIVE_PROGRESS_FD ]]; then
-    # use current stderr to find the attached tty and keep it as fd#3
-    export DEEPDIVE_PROGRESS_FD=3
-    eval "exec $DEEPDIVE_PROGRESS_FD>&2"
-fi
 
 # reduce the noise unless the log level is verbose enough
 case $DEEPDIVE_LOG_LEVEL in

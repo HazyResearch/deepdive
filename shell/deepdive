@@ -64,7 +64,7 @@ if ! [[ "${DEEPDIVE_SHELL:-}" -ef "$0" ]]; then
 
     # if we're running inside a Jupyter Notebook, tweak some configs to play nice with it
     if [[ -n ${JPY_PARENT_PID:-} ]]; then
-        export DEEPDIVE_INTERACTIVE=false DEEPDIVE_PROGRESS_FD=false
+        export DEEPDIVE_INTERACTIVE=false DEEPDIVE_SHOW_PROGRESS=false
     fi
 
     export DEEPDIVE_SHELL=$0
