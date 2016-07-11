@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# db-is_ready -- Exits with zero status if the database is ready
+# > eval "$(db-parse "$url")"
+# > db-is_ready
+##
+# XXX may not be accurate
+exec mysql -h "$DBHOST" -P "$DBPORT" -u "$DBUSER" --password="$DBPASSWORD" -e "SHOW DATABASES" >/dev/null
