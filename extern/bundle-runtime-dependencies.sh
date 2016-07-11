@@ -24,4 +24,19 @@ PATH="$PWD"/buildkit:"$PATH"
 buildkit/depends/module.build
 
 # drop some unused, large binaries
-rm -f .build/bundled/{.all,graphviz/prefix}/bin/{cluster,edgepaint,gvmap*}
+rm -vf .build/bundled/{.all,graphviz/prefix}/bin/{cluster,edgepaint,gvmap*}
+
+# put aside postgresql executables from .all/bin/ so they don't mask user's choice
+# TODO this should be handled by restoring user env upon execution
+( cd .build/bundled
+mkdir -p .all/postgresql
+for exe in postgresql/prefix/bin/*; do
+    [[ -x "$exe" ]] || continue
+    exe=$(basename "$exe")
+    [[ -x .all/bin/"$exe" ]] || continue
+    mv -vf .all/bin/"$exe" .all/postgresql/
+done
+)
+
+# mark as done
+touch .build/bundled
