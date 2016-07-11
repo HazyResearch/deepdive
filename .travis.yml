@@ -78,6 +78,7 @@ install:
 
 script:
   # Run all tests
+  - dist/stage/bin/deepdive env make test ONLY=test/postgresql/chunking_example.bats
   - dist/stage/bin/deepdive env make test
 
   # Check broken links in documentation
