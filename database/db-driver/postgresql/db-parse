@@ -5,6 +5,10 @@ set -eu
 
 . parse-url.sh "$@"
 
+# use bundled postgresql if no psql is available
+type psql &>/dev/null ||
+    echo 'PATH="$DEEPDIVE_HOME/lib/bundled/.all/postgresql:$PATH"'
+
 # default values
 : ${user:=$USER} ${port:=5432}
 
