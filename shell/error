@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 # error -- Show error message
+#
+# $ error MSG [MSG_NEXT_LINE]...
+# Displays the given messages to stderr and exits with 1.
+#
+# Colored output can be controled by a switch in environment:
+# $ export DEEPDIVE_COLOR=auto   # by default, uses color only for tty output
+# $ export DEEPDIVE_COLOR=false  # disables colored messages in tty
+# $ export DEEPDIVE_COLOR=true   # forces color coded output
+# $ error ...
 ##
 # Author: Jaeho Shin <netj@ropas.snu.ac.kr>
 # Created: 2010-07-28
@@ -7,10 +16,11 @@
 # use prefix and a log file when specified
 : ${DEEPDIVE_ERROR_PREFIX:=} ${DEEPDIVE_LOGERROR:=}
 # whether to use colored output
-: ${DEEPDIVE_COLOR:=true}
+: ${DEEPDIVE_COLOR:=auto}
+auto() { [[ -t 2 ]]; }
 
 before= after=
-if [[ -t 2 ]] && $DEEPDIVE_COLOR; then
+if $DEEPDIVE_COLOR; then
     # TODO check terminal's color support
     before=a; a() { echo -ne '\033[31m'; }
      after=b; b() { echo -ne '\033[0m'; }

@@ -118,7 +118,7 @@ trap cleanup EXIT
 #  and leaving an ABORTED symlink upon error
 abort() {
     cd "$DEEPDIVE_APP"
-    [[ $DEEPDIVE_LOG_LEVEL -gt 1 ]] || cat run/"$runDir"/run.log >&2
+    [[ $DEEPDIVE_LOG_LEVEL -gt 1 ]] || error-from-file run/"$runDir"/run.log || true
     [[ ! -e run/"$runDir" ]] || ln -sfnv "$runDir" run/ABORTED >&2
 }
 trap abort ERR

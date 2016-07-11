@@ -53,6 +53,7 @@ stage shell/deepdive-whereis                                      util/
 stage shell/find-deepdive-app                                     util/
 stage shell/parse-url.sh                                          util/
 stage shell/error                                                 util/
+stage shell/error-from-file                                       util/
 stage shell/warning                                               util/
 stage shell/usage                                                 util/
 stage shell/escape4sh                                             util/
