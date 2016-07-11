@@ -65,13 +65,15 @@ cd "$DEEPDIVE_APP"/run
     echo "#!/usr/bin/env bash"
     echo "set -veu"
     echo "################################################################################"
-    echo "# App: $DEEPDIVE_APP"
-    echo "# Targets: $targets"
-    echo "# Plan: run/$runDir/plan.sh"
     echo "# Host: $HOSTNAME"
-    echo "# DeepDive: $DEEPDIVE_SHELL ($(deepdive version | head -1))"
+    echo "# DeepDive: $(deepdive-version | head -1)"
+    echo "export PATH=$(escape4sh "$(dirname "$DEEPDIVE_SHELL")"):\"\$PATH\""
     echo "export DEEPDIVE_PWD=$(escape4sh "$DEEPDIVE_PWD")"
-    echo "cd $(escape4sh "$PWD")"
+    echo "export DEEPDIVE_APP=$(escape4sh "$DEEPDIVE_APP")"
+    echo 'cd "$DEEPDIVE_APP"/run'
+    echo "export DEEPDIVE_RUN_ID=$(escape4sh "$runDir")"
+    echo "# Plan: $runDir/plan.sh"
+    echo "# Targets: $targets"
     echo "################################################################################"
     # and the plan
     deepdive-plan "$@" | tail -n +2
@@ -118,11 +120,6 @@ ln -sfnv "$runDir" run/LATEST
 
 # run it
 cd "$DEEPDIVE_APP"/run
-DEEPDIVE_ERROR_PREFIX="[ERROR] "  # prefixing error messages in logs
-DEEPDIVE_APP=$(cd .. && pwd -P)
-APP_HOME=$DEEPDIVE_APP # XXX legacy
-DEEPDIVE_OUTPUT=$(cd "$runDir" && pwd)
-DEEPDIVE_RUN_ID=$runDir
 # determine fd for tty for displaying progress
 if [[ -n $DEEPDIVE_PROGRESS_FD ]]; then
     # use the inherited DEEPDIVE_PROGRESS_FD to look for tty
@@ -138,7 +135,12 @@ if [[ $tty_fd == +([0-9]) ]]; then
 else
     tty_fd_dup_expr=
 fi
-export DEEPDIVE_ERROR_PREFIX DEEPDIVE_PROGRESS_FD DEEPDIVE_APP APP_HOME DEEPDIVE_OUTPUT DEEPDIVE_RUN_ID
+export DEEPDIVE_PROGRESS_FD              # reporting progress consistently
+export DEEPDIVE_ERROR_PREFIX='[ERROR] '  # prefixing error messages in logs
+# XXX some legacy variables
+export APP_HOME="$DEEPDIVE_APP"                     # XXX legacy
+export DEEPDIVE_OUTPUT="$DEEPDIVE_APP/run/$runDir"  # XXX legacy
+# NOTE more environment variables should be added to top of the plan not here
 eval '"$runDir"/plan.sh '"$tty_fd_dup_expr"' 2>&1' |
 {
 ln -sfn run.log "$runDir"/log.txt # XXX for backward compatibility with pre-0.7.x, keep a symlink
