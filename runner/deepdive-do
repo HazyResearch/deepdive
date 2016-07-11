@@ -73,7 +73,7 @@ cd "$DEEPDIVE_APP"/run
     echo "set -veu"
     echo "################################################################################"
     echo "# Host: $HOSTNAME"
-    echo "# DeepDive: $(deepdive-version | head -1)"
+    echo "# DeepDive: $(deepdive-version 2>/dev/null | head -1)"
     echo "export PATH=$(escape4sh "$(dirname "$DEEPDIVE_SHELL")"):\"\$PATH\""
     echo "export DEEPDIVE_PWD=$(escape4sh "$DEEPDIVE_PWD")"
     echo "export DEEPDIVE_APP=$(escape4sh "$DEEPDIVE_APP")"
