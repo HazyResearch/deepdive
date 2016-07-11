@@ -13,7 +13,7 @@
 # Created: 2015-11-03
 set -euo pipefail
 
-: ${DEEPDIVE_LOG_LEVEL:=0}
+: ${DEEPDIVE_LOG_LEVEL:=1}
 : ${DEEPDIVE_CONFIG_EXTRA:=}  # deepdive.conf can be augmented with extra content
 
 : ${DEEPDIVE_COMPILE_INPUT_JSON:=} # compiling app.ddlog and merging deepdive.conf and schema.json can be skipped by specifying a precompiled deepdive.conf.json
@@ -41,7 +41,7 @@ compileDir=$(date +%Y%m%d/%H%M%S.%N)
 mkdir -p "run/$compileDir"
 exec 3>&2  # keep original stderr dup as fd 3
 # log all the compilation steps and stderr with timestamps
-if [[ $DEEPDIVE_LOG_LEVEL -gt 0 ]]; then
+if [[ $DEEPDIVE_LOG_LEVEL -gt 1 ]]; then
     exec 2> >(logging-with-ts run/"$compileDir"/compile.log >&2)
 else
     exec 2> >(logging-with-ts run/"$compileDir"/compile.log >/dev/null)
@@ -56,7 +56,7 @@ abort() {
     local exitstatus=${1:-$?}  # given or get the last command's
     cd "$DEEPDIVE_APP"
     [[ ! -e run/"$compileDir" ]] || ln -sfnv "$compileDir" run/ABORTED.COMPILE >&2
-    [[ $DEEPDIVE_LOG_LEVEL -gt 0 ]] || cat run/"$compileDir"/compile.log >&3
+    [[ $DEEPDIVE_LOG_LEVEL -gt 1 ]] || cat run/"$compileDir"/compile.log >&3
     exit $exitstatus
 }
 trap cleanup EXIT
@@ -191,6 +191,6 @@ fi
 # point to the successfully compiled one, leaving the previous one as backup
 {
     cd "$DEEPDIVE_APP"
-    [[ ! -e run/compiled ]] || mv -fv --no-target-directory run/compiled run/compiled~
+    [[ ! -e run/compiled ]] || mv -f --no-target-directory run/compiled run/compiled~
     ln -sfnv "$compileDir" run/compiled
 }

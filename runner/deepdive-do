@@ -14,14 +14,23 @@ targets="$*"
 . resolve-args-to-do.sh
 cd "$DEEPDIVE_APP"
 
+: ${DEEPDIVE_PLAN_EDIT:?}
+: ${DEEPDIVE_LOG_LEVEL:?}
+
 if deepdive-done "$@"; then
-    cd run
-    echo "All done at $(format_timestamp $(ls -t "$@" | head -1)):"
-    echo " $targets"
-    echo "To see more details, use: deepdive plan"
-    echo "To redo them anyway, use: deepdive redo"
+    if [[ $DEEPDIVE_LOG_LEVEL -gt 0 ]]; then
+        cd run
+        echo "All done at $(format_timestamp $(ls -t "$@" | head -1)):"
+        echo " $targets"
+        echo "To see more details, use: deepdive plan"
+        echo "To redo them anyway, use: deepdive redo"
+    fi
     exit 0
 fi
+
+# shorthands for setting -v flag dependeing on DEEPDIVE_LOG_LEVEL
+verboseLevel1=; [[ $DEEPDIVE_LOG_LEVEL -lt 1 ]] || verboseLevel1=v
+verboseLevel2=; [[ $DEEPDIVE_LOG_LEVEL -lt 2 ]] || verboseLevel2=v
 
 # create a directory for running
 runDir=$(date +%Y%m%d/%H%M%S.%N)
@@ -111,44 +120,60 @@ trap cleanup EXIT
 #  and leaving an ABORTED symlink upon error
 abort() {
     cd "$DEEPDIVE_APP"
-    [[ ! -e run/"$runDir" ]] || ln -sfnv "$runDir" run/ABORTED
+    [[ $DEEPDIVE_LOG_LEVEL -gt 1 ]] || cat run/"$runDir"/run.log >&2
+    [[ ! -e run/"$runDir" ]] || ln -sfnv "$runDir" run/ABORTED >&2
 }
 trap abort ERR
 cd "$DEEPDIVE_APP"
-ln -sfnv "$runDir" run/RUNNING
-ln -sfnv "$runDir" run/LATEST
+ln -sfn$verboseLevel1 "$runDir" run/RUNNING
+ln -sfn$verboseLevel2 "$runDir" run/LATEST
 
 # run it
-cd "$DEEPDIVE_APP"/run
+( cd "$DEEPDIVE_APP"/run
+
+# NOTE the exec redirections to process substitution below are applied in reverse order
+# i.e., the first one gets the output already processed by the ones that follow it,
+# allowing us to produce less verbose output and do separate logging.
+
 # determine fd for tty for displaying progress
-if [[ -n $DEEPDIVE_PROGRESS_FD ]]; then
-    # use the inherited DEEPDIVE_PROGRESS_FD to look for tty
-    tty_fd=$DEEPDIVE_PROGRESS_FD
-else
+[[ $DEEPDIVE_LOG_LEVEL -gt 0 ]] ||
+    # disable progress when we are supposed to be quiet
+    DEEPDIVE_PROGRESS_FD=false
+if [[ -z $DEEPDIVE_PROGRESS_FD ]]; then
     # use current stderr to find the attached tty and keep it as fd#3
-    DEEPDIVE_PROGRESS_FD=3 tty_fd=2
+    export DEEPDIVE_PROGRESS_FD=3
+    eval "exec $DEEPDIVE_PROGRESS_FD>&2"
 fi
-# dup fd for tty (initially found with stderr) show_progress displays progress
-shopt -s extglob
-if [[ $tty_fd == +([0-9]) ]]; then
-    tty_fd_dup_expr="$DEEPDIVE_PROGRESS_FD>&$tty_fd"
-else
-    tty_fd_dup_expr=
-fi
-export DEEPDIVE_PROGRESS_FD              # reporting progress consistently
+
+# reduce the noise unless the log level is verbose enough
+case $DEEPDIVE_LOG_LEVEL in
+    0) # display nothing
+        exec >/dev/null
+        ;;
+    1) # display only the important lines in the plan
+        exec > >(sed '/ ###* last done: /!d; /^..........................     # /d; s/ ###* .*//')
+        ;;
+    *) # show everything that's logged
+esac
+
+# keep a unified log file with timestamped stdout and stderr
+exec > >(tee "$runDir"/run.log) 2>&1
+ln -sfn run.log "$runDir"/log.txt # XXX for backward compatibility with pre-0.7.x, keep a symlink
+
+# also keep a separate log file for stdout and stderr with timestamps on each line
+exec 1> >(logging-with-ts "$runDir"/run.out >&1)
+exec 2> >(logging-with-ts "$runDir"/run.err >&2)
+
 export DEEPDIVE_ERROR_PREFIX='[ERROR] '  # prefixing error messages in logs
 # XXX some legacy variables
 export APP_HOME="$DEEPDIVE_APP"                     # XXX legacy
 export DEEPDIVE_OUTPUT="$DEEPDIVE_APP/run/$runDir"  # XXX legacy
 # NOTE more environment variables should be added to top of the plan not here
-eval '"$runDir"/plan.sh '"$tty_fd_dup_expr"' 2>&1' |
-{
-ln -sfn run.log "$runDir"/log.txt # XXX for backward compatibility with pre-0.7.x, keep a symlink
-# keep a log with timestamps on each line
-logging-with-ts "$runDir"/run.log
-}
+
+exec "$runDir"/plan.sh
+)
 
 # leave a symlink to the latest successful run
 cd "$DEEPDIVE_APP"
-[[ ! -e run/FINISHED ]] || mv -fv --no-target-directory run/FINISHED run/FINISHED~
+[[ ! -e run/FINISHED ]] || mv -f$verboseLevel2 --no-target-directory run/FINISHED run/FINISHED~
 ln -sfnv "$runDir" run/FINISHED
