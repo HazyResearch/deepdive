@@ -59,6 +59,7 @@ stage shell/usage                                                 util/
 stage shell/escape4sh                                             util/
 stage compiler/jq2sh                                              util/
 stage shell/jq                                                    util/
+stage shell/make                                                  util/
 stage shell/logging-with-ts                                       util/
 stage shell/deepdive_bash_completion.sh                           etc/
 

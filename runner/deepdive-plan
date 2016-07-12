@@ -22,7 +22,6 @@ list-commands() {
     timestamp_expr() {
         echo '$(shell format_timestamp $@ $@~ 2>/dev/null)'
     }
-    SHELL="$(type -p bash)" \
     make -C "$DEEPDIVE_APP"/run --dry-run --silent \
         TOUCH= \
         CMD_process="\$(@:.done=/run.sh) $(hash_padding_expr '/run.sh') last done: $(timestamp_expr)" \

@@ -1,0 +1,7 @@
+#!/bin/sh
+# make -- a portability wrapper that makes sure `make` within deepdive uses
+#         uniform configuration, e.g., SHELL=bash, etc.
+set -e
+make=`which -a make | grep -vxF "$0" | head -1` # XXX this is slow
+SHELL="`which bash`" \
+exec "$make" "$@"

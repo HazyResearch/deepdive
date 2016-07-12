@@ -26,7 +26,7 @@ if [[ $# -gt 0 ]]; then
         resolved=false
         for fmt in %s %s.done {data,process,data/model,model,process/{model,grounding{,/{factor,variable}}}}/%s.done; do
             makeTarget=$(printf "$fmt" "$target")
-            if [[ $(SHELL="$(type -p bash)" make -C "$DEEPDIVE_APP"/run -p | sed 's/:.*$//' | grep -cxF "$makeTarget") -gt 0 ]]; then
+            if [[ $(make -C "$DEEPDIVE_APP"/run -p | sed 's/:.*$//' | grep -cxF "$makeTarget") -gt 0 ]]; then
                 makeTargets+=("$makeTarget")
                 resolved=true
                 break
@@ -37,7 +37,6 @@ if [[ $# -gt 0 ]]; then
     set -- "${makeTargets[@]}"
 else
     usage "$0" "No TARGET specified, which can be one of:" ||
-    SHELL="$(type -p bash)" \
     make -C "$DEEPDIVE_APP"/run --silent list >&2
     false
 fi
