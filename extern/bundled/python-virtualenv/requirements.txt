@@ -1,1 +1,3 @@
 pyhocon
+psycopg2
+ujson

@@ -1,0 +1,37 @@
+#!/usr/bin/env python
+# db-query-tsj -- Runs SQL against PostgreSQL and formats output rows in TSJ
+#
+# $ db-query-tsj SQL
+##
+import psycopg2, ujson
+import sys, subprocess, os
+
+# get command-line arguments
+def usage(*msg):
+    err = subprocess.call(["usage", sys.argv[0]] + list(msg))
+    if err != 0: sys.exit(err)
+
+if not len(sys.argv) > 1: usage("Missing SQL")
+sql = sys.argv[1]
+
+# use Pyscopg2 to access each row in the database
+conn = psycopg2.connect(
+        database=os.environ.get("DBNAME"),
+        password=os.environ.get("DBPASSWORD"),
+        user=os.environ.get("DBUSER"),
+        host=os.environ.get("DBHOST"),
+        port=os.environ.get("DBPORT"),
+        )
+
+with conn:
+    with conn.cursor() as curs:
+        curs.execute(sql)
+        while True:
+            row = curs.fetchone()
+            if row is None: break
+            for i,col in enumerate(row):
+                if i > 0: sys.stdout.write("\t")
+                ujson.dump(col, sys.stdout)
+            sys.stdout.write("\n")
+
+conn.close()
