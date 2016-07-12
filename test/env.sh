@@ -26,10 +26,14 @@ DEEPDIVE_SOURCE_ROOT=$(cd "$DEEPDIVE_TEST_ROOT/.." && pwd)
 PATH="$DEEPDIVE_HOME/util:$DEEPDIVE_HOME/bin:$DEEPDIVE_HOME/lib/bundled/.all/bin:$PATH"
 ! [[ -r "$DEEPDIVE_HOME"/env.sh ]] || source "$DEEPDIVE_HOME"/env.sh
 
+# turn off progress reporting during tests
+DEEPDIVE_SHOW_PROGRESS=false
+
 export \
     DEEPDIVE_TEST_ROOT \
     DEEPDIVE_SOURCE_ROOT \
     DEEPDIVE_HOME \
+    DEEPDIVE_SHOW_PROGRESS \
     PATH \
     CLASSPATH \
     TEST_DEBUG \
