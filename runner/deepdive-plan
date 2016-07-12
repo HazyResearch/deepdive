@@ -14,14 +14,15 @@ list-commands() {
     hash_padding_expr() {
         local extra_stuff=${1:-}
         local max_padding_len=$(($DEEPDIVE_PLAN_PADDING - ${#extra_stuff}))
-        local min_padding_len=2
-        echo '$(shell p="$(@:.done=)"; \
-            jq -r '\''"#"*(if . < '$min_padding_len' then '$min_padding_len' \
-                    else . end)'\'' <<<$$(('$max_padding_len' - $${#p})))'
+        local min_padding_len=2  # NOTE this min length is critical for deepdive-do's filter producing less verbose output
+        echo '$(shell echo "$(@:.done=)" | \
+            '"jq -R -r '\"#\"*( $max_padding_len - length | \
+                if . < $min_padding_len then $min_padding_len else . end )')"
     }
     timestamp_expr() {
         echo '$(shell format_timestamp $@ $@~ 2>/dev/null)'
     }
+    SHELL="$(type -p bash)" \
     make -C "$DEEPDIVE_APP"/run --dry-run --silent \
         TOUCH= \
         CMD_process="\$(@:.done=/run.sh) $(hash_padding_expr '/run.sh') last done: $(timestamp_expr)" \
