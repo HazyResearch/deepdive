@@ -6,6 +6,8 @@
 import psycopg2, ujson
 import sys, subprocess, os
 
+BATCH_SIZE = int(os.environ.get("BATCH_SIZE", 100))
+
 # get command-line arguments
 def usage(*msg):
     err = subprocess.call(["usage", sys.argv[0]] + list(msg))
@@ -27,11 +29,12 @@ with conn:
     with conn.cursor() as curs:
         curs.execute(sql)
         while True:
-            row = curs.fetchone()
-            if row is None: break
-            for i,col in enumerate(row):
-                if i > 0: sys.stdout.write("\t")
-                ujson.dump(col, sys.stdout)
-            sys.stdout.write("\n")
+            result = curs.fetchmany(BATCH_SIZE)
+            if result is None: break
+            for row in result:
+                for i,col in enumerate(row):
+                    if i > 0: sys.stdout.write("\t")
+                    ujson.dump(col, sys.stdout)
+                sys.stdout.write("\n")
 
 conn.close()
