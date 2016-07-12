@@ -32,6 +32,7 @@ esac
 case $State in
     "done")
         # XXX cannot use make's --touch as it doesn't ensure parent directories exist
+        SHELL="$(type -p bash)" \
         make -C "$DEEPDIVE_APP"/run TOUCH='mkdir -p $(@D) && touch $@' --silent "$@"
         ;;
 
@@ -42,6 +43,7 @@ case $State in
 
     all-new)
         # XXX cannot use make's --touch as it doesn't ensure parent directories exist
+        SHELL="$(type -p bash)" \
         make -C "$DEEPDIVE_APP"/run TOUCH='mkdir -p $(@D) && touch $@' --silent --always-make "$@"
         ;;
 
@@ -61,6 +63,7 @@ case $State in
         ;;
 
     todo-from-scratch)
+        SHELL="$(type -p bash)" \
         make -C "$DEEPDIVE_APP"/run --silent "${@/.done/.reset}" RESET=reset_timestamp
         ;;
 
