@@ -4,6 +4,7 @@ package org.deepdive.ddlog
 // See: https://docs.google.com/document/d/1SBIvvki3mnR28Mf0Pkin9w9mWNam5AA0SpIGj1ZN2c4
 
 import scala.collection.immutable.HashMap
+import scala.collection.mutable.HashSet
 import scala.language.postfixOps
 
 // Compiler that takes parsed program as input and turns into blocks of deepdive.conf
@@ -134,6 +135,9 @@ class QueryCompiler(cq : ConjunctiveQuery, hackFrom: List[String] = Nil, hackWhe
   // conditions, select, etc.)
   var query_schema = new HashMap[ String, Tuple2[String,Variable] ]()
 
+  // Set of all symbols ever unified with a categorical column
+  var categorical_val_vars = new HashSet[String]()
+
   // maps each variable name to a canonical version of itself (first occurrence in body in left-to-right order)
   // index is the index of the subgoal/atom this variable is found in the body.
   // variable is the complete Variable type for the found variable.
@@ -142,8 +146,14 @@ class QueryCompiler(cq : ConjunctiveQuery, hackFrom: List[String] = Nil, hackWhe
       a.terms.zipWithIndex.foreach { case (expr, i) =>
         expr match {
           case VarPattern(v) =>
+            schemaDeclarationByRelationName get(a.name) map {
+              case decl =>
+                if (decl.categoricalColumnIndexes contains i)
+                  categorical_val_vars += v
+            }
+
             if (! (query_schema contains v) )
-              query_schema += { v -> (index, Variable(v,a.name,i) ) }
+              query_schema += { v -> (index, Variable(v, a.name, i) ) }
           case _ =>
         }
       }
@@ -187,6 +197,13 @@ class QueryCompiler(cq : ConjunctiveQuery, hackFrom: List[String] = Nil, hackWhe
     }
     case ViewAlias => s" AS ${deepdiveViewOrderedColumnPrefix}${cq.headTerms indexOf e}"
     case UseVariableAsAlias => s""" AS "${DeepDiveLogPrettyPrinter.print(e)}\""""
+  }
+
+  def isCategoricalColumn(e: Expr) : Boolean = {
+    e match {
+      case VarExpr(name) => categorical_val_vars contains name
+      case _ => false
+    }
   }
 
   // resolve an expression
@@ -508,6 +525,8 @@ class QueryCompiler(cq : ConjunctiveQuery, hackFrom: List[String] = Nil, hackWhe
       case _ => List.empty
     } flatten
 
+    var nonCategoryWeightCols = new HashSet[String]()
+
     val inputQueries =
       stmt.q.bodies map { case cqBody =>
         // Here we need to select from the bodies atoms as well as the head atoms,
@@ -523,6 +542,12 @@ class QueryCompiler(cq : ConjunctiveQuery, hackFrom: List[String] = Nil, hackWhe
         val weightColumns = stmt.weights.variables.zipWithIndex collect {
           case (s: Expr, i) if !s.isInstanceOf[ConstExpr] =>
             s"""${qc.compileExpr(s)} AS "${deepdiveWeightColumnPrefix}${i}\""""
+        }
+
+        // nonCategoryWeightCols
+        stmt.weights.variables.zipWithIndex.foreach {case(s: Expr, i) =>
+          if (!s.isInstanceOf[ConstExpr] && !qc.isCategoricalColumn(s))
+            nonCategoryWeightCols += s"${deepdiveWeightColumnPrefix}${i}"
         }
 
         // factor input query
@@ -584,6 +609,7 @@ class QueryCompiler(cq : ConjunctiveQuery, hackFrom: List[String] = Nil, hackWhe
         "input_query" -> QuotedString("\n"+inputQueries.mkString(" UNION ALL ")+"\n"),
         "function" -> QuotedString(func),
         "weight" -> QuotedString(weight),
+        "non_category_weight_cols" -> nonCategoryWeightCols.toList.sorted,
         "input_relations" -> {
           val relationsInHead = stmt.head.variables map (_.atom.name)
           val relationsInBody = relationNamesUsedByStatement getOrElse(stmt, List.empty)

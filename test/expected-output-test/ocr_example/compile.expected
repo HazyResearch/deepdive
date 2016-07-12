@@ -37,6 +37,10 @@ materialize: false
 }
 
 deepdive.inference.factors.inf_istrue_q1 {
+weight: """?(dd_weight_column_0)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+]
 input_query: """
 SELECT dd_id_0.dd_id AS "q1.R0.dd_id"
      , R0.wid AS "q1.R0.wid"
@@ -47,16 +51,19 @@ FROM q1 R0
 WHERE R1.word_id = R0.wid
   AND R0.wid = dd_id_0.wid
 """
-function: """Imply(q1.R0.dd_label)"""
-weight: """?(dd_weight_column_0)"""
 input_relations: [
   q1
   features
 ]
+function: """Imply(q1.R0.dd_label)"""
 
 }
 
 deepdive.inference.factors.inf_istrue_q2 {
+weight: """?(dd_weight_column_0)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+]
 input_query: """
 SELECT dd_id_0.dd_id AS "q2.R0.dd_id"
      , R0.wid AS "q2.R0.wid"
@@ -67,12 +74,11 @@ FROM q2 R0
 WHERE R1.word_id = R0.wid
   AND R0.wid = dd_id_0.wid
 """
-function: """Imply(q2.R0.dd_label)"""
-weight: """?(dd_weight_column_0)"""
 input_relations: [
   q2
   features
 ]
+function: """Imply(q2.R0.dd_label)"""
 
 }
 

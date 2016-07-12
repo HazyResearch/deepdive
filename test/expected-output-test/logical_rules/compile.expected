@@ -37,6 +37,10 @@ materialize: false
 }
 
 deepdive.inference.factors.inf_imply_P_Q {
+weight: """1"""
+non_category_weight_cols: [
+  
+]
 input_query: """
 SELECT dd_id_0.dd_id AS "P.R0.dd_id"
      , R0.x AS "P.R0.x"
@@ -51,12 +55,11 @@ WHERE R1.x = R0.x
   AND R0.x = dd_id_0.x
   AND R1.x = dd_id_1.x
 """
-function: """Imply(P.R0.dd_label, Q.R1.dd_label)"""
-weight: """1"""
 input_relations: [
   P
   Q
 ]
+function: """Imply(P.R0.dd_label, Q.R1.dd_label)"""
 
 }
 
