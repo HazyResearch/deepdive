@@ -10,6 +10,10 @@ e.dd_label: Boolean
 }
 
 deepdive.inference.factors.inf_istrue_a {
+weight: """?(dd_weight_column_0)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+]
 input_query: """
 SELECT dd_id_0.dd_id AS "a.R0.dd_id"
      , R0.k AS "a.R0.k"
@@ -20,16 +24,19 @@ FROM a R0
 WHERE R1.k = R0.k
   AND R0.k = dd_id_0.k
 """
-function: """Imply(a.R0.dd_label)"""
-weight: """?(dd_weight_column_0)"""
 input_relations: [
   a
   b
 ]
+function: """Imply(a.R0.dd_label)"""
 
 }
 
 deepdive.inference.factors.inf_istrue_c {
+weight: """?"""
+non_category_weight_cols: [
+  dd_weight_column_0
+]
 input_query: """
 SELECT dd_id_0.dd_id AS "c.R0.dd_id"
      , R0.k AS "c.R0.k"
@@ -39,16 +46,20 @@ FROM c R0
 WHERE R1.k = R0.k
   AND R0.k = dd_id_0.k
 """
-function: """Imply(c.R0.dd_label)"""
-weight: """?"""
 input_relations: [
   c
   b
 ]
+function: """Imply(c.R0.dd_label)"""
 
 }
 
 deepdive.inference.factors.inf_istrue_d {
+weight: """?(dd_weight_column_0, dd_weight_column_1)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+  dd_weight_column_1
+]
 input_query: """
 SELECT dd_id_0.dd_id AS "d.R0.dd_id"
      , R0.k AS "d.R0.k"
@@ -60,16 +71,19 @@ FROM d R0
 WHERE R1.k = R0.k
   AND R0.k = dd_id_0.k
 """
-function: """Imply(d.R0.dd_label)"""
-weight: """?(dd_weight_column_0, dd_weight_column_1)"""
 input_relations: [
   d
   b
 ]
+function: """Imply(d.R0.dd_label)"""
 
 }
 
 deepdive.inference.factors.inf_istrue_e {
+weight: """-10"""
+non_category_weight_cols: [
+  dd_weight_column_0
+]
 input_query: """
 SELECT dd_id_0.dd_id AS "e.R0.dd_id"
      , R0.k AS "e.R0.k"
@@ -79,16 +93,19 @@ FROM e R0
 WHERE R1.k = R0.k
   AND R0.k = dd_id_0.k
 """
-function: """Imply(e.R0.dd_label)"""
-weight: """-10"""
 input_relations: [
   e
   b
 ]
+function: """Imply(e.R0.dd_label)"""
 
 }
 
 deepdive.inference.factors.inf_istrue_f {
+weight: """-0.3"""
+non_category_weight_cols: [
+  dd_weight_column_0
+]
 input_query: """
 SELECT dd_id_0.dd_id AS "f.R0.dd_id"
      , R0.k AS "f.R0.k"
@@ -98,12 +115,11 @@ FROM f R0
 WHERE R1.k = R0.k
   AND R0.k = dd_id_0.k
 """
-function: """Imply(f.R0.dd_label)"""
-weight: """-0.3"""
 input_relations: [
   f
   b
 ]
+function: """Imply(f.R0.dd_label)"""
 
 }
 

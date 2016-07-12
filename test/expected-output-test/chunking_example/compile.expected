@@ -81,6 +81,10 @@ WHERE R1.sent_id = R0.sent_id
 }
 
 deepdive.inference.factors.inf_istrue_chunk {
+weight: """?(dd_weight_column_0, dd_weight_column_1)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+]
 input_query: """
 SELECT dd_id_0.dd_id AS "chunk.R0.dd_id"
      , R0.sent_id AS "chunk.R0.sent_id"
@@ -101,18 +105,21 @@ WHERE R1.sent_id = R0.sent_id
   AND R0.sent_id = dd_id_0.sent_id
   AND R0.word_id = dd_id_0.word_id
 """
-function: """AndCategorical(chunk.R0.dd_label)"""
-weight: """?(dd_weight_column_0, dd_weight_column_1)"""
 input_relations: [
   chunk
   words
   tags
   word_features
 ]
+function: """AndCategorical(chunk.R0.dd_label)"""
 
 }
 
 deepdive.inference.factors.inf_and_chunk_chunk {
+weight: """?(dd_weight_column_0, dd_weight_column_1)"""
+non_category_weight_cols: [
+  
+]
 input_query: """
 SELECT dd_id_0.dd_id AS "chunk.R0.dd_id"
      , R0.sent_id AS "chunk.R0.sent_id"
@@ -145,17 +152,20 @@ WHERE R1.sent_id = R0.sent_id
   AND R1.sent_id = dd_id_1.sent_id
   AND R1.word_id = dd_id_1.word_id
 """
-function: """AndCategorical(chunk.R0.dd_label, chunk.R1.dd_label)"""
-weight: """?(dd_weight_column_0, dd_weight_column_1)"""
 input_relations: [
   chunk
   words
   tags
 ]
+function: """AndCategorical(chunk.R0.dd_label, chunk.R1.dd_label)"""
 
 }
 
 deepdive.inference.factors.inf1_and_chunk_chunk {
+weight: """?(dd_weight_column_0, dd_weight_column_1)"""
+non_category_weight_cols: [
+  
+]
 input_query: """
 SELECT dd_id_0.dd_id AS "chunk.R0.dd_id"
      , R0.sent_id AS "chunk.R0.sent_id"
@@ -189,13 +199,12 @@ WHERE R1.sent_id = R0.sent_id
   AND R1.sent_id = dd_id_1.sent_id
   AND R1.word_id = dd_id_1.word_id
 """
-function: """AndCategorical(chunk.R0.dd_label, chunk.R1.dd_label)"""
-weight: """?(dd_weight_column_0, dd_weight_column_1)"""
 input_relations: [
   chunk
   words
   tags
 ]
+function: """AndCategorical(chunk.R0.dd_label, chunk.R1.dd_label)"""
 
 }
 
