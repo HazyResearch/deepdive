@@ -15,7 +15,6 @@
 set -eu
 
 : ${GPFDIST_DISABLE:=} ${GPFDIST_PORT_BASE:=10000} ${GPFDIST_MAX_LENGTH:=$((2**20))} ${GPFDIST_LOG_PATH:=}
-: ${DEEPDIVE_SHOW_PROGRESS:=true}
 
 [[ $# -gt 0 ]] || usage "$0" "Missing QUERY"
 query=$1; shift
@@ -77,7 +76,7 @@ case $format in
                     echo $! >>"$tmpDir"/gpfdist-$i.pid
                     # TODO cope with gpfdist failure, e.g., port number collision
                 }
-                if $DEEPDIVE_SHOW_PROGRESS; then
+                if ${DEEPDIVE_SHOW_PROGRESS:-true}; then
                     spawn_gpfdist -d "$tmpDir"
                     rm -f "$tmpDir"/sink-$i; mkfifo "$tmpDir"/sink-$i
                     show_progress output_from "unloading [$i/$nsinks]" -- \
