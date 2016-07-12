@@ -13,21 +13,21 @@ copy_option=
 case $format in
     tsj)
         # Tab-Separated-JSONs format, assuming all column values are already in JSON
+        types=$(db-execute "
+            CREATE TEMP TABLE __dd_to_tsj_temp AS SELECT * FROM ($sql) result LIMIT 0;
+            $(sql_for_column_types __dd_to_tsj_temp)
+        " -v QUIET=1 | tr a-z A-Z | escape4sh)
         if ${DEEPDIVE_USE_TSV2TSJ:=false}; then
             # XXX postprocessing TSV had 4-5x (parallel) or 10x (single threaded) slower throughput
-            types=$(db-execute "
-                CREATE TEMP TABLE __dd_to_tsj_temp AS SELECT * FROM ($sql) result LIMIT 0;
-                $(sql_for_column_types __dd_to_tsj_temp)
-            " -v QUIET=1 | tr a-z A-Z | escape4sh)
             db-query "$sql" tsv "$header" "$@" | eval "tsv2tsj $types"
             exit $?  # all done, no need to go further
         else
             # use psycopg2 with ujson
             # Profiling instruction:
-            # 1. uncomment the following line:
-            #exec python -m cProfile -s cumtime -o db-query-tsj.cProfile "$(dirname "$0")"/db-query-tsj "$sql"
-            # 2. then use snakeviz to see the *.cProfile file.
-            exec db-query-tsj "$sql"
+            #  1. uncomment the following line:
+            #eval 'exec python -m cProfile -s cumtime -o db-query-tsj.cProfile "$(dirname "$0")"/db-query-tsj "$sql" '"$types"
+            #  2. then use snakeviz to see the *.cProfile file.
+            eval 'exec db-query-tsj "$sql" '"$types"
         fi
         ;;
     tsv)
