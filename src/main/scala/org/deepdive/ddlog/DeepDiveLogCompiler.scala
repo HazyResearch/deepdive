@@ -538,15 +538,16 @@ class QueryCompiler(cq : ConjunctiveQuery, hackFrom: List[String] = Nil, hackWhe
         // TODO XXX: Fix the `internal` hack below
         val qc = new QueryCompiler(fakeCQ, internalVarTables, internalVarJoinConds)
 
-        stmt.weights.variables.zipWithIndex.foreach {case(s: Expr, i) =>
-          if (!qc.isCategoricalColumn(s))
-            nonCategoryWeightCols += s"${deepdiveWeightColumnPrefix}${i}"
-        }
-
         // weight columns
         val weightColumns = stmt.weights.variables.zipWithIndex collect {
           case (s: Expr, i) if !s.isInstanceOf[ConstExpr] =>
             s"""${qc.compileExpr(s)} AS "${deepdiveWeightColumnPrefix}${i}\""""
+        }
+
+        // nonCategoryWeightCols
+        stmt.weights.variables.zipWithIndex.foreach {case(s: Expr, i) =>
+          if (!s.isInstanceOf[ConstExpr] && !qc.isCategoricalColumn(s))
+            nonCategoryWeightCols += s"${deepdiveWeightColumnPrefix}${i}"
         }
 
         // factor input query
