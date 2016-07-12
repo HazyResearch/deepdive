@@ -4,7 +4,7 @@
 # $ db-query-tsj SQL COLUMN_TYPE...
 ##
 import psycopg2, psycopg2.extras, ujson
-import sys, subprocess, os
+import sys, subprocess, os, re
 
 # get arguments from command-line
 def usage(*msg):
@@ -18,8 +18,18 @@ column_types = sys.argv[2:]
 # write TSJ to stdout
 tsj_output = sys.stdout
 
+
 # SQL types that are already formatted in JSON (to bypass ujson.dump)
 TYPES_TO_PASS_THRU = [ "json" ]
+
+# PostgreSQL date/time types adapted by psycopg that need special formatting
+# See: http://initd.org/psycopg/docs/usage.html#adapt-date
+# See: https://www.postgresql.org/docs/current/static/datatype-datetime.html
+TYPES_DATETIME_PATTERNS = [re.compile(regex) for regex in (
+        r'date',
+        r'interval(?:|.+)',
+        r'timestamp\s*(?:\(\d\))?(?:\s*with(?:out)?\s+time\s+zone)?',
+        )]
 
 # generate code to output columns of each row based on their types
 # See: http://lucumr.pocoo.org/2011/2/1/exec-in-python/
@@ -29,7 +39,11 @@ for i,ty in enumerate(column_types):
     if i > 0: # separate each column by TAB
         stmts.append('tsj_output.write("\\t")')
     if ty in TYPES_TO_PASS_THRU:
+        # passthru JSON compatible columns
         stmts.append('tsj_output.write(columns[%d])' % i)
+    elif any(pattern.match(ty) for pattern in TYPES_DATETIME_PATTERNS):
+        # ujson needs us to format datetime
+        stmts.append('ujson.dump(columns[%d].isoformat(), tsj_output)' % i)
     else:  # dump in JSON except a few
         stmts.append('ujson.dump(columns[%d], tsj_output)' % i)
 stmts.append('tsj_output.write("\\n")')
