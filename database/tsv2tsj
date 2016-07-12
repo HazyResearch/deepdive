@@ -65,7 +65,6 @@ cd "$tmpdir"
 (
     cat "$0".pl
     echo '
-    select(*STDIN); $| = 1; select(*STDOUT);
     while ( <> ) {
         chomp;
         @ARGV = split "\t";
@@ -76,12 +75,14 @@ cd "$tmpdir"
 ) >tsv2tsj-$$.pl
 chmod +x tsv2tsj-$$.pl
 
-# run in parallel (increases throughput 2-3x in with 8 cores but not that much)
-pids=(--)
-mkprocs -I input-%s -O output-%s ./tsv2tsj-$$.pl
-mkmimo output-* \> /dev/stdout & pids+=($!)
-mkmimo /dev/stdin \> input-*
-set "${pids[@]}"; for pid; do wait $pid; done
-
-## single threaded
-#exec ./tsv2tsj-$$.pl
+if [[ ${DEEPDIVE_USE_TSV2TSJ_NPROCS:=$(nproc)} -gt 1 ]]; then
+    # run in parallel (increases throughput 2-3x in with 8 cores but not that much)
+    pids=(--)
+    mkprocs -n $DEEPDIVE_USE_TSV2TSJ_NPROCS -I input-%s -O output-%s ./tsv2tsj-$$.pl
+    mkmimo output-* \> /dev/stdout & pids+=($!)
+    mkmimo /dev/stdin \> input-*
+    set "${pids[@]}"; for pid; do wait $pid; done
+else
+    # single threaded
+    exec ./tsv2tsj-$$.pl
+fi
