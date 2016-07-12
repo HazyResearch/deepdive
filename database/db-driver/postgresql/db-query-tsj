@@ -3,16 +3,13 @@
 #
 # $ db-query-tsj SQL
 ##
-import psycopg2, ujson
+import psycopg2, psycopg2.extras, ujson
 import sys, subprocess, os
-
-BATCH_SIZE = int(os.environ.get("BATCH_SIZE", 100))
 
 # get command-line arguments
 def usage(*msg):
     err = subprocess.call(["usage", sys.argv[0]] + list(msg))
     if err != 0: sys.exit(err)
-
 if not len(sys.argv) > 1: usage("Missing SQL")
 sql = sys.argv[1]
 
@@ -25,16 +22,26 @@ conn = psycopg2.connect(
         port=os.environ.get("DBPORT"),
         )
 
+# a wrapper class to avoid JSON load/dump overhead
+class PassThru:
+    def __init__(self, v):
+        self.v = v
+
+# do not parse JSON
+psycopg2.extras.register_default_json(loads=PassThru)
+# or parse it with ujson
+#psycopg2.extras.register_default_json(loads=ujson.loads)
+
 with conn:
-    with conn.cursor() as curs:
+    with conn.cursor("named") as curs:
         curs.execute(sql)
-        while True:
-            result = curs.fetchmany(BATCH_SIZE)
-            if result is None: break
-            for row in result:
-                for i,col in enumerate(row):
-                    if i > 0: sys.stdout.write("\t")
+        for row in curs:
+            for i,col in enumerate(row):
+                if i > 0: sys.stdout.write("\t")
+                if isinstance(col, PassThru):
+                    sys.stdout.write(col.v)
+                else:
                     ujson.dump(col, sys.stdout)
-                sys.stdout.write("\n")
+            sys.stdout.write("\n")
 
 conn.close()
