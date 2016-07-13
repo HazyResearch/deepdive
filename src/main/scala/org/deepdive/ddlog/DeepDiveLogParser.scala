@@ -137,6 +137,14 @@ case class SchemaDeclaration(a: Attribute,
       a.terms diff keyColumns toList
     else
       List.empty
+
+  val categoricalColumnIndexes : Set[Int] =
+    if (isQuery)
+      a.terms.zipWithIndex.filter { case(term, i) =>
+        categoricalColumns contains term
+      } map { _._2} toSet
+    else
+      Set.empty
 }
 case class FunctionDeclaration(functionName: String,
                                inputType: FunctionInputOutputType,

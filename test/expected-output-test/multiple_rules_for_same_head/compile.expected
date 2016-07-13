@@ -200,6 +200,10 @@ WHERE R0.a > 0
 }
 
 deepdive.inference.factors.inf_istrue_Q {
+weight: """?(dd_weight_column_0)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+]
 input_query: """
 SELECT dd_id_0.dd_id AS "Q.R0.dd_id"
      , R0.x AS "Q.R0.x"
@@ -211,16 +215,19 @@ WHERE R1.a = R0.x
   AND R0.x > 1000
   AND R0.x = dd_id_0.x
 """
-function: """Imply(Q.R0.dd_label)"""
-weight: """?(dd_weight_column_0)"""
 input_relations: [
   Q
   S
 ]
+function: """Imply(Q.R0.dd_label)"""
 
 }
 
 deepdive.inference.factors.inf1_istrue_Q {
+weight: """1.0"""
+non_category_weight_cols: [
+  
+]
 input_query: """
 SELECT dd_id_0.dd_id AS "Q.R0.dd_id"
      , R0.x AS "Q.R0.x"
@@ -231,16 +238,19 @@ WHERE R1.a = R0.x
   AND R0.x = 0
   AND R0.x = dd_id_0.x
 """
-function: """Imply(Q.R0.dd_label)"""
-weight: """1.0"""
 input_relations: [
   Q
   S
 ]
+function: """Imply(Q.R0.dd_label)"""
 
 }
 
 deepdive.inference.factors.inf_istrue_not_Q {
+weight: """?"""
+non_category_weight_cols: [
+  
+]
 input_query: """
 SELECT dd_id_0.dd_id AS "Q.R0.dd_id"
      , R0.x AS "Q.R0.x"
@@ -251,16 +261,19 @@ WHERE R1.a = R0.x
   AND R0.x < 1000
   AND R0.x = dd_id_0.x
 """
-function: """Imply(!Q.R0.dd_label)"""
-weight: """?"""
 input_relations: [
   Q
   S
 ]
+function: """Imply(!Q.R0.dd_label)"""
 
 }
 
 deepdive.inference.factors.inf_imply_Q_Q {
+weight: """?(dd_weight_column_0)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+]
 input_query: """
 SELECT dd_id_0.dd_id AS "Q.R0.dd_id"
      , R0.x AS "Q.R0.x"
@@ -281,17 +294,20 @@ WHERE R2.a = R0.x
   AND R0.x = dd_id_0.x
   AND R1.x = dd_id_1.x
 """
-function: """Imply(Q.R0.dd_label, Q.R1.dd_label)"""
-weight: """?(dd_weight_column_0)"""
 input_relations: [
   Q
   S
   R
 ]
+function: """Imply(Q.R0.dd_label, Q.R1.dd_label)"""
 
 }
 
 deepdive.inference.factors.inf1_imply_Q_Q {
+weight: """-10.0"""
+non_category_weight_cols: [
+  
+]
 input_query: """
 SELECT dd_id_0.dd_id AS "Q.R0.dd_id"
      , R0.x AS "Q.R0.x"
@@ -312,17 +328,20 @@ WHERE R2.a = R0.x
   AND R0.x = dd_id_0.x
   AND R1.x = dd_id_1.x
 """
-function: """Imply(Q.R0.dd_label, Q.R1.dd_label)"""
-weight: """-10.0"""
 input_relations: [
   Q
   S
   R
 ]
+function: """Imply(Q.R0.dd_label, Q.R1.dd_label)"""
 
 }
 
 deepdive.inference.factors.inf2_imply_Q_Q {
+weight: """10.0"""
+non_category_weight_cols: [
+  
+]
 input_query: """
 SELECT dd_id_0.dd_id AS "Q.R0.dd_id"
      , R0.x AS "Q.R0.x"
@@ -343,13 +362,12 @@ WHERE R2.a = R0.x
   AND R0.x = dd_id_0.x
   AND R1.x = dd_id_1.x
 """
-function: """Imply(Q.R0.dd_label, Q.R1.dd_label)"""
-weight: """10.0"""
 input_relations: [
   Q
   S
   R
 ]
+function: """Imply(Q.R0.dd_label, Q.R1.dd_label)"""
 
 }
 

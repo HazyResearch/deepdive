@@ -37,6 +37,10 @@ materialize: false
 }
 
 deepdive.inference.factors.inf_imply_smoke_cancer {
+weight: """0.5"""
+non_category_weight_cols: [
+  
+]
 input_query: """
 SELECT dd_id_0.dd_id AS "smoke.R0.dd_id"
      , R0.person_id AS "smoke.R0.person_id"
@@ -52,17 +56,20 @@ WHERE R1.person_id = R0.person_id
   AND R0.person_id = dd_id_0.person_id
   AND R1.person_id = dd_id_1.person_id
 """
-function: """Imply(smoke.R0.dd_label, cancer.R1.dd_label)"""
-weight: """0.5"""
 input_relations: [
   smoke
   cancer
   person_smokes
 ]
+function: """Imply(smoke.R0.dd_label, cancer.R1.dd_label)"""
 
 }
 
 deepdive.inference.factors.inf_imply_smoke_smoke {
+weight: """0.4"""
+non_category_weight_cols: [
+  
+]
 input_query: """
 SELECT dd_id_0.dd_id AS "smoke.R0.dd_id"
      , R0.person_id AS "smoke.R0.person_id"
@@ -78,12 +85,11 @@ WHERE R2.person_id = R0.person_id
   AND R0.person_id = dd_id_0.person_id
   AND R1.person_id = dd_id_1.person_id
 """
-function: """Imply(smoke.R0.dd_label, smoke.R1.dd_label)"""
-weight: """0.4"""
 input_relations: [
   smoke
   friends
 ]
+function: """Imply(smoke.R0.dd_label, smoke.R1.dd_label)"""
 
 }
 
