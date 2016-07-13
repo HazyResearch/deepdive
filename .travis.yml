@@ -34,7 +34,6 @@ cache:
 
 env:
   global:
-    - DEEPDIVE_SHOW_PROGRESS: false
     - PGUSER: postgres
     - PGPASSWORD:
     - PGPORT: 5432

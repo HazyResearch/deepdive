@@ -71,11 +71,8 @@ if ! [[ "${DEEPDIVE_SHELL:-}" -ef "$0" ]]; then
     fi
 
     # turn on progress display only if we're running directly from a tty
-    if [[ -t 2 ]]; then
-        export DEEPDIVE_SHOW_PROGRESS=true
-    else
-        export DEEPDIVE_SHOW_PROGRESS=false
-    fi
+    : ${DEEPDIVE_SHOW_PROGRESS:=$(if [[ -t 2 ]]; then echo true; else echo false; fi)}
+    export DEEPDIVE_SHOW_PROGRESS
 
     export DEEPDIVE_SHELL=$0
 fi
