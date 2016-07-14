@@ -11,8 +11,8 @@ RUN INSTALLER_LOCAL_FIRST=true \
     util/install.sh \
         _deepdive_build_deps \
         _deepdive_runtime_deps \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+ && sudo apt-get clean \
+ && sudo rm -rf /var/lib/apt/lists/*
 
 # Copy the rest of the source tree
 COPY . /deepdive/

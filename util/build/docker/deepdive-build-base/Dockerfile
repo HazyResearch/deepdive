@@ -4,15 +4,22 @@ MAINTAINER deepdive-dev@googlegroups.com
 
 # Install essential stuffs
 RUN apt-get update && apt-get install -qy \
-        sudo \
         coreutils \
         bash \
         curl \
         git \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+        sudo \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
 
-ENV USER=root
+# Set up a non-superuser
+ARG USER=user
+ENV USER=$USER
+RUN adduser --disabled-password --gecos "" $USER \
+ && adduser $USER adm \
+ && bash -c "echo '%adm ALL=(ALL:ALL) NOPASSWD: ALL' | tee -a /etc/sudoers"
+USER $USER
+
 WORKDIR /deepdive-build-base
 
 # Install deepdive build/runtime dependencies
@@ -23,17 +30,19 @@ ENV RELEASE=$RELEASE
 ENV INSTALLER_LOCAL_FIRST=true
 COPY install    install
 COPY install.sh install.sh
+RUN sudo chown -R $USER .
 RUN ./install.sh \
         _deepdive_build_deps \
         _deepdive_runtime_deps \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+ && sudo apt-get clean \
+ && sudo rm -rf /var/lib/apt/lists/*
 
 # Get a fresh clone of deepdive
-RUN GITCLONE=/deepdive ./install.sh _deepdive_git_repo
+WORKDIR /deepdive
+RUN sudo chown -R $USER .
+RUN GITCLONE=$PWD \
+    /deepdive-build-base/install.sh _deepdive_git_repo
 
 # Build deepdive
-WORKDIR /deepdive
-RUN FORCE_UNSAFE_CONFIGURE=1 \
-    make bundled-runtime-dependencies
+RUN make bundled-runtime-dependencies
 RUN make
