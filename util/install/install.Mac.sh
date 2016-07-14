@@ -20,6 +20,9 @@ install__deepdive_build_deps() {
     # sampler build dependencies
     has unzip   || brew install unzip
     has cmake   || brew install cmake
+    # graphviz-devel
+    has autoconf || brew install autoconf
+    has pkg-config || brew install pkg-config
 }
 
 install__deepdive_runtime_deps() {
