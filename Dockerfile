@@ -1,5 +1,5 @@
 # Dockerfile to build and test DeepDive inside a container
-FROM deepdive-build-base
+FROM netj/deepdive-build-base
 MAINTAINER deepdive-dev@googlegroups.com
 
 WORKDIR /deepdive
