@@ -29,8 +29,8 @@ USER $USER
 ARG BRANCH=master
 ENV BRANCH=$BRANCH
 WORKDIR /deepdive
-RUN sudo chown -R $USER .
 COPY .git .git
+RUN sudo chown -R $USER .
 RUN git checkout .
 
 # Install deepdive build/runtime dependencies
