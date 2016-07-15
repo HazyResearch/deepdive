@@ -7,24 +7,28 @@ set -euo pipefail
 
 DOCKER_CONTAINER+="-inspect.$$"
 
-# run given command or shell
+# docker run options
+dockerRunOpts=(
+    --rm
+)
+
+# run given command or shell depending on whether we're in a tty
 if [[ -t 1 ]]; then
-    # in a tty
+    # interactive shell in a tty
     [[ $# -gt 0 ]] || set -- bash -i
-    cmd=$(printf "%q " exec "$@")
-    set -x
-    docker run --name "$DOCKER_CONTAINER" \
-        --rm \
-        --interactive --tty \
-        "$DOCKER_IMAGE" \
-        env \
-            TERM="$TERM" \
-        script -q -e -c "$cmd" /dev/null
+    dockerRunOpts+=(--interactive --tty)
 else
+    # just a shell
     [[ $# -gt 0 ]] || set -- bash
-    set -x
-    docker run --name "$DOCKER_CONTAINER" \
-        --rm \
-        "$DOCKER_IMAGE" \
-        "$@"
 fi
+
+# XXX need to wrap command around a script(1) session to get sane tty as well
+# as a real PGID separate from 1
+set -- script -q -e -c "$(printf "%q " exec "$@")" /dev/null
+
+set -x
+# run the command in a container
+docker run --name "$DOCKER_CONTAINER" \
+    "${dockerRunOpts[@]}" \
+    "$DOCKER_IMAGE" \
+    "$@"
