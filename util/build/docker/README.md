@@ -1,55 +1,61 @@
-# DeepDive utilities for builds inside Docker containers
+# DeepDive builds inside Docker containers
 
-Here are some utilities to simplify the build and tests using Docker.
+Here are several commands for developers to quickly run their builds/tests in [Docker](https://docker.io) containers.
 
-The recommended workflow is to run tests after an incremental build on top of an already published Docker image that holds a relatively recent build.
-This is because it would waste too much time for the build to repeat every time all steps that rarely change taking care of the build/runtime dependencies.
-The `Dockerfile` at the top of the source tree can build such master images from scratch.
-A set of scripts here supports a handful of typical tasks using and updating the master image.
+There is a `Dockerfile` at the top of the source tree that can create a DeepDive build from scratch.
+However, it is not suitable for development because it wastes too much time on repeating all steps that rarely change to ensure build/runtime dependencies, etc.
+The recommended development workflow using Docker is to use an already published "master" Docker image that holds a relatively recent build.
+After applying the source code changes to the image, an incremental build on top of it can be done much more quickly.
+([`netj/deepdive-build:master`](https://hub.docker.com/r/netj/deepdive-build/) is DeepDive's master image.)
 
-## host/ utilities
+Scripts here support the typical build and test tasks using the master image as well as creating and updating it.
 
-Several commands are available for developers to quickly start and manage the builds/tests in Docker containers:
+## Build/Test
 
-* `create-container`
-    Runs a new Docker container with the master image, mounting the host source tree inside the container.
+### `build-in-container`
+Builds any changes made from the host inside a container using the master image.
+The master image name can be specified in `config.bash`, `DOCKER_IMAGE_MASTER` environment variable, or as the first argument to the command.
 
-* `build-in-container`
-    Builds inside the container any changes made from the host.
+### `test-in-container`
+Runs tests against the latest build inside a container.
+It commits the container as `PASS` or `FAIL` using a name with `DOCKER_IMAGE_TEST_PREFIX`.
 
-* `test-in-container`
-    Runs tests inside the container.
+There are a few more scripts that launch other containers such as databases and run tests in containers linked to them.
 
-* `run-in-container`
-    Runs arbitrary command inside the container.
+* `test-in-container-postgres`
+* `test-in-container-greenplum`
 
-* `inspect-container`
-    Starts an interactive shell for inspecting the container.
+### `inspect-build`
+Starts an interactive shell or runs given command for inspecting the container holding the latest build.
+The `DOCKER_IMAGE` environment can point to the precise Docker image to inspect.
 
-* `remove-container`
-    Kills and removes the Docker container.
+## Update Images
+
+### `update-master-image`
+Makes the latest build the master image, so subsequent `build-in-container` can start builds on top of it.
+This script does not push the image to DockerHub, and should be done manually if desired:
+
+```bash
+# after updating master image locally
+update-master-image
+
+# also publish it
+docker push netj/deepdive-build:master
+```
+
+### `update-master-image-from-scratch`
+Uses the `Dockerfile` at the top of the source tree to rebuild the master image and pushes to DockerHub.
 
 
+## Clean up
 
-### Snapshot and master images
+Scripts here leaves each build and test in a new container image layer, which are kept as small as possible, but still can add up to a huge amount of wasted space.
+Here are some tricks to clean them up.
 
-* `update-master-image`
-    Uses the `Dockerfile` to rebuild the master image and pushes to DockerHub.
+```bash
+# to kill and remove all containers
+docker ps -qa | xargs docker rm -f
 
-    ```bash
-    docker build -t netj/deepdive-build:master https://github.com/HazyResearch/deepdive/raw/master/Dockerfile
-    ```
-
-* `snapshot-container TAG`
-    Commits the diff of the running container with given TAG and pushes to DockerHub.
-
-
-
-## container/ utilities
-Several commands are installed in the master image to support builds and tests.
-Most of these are mainly used by the host commands, but they can be useful during `inspect-container` sessions.
-
-* `import-changes-from-host`
-* `export-changes-to-host`
-* `build-changes-from-host`
-* `test-changes-from-host`
+# to remove all images
+docker images -qa | xargs docker rmi -f
+```

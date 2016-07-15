@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# build-in-container -- Builds changes made from host inside Docker container with the master image
+# $ build-in-container
+#
+# It is possible to run the build on a specific Docker image:
+# $ build-in-container DOCKER_IMAGE_MASTER
+#
+# Also, make targets and flags can be specified as well:
+# $ build-in-container DOCKER_IMAGE_MASTER MAKE_TARGET...
+##
+set -euo pipefail
+. "$(dirname "$0")"/config.bash
+
+[[ $# -eq 0 ]] || { DOCKER_IMAGE_MASTER=$1; shift; }
+
+# Use git to figure out identifiers
+wipTag=; [[ $(git status --porcelain | wc -l) -eq 0 ]] || wipTag="WIP-"
+wipDetails=$(git status --porcelain --branch | sed 's/^/    # /')
+commitFull=$(cd "$DOCKER_HOST_PATH" && git rev-parse HEAD)
+COMMIT="$wipTag${commitFull:0:7}"
+escapedDockerHostMountpoint=$(printf %q "$DOCKER_HOST_MOUNTPOINT")
+DOCKER_CONTAINER+=".$COMMIT.$$"
+
+(
+trap 'docker rm -f "$DOCKER_CONTAINER"' EXIT
+set -x
+docker run \
+    --interactive --tty \
+    --name "$DOCKER_CONTAINER" \
+    --volume "$DOCKER_HOST_PATH:$DOCKER_HOST_MOUNTPOINT" \
+    "$DOCKER_IMAGE_MASTER" /bin/sh -c '# build COMMIT='"$wipTag$commitFull"'
+'"$wipDetails"'
+    export PS4="+('"$DOCKER_CONTAINER"') "; set -eux
+
+    # import changes from host via git and rsync
+    rsync -rplHv --omit-dir-times '"$escapedDockerHostMountpoint"'/.git .
+    git checkout .
+    git clean -df
+    git submodule update --init
+
+    # build
+    make -j "$@"
+    ' -- "$@"
+
+docker commit "$DOCKER_CONTAINER" "$DOCKER_IMAGE"
+)
+
+echo '# Docker image '"$DOCKER_IMAGE"' has been updated to this build.'
+echo '# Use `inspect-build` to open a shell or run commands in this build.'
+echo '# Use `test-in-container` to run tests against this build.'
+echo '# Use `update-master-image` to start subsequent builds on top of this.'

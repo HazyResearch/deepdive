@@ -1,22 +1,23 @@
 #!/usr/bin/env bash
-# update-master-image -- Rebuilds and publishes deepdive-build:master Docker image
+# update-master-image-from-scratch -- Rebuilds and publishes master Docker image
 ##
 set -euo pipefail
 . "$(dirname "$0")"/config.bash
+cd "$DEEPDIVE_SOURCE_ROOT"
 
+# display a few things
 type docker
 docker -v
-
-cd "$DEEPDIVE_SOURCE_ROOT"
 pwd
+
 set -x
 
 # build Docker image
 docker build \
      --build-arg BRANCH=$(git rev-parse --abbrev-ref HEAD) \
      --label COMMIT=$(git rev-parse HEAD) \
-     --tag "$DOCKER_IMAGE" \
+     --tag "$DOCKER_IMAGE_MASTER" \
      .
 
 # and publish
-docker push "$DOCKER_IMAGE"
+docker push "$DOCKER_IMAGE_MASTER"

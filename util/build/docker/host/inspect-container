@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-# inspect-container -- Opens an interactive shell for inspecting the Docker container
-##
-set -euo pipefail
-. "$(dirname "$0")"/config.bash
-
-exec run-in-container bash -i
