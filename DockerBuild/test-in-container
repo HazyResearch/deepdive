@@ -7,13 +7,11 @@ set -euo pipefail
 # NOTE other containers, e.g., postgresql or gpdb, can be run externally, then
 # their names can be passed as arguments for --link options followed by the
 # normal test command, e.g.:
-# $ test-in-container --link test-pg --link test-gp netj/deepdive-build make test
+# $ export DOCKER_RUN_OPTS="--link foo --link bar"
+# $ test-in-container  env POSTGRES=foo MONGODB=bar  make test
 
 # default test command
-[[ $# -gt 0 ]] || set -- \
-    $(! [[ -t 1 ]] || echo --tty --interactive) \
-    -- "$DOCKER_IMAGE" \
-    make test
+[[ $# -gt 0 ]] || set -- make test
 
 DOCKER_CONTAINER+="-test.$$"
 
@@ -21,7 +19,7 @@ DOCKER_CONTAINER+="-test.$$"
 trap 'docker rm -f "$DOCKER_CONTAINER"' EXIT
 set -x
 DOCKER_IMAGE_TEST=$DOCKER_IMAGE_TEST_PREFIX
-if docker-run --name "$DOCKER_CONTAINER" "$@"
+if docker-run --name "$DOCKER_CONTAINER" -- "$DOCKER_IMAGE" "$@"
 then exit_status=$? DOCKER_IMAGE_TEST+="PASS"
 else exit_status=$? DOCKER_IMAGE_TEST+="FAIL"
 fi

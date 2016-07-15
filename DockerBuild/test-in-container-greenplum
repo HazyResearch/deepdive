@@ -9,17 +9,19 @@ set -euo pipefail
 : ${GREENPLUM_PASSWORD:=pivotal}
 
 # run a greenplum container
+trap 'docker rm -f "$DOCKER_GPNAME"' EXIT
+set -x
 docker run --detach --name "$DOCKER_GPNAME" \
     --publish 5432 \
     pivotaldata/gpdb-base
-trap 'docker rm -f "$DOCKER_GPNAME"' EXIT
 
 # run test against it
+DOCKER_RUN_OPTS="
+    --link $DOCKER_GPNAME
+    " \
 test-in-container \
-    $(! [[ -t 1 ]] || echo --tty --interactive) \
-    --link "$DOCKER_GPNAME" \
-    --env TEST_GREENPLUM_DBHOST="$GREENPLUM_USER:$GREENPLUM_PASSWORD@$DOCKER_GPNAME" \
-    -- "$DOCKER_IMAGE" \
+    env \
+        TEST_GREENPLUM_DBHOST="$GREENPLUM_USER:$GREENPLUM_PASSWORD@$DOCKER_GPNAME" \
     /bin/sh -euc '
 # FIXME greenplum client executables must be installed
 make test "$@"

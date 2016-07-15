@@ -8,16 +8,18 @@ DOCKER_PGNAME=test-postgres
 POSTGRES_PASSWORD=$RANDOM$RANDOM
 
 # run a postgres container
+trap 'docker rm -f "$DOCKER_PGNAME"' EXIT
+set -x
 docker run --detach --name "$DOCKER_PGNAME" \
     --env POSTGRES_USER="$USER" \
     --env POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
     postgres
-trap 'docker rm -f "$DOCKER_PGNAME"' EXIT
 
 # run test against it
+DOCKER_RUN_OPTS="
+    --link $DOCKER_PGNAME
+    " \
 test-in-container \
-    $(! [[ -t 1 ]] || echo --tty --interactive) \
-    --link "$DOCKER_PGNAME" \
-    --env TEST_POSTGRES_DBHOST="$USER:$POSTGRES_PASSWORD@$DOCKER_PGNAME" \
-    -- "$DOCKER_IMAGE" \
+    env \
+        TEST_POSTGRES_DBHOST="$USER:$POSTGRES_PASSWORD@$DOCKER_PGNAME" \
     make test "$@"

@@ -8,7 +8,7 @@ set -euo pipefail
 . "$(dirname "$0")"/config.bash ''
 
 # extra docker run options
-[[ -z $DOCKER_RUN_OPTS ]] || eval 'set -- '"$DOCKER_RUN_OPTS"' "$@"'
+[[ -z $DOCKER_RUN_OPTS ]] || eval set -- $DOCKER_RUN_OPTS '"$@"'
 
 # run interactively if we're in a tty
 ! [[ -t 0 && -t 1 ]] || set -- --interactive --tty --env TERM="$TERM" "$@"
