@@ -3,7 +3,7 @@
 # See: https://docker.io/
 sudo: required
 dist: trusty
-
+language: c  # C seems to have the least amount of setup
 services:
   - docker
 
@@ -24,6 +24,11 @@ notifications:
 before_install:
   # Check coding style before performing the build and tests
   - make checkstyle
+
+  # Have Docker build scripts use and update the correct images
+  - export DOCKER_IMAGE=netj/deepdive-build
+  - export DOCKER_IMAGE_MASTER=$DOCKER_IMAGE:master
+  - export DOCKER_IMAGE_TEST_PREFIX=$DOCKER_IMAGE:travis-$TRAVIS_JOB_NUMBER
 
 install:
   # Build using Docker
