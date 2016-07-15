@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# test-in-container-postgres -- Tests with PostgreSQL container linked
+##
+set -euo pipefail
+. "$(dirname "$0")"/config.bash
+
+DOCKER_PGNAME=test-postgres
+POSTGRES_PASSWORD=$RANDOM$RANDOM
+
+# run a postgres container
+docker run --detach --name "$DOCKER_PGNAME" \
+    --env POSTGRES_USER="$USER" \
+    --env POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+    postgres
+trap 'docker rm -f "$DOCKER_PGNAME"' EXIT
+
+# run test against it
+test-in-container \
+    --tty --interactive \
+    --link "$DOCKER_PGNAME" \
+    --env TEST_POSTGRES_DBHOST="$USER:$POSTGRES_PASSWORD@$DOCKER_PGNAME" \
+    "$DOCKER_IMAGE" \
+    /bin/sh -euc '
+sudo apt-get update
+sudo apt-get -qy install postgresql-client
+sudo apt-get clean
+sudo rm -rf /var/lib/apt/lists/*
+
+make test "$@"
+'

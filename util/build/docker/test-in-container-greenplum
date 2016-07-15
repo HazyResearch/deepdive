@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# test-in-container-greenplum -- Tests with Greenplum container linked
+##
+set -euo pipefail
+. "$(dirname "$0")"/config.bash
+
+: ${DOCKER_GPNAME:=test-greenplum}
+: ${GREENPLUM_USER:=gpadmin}
+: ${GREENPLUM_PASSWORD:=pivotal}
+
+# run a greenplum container
+docker run --detach --name "$DOCKER_GPNAME" \
+    --publish 5432 \
+    pivotaldata/gpdb-base
+trap 'docker rm -f "$DOCKER_GPNAME"' EXIT
+
+# run test against it
+test-in-container \
+    --tty --interactive \
+    --link "$DOCKER_GPNAME" \
+    --env TEST_GREENPLUM_DBHOST="$GREENPLUM_USER:$GREENPLUM_PASSWORD@$DOCKER_GPNAME" \
+    "$DOCKER_IMAGE" \
+    /bin/sh -euc '
+# FIXME greenplum client executables must be installed
+make test "$@"
+'
