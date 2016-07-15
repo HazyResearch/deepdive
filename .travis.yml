@@ -28,7 +28,7 @@ before_install:
   # Have Docker build scripts use and update the correct images
   - export DOCKER_IMAGE=netj/deepdive-build
   - export DOCKER_IMAGE_MASTER=$DOCKER_IMAGE:master
-  - export DOCKER_IMAGE_TEST_PREFIX=$DOCKER_IMAGE:travis-$TRAVIS_JOB_NUMBER
+  - export DOCKER_IMAGE_TEST_PREFIX=$DOCKER_IMAGE:travis-$TRAVIS_JOB_NUMBER-${TRAVIS_COMMIT:0:7}-
 
 install:
   # Build using Docker
