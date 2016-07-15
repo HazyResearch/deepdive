@@ -5,13 +5,15 @@
 set -euo pipefail
 . "$(dirname "$0")"/config.bash ''
 
+DOCKER_CONTAINER+="-inspect.$$"
+
 # run given command or shell
 if [[ -t 1 ]]; then
     # in a tty
     [[ $# -gt 0 ]] || set -- bash -i
     cmd=$(printf "%q " exec "$@")
     set -x
-    docker run \
+    docker run --name "$DOCKER_CONTAINER" \
         --rm \
         --interactive --tty \
         "$DOCKER_IMAGE" \
@@ -21,7 +23,7 @@ if [[ -t 1 ]]; then
 else
     [[ $# -gt 0 ]] || set -- bash
     set -x
-    docker run \
+    docker run --name "$DOCKER_CONTAINER" \
         --rm \
         "$DOCKER_IMAGE" \
         "$@"
