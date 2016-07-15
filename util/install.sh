@@ -13,7 +13,7 @@ INSTALLER_HOME_DIR=$(dirname "$0")/install
 
 # see if running from the git repo
 : ${INSTALLER_LOCAL_FIRST:=false}
-[[ -e "$INSTALLER_HOME_DIR"/../../.git ]] || INSTALLER_LOCAL_FIRST=true
+! [[ -e "$INSTALLER_HOME_DIR"/../../.git ]] || INSTALLER_LOCAL_FIRST=true
 ! $INSTALLER_LOCAL_FIRST ||
     # set GITCLONE to the containing git working copy when running from it
     case $(declare -p GITCLONE) in "declare --"*) false ;; *) true ;; esac ||
