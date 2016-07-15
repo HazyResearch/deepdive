@@ -14,4 +14,4 @@ Here=$(cd "$(dirname "$BASH_SOURCE")" && pwd)
 : ${DOCKER_RUN_OPTS:=}
 
 # call other scripts by name
-PATH="$Here:$PATH"
+PATH="$Here/util:$Here:$PATH"
