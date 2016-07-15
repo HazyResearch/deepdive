@@ -19,7 +19,7 @@ test-in-container \
     $(! [[ -t 1 ]] || echo --tty --interactive) \
     --link "$DOCKER_GPNAME" \
     --env TEST_GREENPLUM_DBHOST="$GREENPLUM_USER:$GREENPLUM_PASSWORD@$DOCKER_GPNAME" \
-    "$DOCKER_IMAGE" \
+    -- "$DOCKER_IMAGE" \
     /bin/sh -euc '
 # FIXME greenplum client executables must be installed
 make test "$@"

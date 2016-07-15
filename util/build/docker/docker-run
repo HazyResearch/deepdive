@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# docker-run -- Wraps docker run fixing some tty and PGID issues
+# $ docker-run [DOCKER_RUN_OPTS...] -- DOCKER_IMAGE [COMMAND [ARG...]]
+#
+# NOTE the `--` before DOCKER_IMAGE is required!
+##
+set -euo pipefail
+. "$(dirname "$0")"/config.bash ''
+
+# extra docker run options
+[[ -z $DOCKER_RUN_OPTS ]] || eval 'set -- '"$DOCKER_RUN_OPTS"' "$@"'
+
+# run interactively if we're in a tty
+! [[ -t 0 && -t 1 ]] || set -- --interactive --tty "$@"
+
+# pick up options to pass to docker run until the -- separator
+[[ $# -gt 0 ]] || usage "$0" "Missing `--` separator"
+dockerRunOpts=()
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --) shift; break ;;
+        *) dockerRunOpts+=("$1"); shift
+    esac
+done
+# and the image argument
+[[ $# -gt 0 ]] || usage "$0" "Missing DOCKER_IMAGE"
+dockerRunOpts+=("$1"); shift  # this ensure [[ ${#dockerRunOpts[@]} -gt 0 ]]
+
+[[ $# -eq 0 ]] ||
+    # XXX wrap given command around a script(1) session to get:
+    # a sane tty as well as a real PGID separate from 1
+    set -- script -q -e -c "$(printf "%q " exec "$@")" /dev/null
+
+set -x
+# run the command in a container
+docker run "${dockerRunOpts[@]}" "$@"

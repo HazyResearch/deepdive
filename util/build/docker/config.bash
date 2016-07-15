@@ -9,6 +9,7 @@ Here=$(cd "$(dirname "$BASH_SOURCE")" && pwd)
 : ${DOCKER_IMAGE_TEST_PREFIX:=${DOCKER_IMAGE_MASTER%%:*}:test.}
 : ${DOCKER_HOST_PATH:=$DEEPDIVE_SOURCE_ROOT}
 : ${DOCKER_HOST_MOUNTPOINT:=/mnt}
+: ${DOCKER_RUN_OPTS:=}
 
 # use error, warning, etc.
 PATH="$DEEPDIVE_SOURCE_ROOT/shell:$PATH"
