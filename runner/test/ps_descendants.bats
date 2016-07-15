@@ -18,12 +18,14 @@ teardown() {
 @test "ps_descendants basic" {
     export pidsfile
     : >$pidsfile
+    set -m
     bash -c '
         sleep 5 &
         echo $! >>$pidsfile
         wait
     ' &
     pid=$!
+    sleep 0.1
 
     diff -u $pidsfile <(ps_descendants $pid)
     kill $(cat $pidsfile)
