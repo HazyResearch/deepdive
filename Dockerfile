@@ -1,21 +1,42 @@
 # Dockerfile to build and test DeepDive inside a container
-FROM netj/deepdive-build-base
+#
+# `make build-in-container test-in-container` uses master image built by this.
+# `util/build/docker/` contains utilities relevant to this.
+FROM ubuntu
 MAINTAINER deepdive-dev@googlegroups.com
 
-WORKDIR /deepdive
+# Install essential stuffs
+RUN apt-get update && apt-get install -qy \
+        coreutils \
+        bash \
+        curl \
+        sudo \
+        git \
+        build-essential \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
 
-# Install any updated build/runtime dependencies
-COPY util/install    /deepdive/util/install
-COPY util/install.sh /deepdive/util/install.sh
-RUN INSTALLER_LOCAL_FIRST=true \
-    util/install.sh \
-        _deepdive_build_deps \
-        _deepdive_runtime_deps \
+# Set up a non-superuser
+ARG USER=user
+ENV USER=$USER
+RUN adduser --disabled-password --gecos "" $USER \
+ && adduser $USER adm \
+ && bash -c "echo '%adm ALL=(ALL:ALL) NOPASSWD: ALL' | tee -a /etc/sudoers"
+USER $USER
+
+# Get a fresh clone of deepdive
+ARG BRANCH=master
+ENV BRANCH=$BRANCH
+WORKDIR /deepdive
+RUN sudo chown -R $USER .
+COPY .git .git
+RUN git checkout -f
+
+# Install deepdive build/runtime dependencies
+RUN make depends \
  && sudo apt-get clean \
  && sudo rm -rf /var/lib/apt/lists/*
 
-# Copy the rest of the source tree
-COPY . /deepdive/
-
-# Build the copied source
+# Build deepdive
+RUN make bundled-runtime-dependencies
 RUN make
