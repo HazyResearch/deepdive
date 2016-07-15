@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# usage -- Show usage of given tool
+#
+# > usage TOOLPATH [MESSAGE]...
+#
+# The first block of comments in TOOLPATH (i.e., the lines that start with `# `
+# excluding the first she-bang line) will be shown as the usage of the tool.
+# The block is terminated with a `#`-line that has no trailing space.
+#
+# Any comment in the block beginning with `> ` or `$ ` will be shown without the
+# leading hash (`#`).  All other non-empty lines will keep their leading hash.
+# Therefore, it is recommended to prefix shell commands, or code for the user
+# to literally copy with these marker characters.
+#
+# When a MESSAGE is given, it will be shown as error.  It's a good practice to
+# specify the reason why the usage is being displayed using the same texts.
+##
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2009-11-10
+set -eu
+
+ToolPath=$1; shift || usage "$0" "No TOOLPATH given"
+
+# show embedded usage
+# TODO only for scripts
+cat "$ToolPath" |
+sed -n "
+2,/^##$/ {
+    /^##$/q
+    ${USAGE_TOOL_COMMAND:+$(printf \
+        's#^\(\# [$>] \)%s #\\1%s #' \
+        "${USAGE_TOOL_COMMAND//\#/\\\#}" \
+        "${USAGE_TOOL_PATH//\#/\\\#}"
+    )}
+    s/^# [$>] //
+    s/^# *$//
+    p
+}
+"
+
+# show message if available
+[ $# -eq 0 ] || error "$@"

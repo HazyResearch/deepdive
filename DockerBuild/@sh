@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# @sh -- Escapes each argument or each line in stdin into a shell WORD
+#        such that it is safe to use as input for shells, e.g., sh -c ...
+#
+# $ sh -c "$(@sh ARG...)"
+#
+# $ eval "$(@sh echo "foo  bar" "baz's \"qux\"")"
+# $ eval "printf 'file: [%s]\n' $(ls | @sh)"
+#
+# Compare the following two:
+# $ printf '[%s]\n' $(seq 10 | xargs -L1 -I{} date)
+# $ eval printf '[%s]\n' $(seq 10 | xargs -L1 -I{} date | @sh)
+##
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-01-24
+set -euo pipefail
+if [[ $# -gt 0 ]]; then
+    # construct a jq expression that applies shell escaping for each given argument
+    args=() i=0 jqExpr=
+    while [[ $# -gt 0 ]]; do
+        let ++i
+        args+=(--arg "a$i" "$1"); shift
+        jqExpr+='($a'$i'|@sh), '
+    done
+    jqExpr=${jqExpr%, }
+    # then run it
+    eval 'jq -n -r "${args[@]}" '\'"[$jqExpr]"' | join(" ")'\'
+else
+    # without any arguments, escape each line in STDIN
+    sed "s/'/'\\\\''/g; s/^/'/; s/\$/'/" | tr '\n' ' ' | sed 's/ $//'
+fi

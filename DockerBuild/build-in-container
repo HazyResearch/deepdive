@@ -18,7 +18,7 @@ wipTag=; [[ $(git status --porcelain | wc -l) -eq 0 ]] || wipTag="WIP-"
 wipDetails=$(git status --porcelain --branch | sed 's/^/    # /')
 commitFull=$(cd "$DOCKER_HOST_PATH" && git rev-parse HEAD)
 COMMIT="$wipTag${commitFull:0:7}"
-escapedDockerHostMountpoint=$(printf %q "$DOCKER_HOST_MOUNTPOINT")
+escapedDockerHostMountpoint=$(@sh "$DOCKER_HOST_MOUNTPOINT")
 DOCKER_CONTAINER+=".$COMMIT.$$"
 
 (

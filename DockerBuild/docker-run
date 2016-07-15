@@ -11,7 +11,7 @@ set -euo pipefail
 [[ -z $DOCKER_RUN_OPTS ]] || eval 'set -- '"$DOCKER_RUN_OPTS"' "$@"'
 
 # run interactively if we're in a tty
-! [[ -t 0 && -t 1 ]] || set -- --interactive --tty "$@"
+! [[ -t 0 && -t 1 ]] || set -- --interactive --tty --env TERM="$TERM" "$@"
 
 # pick up options to pass to docker run until the -- separator
 [[ $# -gt 0 ]] || usage "$0" "Missing `--` separator"
@@ -29,8 +29,8 @@ dockerRunOpts+=("$1"); shift  # this ensure [[ ${#dockerRunOpts[@]} -gt 0 ]]
 [[ $# -eq 0 ]] ||
     # XXX wrap given command around a script(1) session to get:
     # a sane tty as well as a real PGID separate from 1
-    set -- script -q -e -c "$(printf "%q " exec "$@")" /dev/null
+    set -- script -q -e -c "$(@sh exec "$@")" /dev/null
 
-set -x
+#set -x # XXX this is too verbose and the callers already show the options
 # run the command in a container
 docker run "${dockerRunOpts[@]}" "$@"

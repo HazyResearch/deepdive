@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# error -- Show error message
+##
+# Author: Jaeho Shin <netj@ropas.snu.ac.kr>
+# Created: 2010-07-28
+
+if [[ -t 2 ]]; then
+    # TODO check terminal's color support
+    echo -ne '\033[31m'
+    for msg; do echo "$msg"; done
+    echo -ne '\033[0m'
+else
+    for msg; do echo "$msg"; done
+fi >&2
+false

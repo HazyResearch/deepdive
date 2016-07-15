@@ -32,11 +32,11 @@ before_install:
 
 install:
   # Build using Docker
-  - util/build/docker/build-in-container
+  - ./DockerBuild/build-in-container
 
 script:
   # Run all tests
-  - util/build/docker/test-in-container-postgres
+  - ./DockerBuild/test-in-container-postgres
 
   # Check broken links in documentation
   # TODO check only when doc/ has changed
