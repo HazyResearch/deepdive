@@ -26,11 +26,6 @@ done
 [[ $# -gt 0 ]] || usage "$0" "Missing DOCKER_IMAGE"
 dockerRunOpts+=("$1"); shift  # this ensure [[ ${#dockerRunOpts[@]} -gt 0 ]]
 
-[[ $# -eq 0 ]] ||
-    # XXX wrap given command around a script(1) session to get:
-    # a sane tty as well as a real PGID separate from 1
-    set -- script -q -e -c "$(@sh exec "$@")" /dev/null
-
 #set -x # XXX this is too verbose and the callers already show the options
 # run the command in a container
 docker run "${dockerRunOpts[@]}" "$@"
