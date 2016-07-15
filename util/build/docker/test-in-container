@@ -11,7 +11,7 @@ set -euo pipefail
 
 # default test command
 [[ $# -gt 0 ]] || set -- \
-    --interactive --tty \
+    $(! [[ -t 1 ]] || echo --tty --interactive) \
     "$DOCKER_IMAGE" \
     make test
 

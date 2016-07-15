@@ -16,7 +16,7 @@ trap 'docker rm -f "$DOCKER_GPNAME"' EXIT
 
 # run test against it
 test-in-container \
-    --tty --interactive \
+    $(! [[ -t 1 ]] || echo --tty --interactive) \
     --link "$DOCKER_GPNAME" \
     --env TEST_GREENPLUM_DBHOST="$GREENPLUM_USER:$GREENPLUM_PASSWORD@$DOCKER_GPNAME" \
     "$DOCKER_IMAGE" \
