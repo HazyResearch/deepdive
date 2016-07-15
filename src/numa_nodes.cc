@@ -46,7 +46,9 @@ struct bitmask* NumaNodes::numa_nodemask() {
 void NumaNodes::bind() { numa_bind(numa_nodemask()); }
 void NumaNodes::unbind() { numa_bind(numa_nodemask()); }
 
-size_t NumaNodes::num_configured() { return numa_num_configured_nodes(); }
+size_t NumaNodes::num_configured() {
+  return std::max(numa_num_configured_nodes(), 1);
+}
 
 NumaNodes NumaNodes::partition(size_t ith_part, size_t num_parts) {
   size_t num_numa_nodes = num_configured();
