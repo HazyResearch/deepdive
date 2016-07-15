@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# test-in-container -- Builds changes made from host inside Docker container with the master image
+##
+set -euo pipefail
+. "$(dirname "$0")"/config.bash
+
+# TODO run other containers, e.g., postgresql or gpdb
+
+# run tests
+run-in-container make test "$@"

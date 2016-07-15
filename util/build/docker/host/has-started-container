@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# has-started-container -- Checks if the Docker container has started
+##
+set -euo pipefail
+. "$(dirname "$0")"/config.bash
+
+[[ $(docker ps -qlf Name="$DOCKER_CONTAINER" | wc -l) -gt 0 ]] ||
+    error 'DOCKER_CONTAINER='"$DOCKER_CONTAINER"' is not running!' \
+        'Make sure you ran `start-container`' \
+        #

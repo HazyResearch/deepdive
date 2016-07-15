@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# build-in-container -- Builds changes made from host inside Docker container with the master image
+##
+set -euo pipefail
+. "$(dirname "$0")"/config.bash
+
+# import changes from host via rsync'ing git
+run-in-container rsync -rplHv --omit-dir-times "$DOCKER_HOST_MOUNTPOINT"/.git .
+run-in-container git checkout -f
+run-in-container git clean -df
+run-in-container git submodule update --init
+
+# build
+run-in-container make

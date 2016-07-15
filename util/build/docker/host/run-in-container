@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# run-in-container -- Runs given command inside the Docker container
+##
+set -euo pipefail
+. "$(dirname "$0")"/config.bash
+
+has-started-container
+
+# run given command or shell
+if [[ -t 1 ]]; then
+    # in a tty
+    [[ $# -gt 0 ]] || set -- bash -i
+    cmd=$(printf "%q " exec "$@")
+    set -x
+    docker exec --interactive --tty \
+        "$DOCKER_CONTAINER" \
+        env \
+            TERM="$TERM" \
+        script -q -e -c "$cmd" /dev/null
+else
+    [[ $# -gt 0 ]] || set -- bash
+    set -x
+    docker exec \
+        "$DOCKER_CONTAINER" \
+        "$@"
+fi

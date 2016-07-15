@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# start-container -- Runs a new Docker container with the master image
+##
+set -euo pipefail
+. "$(dirname "$0")"/config.bash
+
+# Check if there's already a running container
+containerRunning=$(docker ps -qlf Name="$DOCKER_CONTAINER")
+[[ -z $containerRunning ]] || { warning \
+    'DOCKER_CONTAINER='"$DOCKER_CONTAINER"' already running' \
+    'To restart please run `stop-container` first' \
+    #
+    exit 0
+}
+
+set -x
+
+# Remove the container with the same name
+container=$(docker ps -qlf Name="$DOCKER_CONTAINER")
+[[ -z $container ]] || docker rm -f "$DOCKER_CONTAINER"
+
+# Run a new container
+docker run --detach \
+    "$@" \
+    --name "$DOCKER_CONTAINER" \
+    --volume "$DOCKER_HOST_PATH:$DOCKER_HOST_MOUNTPOINT" \
+    "$DOCKER_IMAGE" /sbin/init
