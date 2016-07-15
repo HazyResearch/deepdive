@@ -20,11 +20,4 @@ test-in-container \
     --link "$DOCKER_PGNAME" \
     --env TEST_POSTGRES_DBHOST="$USER:$POSTGRES_PASSWORD@$DOCKER_PGNAME" \
     "$DOCKER_IMAGE" \
-    /bin/sh -euc '
-sudo apt-get update
-sudo apt-get -qy install postgresql-client
-sudo apt-get clean
-sudo rm -rf /var/lib/apt/lists/*
-
-make test "$@"
-'
+    make test "$@"

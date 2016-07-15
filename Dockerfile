@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -qy \
         sudo \
         git \
         build-essential \
+        postgresql-client \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
@@ -30,7 +31,7 @@ ENV BRANCH=$BRANCH
 WORKDIR /deepdive
 RUN sudo chown -R $USER .
 COPY .git .git
-RUN git checkout -f
+RUN git checkout .
 
 # Install deepdive build/runtime dependencies
 RUN make depends \
