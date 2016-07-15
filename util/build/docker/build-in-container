@@ -36,7 +36,7 @@ docker run \
     rsync -rplHv --omit-dir-times '"$escapedDockerHostMountpoint"'/.git .
     git checkout .
     git clean -df
-    git submodule update --init
+    git submodule update --init --recursive --force
 
     # build
     make -j "$@"
