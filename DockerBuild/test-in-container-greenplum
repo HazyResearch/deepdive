@@ -4,7 +4,7 @@
 set -euo pipefail
 . "$(dirname "$0")"/config.bash
 
-: ${DOCKER_GPNAME:=test-greenplum}
+: ${DOCKER_GPNAME:=test-greenplum.$$}
 : ${GREENPLUM_USER:=gpadmin}
 : ${GREENPLUM_PASSWORD:=pivotal}
 : ${GREENPLUM_START_TIME:=4} # seconds

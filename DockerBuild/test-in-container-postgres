@@ -4,7 +4,7 @@
 set -euo pipefail
 . "$(dirname "$0")"/config.bash
 
-: ${DOCKER_PGNAME:=test-postgres}
+: ${DOCKER_PGNAME:=test-postgres.$$}
 : ${POSTGRES_PASSWORD:=$RANDOM$RANDOM}
 : ${POSTGRES_START_TIME:=4} # seconds
 
