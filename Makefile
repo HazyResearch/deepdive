@@ -26,9 +26,10 @@ endif
 ### dependency recipes ########################################################
 
 .PHONY: depends
-depends:
+depends: .build/depends
+.build/depends: util/install.sh $(wildcard util/install/*)
 	# Installing and Checking dependencies...
-	util/install.sh _deepdive_build_deps _deepdive_runtime_deps
+	$< _deepdive_build_deps _deepdive_runtime_deps
 
 ### install recipes ###########################################################
 
