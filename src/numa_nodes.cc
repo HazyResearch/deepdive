@@ -19,6 +19,14 @@
 #define numa_bitmask_alloc(n) nullptr
 #define numa_bitmask_free(bmp)
 
+void numa_warn(int number, char* where, ...) {
+  // ignore
+}
+
+void numa_error(char* where) {
+  // ignore
+}
+
 #endif  // __linux__
 
 namespace dd {
