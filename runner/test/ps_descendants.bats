@@ -26,7 +26,7 @@ teardown() {
     pid=$!
     sleep 0.1
 
-    diff -u $pidsfile <(ps_descendants $pid)
+    diff -u <(sort -n $pidsfile) <(ps_descendants $pid | sort -n)
     kill $(cat $pidsfile)
 }
 
@@ -45,6 +45,6 @@ teardown() {
     pid=$!
     sleep 0.1
 
-    diff -u $pidsfile <(ps_descendants $pid)
+    diff -u <(sort -n $pidsfile) <(ps_descendants $pid | sort -n)
     kill $(cat $pidsfile)
 }
