@@ -11,8 +11,6 @@
 set -euo pipefail
 . "$(dirname "$0")"/config.bash
 
-[[ $# -eq 0 ]] || { DOCKER_IMAGE_MASTER=$1; shift; }
-
 # Use git to figure out identifiers
 wipTag=; [[ $(git status --porcelain | wc -l) -eq 0 ]] || wipTag="WIP-"
 wipDetails=$(git status --porcelain --branch | sed 's/^/    # /')
@@ -20,6 +18,9 @@ commitFull=$(cd "$DOCKER_HOST_PATH" && git rev-parse HEAD)
 COMMIT="$wipTag${commitFull:0:7}"
 escapedDockerHostMountpoint=$(@sh "$DOCKER_HOST_MOUNTPOINT")
 DOCKER_CONTAINER+=".$COMMIT.$$"
+
+# default build command
+[[ $# -gt 0 ]] || set -- make -j
 
 (
 trap 'docker rm -f "$DOCKER_CONTAINER"' EXIT
@@ -43,8 +44,8 @@ docker-run --name "$DOCKER_CONTAINER" \
     # TODO the same thing with git submodule foreach?
 
     # build
-    make -j "$@"
-    ' -- "$@"
+    '"$(@sh "$@")"'
+    '
 
 docker commit "$DOCKER_CONTAINER" "$DOCKER_IMAGE"
 )
