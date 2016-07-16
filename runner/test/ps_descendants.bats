@@ -15,11 +15,29 @@ teardown() {
     ! ps_descendants 123 456 || false
 }
 
-@test "ps_descendants basic" {
+@test "ps_descendants works with descendants" {
+    export pidsfile
+    : >$pidsfile
+    bash -c '
+        sleep 5 &
+        echo $! >>$pidsfile
+        wait
+    ' &
+    pid=$!
+    sleep 0.1
+
+    diff -u $pidsfile <(ps_descendants $pid)
+    kill $(cat $pidsfile)
+}
+
+@test "ps_descendants works with process group" {
     export pidsfile
     : >$pidsfile
     set -m
     bash -c '
+        sleep 5 &
+        echo $! >>$pidsfile
+        disown
         sleep 5 &
         echo $! >>$pidsfile
         wait
