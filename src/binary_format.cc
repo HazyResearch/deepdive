@@ -129,7 +129,8 @@ void FactorGraph::load_factors(const std::string &filename) {
         factor_weight_key_t n_weights = 0;
         read_be_or_die(file, n_weights);
         factors[size.num_factors].factor_params =
-            new std::unordered_map<factor_weight_key_t, FactorParams>(n_weights);
+            new std::unordered_map<factor_weight_key_t, FactorParams>(
+                n_weights);
         for (factor_weight_key_t i = 0; i < n_weights; ++i) {
           // calculate radix-based key into factor_params (see also
           // FactorGraph::get_categorical_weight_id)

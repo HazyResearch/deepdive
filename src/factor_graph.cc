@@ -144,7 +144,7 @@ CompactFactorGraph::CompactFactorGraph(const CompactFactorGraph &other)
   COPY_ARRAY_UNIQUE_PTR_MEMBER(vifs, size.num_edges);
 }
 
-const FactorParams& CompactFactorGraph::get_categorical_factor_params(
+const FactorParams &CompactFactorGraph::get_categorical_factor_params(
     const variable_value_t assignments[], const CompactFactor &fs,
     variable_id_t vid, variable_value_t proposal) {
   /**
@@ -162,8 +162,8 @@ const FactorParams& CompactFactorGraph::get_categorical_factor_params(
    * binary_format.cc read_factors)
    */
 
-  static constexpr FactorParams INVALID_PARAMS =
-      {Weight::INVALID_ID, Factor::DEFAULT_VALUE};
+  static constexpr FactorParams INVALID_PARAMS = {Weight::INVALID_ID,
+                                                  Factor::DEFAULT_VALUE};
 
   factor_weight_key_t key = 0;
   // for each variable in the factor

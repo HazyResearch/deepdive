@@ -143,10 +143,8 @@ class CompactFactorGraph {
    * indicator function and weight.
    */
   const FactorParams& get_categorical_factor_params(
-      const variable_value_t assignments[],
-      const CompactFactor& fs,
-      variable_id_t vid,
-      variable_value_t proposal);
+      const variable_value_t assignments[], const CompactFactor& fs,
+      variable_id_t vid, variable_value_t proposal);
 
   /**
    * Given a variable, updates the weights associated with the factors that
