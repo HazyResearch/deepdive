@@ -170,7 +170,7 @@ case class SupervisionRule(headName: String,
 case class InferenceRule(head: InferenceRuleHead,
                          q: ConjunctiveQuery,
                          weights: FactorWeight = null,
-                         valueExpr: Expr = null,
+                         valueExpr: Option[Expr] = None,
                          annotations: List[Annotation] = List.empty
                         ) extends RuleWithConjunctiveQuery
 
@@ -448,7 +448,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
       anno => (anno named "weight") && (anno.args isDefined)
     } =>
       val weights = FactorWeight(rule.annotations find (_ named "weight") map (_ exprs) get)
-      val valueExpr = (rule.annotations find (_ named "value") flatMap (_ expr) getOrElse null)
+      val valueExpr = (rule.annotations find (_ named "value") flatMap (_ expr))
       rule match {
         case extrRule: ExtractionRule =>
           // turn normal derivation rules to IsTrue factors
@@ -464,12 +464,8 @@ class DeepDiveLogParser extends JavaTokenParsers {
             annotations = extrRule.annotations
           )
         case infrRule: InferenceRule =>
-          var infrRuleUpdated = infrRule.copy(weights = weights)
-          if (valueExpr != null) {
-            infrRuleUpdated.copy(valueExpr = valueExpr)
-          } else {
-            infrRuleUpdated
-          }
+          infrRule.copy(weights = weights, valueExpr = valueExpr)
+
         case _ => sys.error(s"Invalid usage of @weight:\n${DeepDiveLogPrettyPrinter.print(rule)}")
       }
       // DeepDiveLogPrettyPrinter.print(rule)
