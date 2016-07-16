@@ -67,9 +67,9 @@ after_script:
     tag=$(echo -n "$tag" | tr -c 'A-Za-z0-9_.-' _);
 
     # push the test result
-  - docker login -e "$DOCKER_EMAIL" -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
+  - docker login -e "$encrypted_DOCKER_EMAIL" -u "$encrypted_DOCKER_USERNAME" -p "$encrypted_DOCKER_PASSWORD";
   - docker tag $DOCKER_IMAGE_TO_PUSH $DOCKER_IMAGE:$tag;
-  - docker push $DOCKER_IMAGE:$tag;
+    docker push $DOCKER_IMAGE:$tag;
 
     # update the master image with the successful build
   - case $TRAVIS_EVENT_TYPE-$TRAVIS_BRANCH-$TRAVIS_TEST_RESULT in
