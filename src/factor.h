@@ -17,6 +17,11 @@ class CompactFactor;
 class Factor;
 class RawFactor;
 
+typedef struct FactorParams {
+  weight_id_t wid;
+  factor_value_t value;
+} FactorParams;
+
 /**
  * Encapsulates a factor function in the factor graph.
  *
@@ -26,6 +31,7 @@ class RawFactor;
 class CompactFactor {
  public:
   factor_id_t id;                  // factor id
+  factor_value_t value;            // factor value
   factor_function_type_t func_id;  // function type id
   factor_arity_t n_variables;      // number of variables in the factor
   num_edges_t
@@ -307,6 +313,7 @@ class CompactFactor {
 class Factor {
  public:
   factor_id_t id;                  // factor id
+  factor_value_t value;            // factor value
   weight_id_t weight_id;           // weight id
   factor_function_type_t func_id;  // factor function id
   factor_arity_t n_variables;      // number of variables
@@ -314,6 +321,7 @@ class Factor {
   num_edges_t n_start_i_vif;  // start variable id
 
   static constexpr factor_id_t INVALID_ID = -1;
+  static constexpr factor_value_t DEFAULT_VALUE = 1;
   static constexpr factor_function_type_t INVALID_FUNC_ID = FUNC_UNDEFINED;
 
   // Variable value dependent weights for categorical factors
@@ -326,7 +334,7 @@ class Factor {
   // An empty map takes 48 bytes, so we create it only as needed, i.e., when
   // func_id = FUNC_AND_CATEGORICAL
   // Allocated in binary_parser.read_factors. Never deallocated.
-  std::unordered_map<factor_weight_key_t, weight_id_t> *weight_ids;
+  std::unordered_map<factor_weight_key_t, FactorParams> *factor_params;
 
   /**
    * Turns out the no-arg constructor is still required, since we're
@@ -335,8 +343,8 @@ class Factor {
    */
   Factor();
 
-  Factor(factor_id_t id, weight_id_t weight_id, factor_function_type_t func_id,
-         factor_arity_t n_variables);
+  Factor(factor_id_t id, factor_value_t value, weight_id_t weight_id,
+         factor_function_type_t func_id, factor_arity_t n_variables);
 
   /**
    * Copy constructor from a RawFactor.
@@ -366,7 +374,7 @@ class RawFactor : public Factor {
 
   /**
    */
-  RawFactor(factor_id_t id, weight_id_t weight_id,
+  RawFactor(factor_id_t id, factor_value_t value, weight_id_t weight_id,
             factor_function_type_t func_id, factor_arity_t n_variables);
 
   inline void add_variable_in_factor(const VariableInFactor &vif) {

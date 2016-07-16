@@ -108,7 +108,8 @@ void FactorGraph::load_factors(const std::string &filename) {
     read_be_or_die(file, arity);
     // register the factor
     factors[size.num_factors] =
-        RawFactor(size.num_factors, -1, (factor_function_type_t)type, arity);
+        RawFactor(size.num_factors, Factor::DEFAULT_VALUE, Weight::INVALID_ID,
+                  (factor_function_type_t)type, arity);
     for (factor_arity_t position = 0; position < arity; ++position) {
       // read fields for each variable reference
       variable_id_t variable_id;
@@ -127,10 +128,10 @@ void FactorGraph::load_factors(const std::string &filename) {
         // weight references for categorical factors
         factor_weight_key_t n_weights = 0;
         read_be_or_die(file, n_weights);
-        factors[size.num_factors].weight_ids =
-            new std::unordered_map<factor_weight_key_t, weight_id_t>(n_weights);
+        factors[size.num_factors].factor_params =
+            new std::unordered_map<factor_weight_key_t, FactorParams>(n_weights);
         for (factor_weight_key_t i = 0; i < n_weights; ++i) {
-          // calculate radix-based key into weight_ids (see also
+          // calculate radix-based key into factor_params (see also
           // FactorGraph::get_categorical_weight_id)
           // TODO: refactor the above formula into a shared routine. (See also
           // FactorGraph::get_categorical_weight_id)
@@ -143,9 +144,10 @@ void FactorGraph::load_factors(const std::string &filename) {
             key *= var.cardinality;
             key += var.get_domain_index(value_id);
           }
-          weight_id_t wid;
-          read_be_or_die(file, wid);
-          (*factors[size.num_factors].weight_ids)[key] = wid;
+          FactorParams fparam;
+          read_be_or_die(file, fparam.wid);
+          read_be_or_die(file, fparam.value);
+          (*factors[size.num_factors].factor_params)[key] = fparam;
         }
         break;
       }
@@ -155,6 +157,9 @@ void FactorGraph::load_factors(const std::string &filename) {
         weight_id_t wid;
         read_be_or_die(file, wid);
         factors[size.num_factors].weight_id = wid;
+        factor_value_t val;
+        read_be_or_die(file, val);
+        factors[size.num_factors].value = val;
     }
     ++size.num_factors;
   }

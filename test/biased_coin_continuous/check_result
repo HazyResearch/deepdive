@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -eu
+
+# the factor graph used for test is from biased coin, which contains 18
+# variables,
+# 1 weight, 18 factors, and 18 edges. Variables of id 0-8 are evidence: id 0-7
+# positive and id 8 negative. However, the positive evidence has a total "value"
+# of 6, same as the value for id 8. So roughly it's balanced...
+
+# check results
+
+# all weights should be around 0
+awk <inference_result.out.weights.text '{
+    id=$1; weight=$2;
+    expected=0.0
+    eps=0.1
+    if ((weight > expected + eps) || (weight < expected - eps)) {
+        print "weight " id " not around " 0.0
+        #exit(1)
+    }
+}'
+
+# all probabilities should be around 0.5
+awk <inference_result.out.text '{
+    id=$1; e=$2; prob=$3;
+    expected=0.5
+    eps=0.03
+    print id prob
+    if ((prob > expected + eps) || (prob < expected - eps)) {
+        print "var " id " prob not near " 0.5
+        exit(1)
+    }
+}'

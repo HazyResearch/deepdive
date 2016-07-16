@@ -74,8 +74,10 @@ Each block of `weightReferences` must have the following structure when `factorF
     ...                             // categoryValue must appear exactly arity times
     weightId        uint64_t    8   // the weight id for this factor when each connected variable
                                     //   takes the categorical value
+    factorValue     double      8   // the value for this factor
 
 Otherwise, for other `factorFunction`s, the `weightReferences` block is simply:
 
     weightId        uint64_t    8   // the weight id for this factor
+    factorValue     double      8   // the value for this factor
 
