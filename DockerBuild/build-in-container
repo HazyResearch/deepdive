@@ -25,7 +25,6 @@ DOCKER_CONTAINER+=".$COMMIT.$$"
 trap 'docker rm -f "$DOCKER_CONTAINER"' EXIT
 set -x
 docker-run --name "$DOCKER_CONTAINER" \
-    --volume "$DOCKER_HOST_PATH:$DOCKER_HOST_MOUNTPOINT" \
     -- "$DOCKER_IMAGE_MASTER" /bin/sh -c '# build COMMIT='"$wipTag$commitFull"'
 '"$wipDetails"'
     export PS4="+('"$DOCKER_CONTAINER"') "; set -eux

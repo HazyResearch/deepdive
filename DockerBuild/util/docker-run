@@ -27,6 +27,9 @@ done
 # run interactively if we're in a tty
 ! [[ -t 0 && -t 1 ]] || set -- --interactive --tty --env TERM="$TERM" "$@"
 
+# mount host source root inside container
+set -- --volume "$DOCKER_HOST_PATH:$DOCKER_HOST_MOUNTPOINT" "$@"
+
 # pick up options to pass to docker run until the -- separator
 [[ $# -gt 0 ]] || usage "$0" "Missing `--` separator"
 dockerRunOpts=()
