@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # test-in-container-greenplum -- Tests with Greenplum container linked
+#
+# Uses: https://hub.docker.com/r/pivotaldata/gpdb-base/
 ##
 set -euo pipefail
 . "$(dirname "$0")"/config.bash

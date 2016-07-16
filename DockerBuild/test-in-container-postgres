@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # test-in-container-postgres -- Tests with PostgreSQL container linked
+#
+# Uses: https://hub.docker.com/_/postgres/
 ##
 set -euo pipefail
 . "$(dirname "$0")"/config.bash
