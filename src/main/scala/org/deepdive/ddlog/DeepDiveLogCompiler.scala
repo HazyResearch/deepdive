@@ -550,8 +550,11 @@ class QueryCompiler(cq : ConjunctiveQuery, hackFrom: List[String] = Nil, hackWhe
             nonCategoryWeightCols += s"${deepdiveWeightColumnPrefix}${i}"
         }
 
+        val valueExpr = if (stmt.valueExpr != null) stmt.valueExpr else IntConst(1)
+        val valueColumn = s"""(${qc.compileExpr(valueExpr)})::float AS factor_value"""
+
         // factor input query
-        s"""SELECT ${(variableIdAndColumns ++ weightColumns) mkString ("\n     , ")
+        s"""SELECT ${(variableIdAndColumns ++ weightColumns ++ List(valueColumn)) mkString ("\n     , ")
         }\n${qc.generateSQLBody(fakeBody) }"""
       }
 

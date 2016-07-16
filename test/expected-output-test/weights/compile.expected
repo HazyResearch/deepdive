@@ -18,6 +18,7 @@ input_query: """
 SELECT dd_id_0.dd_id AS "a.R0.dd_id"
      , R0.k AS "a.R0.k"
      , R0.k + R1.p AS "dd_weight_column_0"
+     , (1)::float AS factor_value
 FROM a R0
    , b R1
    , dd_variables_a AS dd_id_0
@@ -40,6 +41,7 @@ non_category_weight_cols: [
 input_query: """
 SELECT dd_id_0.dd_id AS "c.R0.dd_id"
      , R0.k AS "c.R0.k"
+     , (1)::float AS factor_value
 FROM c R0
    , b R1
    , dd_variables_c AS dd_id_0
@@ -65,6 +67,7 @@ SELECT dd_id_0.dd_id AS "d.R0.dd_id"
      , R0.k AS "d.R0.k"
      , R0.k AS "dd_weight_column_0"
      , R1.p AS "dd_weight_column_1"
+     , (1)::float AS factor_value
 FROM d R0
    , b R1
    , dd_variables_d AS dd_id_0
@@ -87,6 +90,7 @@ non_category_weight_cols: [
 input_query: """
 SELECT dd_id_0.dd_id AS "e.R0.dd_id"
      , R0.k AS "e.R0.k"
+     , (1)::float AS factor_value
 FROM e R0
    , b R1
    , dd_variables_e AS dd_id_0
@@ -109,6 +113,7 @@ non_category_weight_cols: [
 input_query: """
 SELECT dd_id_0.dd_id AS "f.R0.dd_id"
      , R0.k AS "f.R0.k"
+     , (1)::float AS factor_value
 FROM f R0
    , b R1
    , dd_variables_f AS dd_id_0
