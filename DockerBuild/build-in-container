@@ -33,7 +33,8 @@ docker-run --name "$DOCKER_CONTAINER" \
     # import changes from host via git
     # XXX using rsync works but suboptimal
     #rsync -rplHv --omit-dir-times '"$escapedDockerHostMountpoint"'/.git .
-    git fetch --force --update-head-ok --prune --recurse-submodules '"$escapedDockerHostMountpoint"'
+    git fetch --force --update-head-ok --prune --no-recurse-submodules '"$escapedDockerHostMountpoint"'
+    git submodule foreach sh -c "git fetch /mnt/\${PWD#\$1/}" -- "$PWD"
     # sync the working directory with host
     git checkout FETCH_HEAD
     git checkout .
