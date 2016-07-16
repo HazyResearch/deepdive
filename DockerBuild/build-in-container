@@ -30,11 +30,17 @@ docker-run --name "$DOCKER_CONTAINER" \
 '"$wipDetails"'
     export PS4="+('"$DOCKER_CONTAINER"') "; set -eux
 
-    # import changes from host via git and rsync
-    rsync -rplHv --omit-dir-times '"$escapedDockerHostMountpoint"'/.git .
+    # import changes from host via git
+    # XXX using rsync works but suboptimal
+    #rsync -rplHv --omit-dir-times '"$escapedDockerHostMountpoint"'/.git .
+    git fetch --force --update-head-ok --prune --recurse-submodules '"$escapedDockerHostMountpoint"'
+    # sync the working directory with host
+    git checkout FETCH_HEAD
     git checkout .
     git clean -df
     git submodule update --init --recursive --force
+    # TODO git-apply git-diff produced from host
+    # TODO the same thing with git submodule foreach?
 
     # build
     make -j "$@"
