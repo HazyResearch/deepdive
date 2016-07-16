@@ -30,6 +30,10 @@ before_install:
   - export DOCKER_IMAGE_MASTER=$DOCKER_IMAGE:master
   - export DOCKER_IMAGE_TEST_PREFIX=$DOCKER_IMAGE:travis-$TRAVIS_JOB_NUMBER-${TRAVIS_COMMIT:0:7}-test.
 
+  # Pull Docker images
+  - docker pull $DOCKER_IMAGE_MASTER
+  - docker pull postgres
+
 install:
   # Build using Docker
   - ./DockerBuild/build-in-container
