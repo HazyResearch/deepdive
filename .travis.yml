@@ -36,7 +36,10 @@ before_install:
 
   # Pull Docker images after loading from cache
   - sudo apt-get install pv
-  - if [[ -e ~/docker/images.tar ]]; then pv ~/docker/images.tar | docker load; fi;
+  - for imgfile in ~/docker/images*.tar; do
+        echo Loading $imgfile;
+        pv $imgfile | docker load;
+    done
   - docker pull $DOCKER_IMAGE_MASTER;
   - docker pull postgres;
 
@@ -61,7 +64,12 @@ script:
 
     # Save images so they can be cached by Travis
   - mkdir -p ~/docker;
-    docker save $DOCKER_IMAGE_MASTER postgres | pv >~/docker/images.tar;
+    for img in $DOCKER_IMAGE_MASTER postgres; do
+        [[ "$(cat ~/docker/images-$img.id 2>/dev/null)" != "$(docker images -q $img)" ]] || continue;
+        echo Saving $img;
+        docker save $img | pv >~/docker/images-$img.tar;
+        docker images -q $img >~/docker/images-$img.id;
+    done
 
 after_script:
     # decide which test result image to push
@@ -87,9 +95,6 @@ after_script:
         push-master-0)
             docker push $DOCKER_IMAGE_MASTER ;;
     esac;
-
-#before_deploy:
-#  - TODO docker cp ...
 
 ## update GitHub releases for some select branches (master and v*.*.x)
 #deploy:
