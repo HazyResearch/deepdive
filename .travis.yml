@@ -6,10 +6,6 @@ dist: trusty
 language: c  # C seems to have the least amount of setup
 services:
   - docker
-cache:
-  directories:
-      # Cache Docker images (See: https://circleci.com/docs/docker/#caching-docker-layers)
-    - $HOME/docker
 
 notifications:
   email:
@@ -34,12 +30,7 @@ before_install:
     export DOCKER_IMAGE_MASTER=$DOCKER_IMAGE:master;
     export DOCKER_IMAGE_TEST_PREFIX=$DOCKER_IMAGE:travis.$TRAVIS_JOB_NUMBER-${TRAVIS_COMMIT:0:7}-test.;
 
-  # Pull Docker images after loading from cache
-  - sudo apt-get install pv
-  - for imgfile in ~/docker/images*.tar; do
-        echo Loading $imgfile;
-        pv $imgfile | docker load;
-    done
+  # Pull Docker images
   - docker pull $DOCKER_IMAGE_MASTER;
   - docker pull postgres;
 
@@ -55,21 +46,6 @@ script:
   # Check broken links in documentation
   # TODO check only when doc/ has changed
   #- make -C doc/ linkcheck
-
-    # update master image
-  - case $TRAVIS_EVENT_TYPE-$TRAVIS_BRANCH-$TRAVIS_TEST_RESULT in
-        push-master-0)
-            ./DockerBuild/update-master-image ;;
-    esac
-
-    # Save images so they can be cached by Travis
-  - mkdir -p ~/docker;
-    for img in $DOCKER_IMAGE_MASTER postgres; do
-        [[ "$(cat ~/docker/images-$img.id 2>/dev/null)" != "$(docker images -q $img)" ]] || continue;
-        echo Saving $img;
-        docker save $img | pv >~/docker/images-$img.tar;
-        docker images -q $img >~/docker/images-$img.id;
-    done
 
 after_script:
     # decide which test result image to push
@@ -93,6 +69,7 @@ after_script:
     # update the master image with the successful build
   - case $TRAVIS_EVENT_TYPE-$TRAVIS_BRANCH-$TRAVIS_TEST_RESULT in
         push-master-0)
+            docker tag $DOCKER_IMAGE $DOCKER_IMAGE_MASTER;
             docker push $DOCKER_IMAGE_MASTER ;;
     esac;
 
