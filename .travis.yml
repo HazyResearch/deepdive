@@ -28,11 +28,12 @@ before_install:
   # Have Docker build scripts use and update the correct images
   - export DOCKER_IMAGE=netj/deepdive-build
   - export DOCKER_IMAGE_MASTER=$DOCKER_IMAGE:master
-  - export DOCKER_IMAGE_TEST_PREFIX=$DOCKER_IMAGE:travis-$TRAVIS_JOB_NUMBER-${TRAVIS_COMMIT:0:7}-
+  - export DOCKER_IMAGE_TEST_PREFIX=$DOCKER_IMAGE:travis-$TRAVIS_JOB_NUMBER-${TRAVIS_COMMIT:0:7}-test.
 
 install:
   # Build using Docker
   - ./DockerBuild/build-in-container
+  # TODO tag the $DOCKER_IMAGE with TRAVIS environment
 
 script:
   # Run all tests
@@ -42,14 +43,32 @@ script:
   # TODO check only when doc/ has changed
   #- make -C doc/ linkcheck
 
-#after_success:
-#  - docker login ...
-#  - docker push $DOCKER_IMAGE
-#  - docker push ${DOCKER_IMAGE_TEST_PREFIX}PASS
-#after_failure:
-#  - docker login ...
-#  - docker push $DOCKER_IMAGE
-#  - docker push ${DOCKER_IMAGE_TEST_PREFIX}FAIL
+after_script:
+    # decide which test result image to push
+  - DOCKER_IMAGE_TO_PUSH=$DOCKER_IMAGE_TEST_PREFIX
+    if [[ $TRAVIS_TEST_RESULT = 0 ]]
+    then DOCKER_IMAGE_TO_PUSH+=PASS
+    else DOCKER_IMAGE_TO_PUSH+=FAIL
+    fi
+    # decide what tag to use
+  - if [[ $TRAVIS_PULL_REQUEST = false ]]
+    then tag=travis-pr$TRAVIS_BRANCH
+    else tag=travis-$TRAVIS_BRANCH
+    fi
+    tag=$(echo -n "$tag" | tr -c 'A-Za-z0-9_.-' _)
+
+    # push the test result
+  - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
+  - docker tag $DOCKER_IMAGE_TO_PUSH $DOCKER_IMAGE:$tag
+  - docker push $DOCKER_IMAGE:$tag
+
+    # update the master image with the successful build
+  - case $TRAVIS_EVENT_TYPE-$TRAVIS_BRANCH-$TRAVIS_TEST_RESULT in
+        push-master-0)
+            docker tag $DOCKER_IMAGE $DOCKER_IMAGE:master
+            docker push $DOCKER_IMAGE:master
+            ;;
+    esac
 
 #before_deploy:
 #  - TODO docker cp ...
