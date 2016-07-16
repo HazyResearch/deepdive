@@ -6,6 +6,10 @@ dist: trusty
 language: c  # C seems to have the least amount of setup
 services:
   - docker
+cache:
+  directories:
+      # Cache Docker images (See: https://circleci.com/docs/docker/#caching-docker-layers)
+    - $HOME/docker
 
 notifications:
   email:
@@ -30,7 +34,8 @@ before_install:
   - export DOCKER_IMAGE_MASTER=$DOCKER_IMAGE:master
   - export DOCKER_IMAGE_TEST_PREFIX=$DOCKER_IMAGE:travis-$TRAVIS_JOB_NUMBER-${TRAVIS_COMMIT:0:7}-test.
 
-  # Pull Docker images
+  # Pull Docker images after loading from cache
+  - if [[ -e ~/docker/images.tar ]]; then docker load -i ~/docker/images.tar; fi
   - docker pull $DOCKER_IMAGE_MASTER
   - docker pull postgres
 
@@ -73,6 +78,9 @@ after_script:
             docker push $DOCKER_IMAGE:master
             ;;
     esac
+
+    # Save images so they can be cached by Travis
+  - mkdir -p ~/docker; docker save $DOCKER_IMAGE_MASTER postgres >~/docker/images.tar
 
 #before_deploy:
 #  - TODO docker cp ...
