@@ -68,17 +68,17 @@ TEST_F(SamplerTest, sample_single_variable) {
   infrs->weight_values[0] = 2;
 
   sampler->sample_single_variable(0);
-  EXPECT_EQ(infrs->assignments_evid[0], 1);
+  EXPECT_EQ(infrs->assignments_evid[0], 1U);
 
-  sampler->sample_single_variable(10);
-  EXPECT_EQ(infrs->assignments_evid[10], 1);
+  sampler->sample_single_variable(10U);
+  EXPECT_EQ(infrs->assignments_evid[10], 1U);
 
   infrs->weight_values[0] = 20;
-  sampler->sample_single_variable(11);
-  EXPECT_EQ(infrs->assignments_evid[11], 1);
+  sampler->sample_single_variable(11U);
+  EXPECT_EQ(infrs->assignments_evid[11], 1U);
 
-  sampler->sample_single_variable(12);
-  EXPECT_EQ(infrs->assignments_evid[12], 1);
+  sampler->sample_single_variable(12U);
+  EXPECT_EQ(infrs->assignments_evid[12], 1U);
 }
 
 }  // namespace dd

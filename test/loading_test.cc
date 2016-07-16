@@ -45,11 +45,11 @@ class LoadingTest : public testing::Test {
 
 // test for loading a factor graph
 TEST_F(LoadingTest, load_factor_graph) {
-  EXPECT_EQ(fg.size.num_variables, 18);
-  EXPECT_EQ(fg.size.num_variables_evidence, 9);
-  EXPECT_EQ(fg.size.num_variables_query, 9);
-  EXPECT_EQ(fg.size.num_factors, 18);
-  EXPECT_EQ(fg.size.num_weights, 1);
+  EXPECT_EQ(fg.size.num_variables, 18U);
+  EXPECT_EQ(fg.size.num_variables_evidence, 9U);
+  EXPECT_EQ(fg.size.num_variables_query, 9U);
+  EXPECT_EQ(fg.size.num_factors, 18U);
+  EXPECT_EQ(fg.size.num_weights, 1U);
 
   /* Due to how loading works in this new model, the factor graph is not
    * supposed to count the edges during loading. This only happens after
