@@ -35,7 +35,8 @@ before_install:
     export DOCKER_IMAGE_TEST_PREFIX=$DOCKER_IMAGE:travis.$TRAVIS_JOB_NUMBER-${TRAVIS_COMMIT:0:7}-test.;
 
   # Pull Docker images after loading from cache
-  - if [[ -e ~/docker/images.tar ]]; then docker load -i ~/docker/images.tar; fi;
+  - sudo apt-get install pv
+  - if [[ -e ~/docker/images.tar ]]; then pv ~/docker/images.tar | docker load; fi;
   - docker pull $DOCKER_IMAGE_MASTER;
   - docker pull postgres;
 
@@ -60,7 +61,7 @@ script:
 
     # Save images so they can be cached by Travis
   - mkdir -p ~/docker;
-    docker save $DOCKER_IMAGE_MASTER postgres >~/docker/images.tar;
+    docker save $DOCKER_IMAGE_MASTER postgres | pv >~/docker/images.tar;
 
 after_script:
     # decide which test result image to push
