@@ -32,7 +32,10 @@ void numa_error(char* where) {
 namespace dd {
 
 NumaNodes::NumaNodes(const std::string& nodestring)
-    : nodestring_(nodestring), numa_nodemask_(nullptr) {}
+    : nodestring_(nodestring),
+      numa_nodemask_(nullptr),
+      numa_available_(numa_available() != -1 &&
+                      numa_num_configured_nodes() > 0) {}
 
 NumaNodes::~NumaNodes() {
   if (numa_nodemask_) numa_bitmask_free(numa_nodemask_);
@@ -49,15 +52,15 @@ void NumaNodes::swap(NumaNodes& other) {
 }
 
 struct bitmask* NumaNodes::numa_nodemask() {
-  if (!numa_nodemask_ && numa_available() != -1)
+  if (!numa_nodemask_ && numa_available_)
     numa_nodemask_ = numa_parse_nodestring(&nodestring_[0]);
   return numa_nodemask_;
 }
 void NumaNodes::bind() {
-  if (numa_available() != -1) numa_bind(numa_nodemask());
+  if (numa_available_) numa_bind(numa_nodemask());
 }
 void NumaNodes::unbind() {
-  if (numa_available() != -1) numa_bind(numa_nodemask());
+  if (numa_available_) numa_bind(numa_nodemask());
 }
 
 size_t NumaNodes::num_configured() {

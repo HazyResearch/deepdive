@@ -27,6 +27,12 @@ class NumaNodes {
   struct bitmask* numa_nodemask_;
   struct bitmask* numa_nodemask();
 
+  /**
+   * Whether libnuma API is available is checked first and this flag is set.
+   * Other members will try to behave reasonably if this flag is false.
+   */
+  bool numa_available_;
+
  public:
   NumaNodes(const std::string& nodestring);
   ~NumaNodes();
