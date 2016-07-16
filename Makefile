@@ -23,6 +23,18 @@ else
 endif
 endif
 
+### build inside containers ###################################################
+build+container:
+	./DockerBuild/build-in-container bash -euc ' \
+	    ./DockerBuild/container-apt-use-source $(DOCKER_APT_SOURCE); \
+	    make .build/depends; \
+	    ./DockerBuild/container-apt-clean; \
+	    make -j build; \
+	'
+test+container:
+	./DockerBuild/test-in-container-postgres \
+	    make -j test # TODO pass ONLY=$(ONLY) EXCEPT=$(EXCEPT) when defined
+
 ### dependency recipes ########################################################
 
 .PHONY: depends
