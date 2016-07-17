@@ -12,18 +12,30 @@
 #else  // __linux__
 
 // portability shims for platforms without libnuma support, e.g., Mac
+#define numa_available() -1
 #define numa_num_configured_nodes() 1
 #define numa_bind(bmp)
 #define numa_parse_nodestring(str) nullptr
 #define numa_bitmask_alloc(n) nullptr
 #define numa_bitmask_free(bmp)
 
+void numa_warn(int number, char* where, ...) {
+  // ignore
+}
+
+void numa_error(char* where) {
+  // ignore
+}
+
 #endif  // __linux__
 
 namespace dd {
 
 NumaNodes::NumaNodes(const std::string& nodestring)
-    : nodestring_(nodestring), numa_nodemask_(nullptr) {}
+    : nodestring_(nodestring),
+      numa_nodemask_(nullptr),
+      numa_available_(numa_available() != -1 &&
+                      numa_num_configured_nodes() > 0) {}
 
 NumaNodes::~NumaNodes() {
   if (numa_nodemask_) numa_bitmask_free(numa_nodemask_);
@@ -40,13 +52,20 @@ void NumaNodes::swap(NumaNodes& other) {
 }
 
 struct bitmask* NumaNodes::numa_nodemask() {
-  if (!numa_nodemask_) numa_nodemask_ = numa_parse_nodestring(&nodestring_[0]);
+  if (!numa_nodemask_ && numa_available_)
+    numa_nodemask_ = numa_parse_nodestring(&nodestring_[0]);
   return numa_nodemask_;
 }
-void NumaNodes::bind() { numa_bind(numa_nodemask()); }
-void NumaNodes::unbind() { numa_bind(numa_nodemask()); }
+void NumaNodes::bind() {
+  if (numa_available_) numa_bind(numa_nodemask());
+}
+void NumaNodes::unbind() {
+  if (numa_available_) numa_bind(numa_nodemask());
+}
 
-size_t NumaNodes::num_configured() { return numa_num_configured_nodes(); }
+size_t NumaNodes::num_configured() {
+  return std::max(numa_available() != -1 ? numa_num_configured_nodes() : 1, 1);
+}
 
 NumaNodes NumaNodes::partition(size_t ith_part, size_t num_parts) {
   size_t num_numa_nodes = num_configured();
