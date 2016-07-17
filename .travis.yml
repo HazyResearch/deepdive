@@ -36,12 +36,12 @@ before_install:
 
 install:
   # Build using Docker
-  - ./DockerBuild/build-in-container;
+  - make build--in-container;
   # TODO tag the $DOCKER_IMAGE with TRAVIS environment
 
 script:
-  # Run all tests
-  - ./DockerBuild/test-in-container-postgres;
+  # Run all tests using Docker
+  - make test--in-container;
 
   # Check broken links in documentation
   # TODO check only when doc/ has changed
