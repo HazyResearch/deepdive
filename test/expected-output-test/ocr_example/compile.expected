@@ -45,6 +45,7 @@ input_query: """
 SELECT dd_id_0.dd_id AS "q1.R0.dd_id"
      , R0.wid AS "q1.R0.wid"
      , R1.feature_id AS "dd_weight_column_0"
+     , (1)::float AS factor_value
 FROM q1 R0
    , features R1
    , dd_variables_q1 AS dd_id_0
@@ -68,6 +69,7 @@ input_query: """
 SELECT dd_id_0.dd_id AS "q2.R0.dd_id"
      , R0.wid AS "q2.R0.wid"
      , R1.feature_id AS "dd_weight_column_0"
+     , (1)::float AS factor_value
 FROM q2 R0
    , features R1
    , dd_variables_q2 AS dd_id_0

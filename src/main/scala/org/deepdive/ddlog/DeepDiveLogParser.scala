@@ -170,6 +170,7 @@ case class SupervisionRule(headName: String,
 case class InferenceRule(head: InferenceRuleHead,
                          q: ConjunctiveQuery,
                          weights: FactorWeight = null,
+                         valueExpr: Option[Expr] = None,
                          annotations: List[Annotation] = List.empty
                         ) extends RuleWithConjunctiveQuery
 
@@ -447,6 +448,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
       anno => (anno named "weight") && (anno.args isDefined)
     } =>
       val weights = FactorWeight(rule.annotations find (_ named "weight") map (_ exprs) get)
+      val valueExpr = (rule.annotations find (_ named "value") flatMap (_ expr))
       rule match {
         case extrRule: ExtractionRule =>
           // turn normal derivation rules to IsTrue factors
@@ -458,12 +460,15 @@ class DeepDiveLogParser extends JavaTokenParsers {
             head = InferenceRuleHead(FactorFunction.IsTrue(), List(headAtom)),
             q = extrRule.q.copy(headTerms = List.empty),
             weights = weights,
+            valueExpr = valueExpr,
             annotations = extrRule.annotations
           )
         case infrRule: InferenceRule =>
-          infrRule.copy(weights = weights)
+          infrRule.copy(weights = weights, valueExpr = valueExpr)
+
         case _ => sys.error(s"Invalid usage of @weight:\n${DeepDiveLogPrettyPrinter.print(rule)}")
       }
+      // DeepDiveLogPrettyPrinter.print(rule)
 
     // treat @label annotation
     case rule: ExtractionRule if rule.annotations exists {
@@ -478,7 +483,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   } ^? {
     // treat @semantics annotation
-    case rule@InferenceRule(InferenceRuleHead(FactorFunction.Imply(), _), _, _, _) if rule.annotations exists {
+    case rule@InferenceRule(InferenceRuleHead(FactorFunction.Imply(), _), _, _, _, _) if rule.annotations exists {
       anno => (anno named "semantics") && (anno.exprs.size == 1)
     } =>
       rule.annotations find (_ named "semantics") flatMap (_ value) collect {

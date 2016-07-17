@@ -92,6 +92,7 @@ SELECT dd_id_0.dd_id AS "chunk.R0.dd_id"
      , R0.tag AS "chunk.R0.tag"
      , R3.feature AS "dd_weight_column_0"
      , R0.tag AS "dd_weight_column_1"
+     , (R3.feature)::float AS factor_value
 FROM chunk R0
    , words R1
    , tags R2
@@ -131,6 +132,7 @@ SELECT dd_id_0.dd_id AS "chunk.R0.dd_id"
      , R1.tag AS "chunk.R1.tag"
      , R0.tag AS "dd_weight_column_0"
      , R1.tag AS "dd_weight_column_1"
+     , (1)::float AS factor_value
 FROM chunk R0
    , chunk R1
    , words R2
@@ -177,6 +179,7 @@ SELECT dd_id_0.dd_id AS "chunk.R0.dd_id"
      , R1.tag AS "chunk.R1.tag"
      , R0.tag AS "dd_weight_column_0"
      , R1.tag AS "dd_weight_column_1"
+     , (1)::float AS factor_value
 FROM chunk R0
    , chunk R1
    , words R2
