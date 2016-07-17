@@ -53,9 +53,10 @@
     deepdive relation list | diff -u <(
         echo chunk
         echo tags
-        echo word_features
+        echo vec_dims
+        echo word_embedding
+        echo word_vec
         echo words
-        echo words_raw
     ) -
     deepdive relation columns words | diff -u <(
         echo sent_id
@@ -63,7 +64,6 @@
         echo word
         echo pos
         echo true_tag
-        echo tag
     ) -
     deepdive relation column-types words | diff -u <(
         echo sent_id:bigint
@@ -71,6 +71,5 @@
         echo word:text
         echo pos:text
         echo true_tag:text
-        echo tag:text
     ) -
 }
