@@ -159,7 +159,8 @@ class CompactFactorGraph {
    * Returns potential of the given factor
    */
   inline double potential(const CompactFactor& factor,
-                          const variable_value_t assignments[]);
+                          const variable_value_t assignments[],
+                          factor_value_t factor_value = Factor::DEFAULT_VALUE);
 
   /**
    * Returns log-linear weighted potential of the all factors for the given
@@ -172,8 +173,17 @@ class CompactFactorGraph {
 };
 
 inline double CompactFactorGraph::potential(
-    const CompactFactor& factor, const variable_value_t assignments[]) {
-  return factor.potential(vifs.get(), assignments, -1, -1) * factor.value;
+    const CompactFactor& factor, const variable_value_t assignments[],
+    factor_value_t factor_value) {
+  // For boolean, this is stored in CompactFactor.value;
+  //     caller shouldn't set the factor_value arg.
+  // For categorical, this is stored in Factor.factor_params.value.
+  //     caller should pass in via the factor_value arg.
+  // TODO: better data structures than the factor_params duct tape...
+  if (factor_value == Factor::DEFAULT_VALUE) {
+    factor_value = factor.value;
+  }
+  return factor.potential(vifs.get(), assignments, -1, -1) * factor_value;
 }
 
 inline double CompactFactorGraph::potential(

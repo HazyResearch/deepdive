@@ -229,15 +229,17 @@ void CompactFactorGraph::update_weight(const Variable &variable,
         if (fp1.wid != Weight::INVALID_ID && !infrs.weights_isfixed[fp1.wid]) {
           infrs.weight_values[fp1.wid] +=
               stepsize *
-              (potential(fs[i], infrs.assignments_evid.get()) -
-               equal * potential(fs[i], infrs.assignments_free.get()));
+              (potential(fs[i], infrs.assignments_evid.get(), fp1.value) -
+               equal *
+                   potential(fs[i], infrs.assignments_free.get(), fp1.value));
         }
 
         if (fp2.wid != Weight::INVALID_ID && !infrs.weights_isfixed[fp2.wid]) {
           infrs.weight_values[fp2.wid] +=
               stepsize *
-              (equal * potential(fs[i], infrs.assignments_evid.get()) -
-               potential(fs[i], infrs.assignments_free.get()));
+              (equal *
+                   potential(fs[i], infrs.assignments_evid.get(), fp2.value) -
+               potential(fs[i], infrs.assignments_free.get(), fp2.value));
         }
         break;
       }
