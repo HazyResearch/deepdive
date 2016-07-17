@@ -75,7 +75,7 @@ void dump_factors(const FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
   std::vector<variable_value_t> vals;
   std::vector<weight_id_t> weights;
-  std::vector<factor_value_t> factor_values;
+  std::vector<feature_value_t> feature_values;
   std::string element;
   for (factor_id_t i = 0; i < fg.size.num_factors; ++i) {
     const auto &f = fg.factors[i];
@@ -92,17 +92,17 @@ void dump_factors(const FactorGraph &fg, const std::string &filename) {
         // transpose tuples; sort to ensure consistency
         vals.clear();
         weights.clear();
-        factor_values.clear();
+        feature_values.clear();
         vals.reserve(f.n_variables * f.factor_params->size());
         weights.reserve(f.factor_params->size());
-        factor_values.reserve(f.factor_params->size());
+        feature_values.reserve(f.factor_params->size());
         std::map<factor_weight_key_t, FactorParams> ordered(
             f.factor_params->begin(), f.factor_params->end());
         factor_weight_key_t w = 0;
         for (const auto &item : ordered) {
           factor_weight_key_t key = item.first;
           weight_id_t wid = item.second.wid;
-          factor_value_t fval = item.second.value;
+          feature_value_t fval = item.second.feature_value;
           for (factor_arity_t k = f.n_variables; k > 0;) {
             --k;  // turning it into a correct index
             variable_id_t vid = f.tmp_variables.at(k).vid;
@@ -113,7 +113,7 @@ void dump_factors(const FactorGraph &fg, const std::string &filename) {
             vals[w * f.n_variables + k] = val;
           }
           weights[w] = wid;
-          factor_values[w] = fval;
+          feature_values[w] = fval;
           ++w;
         }
         // output num_weights
@@ -139,10 +139,10 @@ void dump_factors(const FactorGraph &fg, const std::string &filename) {
         }
         fout << "}";
         fout << text_field_delim;
-        // output factor values
+        // output feature values
         fout << "{";
         j = 0;
-        for (factor_value_t fval : factor_values) {
+        for (feature_value_t fval : feature_values) {
           if (j > 0) fout << ",";
           fout << fval;
           ++j;
@@ -154,7 +154,7 @@ void dump_factors(const FactorGraph &fg, const std::string &filename) {
         // followed by a weight id
         fout << f.weight_id;
         fout << text_field_delim;
-        fout << f.value;
+        fout << f.feature_value;
     }
     fout << std::endl;
   }

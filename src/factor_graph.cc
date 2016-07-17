@@ -91,7 +91,7 @@ CompactFactorGraph::CompactFactorGraph(const FactorGraph &fg)
       auto &cf = compact_factors[i_edge];
       const auto &f = factors[fid];
       cf.id = f.id;
-      cf.value = f.value;
+      cf.feature_value = f.feature_value;
       cf.func_id = f.func_id;
       cf.n_variables = f.n_variables;
       cf.n_start_i_vif = f.n_start_i_vif;
@@ -163,7 +163,7 @@ const FactorParams &CompactFactorGraph::get_categorical_factor_params(
    */
 
   static constexpr FactorParams INVALID_PARAMS = {Weight::INVALID_ID,
-                                                  Factor::DEFAULT_VALUE};
+                                                  DEFAULT_FEATURE_VALUE};
 
   factor_weight_key_t key = 0;
   // for each variable in the factor
@@ -228,18 +228,18 @@ void CompactFactorGraph::update_weight(const Variable &variable,
 
         if (fp1.wid != Weight::INVALID_ID && !infrs.weights_isfixed[fp1.wid]) {
           infrs.weight_values[fp1.wid] +=
-              stepsize *
-              (potential(fs[i], infrs.assignments_evid.get(), fp1.value) -
-               equal *
-                   potential(fs[i], infrs.assignments_free.get(), fp1.value));
+              stepsize * (potential(fs[i], infrs.assignments_evid.get(),
+                                    fp1.feature_value) -
+                          equal * potential(fs[i], infrs.assignments_free.get(),
+                                            fp1.feature_value));
         }
 
         if (fp2.wid != Weight::INVALID_ID && !infrs.weights_isfixed[fp2.wid]) {
           infrs.weight_values[fp2.wid] +=
-              stepsize *
-              (equal *
-                   potential(fs[i], infrs.assignments_evid.get(), fp2.value) -
-               potential(fs[i], infrs.assignments_free.get(), fp2.value));
+              stepsize * (equal * potential(fs[i], infrs.assignments_evid.get(),
+                                            fp2.feature_value) -
+                          potential(fs[i], infrs.assignments_free.get(),
+                                    fp2.feature_value));
         }
         break;
       }

@@ -158,9 +158,9 @@ class CompactFactorGraph {
   /**
    * Returns potential of the given factor
    */
-  inline double potential(const CompactFactor& factor,
-                          const variable_value_t assignments[],
-                          factor_value_t factor_value = Factor::DEFAULT_VALUE);
+  inline double potential(
+      const CompactFactor& factor, const variable_value_t assignments[],
+      feature_value_t feature_value = DEFAULT_FEATURE_VALUE);
 
   /**
    * Returns log-linear weighted potential of the all factors for the given
@@ -174,16 +174,13 @@ class CompactFactorGraph {
 
 inline double CompactFactorGraph::potential(
     const CompactFactor& factor, const variable_value_t assignments[],
-    factor_value_t factor_value) {
-  // For boolean, this is stored in CompactFactor.value;
-  //     caller shouldn't set the factor_value arg.
-  // For categorical, this is stored in Factor.factor_params.value.
-  //     caller should pass in via the factor_value arg.
+    feature_value_t feature_value) {
+  // For boolean, feature_value is stored in CompactFactor.value;
+  //     caller shouldn't set the feature_value arg.
+  // For categorical, feature_value is stored in Factor.factor_params.value.
+  //     caller should pass in via the feature_value arg.
   // TODO: better data structures than the factor_params duct tape...
-  if (factor_value == Factor::DEFAULT_VALUE) {
-    factor_value = factor.value;
-  }
-  return factor.potential(vifs.get(), assignments, -1, -1) * factor_value;
+  return factor.potential(vifs.get(), assignments, -1, -1, feature_value);
 }
 
 inline double CompactFactorGraph::potential(
@@ -205,7 +202,7 @@ inline double CompactFactorGraph::potential(
       // weighted potential
       for (factor_id_t i = 0; i < variable.n_factors; ++i) {
         weight_id_t wid = ws[i];
-        pot += weight_values[wid] * fs[i].value *
+        pot += weight_values[wid] *
                fs[i].potential(vifs.get(), assignments, variable.id, proposal);
       }
       break;
@@ -217,8 +214,9 @@ inline double CompactFactorGraph::potential(
         FactorParams fp = get_categorical_factor_params(assignments, fs[i],
                                                         variable.id, proposal);
         if (fp.wid == Weight::INVALID_ID) continue;
-        pot += weight_values[fp.wid] * fp.value *
-               fs[i].potential(vifs.get(), assignments, variable.id, proposal);
+        pot += weight_values[fp.wid] *
+               fs[i].potential(vifs.get(), assignments, variable.id, proposal,
+                               fp.feature_value);
       }
       break;
     }

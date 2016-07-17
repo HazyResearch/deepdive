@@ -40,8 +40,8 @@ TODO polish the following
             2. number of weights, e.g., `3`
             3. num_vars columns of parallel var value arrays, e.g., `{1,2,3}	{2,3,4}`
             4. wid array, e.g., `{100,101,102}`
-            5. value array, e.g., `{1.2,-4,5.4}`
+            5. feature value array, e.g., `{1.2,-4,5.4}`
         * Otherwise:
             2. wid, e.g., `100`
-            3. value, e.g., `3`
+            3. feature value, e.g., `3`
 

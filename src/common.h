@@ -69,7 +69,7 @@ typedef uint64_t factor_weight_key_t;  // must hold values of
 
 typedef num_weights_t weight_id_t;
 typedef double weight_value_t;
-typedef double factor_value_t;
+typedef double feature_value_t;
 
 /**
  * Handy way to copy arrays of objects correctly, pointed by unique_ptr

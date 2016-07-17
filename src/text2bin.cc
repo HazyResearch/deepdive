@@ -119,7 +119,7 @@ void text2bin_factors(
   std::vector<variable_id_t> vids;
   std::vector<variable_value_t> cids_per_wid;
   std::vector<weight_id_t> wids;
-  std::vector<factor_value_t> factor_vals;
+  std::vector<feature_value_t> feature_values;
   std::string line;
   std::string array_piece;
   while (getline(fin, line)) {
@@ -159,7 +159,7 @@ void text2bin_factors(
       case FUNC_AND_CATEGORICAL: {
         cids_per_wid.clear();
         wids.clear();
-        factor_vals.clear();
+        feature_values.clear();
         // IN  Format: NUM_WEIGHTS [VAR1 VAL ID] [VAR2 VAL ID] ... [WEIGHT ID]
         // OUT Format: NUM_WEIGHTS [[VAR1_VALi, VAR2_VALi, ..., WEIGHTi]]
         // 1. the run-length
@@ -183,10 +183,10 @@ void text2bin_factors(
           weight_id_t wid = atol(element.c_str());
           wids.push_back(wid);
         }, num_weightids);
-        // 4. parse factor values
-        parse_pgarray_or_die(ss, [&factor_vals](const std::string &element) {
-          factor_value_t val = atof(element.c_str());
-          factor_vals.push_back(val);
+        // 4. parse feature values
+        parse_pgarray_or_die(ss, [&feature_values](const std::string &element) {
+          feature_value_t val = atof(element.c_str());
+          feature_values.push_back(val);
         }, num_weightids);
         // 5. transpose into output format
         for (factor_weight_key_t i = 0; i < num_weightids; ++i) {
@@ -195,7 +195,7 @@ void text2bin_factors(
             write_be_or_die(fout, cid);
           }
           write_be_or_die(fout, wids[i]);
-          write_be_or_die(fout, factor_vals[i]);
+          write_be_or_die(fout, feature_values[i]);
         }
         break;
       }
@@ -205,7 +205,7 @@ void text2bin_factors(
         weight_id_t wid = atol(field.c_str());
         write_be_or_die(fout, wid);
         assert(getline(ss, field, text_field_delim));
-        factor_value_t val = atof(field.c_str());
+        feature_value_t val = atof(field.c_str());
         write_be_or_die(fout, val);
     }
   }

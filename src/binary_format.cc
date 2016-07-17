@@ -108,7 +108,7 @@ void FactorGraph::load_factors(const std::string &filename) {
     read_be_or_die(file, arity);
     // register the factor
     factors[size.num_factors] =
-        RawFactor(size.num_factors, Factor::DEFAULT_VALUE, Weight::INVALID_ID,
+        RawFactor(size.num_factors, DEFAULT_FEATURE_VALUE, Weight::INVALID_ID,
                   (factor_function_type_t)type, arity);
     for (factor_arity_t position = 0; position < arity; ++position) {
       // read fields for each variable reference
@@ -147,7 +147,7 @@ void FactorGraph::load_factors(const std::string &filename) {
           }
           FactorParams fparam;
           read_be_or_die(file, fparam.wid);
-          read_be_or_die(file, fparam.value);
+          read_be_or_die(file, fparam.feature_value);
           (*factors[size.num_factors].factor_params)[key] = fparam;
         }
         break;
@@ -158,9 +158,9 @@ void FactorGraph::load_factors(const std::string &filename) {
         weight_id_t wid;
         read_be_or_die(file, wid);
         factors[size.num_factors].weight_id = wid;
-        factor_value_t val;
+        feature_value_t val;
         read_be_or_die(file, val);
-        factors[size.num_factors].value = val;
+        factors[size.num_factors].feature_value = val;
     }
     ++size.num_factors;
   }
