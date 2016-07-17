@@ -133,9 +133,9 @@ void FactorGraph::load_factors(const std::string &filename) {
                 n_weights);
         for (factor_weight_key_t i = 0; i < n_weights; ++i) {
           // calculate radix-based key into factor_params (see also
-          // FactorGraph::get_categorical_weight_id)
+          // FactorGraph::get_categorical_factor_params)
           // TODO: refactor the above formula into a shared routine. (See also
-          // FactorGraph::get_categorical_weight_id)
+          // FactorGraph::get_categorical_factor_params)
           factor_weight_key_t key = 0;
           for (factor_arity_t j = 0; j < arity; ++j) {
             const Variable &var =
