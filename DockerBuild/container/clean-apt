@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# container-clean-apt -- Restores and cleans up APT cache and downloads
+# container.apt-clean -- Restores and cleans up APT cache and downloads
 set -euo pipefail
 
 sudo apt-get clean

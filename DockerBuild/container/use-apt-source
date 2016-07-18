@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# container-apt-switch-source -- Switches APT source to a mirror specified via DOCKER_APT_SOURCE environment
+# container.apt-use-source -- Switches APT source to a mirror specified via DOCKER_APT_SOURCE environment
 set -euo pipefail
 
 : ${DOCKER_APT_SOURCE:=${1:-}}
