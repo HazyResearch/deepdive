@@ -20,7 +20,8 @@ escapedDockerHostMountpoint=$(@sh "$DOCKER_HOST_MOUNTPOINT")
 DOCKER_CONTAINER+=".$COMMIT.$$"
 
 # default build command
-[[ $# -gt 0 ]] || set -- make -j
+buildCommand=$DOCKER_BUILD_COMMAND
+[[ $# -eq 0 ]] || buildCommand=$(@sh "$@")
 
 (
 trap 'docker rm -f "$DOCKER_CONTAINER"' EXIT
@@ -43,8 +44,7 @@ docker-run --name "$DOCKER_CONTAINER" \
     # TODO git-apply git-diff produced from host
     # TODO the same thing with git submodule foreach?
 
-    # build
-    '"$(@sh "$@")"'
+    '"$buildCommand"'
     '
 
 docker commit "$DOCKER_CONTAINER" "$DOCKER_IMAGE"

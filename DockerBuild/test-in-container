@@ -11,7 +11,7 @@ set -euo pipefail
 # $ test-in-container  env POSTGRES=foo MONGODB=bar  make test
 
 # default test command
-[[ $# -gt 0 ]] || set -- make test
+[[ $# -gt 0 ]] || set -- bash -xeuc "$DOCKER_TEST_COMMAND"
 
 DOCKER_CONTAINER+="-test.$$"
 
