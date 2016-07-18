@@ -109,7 +109,7 @@ DeepDive build and tests can be done using [Docker](https://www.docker.com), whi
     But until then, make sure you commit everything to build and test.
 
 
-* To test the build, run:
+* To test the latest build, run:
 
     ```bash
     make test--in-container
@@ -130,6 +130,22 @@ DeepDive build and tests can be done using [Docker](https://www.docker.com), whi
     ./DockerBuild/test-in-container-postgres  make test ONLY=test/postgresql/*.bats
     ```
 
+* To make the latest build the new master image (on your local machine), run:
+
+    ```bash
+    ./DockerBuild/update-master-image
+    ```
+
+    Until you run this command, new builds will always start from the master image, not from the latest build.
+    If your source tree has diverged a lot from it, it's a good idea to update the master image once the initial long build finishes and passes the tests.
+    That way each subsequent build won't have to repeat the same long build.
+
+    If you have permission, you can push your master image to DockerHub and have others start build from there by running:
+
+    ```bash
+    docker push netj/deepdive-build:master
+    ```
+
 * To inspect the build, run:
 
     ```bash
@@ -141,7 +157,6 @@ DeepDive build and tests can be done using [Docker](https://www.docker.com), whi
     ```bash
     ./DockerBuild/inspect-build  make test
     ```
-
 
 ##### <a name="build-test-docker"></a> Normal builds and tests
 
