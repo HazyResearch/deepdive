@@ -162,9 +162,6 @@ const FactorParams &CompactFactorGraph::get_categorical_factor_params(
    * binary_format.cc read_factors)
    */
 
-  static constexpr FactorParams INVALID_PARAMS = {Weight::INVALID_ID,
-                                                  DEFAULT_FEATURE_VALUE};
-
   factor_weight_key_t key = 0;
   // for each variable in the factor
   for (num_edges_t i = fs.n_start_i_vif; i < fs.n_start_i_vif + fs.n_variables;
@@ -209,8 +206,9 @@ void CompactFactorGraph::update_weight(const Variable &variable,
           // calculated
           // using a sample of the variable.
           infrs.weight_values[ws[i]] +=
-              stepsize * (potential(fs[i], infrs.assignments_evid.get()) -
-                          potential(fs[i], infrs.assignments_free.get()));
+              stepsize *
+              (fs[i].potential(vifs.get(), infrs.assignments_evid.get()) -
+               fs[i].potential(vifs.get(), infrs.assignments_free.get()));
         }
         break;
       }
@@ -228,18 +226,22 @@ void CompactFactorGraph::update_weight(const Variable &variable,
 
         if (fp1.wid != Weight::INVALID_ID && !infrs.weights_isfixed[fp1.wid]) {
           infrs.weight_values[fp1.wid] +=
-              stepsize * (potential(fs[i], infrs.assignments_evid.get(),
-                                    fp1.feature_value) -
-                          equal * potential(fs[i], infrs.assignments_free.get(),
-                                            fp1.feature_value));
+              stepsize *
+              (fs[i].potential(vifs.get(), infrs.assignments_evid.get(), -1, -1,
+                               fp1.feature_value) -
+               equal *
+                   fs[i].potential(vifs.get(), infrs.assignments_free.get(), -1,
+                                   -1, fp1.feature_value));
         }
 
         if (fp2.wid != Weight::INVALID_ID && !infrs.weights_isfixed[fp2.wid]) {
           infrs.weight_values[fp2.wid] +=
-              stepsize * (equal * potential(fs[i], infrs.assignments_evid.get(),
-                                            fp2.feature_value) -
-                          potential(fs[i], infrs.assignments_free.get(),
-                                    fp2.feature_value));
+              stepsize *
+              (equal *
+                   fs[i].potential(vifs.get(), infrs.assignments_evid.get(), -1,
+                                   -1, fp2.feature_value) -
+               fs[i].potential(vifs.get(), infrs.assignments_free.get(), -1, -1,
+                               fp2.feature_value));
         }
         break;
       }

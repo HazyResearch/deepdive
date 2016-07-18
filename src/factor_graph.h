@@ -173,17 +173,6 @@ class CompactFactorGraph {
 };
 
 inline double CompactFactorGraph::potential(
-    const CompactFactor& factor, const variable_value_t assignments[],
-    feature_value_t feature_value) {
-  // For boolean, feature_value is stored in CompactFactor.value;
-  //     caller shouldn't set the feature_value arg.
-  // For categorical, feature_value is stored in Factor.factor_params.value.
-  //     caller should pass in via the feature_value arg.
-  // TODO: better data structures than the factor_params duct tape...
-  return factor.potential(vifs.get(), assignments, -1, -1, feature_value);
-}
-
-inline double CompactFactorGraph::potential(
     const Variable& variable, variable_value_t proposal,
     const variable_value_t assignments[],
     const weight_value_t weight_values[]) {
