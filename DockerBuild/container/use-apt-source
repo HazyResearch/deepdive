@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# container.apt-use-source -- Switches APT source to a mirror specified via DOCKER_APT_SOURCE environment
+set -euo pipefail
+
+: ${DOCKER_APT_SOURCE:=${1:-}}
+
+[[ -z "${DOCKER_APT_SOURCE:-}" ]] ||
+    sudo sed -i~ "s#\\(deb.*\\) http://[^/]*/#\\1 $DOCKER_APT_SOURCE/#" /etc/apt/sources.list

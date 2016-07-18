@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# build-in-container -- Builds changes made from host inside Docker container with the master image
+# $ build-in-container
+#
+# It is possible to run the build on a specific Docker image:
+# $ build-in-container DOCKER_IMAGE_MASTER
+#
+# Also, make targets and flags can be specified as well:
+# $ build-in-container DOCKER_IMAGE_MASTER MAKE_TARGET...
+##
+set -euo pipefail
+. "$(dirname "$0")"/DockerBuild.bash
+
+# Use git to figure out identifiers
+wipTag=; [[ $(git status --porcelain | wc -l) -eq 0 ]] || wipTag="WIP-"
+wipDetails=$(git status --porcelain --branch | sed 's/^/    # /')
+commitFull=$(cd "$DOCKER_HOST_PATH" && git rev-parse HEAD)
+COMMIT="$wipTag${commitFull:0:7}"
+escapedDockerHostMountpoint=$(@sh "$DOCKER_HOST_MOUNTPOINT")
+DOCKER_CONTAINER+=".$COMMIT.$$"
+
+# default build command
+buildCommand=$DOCKER_BUILD_COMMAND
+[[ $# -eq 0 ]] || buildCommand=$(@sh "$@")
+
+# prepare a script that patches (staged and unstaged) changes in the source tree since last commit (including all submodule)
+patchCommands=$(
+    cd "$DOCKER_HOST_PATH"
+    producePatch="git diff --minimal --ignore-submodules=all HEAD"
+    escapePatch='sed "s/'\''/'\'\\\\\\\\\'\''/g"' # XXX a black magic for properly embedding patches in the script
+    # produce patch instruction for the source tree
+    if [[ $($producePatch | wc -l) -gt 0 ]]; then
+        echo ': patching uncommitted changes'
+        { echo "    git apply <<<'"; eval $producePatch | eval $escapePatch; echo "'"; }
+    fi
+    # produce patch instruction for every submodule
+    git submodule --quiet foreach --recursive bash -c '
+        if [[ $('"$producePatch"' | wc -l) -gt 0 ]]; then
+            submodule=$(printf %q "${PWD#$1/}")
+            echo "    : patching uncommitted changes in $submodule"
+            echo "    ( cd $submodule"
+            { echo "    git apply <<<'\''"; '"$producePatch | $escapePatch"'; echo "'\''"; }
+            echo "    )"
+        fi
+    ' -- "$PWD"
+)
+
+(
+trap 'docker rm -f "$DOCKER_CONTAINER"' EXIT
+set -x
+docker-run --name "$DOCKER_CONTAINER" \
+    -- "$DOCKER_IMAGE_MASTER" bash -c '# build COMMIT='"$wipTag$commitFull"'
+'"$wipDetails"'
+    export PS4="+('"$DOCKER_CONTAINER"') "; set -eux
+
+    : importing changes from host via git
+    git fetch --force --update-head-ok --prune --no-recurse-submodules '"$escapedDockerHostMountpoint"'
+    git submodule foreach sh -c "git fetch /mnt/\${PWD#\$1/}" -- "$PWD"
+    : syncing the container working directory with host
+    git checkout --force FETCH_HEAD
+    git clean -d --force
+    git submodule update --init --recursive --force
+    '"$patchCommands"'
+
+    '"$buildCommand"'
+    '
+
+docker commit "$DOCKER_CONTAINER" "$DOCKER_IMAGE"
+)
+
+echo '# Docker image '"$DOCKER_IMAGE"' has been updated to this build.'
+echo '# Use `inspect-build` to open a shell or run commands in this build.'
+echo '# Use `test-in-container` to run tests against this build.'
+echo '# Use `update-master-image` to start subsequent builds on top of this.'

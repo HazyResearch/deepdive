@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# container.apt-clean -- Restores and cleans up APT cache and downloads
+set -euo pipefail
+
+sudo apt-get clean
+sudo rm -rf /var/lib/apt/lists/*
+sudo mv -f /etc/apt/sources.list{~,} || true

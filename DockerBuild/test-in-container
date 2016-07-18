@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# test-in-container -- Tests inside a Docker container with the latest build
+##
+set -euo pipefail
+. "$(dirname "$0")"/DockerBuild.bash
+
+# NOTE other containers, e.g., postgresql or gpdb, can be run externally, then
+# their names can be passed as arguments for --link options followed by the
+# normal test command, e.g.:
+# $ export DOCKER_RUN_OPTS="--link foo --link bar"
+# $ test-in-container  env POSTGRES=foo MONGODB=bar  make test
+
+# default test command
+[[ $# -gt 0 ]] || set -- bash -xeuc "$DOCKER_TEST_COMMAND"
+
+DOCKER_CONTAINER+="-test.$$"
+
+# run tests
+trap 'docker rm -f "$DOCKER_CONTAINER"' EXIT
+set -x
+DOCKER_IMAGE_TEST=$DOCKER_IMAGE_TEST_PREFIX
+if docker-run --name "$DOCKER_CONTAINER" -- "$DOCKER_IMAGE" "$@"
+then exit_status=$? DOCKER_IMAGE_TEST+="PASS"
+else exit_status=$? DOCKER_IMAGE_TEST+="FAIL"
+fi
+# commit test result
+docker commit "$DOCKER_CONTAINER" "$DOCKER_IMAGE_TEST"
+docker tag "$DOCKER_IMAGE_TEST" "$DOCKER_IMAGE_TEST_PREFIX"latest
+exit $exit_status
