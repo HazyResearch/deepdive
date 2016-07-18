@@ -23,26 +23,44 @@ DOCKER_CONTAINER+=".$COMMIT.$$"
 buildCommand=$DOCKER_BUILD_COMMAND
 [[ $# -eq 0 ]] || buildCommand=$(@sh "$@")
 
+# prepare a script that patches (staged and unstaged) changes in the source tree since last commit (including all submodule)
+patchCommands=$(
+    cd "$DOCKER_HOST_PATH"
+    producePatch="git diff --minimal --ignore-submodules=all HEAD"
+    escapePatch='sed "s/'\''/'\'\\\\\\\\\'\''/g"' # XXX a black magic for properly embedding patches in the script
+    # produce patch instruction for the source tree
+    if [[ $($producePatch | wc -l) -gt 0 ]]; then
+        echo ': patching uncommitted changes'
+        { echo "    git apply <<<'"; eval $producePatch | eval $escapePatch; echo "'"; }
+    fi
+    # produce patch instruction for every submodule
+    git submodule --quiet foreach --recursive bash -c '
+        if [[ $('"$producePatch"' | wc -l) -gt 0 ]]; then
+            submodule=$(printf %q "${PWD#$1/}")
+            echo "    : patching uncommitted changes in $submodule"
+            echo "    ( cd $submodule"
+            { echo "    git apply <<<'\''"; '"$producePatch | $escapePatch"'; echo "'\''"; }
+            echo "    )"
+        fi
+    ' -- "$PWD"
+)
+
 (
 trap 'docker rm -f "$DOCKER_CONTAINER"' EXIT
 set -x
 docker-run --name "$DOCKER_CONTAINER" \
-    -- "$DOCKER_IMAGE_MASTER" /bin/sh -c '# build COMMIT='"$wipTag$commitFull"'
+    -- "$DOCKER_IMAGE_MASTER" bash -c '# build COMMIT='"$wipTag$commitFull"'
 '"$wipDetails"'
     export PS4="+('"$DOCKER_CONTAINER"') "; set -eux
 
-    # import changes from host via git
-    # XXX using rsync works but suboptimal
-    #rsync -rplHv --omit-dir-times '"$escapedDockerHostMountpoint"'/.git .
+    : importing changes from host via git
     git fetch --force --update-head-ok --prune --no-recurse-submodules '"$escapedDockerHostMountpoint"'
     git submodule foreach sh -c "git fetch /mnt/\${PWD#\$1/}" -- "$PWD"
-    # sync the working directory with host
-    git checkout FETCH_HEAD
-    git checkout .
-    git clean -df
+    : syncing the container working directory with host
+    git checkout --force FETCH_HEAD
+    git clean -d --force
     git submodule update --init --recursive --force
-    # TODO git-apply git-diff produced from host
-    # TODO the same thing with git submodule foreach?
+    '"$patchCommands"'
 
     '"$buildCommand"'
     '

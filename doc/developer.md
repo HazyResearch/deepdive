@@ -104,9 +104,8 @@ DeepDive build and tests can be done using [Docker](https://www.docker.com), whi
     This pulls the master image from Docker Hub ([netj/deepdive-build](https://hub.docker.com/r/netj/deepdive-build/)), then inside a fresh container, runs the build after applying the changes made to the current source tree.
     This is the default for `make` (without any target argument) when Docker is available on your system.
 
-    CAVEAT: Note that only code that has been committed into git history is reflected in the build inside containers.
-    In the near future, we will update the supporting scripts to reflect changes made to all tracked files as well.
-    But until then, make sure you commit everything to build and test.
+    CAVEAT: Note that only files that are tracked by git is reflected in the build inside containers.
+    Use `git add` to make sure any new files are also considered when transfering changes to containers.
 
 
 * To test the latest build, run:
