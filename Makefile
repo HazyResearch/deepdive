@@ -25,12 +25,7 @@ endif
 
 ### build/test inside containers ##############################################
 build--in-container:
-	./DockerBuild/build-in-container bash -euc ' \
-	    ./DockerBuild/container-apt-use-source $(DOCKER_APT_SOURCE); \
-	    make .build/depends; \
-	    ./DockerBuild/container-apt-clean; \
-	    make -j build; \
-	'
+	./DockerBuild/build-in-container
 test--in-container:
 	./DockerBuild/test-in-container-postgres \
 	    make -j test $(if $(ONLY),ONLY="$(ONLY)") $(if $(EXCEPT),EXCEPT="$(EXCEPT)")
