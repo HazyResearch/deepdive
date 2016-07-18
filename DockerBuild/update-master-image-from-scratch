@@ -2,7 +2,7 @@
 # update-master-image-from-scratch -- Rebuilds and publishes master Docker image
 ##
 set -euo pipefail
-. "$(dirname "$0")"/config.bash
+. "$(dirname "$0")"/DockerBuild.bash
 cd "$DEEPDIVE_SOURCE_ROOT"
 
 # display a few things

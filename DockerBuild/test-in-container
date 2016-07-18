@@ -2,7 +2,7 @@
 # test-in-container -- Tests inside a Docker container with the latest build
 ##
 set -euo pipefail
-. "$(dirname "$0")"/config.bash
+. "$(dirname "$0")"/DockerBuild.bash
 
 # NOTE other containers, e.g., postgresql or gpdb, can be run externally, then
 # their names can be passed as arguments for --link options followed by the

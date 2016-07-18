@@ -9,7 +9,7 @@
 # $ build-in-container DOCKER_IMAGE_MASTER MAKE_TARGET...
 ##
 set -euo pipefail
-. "$(dirname "$0")"/config.bash
+. "$(dirname "$0")"/DockerBuild.bash
 
 # Use git to figure out identifiers
 wipTag=; [[ $(git status --porcelain | wc -l) -eq 0 ]] || wipTag="WIP-"

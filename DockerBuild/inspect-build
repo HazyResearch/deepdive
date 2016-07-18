@@ -3,7 +3,7 @@
 #                  container attached to the latest build
 ##
 set -euo pipefail
-. "$(dirname "$0")"/config.bash ''
+. "$(dirname "$0")"/DockerBuild.bash ''
 
 DOCKER_CONTAINER+="-inspect.$$"
 

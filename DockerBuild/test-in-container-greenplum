@@ -4,7 +4,7 @@
 # Uses: https://hub.docker.com/r/pivotaldata/gpdb-base/
 ##
 set -euo pipefail
-. "$(dirname "$0")"/config.bash
+. "$(dirname "$0")"/DockerBuild.bash
 
 : ${DOCKER_GPNAME:=test-greenplum.$$}
 : ${GREENPLUM_USER:=gpadmin}

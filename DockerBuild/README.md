@@ -14,7 +14,7 @@ Scripts here support the typical build and test tasks using the master image as 
 
 ### `build-in-container`
 Builds any changes made from the host inside a container using the master image.
-The master image name can be specified in `config.bash`, `DOCKER_IMAGE_MASTER` environment variable, or as the first argument to the command.
+The master image name can be specified in `DockerBuild.conf`, `DOCKER_IMAGE_MASTER` environment variable, or as the first argument to the command.
 
 ### `test-in-container`
 Runs tests against the latest build inside a container.

@@ -5,7 +5,7 @@
 # NOTE the `--` before DOCKER_IMAGE is required!
 ##
 set -euo pipefail
-. "$(dirname "$0")"/../config.bash ''
+. "$(dirname "$0")"/../DockerBuild.bash ''
 
 # extra docker run options
 [[ -z $DOCKER_RUN_OPTS ]] || eval set -- $DOCKER_RUN_OPTS '"$@"'

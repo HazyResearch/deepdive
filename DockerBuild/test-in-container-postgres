@@ -4,7 +4,7 @@
 # Uses: https://hub.docker.com/_/postgres/
 ##
 set -euo pipefail
-. "$(dirname "$0")"/config.bash
+. "$(dirname "$0")"/DockerBuild.bash
 
 : ${DOCKER_PGNAME:=test-postgres.$$}
 : ${POSTGRES_PASSWORD:=$RANDOM$RANDOM}
