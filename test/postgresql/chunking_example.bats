@@ -1,10 +1,7 @@
 #!/usr/bin/env bats
 # Tests for chunking example
 
-set -x
 . "$BATS_TEST_DIRNAME"/env.sh >&2
-
-exec 3>&2 # dup stderr as fd 3
 
 : ${CHUNKING_TEST_NUM_WORDS_TRAIN:=1000} ${CHUNKING_TEST_NUM_WORDS_TEST:=200}
 : ${CHUNKING_TEST_MIN_F1SCORE:=80}
@@ -18,7 +15,6 @@ get_f1score() {
 }
 
 run_chunking_example() {
-exec 1>&3 2>&3 # tee to original stderr
     cd "$BATS_TEST_DIRNAME"/chunking_example || skip
     export SUBSAMPLE_NUM_WORDS_TRAIN=$CHUNKING_TEST_NUM_WORDS_TRAIN SUBSAMPLE_NUM_WORDS_TEST=$CHUNKING_TEST_NUM_WORDS_TEST
     DEEPDIVE_CONFIG_EXTRA='deepdive.calibration.holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT dd_id FROM dd_variables_chunk WHERE word_id > '${SUBSAMPLE_NUM_WORDS_TRAIN}'"' \
@@ -32,7 +28,6 @@ exec 1>&3 2>&3 # tee to original stderr
 }
 
 run_chunking_example_reusing_weights() {
-exec 1>&3 2>&3 # tee to original stderr
     cd "$BATS_TEST_DIRNAME"/chunking_example || skip
     export SUBSAMPLE_NUM_WORDS_TRAIN=0 SUBSAMPLE_NUM_WORDS_TEST=$CHUNKING_TEST_REUSE_NUM_WORDS_TEST
 

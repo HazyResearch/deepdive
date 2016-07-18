@@ -34,7 +34,7 @@
 # > deepdive load sentences sentences.csv.sh
 # creates table 'sentences' and loads the CSV output of a shell script.
 ##
-set -eux
+set -eu
 
 # fallback to a data format or skip detection of it and assume a particular one
 : ${DEEPDIVE_LOAD_FORMAT_DEFAULT:=} ${DEEPDIVE_LOAD_FORMAT:=}

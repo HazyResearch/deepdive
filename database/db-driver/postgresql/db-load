@@ -2,7 +2,7 @@
 # db-load -- Loads file to the PostgreSQL database configured for a DeepDive application
 # > db-load TABLE COLUMNS FORMAT [SOURCE...]
 ##
-set -euxv
+set -eu
 
 [[ $# -gt 0 ]] || usage "$0" "No TABLE given"
 table=$1; shift
@@ -22,14 +22,14 @@ do_load() {
         local i=1
         for source; do
             show_progress input_to "loading $table [$i/$nsources]" -- \
-            bash -xeuc 'sql=$1; exec db-execute "$sql" <'"$("$mkloadingexpr" /dev/stdin)" -- "$sql" <"$source" &
+            bash -euc 'sql=$1; exec db-execute "$sql" <'"$("$mkloadingexpr" /dev/stdin)" -- "$sql" <"$source" &
             let ++i
         done
         wait
     else
         source=$1; shift
         exec show_progress input_to "loading $table" -- \
-        bash -xeuc 'sql=$1; exec db-execute "$sql" <'"$("$mkloadingexpr" /dev/stdin)" -- "$sql" <"$source"
+        bash -euc 'sql=$1; exec db-execute "$sql" <'"$("$mkloadingexpr" /dev/stdin)" -- "$sql" <"$source"
     fi
 }
 

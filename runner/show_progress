@@ -35,7 +35,6 @@ pv_format_bytes=$pv_format; [[ -z $total_bytes ]] || pv_format_bytes+=" %p %e"
 pv_format_lines=$pv_format; [[ -z $total_lines ]] || pv_format_lines+=" %p %e"
 
 # the file descriptor to show the progress bar
-set -x
 : ${DEEPDIVE_PROGRESS_FD:=2}
 if ! [[ -t $DEEPDIVE_PROGRESS_FD ]]; then
     # just execute given COMMAND if the file descriptor is not a tty
