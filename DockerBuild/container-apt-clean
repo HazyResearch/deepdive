@@ -4,4 +4,4 @@ set -euo pipefail
 
 sudo apt-get clean
 sudo rm -rf /var/lib/apt/lists/*
-sudo mv -f /etc/apt/sources.list{~,}
+sudo mv -f /etc/apt/sources.list{~,} || true
