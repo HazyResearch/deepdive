@@ -144,7 +144,8 @@ class CompactFactorGraph {
    */
   const FactorParams& get_categorical_factor_params(
       const variable_value_t assignments[], const CompactFactor& fs,
-      variable_id_t vid, variable_value_t proposal);
+      variable_id_t vid = Variable::INVALID_ID,
+      variable_value_t proposal = Variable::INVALID_VALUE);
 
   /**
    * Given a variable, updates the weights associated with the factors that
@@ -154,13 +155,6 @@ class CompactFactorGraph {
    */
   void update_weight(const Variable& variable, InferenceResult& infrs,
                      double stepsize);
-
-  /**
-   * Returns potential of the given factor
-   */
-  inline double potential(
-      const CompactFactor& factor, const variable_value_t assignments[],
-      feature_value_t feature_value = DEFAULT_FEATURE_VALUE);
 
   /**
    * Returns log-linear weighted potential of the all factors for the given

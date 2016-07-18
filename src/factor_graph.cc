@@ -218,10 +218,10 @@ void CompactFactorGraph::update_weight(const Variable &variable,
         // sample without evidence unfixed, I1, with corresponding weight w2
         // gradient of wd0 = f(I0) - I(w1==w2)f(I1)
         // gradient of wd1 = I(w1==w2)f(I0) - f(I1)
-        const FactorParams &fp1 = get_categorical_factor_params(
-            infrs.assignments_evid.get(), fs[i], -1, -1);
-        const FactorParams &fp2 = get_categorical_factor_params(
-            infrs.assignments_free.get(), fs[i], -1, -1);
+        const FactorParams &fp1 =
+            get_categorical_factor_params(infrs.assignments_evid.get(), fs[i]);
+        const FactorParams &fp2 =
+            get_categorical_factor_params(infrs.assignments_free.get(), fs[i]);
         bool equal = (fp1.wid == fp2.wid);
 
         if (fp1.wid != Weight::INVALID_ID && !infrs.weights_isfixed[fp1.wid]) {
