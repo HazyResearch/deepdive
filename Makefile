@@ -9,6 +9,11 @@ BUILD_DIR = .build
 # path to the package to be built
 PACKAGE = $(dir $(STAGE_DIR))deepdive.tar.gz
 
+ifneq ($(shell which docker 2>/dev/null),)
+# do a containerized build by default if Docker is available
+.DEFAULT_GOAL := build--in-container
+
+else  # do a normal build by default without Docker
 .DEFAULT_GOAL := build
 
 # On Mac OS X, require GNU coreutils instead of continuing on BSD utilities with uncertainty
@@ -22,6 +27,8 @@ else
     )
 endif
 endif
+
+endif  # Docker
 
 ### build/test inside containers ##############################################
 build--in-container:
