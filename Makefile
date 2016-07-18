@@ -41,7 +41,9 @@ test--in-container:
 depends: .build/depends
 .build/depends: util/install.sh $(wildcard util/install/*)
 	# Installing and Checking dependencies...
+	sha1sum $^ | diff -q $@ - || \
 	$< _deepdive_build_deps _deepdive_runtime_deps
+	sha1sum $^ >$@
 
 ### install recipes ###########################################################
 
