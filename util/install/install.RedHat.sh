@@ -31,6 +31,14 @@ install__deepdive_build_deps() {
         perl
         python
         java
+        # bash
+        bison
+        # psycopg2
+        readline-devel
+        python-devel
+        postgresql-devel
+        # graphviz-devel
+        autoconf pkgconfig libtool
         # mindbender
         ed
         # sampler
