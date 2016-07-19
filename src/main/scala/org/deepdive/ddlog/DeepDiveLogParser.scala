@@ -467,6 +467,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
             q = extrRule.q.copy(headTerms = List.empty),
             weights = weights,
             valueExpr = valueExpr,
+            ruleName = ruleName,
             annotations = extrRule.annotations
           )
         case infrRule: InferenceRule =>
