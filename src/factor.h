@@ -73,9 +73,9 @@ class CompactFactor {
    */
   inline double potential(
       const VariableInFactor vifs[], const variable_value_t var_values[],
+      feature_value_t val = DEFAULT_FEATURE_VALUE,
       const variable_id_t vid = Variable::INVALID_ID,
-      const variable_value_t proposal = Variable::INVALID_VALUE,
-      feature_value_t val = DEFAULT_FEATURE_VALUE) const {
+      const variable_value_t proposal = Variable::INVALID_VALUE) const {
     // For boolean, this is stored in CompactFactor.value;
     //     caller shouldn't set the val arg.
     // For categorical, this is stored in Factor.factor_params.value.

@@ -186,7 +186,8 @@ inline double CompactFactorGraph::potential(
       for (factor_id_t i = 0; i < variable.n_factors; ++i) {
         weight_id_t wid = ws[i];
         pot += weight_values[wid] *
-               fs[i].potential(vifs.get(), assignments, variable.id, proposal);
+               fs[i].potential(vifs.get(), assignments, DEFAULT_FEATURE_VALUE,
+                               variable.id, proposal);
       }
       break;
     }
@@ -198,8 +199,8 @@ inline double CompactFactorGraph::potential(
                                                         variable.id, proposal);
         if (fp.wid == Weight::INVALID_ID) continue;
         pot += weight_values[fp.wid] *
-               fs[i].potential(vifs.get(), assignments, variable.id, proposal,
-                               fp.feature_value);
+               fs[i].potential(vifs.get(), assignments, fp.feature_value,
+                               variable.id, proposal);
       }
       break;
     }
