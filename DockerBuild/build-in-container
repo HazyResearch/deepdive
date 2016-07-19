@@ -64,8 +64,10 @@ docker-run --name "$DOCKER_CONTAINER" \
     export PS4="+('"$DOCKER_CONTAINER"') "; set -eux
 
     : importing changes from host via git
+    ! [[ -s '"$escapedDockerHostMountpoint"'/.git/shallow ]] || # need to cope with shallow repos
+        git fetch --force --update-head-ok --prune --no-recurse-submodules
     git fetch --force --update-head-ok --prune --no-recurse-submodules '"$escapedDockerHostMountpoint"'
-    git submodule foreach sh -c "git fetch /mnt/\${PWD#\$1/}" -- "$PWD"
+    git submodule foreach sh -c '\''git fetch "$1/${PWD#$2/}"'\'' -- '"$escapedDockerHostMountpoint"' "$PWD"
     : syncing the container working directory with host
     git checkout --force FETCH_HEAD
     git clean -d --force
