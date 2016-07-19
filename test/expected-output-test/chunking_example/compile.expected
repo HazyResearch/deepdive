@@ -116,7 +116,7 @@ function: """AndCategorical(chunk.R0.dd_label)"""
 
 }
 
-deepdive.inference.factors.inf_and_chunk_chunk {
+deepdive.inference.factors.linear_chain {
 weight: """?(dd_weight_column_0, dd_weight_column_1)"""
 non_category_weight_cols: [
   
@@ -163,7 +163,7 @@ function: """AndCategorical(chunk.R0.dd_label, chunk.R1.dd_label)"""
 
 }
 
-deepdive.inference.factors.inf1_and_chunk_chunk {
+deepdive.inference.factors.phony_rule {
 weight: """?(dd_weight_column_0, dd_weight_column_1)"""
 non_category_weight_cols: [
   

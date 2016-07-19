@@ -224,7 +224,7 @@ function: """Imply(Q.R0.dd_label)"""
 
 }
 
-deepdive.inference.factors.inf1_istrue_Q {
+deepdive.inference.factors.inf_istrue_Q1 {
 weight: """1.0"""
 non_category_weight_cols: [
   
@@ -307,7 +307,7 @@ function: """Imply(Q.R0.dd_label, Q.R1.dd_label)"""
 
 }
 
-deepdive.inference.factors.inf1_imply_Q_Q {
+deepdive.inference.factors.inf_imply_Q_Q1 {
 weight: """-10.0"""
 non_category_weight_cols: [
   
@@ -342,7 +342,7 @@ function: """Imply(Q.R0.dd_label, Q.R1.dd_label)"""
 
 }
 
-deepdive.inference.factors.inf2_imply_Q_Q {
+deepdive.inference.factors.inf_imply_Q_Q2 {
 weight: """10.0"""
 non_category_weight_cols: [
   
