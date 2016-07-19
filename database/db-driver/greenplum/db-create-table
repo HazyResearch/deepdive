@@ -23,5 +23,6 @@ else
     db-execute "DROP $DROP_VIEW_TYPE  VIEW  $Table CASCADE" &>/dev/null || true
     db-execute "DROP $DROP_TABLE_TYPE TABLE $Table CASCADE" &>/dev/null || true
 fi
-db-execute "CREATE DOMAIN json AS TEXT;" || true
+# make sure JSON SQL TYPE (or DOMAIN) is available for TSJ
+[[ $(db-execute '\dT JSON' --tuples-only --no-align | wc -l) -gt 0 ]] || db-execute "CREATE DOMAIN JSON AS TEXT;" || true
 exec db-execute "CREATE $CREATE_TABLE_TYPE TABLE $Table $TableDef $CREATE_TABLE_EXTRA_CLAUSES"

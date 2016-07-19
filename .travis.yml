@@ -57,7 +57,7 @@ after_script:
     # decide what tag to use
   - if [[ $TRAVIS_PULL_REQUEST = false ]];
     then tag=travis.$TRAVIS_BRANCH;
-    else tag=travis-pr$TRAVIS_BRANCH;
+    else tag=travis-pr$TRAVIS_PULL_REQUEST;
     fi;
     tag=$(echo -n "$tag" | tr -c 'A-Za-z0-9_.-' _);
 

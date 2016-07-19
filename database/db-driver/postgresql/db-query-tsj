@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+# db-query-tsj -- Runs SQL against PostgreSQL and formats output rows in TSJ
+#
+# $ db-query-tsj SQL COLUMN_TYPE...
+##
+import psycopg2, psycopg2.extras, ujson
+import sys, subprocess, os, re
+
+# get arguments from command-line
+def usage(*msg):
+    err = subprocess.call(["usage", sys.argv[0]] + list(msg))
+    if err != 0: sys.exit(err)
+if not len(sys.argv) > 1: usage("Missing SQL")
+sql = sys.argv[1]
+if not len(sys.argv) > 2: usage("Missing COLUMN_TYPEs")
+column_types = sys.argv[2:]
+
+# write TSJ to stdout
+tsj_output = sys.stdout
+
+
+# SQL types that are already formatted in JSON (to bypass ujson.dump)
+TYPES_TO_PASS_THRU = [ "json" ]
+
+# PostgreSQL date/time types adapted by psycopg that need special formatting
+# See: http://initd.org/psycopg/docs/usage.html#adapt-date
+# See: https://www.postgresql.org/docs/current/static/datatype-datetime.html
+TYPES_DATETIME_PATTERNS = [re.compile(regex) for regex in (
+        r'date',
+        r'interval(?:|.+)',
+        r'timestamp\s*(?:\(\d\))?(?:\s*with(?:out)?\s+time\s+zone)?',
+        )]
+
+# generate code to output columns of each row based on their types
+# See: http://lucumr.pocoo.org/2011/2/1/exec-in-python/
+stmts = []
+for i,ty in enumerate(column_types):
+    ty = ty.lower()
+    if i > 0: # separate each column by TAB
+        stmts.append('tsj_output.write("\\t")')
+    if ty in TYPES_TO_PASS_THRU:
+        # passthru JSON compatible columns
+        stmts.append('tsj_output.write(columns[%d])' % i)
+    elif any(pattern.match(ty) for pattern in TYPES_DATETIME_PATTERNS):
+        # ujson needs us to format datetime
+        stmts.append('ujson.dump(columns[%d].isoformat(), tsj_output)' % i)
+    else:  # dump in JSON except a few
+        stmts.append('ujson.dump(columns[%d], tsj_output)' % i)
+stmts.append('tsj_output.write("\\n")')
+exec compile("def write_tsj_output(columns):\n" + "\n".join("  " + s for s in stmts),
+        "%s codegen" % sys.argv[0], "exec")
+
+# tell psycopg2 to actually skip parsing any JSON
+psycopg2.extras.register_default_json(loads=lambda x: x)
+# XXX or use ujson.loads if you really must parse it
+#psycopg2.extras.register_default_json(loads=ujson.loads)
+
+# use pyscopg2 to access the database
+conn = psycopg2.connect(
+        # NOTE these environment variables are supposed to set by db-parse
+        database=os.environ.get("DBNAME"),
+        password=os.environ.get("DBPASSWORD"),
+        user=os.environ.get("DBUSER"),
+        host=os.environ.get("DBHOST"),
+        port=os.environ.get("DBPORT"),
+        )
+# execute given SQL query, and output each row in TSJ format
+with conn:
+    with conn.cursor("named") as curs:
+        curs.execute(sql)
+        for columns in curs:
+            write_tsj_output(columns)
+conn.close()

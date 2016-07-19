@@ -108,6 +108,9 @@ queue() {
 # assume a particular format when explicitly specified
 currentFormat=$DEEPDIVE_LOAD_FORMAT
 
+# use USR1 to communicate failure from process substitutions: bzip2, gzip, or custom data sink executables (in the future)
+trap false USR1
+
 # group given paths by format, and batch call to unload to support parallel unload
 format=$currentFormat
 for path; do
@@ -147,7 +150,7 @@ for path; do
     # queue a sink expression
     if [[ -n "$compress" ]]; then
         # wrapped with decompression process if needed
-        queue "$path" ">($(escape4sh "$compress") >$(escape4sh "$path"))"
+        queue "$path" ">($(escape4sh "$compress") >$(escape4sh "$path") || kill -USR1 $$)"
     else
         queue "$path" "$(escape4sh "$path")"
     fi

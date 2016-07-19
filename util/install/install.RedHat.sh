@@ -31,6 +31,14 @@ install__deepdive_build_deps() {
         perl
         python
         java
+        # bash
+        bison
+        # psycopg2
+        readline-devel
+        python-devel
+        postgresql-devel
+        # graphviz-devel
+        autoconf pkgconfig libtool
         # mindbender
         ed
         # sampler
@@ -59,6 +67,7 @@ install__deepdive_runtime_deps() {
         java
         gnuplot
         libtool-ltdl # for graphviz
+        perl-Time-HiRes
     )
     sudo yum install -y "${runtime_deps[@]}"
     sudo localedef -f UTF-8 -i en_US en_US.UTF-8

@@ -57,7 +57,14 @@ for ColumnType; do
 done
 plStmts=${plStmts#'print "\t";'}
 
-exec perl -Mstrict <(cat "$0".pl; echo '
+tmpdir=$(mktemp -d "${TMPDIR:-/tmp}"/tsv2tsj.XXXXXXX)
+trap 'cd /; rm -rf "$tmpdir"' EXIT
+cd "$tmpdir"
+
+# generate code
+(
+    cat "$0".pl
+    echo '
     while ( <> ) {
         chomp;
         @ARGV = split "\t";
@@ -65,4 +72,17 @@ exec perl -Mstrict <(cat "$0".pl; echo '
         print "\n";
     }
     '
-)
+) >tsv2tsj-$$.pl
+chmod +x tsv2tsj-$$.pl
+
+if [[ ${DEEPDIVE_USE_TSV2TSJ_NPROCS:=$(nproc)} -gt 1 ]]; then
+    # run in parallel (increases throughput 2-3x in with 8 cores but not that much)
+    pids=(--)
+    mkprocs -n $DEEPDIVE_USE_TSV2TSJ_NPROCS -I input-%s -O output-%s ./tsv2tsj-$$.pl
+    mkmimo output-* \> /dev/stdout & pids+=($!)
+    mkmimo /dev/stdin \> input-*
+    set "${pids[@]}"; for pid; do wait $pid; done
+else
+    # single threaded
+    exec ./tsv2tsj-$$.pl
+fi

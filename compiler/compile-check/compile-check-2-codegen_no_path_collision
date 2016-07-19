@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# compile-check-2-codegen_no_path_collision -- Checks if all code are designated to distinct file paths
+##
+set -euo pipefail
+
+# find duplicate paths in the compiled codegen blocks
+cat "$@" | jq -c -r '.path' | sort | uniq -d | (
+set +e
+while read -r path; do
+    error "$path: code generated more than once"
+done
+# exits non-zero by hitting an error on non-empty input
+)

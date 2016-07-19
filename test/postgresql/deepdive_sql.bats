@@ -136,9 +136,8 @@ load ../../database/test/corner_cases
 ## a case with nested array
 
 @test "$DBVARIANT deepdive sql eval (with nested arrays) format=tsj works" {
-    skip "NOT SUPPORTED YET" # TODO
     tab2nl "$NestedArrayColumnTypes"
-    actual=$(keeping_output_of deepdive sql eval "$NestedArraySQL" format=tsj)
+    actual=$(keeping_output_of deepdive sql eval "$NestedArraySQL" format=tsj)    || skip "rejected conversion"
     diff -u                                 <(tab2nl "$NestedArrayTSJ") <(jq -c . <<<"$actual")
 }
 
@@ -206,7 +205,6 @@ load ../../database/test/corner_cases
 ## a case with timestamps
 
 @test "$DBVARIANT deepdive sql eval (with timestamp) format=tsj works" {
-    skip "NOT SUPPORTED YET" # TODO
     tab2nl "$TimestampColumnTypes"
     actual=$(keeping_output_of deepdive sql eval "$TimestampSQL" format=tsj)
     diff -u                             <(tab2nl "$TimestampTSJ") <(jq -c . <<<"$actual")

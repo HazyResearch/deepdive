@@ -17,7 +17,7 @@ Query=$1; shift
 
 viewDef=" AS $Query"
 
-if db-execute '\d '"$View" >/dev/null; then
+if db-execute '\d '"$View" &>/dev/null; then
     ! [[ -n $CREATE_IF_NOT_EXISTS ]] ||
         # exit if view or table with same name already exists
         exit 0
