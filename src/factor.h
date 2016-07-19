@@ -17,6 +17,16 @@ class CompactFactor;
 class Factor;
 class RawFactor;
 
+static constexpr feature_value_t DEFAULT_FEATURE_VALUE = 1;
+
+typedef struct FactorParams {
+  weight_id_t wid;
+  feature_value_t feature_value;
+} FactorParams;
+
+static constexpr FactorParams INVALID_PARAMS = {Weight::INVALID_ID,
+                                                DEFAULT_FEATURE_VALUE};
+
 /**
  * Encapsulates a factor function in the factor graph.
  *
@@ -26,6 +36,7 @@ class RawFactor;
 class CompactFactor {
  public:
   factor_id_t id;                  // factor id
+  feature_value_t feature_value;   // feature value (filled only for boolean)
   factor_function_type_t func_id;  // function type id
   factor_arity_t n_variables;      // number of variables in the factor
   num_edges_t
@@ -44,7 +55,7 @@ class CompactFactor {
    */
   CompactFactor(factor_id_t id);
 
-#define POTENTIAL(func_id) _potential_##func_id
+#define POTENTIAL_SIGN(func_id) _potential_sign_##func_id
 
   /**
    * Returns potential of the factor.
@@ -60,13 +71,21 @@ class CompactFactor {
    * This function is defined in the head to make sure
    * it gets inlined
    */
-  inline double potential(const VariableInFactor vifs[],
-                          const variable_value_t var_values[],
-                          const variable_id_t vid,
-                          const variable_value_t proposal) const {
+  inline double potential(
+      const VariableInFactor vifs[], const variable_value_t var_values[],
+      feature_value_t val = DEFAULT_FEATURE_VALUE,
+      const variable_id_t vid = Variable::INVALID_ID,
+      const variable_value_t proposal = Variable::INVALID_VALUE) const {
+    // For boolean, this is stored in CompactFactor.value;
+    //     caller shouldn't set the val arg.
+    // For categorical, this is stored in Factor.factor_params.value.
+    //     caller should pass in via the val arg.
+    // TODO: better data structures than the factor_params duct tape...
+    // See also: CompactFactorGraph::potential
+    val = (func_id == FUNC_AND_CATEGORICAL ? val : this->feature_value);
 #define RETURN_POTENTIAL_FOR(func_id) \
   case func_id:                       \
-    return POTENTIAL(func_id)(vifs, var_values, vid, proposal)
+    return POTENTIAL_SIGN(func_id)(vifs, var_values, vid, proposal) * val
 #define RETURN_POTENTIAL_FOR2(func_id, func_id2) \
   case func_id2:                                 \
     RETURN_POTENTIAL_FOR(func_id)
@@ -102,8 +121,8 @@ class CompactFactor {
                             : vif.satisfiedUsing(var_values[vif.vid]);
   }
 
-#define DEFINE_POTENTIAL_FOR(func_id)                                     \
-  inline double POTENTIAL(func_id)(                                       \
+#define DEFINE_POTENTIAL_SIGN_FOR(func_id)                                \
+  inline double POTENTIAL_SIGN(func_id)(                                  \
       const VariableInFactor vifs[], const variable_value_t var_values[], \
       const variable_id_t vid, const variable_value_t &proposal) const
 
@@ -112,7 +131,7 @@ class CompactFactor {
    * the 'proposal' argument.
    *
    */
-  DEFINE_POTENTIAL_FOR(FUNC_EQUAL) {
+  DEFINE_POTENTIAL_SIGN_FOR(FUNC_EQUAL) {
     const VariableInFactor &vif = vifs[n_start_i_vif];
     /* We use the value of the first variable in the factor as the "gold"
      * standard" */
@@ -135,7 +154,7 @@ class CompactFactor {
    * 'proposal' argument.
    *
    */
-  DEFINE_POTENTIAL_FOR(FUNC_AND) {
+  DEFINE_POTENTIAL_SIGN_FOR(FUNC_AND) {
     /* Iterate over the factor variables */
     for (num_edges_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables;
          ++i_vif) {
@@ -153,7 +172,7 @@ class CompactFactor {
    * 'proposal' argument.
    *
    */
-  DEFINE_POTENTIAL_FOR(FUNC_OR) {
+  DEFINE_POTENTIAL_SIGN_FOR(FUNC_OR) {
     /* Iterate over the factor variables */
     for (num_edges_t i_vif = n_start_i_vif; i_vif < n_start_i_vif + n_variables;
          ++i_vif) {
@@ -178,7 +197,7 @@ class CompactFactor {
    * return 1.0 if the body is not satisfied.
    *
    */
-  DEFINE_POTENTIAL_FOR(FUNC_IMPLY_MLN) {
+  DEFINE_POTENTIAL_SIGN_FOR(FUNC_IMPLY_MLN) {
     /* Compute the value of the body of the rule */
     bool bBody = true;
     for (num_edges_t i_vif = n_start_i_vif;
@@ -213,7 +232,7 @@ class CompactFactor {
    *  return 0.0 if the body is not satisfied.
    *
    */
-  DEFINE_POTENTIAL_FOR(FUNC_IMPLY_NATURAL) {
+  DEFINE_POTENTIAL_SIGN_FOR(FUNC_IMPLY_NATURAL) {
     /* Compute the value of the body of the rule */
     bool bBody = true;
     for (num_edges_t i_vif = n_start_i_vif;
@@ -237,10 +256,10 @@ class CompactFactor {
   }
 
   // potential for factor over categorical variables
-  DEFINE_POTENTIAL_FOR(FUNC_AND_CATEGORICAL) { return 1.0; }
+  DEFINE_POTENTIAL_SIGN_FOR(FUNC_AND_CATEGORICAL) { return 1.0; }
 
   // potential for linear expression
-  DEFINE_POTENTIAL_FOR(FUNC_LINEAR) {
+  DEFINE_POTENTIAL_SIGN_FOR(FUNC_LINEAR) {
     double res = 0.0;
     bool bHead = is_variable_satisfied(vifs[n_start_i_vif + n_variables - 1],
                                        vid, var_values, proposal);
@@ -259,7 +278,7 @@ class CompactFactor {
   }
 
   // potential for linear expression
-  DEFINE_POTENTIAL_FOR(FUNC_RATIO) {
+  DEFINE_POTENTIAL_SIGN_FOR(FUNC_RATIO) {
     double res = 1.0;
     bool bHead = is_variable_satisfied(vifs[n_start_i_vif + n_variables - 1],
                                        vid, var_values, proposal);
@@ -276,7 +295,7 @@ class CompactFactor {
   }
 
   // potential for linear expression
-  DEFINE_POTENTIAL_FOR(FUNC_LOGICAL) {
+  DEFINE_POTENTIAL_SIGN_FOR(FUNC_LOGICAL) {
     double res = 0.0;
     bool bHead = is_variable_satisfied(vifs[n_start_i_vif + n_variables - 1],
                                        vid, var_values, proposal);
@@ -298,7 +317,7 @@ class CompactFactor {
     }
   }
 
-#undef DEFINE_POTENTIAL_FOR
+#undef DEFINE_POTENTIAL_SIGN_FOR
 };
 
 /**
@@ -307,6 +326,7 @@ class CompactFactor {
 class Factor {
  public:
   factor_id_t id;                  // factor id
+  feature_value_t feature_value;   // feature value
   weight_id_t weight_id;           // weight id
   factor_function_type_t func_id;  // factor function id
   factor_arity_t n_variables;      // number of variables
@@ -326,7 +346,7 @@ class Factor {
   // An empty map takes 48 bytes, so we create it only as needed, i.e., when
   // func_id = FUNC_AND_CATEGORICAL
   // Allocated in binary_parser.read_factors. Never deallocated.
-  std::unordered_map<factor_weight_key_t, weight_id_t> *weight_ids;
+  std::unordered_map<factor_weight_key_t, FactorParams> *factor_params;
 
   /**
    * Turns out the no-arg constructor is still required, since we're
@@ -335,8 +355,8 @@ class Factor {
    */
   Factor();
 
-  Factor(factor_id_t id, weight_id_t weight_id, factor_function_type_t func_id,
-         factor_arity_t n_variables);
+  Factor(factor_id_t id, feature_value_t value, weight_id_t weight_id,
+         factor_function_type_t func_id, factor_arity_t n_variables);
 
   /**
    * Copy constructor from a RawFactor.
@@ -366,7 +386,7 @@ class RawFactor : public Factor {
 
   /**
    */
-  RawFactor(factor_id_t id, weight_id_t weight_id,
+  RawFactor(factor_id_t id, feature_value_t value, weight_id_t weight_id,
             factor_function_type_t func_id, factor_arity_t n_variables);
 
   inline void add_variable_in_factor(const VariableInFactor &vif) {

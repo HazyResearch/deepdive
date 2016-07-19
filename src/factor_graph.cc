@@ -88,11 +88,10 @@ CompactFactorGraph::CompactFactorGraph(const FactorGraph &fg)
     }
 
     for (const auto &fid : rv.tmp_factor_ids) {
-      factor_ids[i_edge] = fid;
-
       auto &cf = compact_factors[i_edge];
       const auto &f = factors[fid];
       cf.id = f.id;
+      cf.feature_value = f.feature_value;
       cf.func_id = f.func_id;
       cf.n_variables = f.n_variables;
       cf.n_start_i_vif = f.n_start_i_vif;
@@ -130,10 +129,9 @@ void FactorGraph::safety_check() {
 CompactFactorGraph::CompactFactorGraph(const FactorGraphDescriptor &size)
     : size(size),
       variables(new Variable[size.num_variables]),
-      factors(new Factor[size.num_factors]),
       compact_factors(new CompactFactor[size.num_edges]),
       compact_factors_weightids(new weight_id_t[size.num_edges]),
-      factor_ids(new factor_id_t[size.num_edges]),
+      factors(new Factor[size.num_factors]),
       vifs(new VariableInFactor[size.num_edges]) {}
 
 CompactFactorGraph::CompactFactorGraph(const CompactFactorGraph &other)
@@ -143,11 +141,10 @@ CompactFactorGraph::CompactFactorGraph(const CompactFactorGraph &other)
   COPY_ARRAY_UNIQUE_PTR_MEMBER(factors, size.num_factors);
   COPY_ARRAY_UNIQUE_PTR_MEMBER(compact_factors, size.num_edges);
   COPY_ARRAY_UNIQUE_PTR_MEMBER(compact_factors_weightids, size.num_edges);
-  COPY_ARRAY_UNIQUE_PTR_MEMBER(factor_ids, size.num_edges);
   COPY_ARRAY_UNIQUE_PTR_MEMBER(vifs, size.num_edges);
 }
 
-weight_id_t CompactFactorGraph::get_categorical_weight_id(
+const FactorParams &CompactFactorGraph::get_categorical_factor_params(
     const variable_value_t assignments[], const CompactFactor &fs,
     variable_id_t vid, variable_value_t proposal) {
   /**
@@ -159,11 +156,12 @@ weight_id_t CompactFactorGraph::get_categorical_weight_id(
    * The weight index is
    * (...((((0 * d1 + i1) * d2) + i2) * d3 + i3) * d4 + ...) * dk + ik
    *
-   * For FUNC_AND_CATEGORICAL, we look up the weight_ids map.
+   * For FUNC_AND_CATEGORICAL, we look up the factor_params map.
    *
    * TODO: refactor the above formula into a shared routine. (See also
    * binary_format.cc read_factors)
    */
+
   factor_weight_key_t key = 0;
   // for each variable in the factor
   for (num_edges_t i = fs.n_start_i_vif; i < fs.n_start_i_vif + fs.n_variables;
@@ -177,14 +175,14 @@ weight_id_t CompactFactorGraph::get_categorical_weight_id(
 
   switch (fs.func_id) {
     case FUNC_AND_CATEGORICAL: {
-      auto iter = factors[fs.id].weight_ids->find(key);
-      if (iter != factors[fs.id].weight_ids->end()) return iter->second;
+      auto iter = factors[fs.id].factor_params->find(key);
+      if (iter != factors[fs.id].factor_params->end()) return iter->second;
       break;
     }
     default:
       std::abort();
   }
-  return Weight::INVALID_ID;
+  return INVALID_PARAMS;
 }
 
 void CompactFactorGraph::update_weight(const Variable &variable,
@@ -208,8 +206,9 @@ void CompactFactorGraph::update_weight(const Variable &variable,
           // calculated
           // using a sample of the variable.
           infrs.weight_values[ws[i]] +=
-              stepsize * (potential(fs[i], infrs.assignments_evid.get()) -
-                          potential(fs[i], infrs.assignments_free.get()));
+              stepsize *
+              (fs[i].potential(vifs.get(), infrs.assignments_evid.get()) -
+               fs[i].potential(vifs.get(), infrs.assignments_free.get()));
         }
         break;
       }
@@ -219,24 +218,30 @@ void CompactFactorGraph::update_weight(const Variable &variable,
         // sample without evidence unfixed, I1, with corresponding weight w2
         // gradient of wd0 = f(I0) - I(w1==w2)f(I1)
         // gradient of wd1 = I(w1==w2)f(I0) - f(I1)
-        weight_id_t wid1 = get_categorical_weight_id(
-            infrs.assignments_evid.get(), fs[i], -1, -1);
-        weight_id_t wid2 = get_categorical_weight_id(
-            infrs.assignments_free.get(), fs[i], -1, -1);
-        bool equal = (wid1 == wid2);
+        const FactorParams &fp1 =
+            get_categorical_factor_params(infrs.assignments_evid.get(), fs[i]);
+        const FactorParams &fp2 =
+            get_categorical_factor_params(infrs.assignments_free.get(), fs[i]);
+        bool equal = (fp1.wid == fp2.wid);
 
-        if (wid1 != Weight::INVALID_ID && !infrs.weights_isfixed[wid1]) {
-          infrs.weight_values[wid1] +=
+        if (fp1.wid != Weight::INVALID_ID && !infrs.weights_isfixed[fp1.wid]) {
+          infrs.weight_values[fp1.wid] +=
               stepsize *
-              (potential(fs[i], infrs.assignments_evid.get()) -
-               equal * potential(fs[i], infrs.assignments_free.get()));
+              (fs[i].potential(vifs.get(), infrs.assignments_evid.get(),
+                               fp1.feature_value) -
+               equal *
+                   fs[i].potential(vifs.get(), infrs.assignments_free.get(),
+                                   fp1.feature_value));
         }
 
-        if (wid2 != Weight::INVALID_ID && !infrs.weights_isfixed[wid2]) {
-          infrs.weight_values[wid2] +=
+        if (fp2.wid != Weight::INVALID_ID && !infrs.weights_isfixed[fp2.wid]) {
+          infrs.weight_values[fp2.wid] +=
               stepsize *
-              (equal * potential(fs[i], infrs.assignments_evid.get()) -
-               potential(fs[i], infrs.assignments_free.get()));
+              (equal *
+                   fs[i].potential(vifs.get(), infrs.assignments_evid.get(),
+                                   fp2.feature_value) -
+               fs[i].potential(vifs.get(), infrs.assignments_free.get(),
+                               fp2.feature_value));
         }
         break;
       }

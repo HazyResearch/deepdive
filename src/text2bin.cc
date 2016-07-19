@@ -119,6 +119,7 @@ void text2bin_factors(
   std::vector<variable_id_t> vids;
   std::vector<variable_value_t> cids_per_wid;
   std::vector<weight_id_t> wids;
+  std::vector<feature_value_t> feature_values;
   std::string line;
   std::string array_piece;
   while (getline(fin, line)) {
@@ -158,13 +159,14 @@ void text2bin_factors(
       case FUNC_AND_CATEGORICAL: {
         cids_per_wid.clear();
         wids.clear();
+        feature_values.clear();
         // IN  Format: NUM_WEIGHTS [VAR1 VAL ID] [VAR2 VAL ID] ... [WEIGHT ID]
         // OUT Format: NUM_WEIGHTS [[VAR1_VALi, VAR2_VALi, ..., WEIGHTi]]
-        // first, the run-length
+        // 1. the run-length
         assert(getline(ss, field, text_field_delim));
         factor_weight_key_t num_weightids = atol(field.c_str());
         write_be_or_die(fout, num_weightids);
-        // second, parse var vals for each var
+        // 2. parse var vals for each var
         for (factor_arity_t i = 0; i < arity; ++i) {
           assert(getline(ss, array_piece, text_field_delim));
           std::istringstream ass(array_piece);
@@ -174,19 +176,26 @@ void text2bin_factors(
                 cids_per_wid.push_back(cid);
               }, num_weightids);
         }
-        // third, parse weights
-        parse_pgarray_or_die(ss, [&wids](const std::string &element) {
+        // 3. parse weights
+        assert(getline(ss, array_piece, text_field_delim));
+        std::istringstream ass(array_piece);
+        parse_pgarray_or_die(ass, [&wids](const std::string &element) {
           weight_id_t wid = atol(element.c_str());
           wids.push_back(wid);
         }, num_weightids);
-        // fourth, transpose into output format
+        // 4. parse feature values
+        parse_pgarray_or_die(ss, [&feature_values](const std::string &element) {
+          feature_value_t val = atof(element.c_str());
+          feature_values.push_back(val);
+        }, num_weightids);
+        // 5. transpose into output format
         for (factor_weight_key_t i = 0; i < num_weightids; ++i) {
           for (factor_arity_t j = 0; j < arity; ++j) {
             variable_value_t cid = cids_per_wid[j * num_weightids + i];
             write_be_or_die(fout, cid);
           }
-          weight_id_t wid = wids[i];
-          write_be_or_die(fout, wid);
+          write_be_or_die(fout, wids[i]);
+          write_be_or_die(fout, feature_values[i]);
         }
         break;
       }
@@ -195,6 +204,9 @@ void text2bin_factors(
         assert(getline(ss, field, text_field_delim));
         weight_id_t wid = atol(field.c_str());
         write_be_or_die(fout, wid);
+        assert(getline(ss, field, text_field_delim));
+        feature_value_t val = atof(field.c_str());
+        write_be_or_die(fout, val);
     }
   }
   std::cout << total_edges << std::endl;

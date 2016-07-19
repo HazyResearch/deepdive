@@ -101,17 +101,21 @@ class CompactFactorGraph {
  public:
   FactorGraphDescriptor size;
 
-  std::unique_ptr<Variable[]> variables;
-  std::unique_ptr<Factor[]> factors;
-
   // For each edge, we store the factor, weight id, factor id, and the variable,
   // in the same index of seperate arrays. The edges are ordered so that the
   // edges for a variable is in a continuous region (sequentially).
   // This allows us to access factors given variables, and access variables
   // given factors faster.
+
+  // Variables and edges indexed by variable (sort by <variable, factor>)
+  // Note that wids are put in a dedicated array (instead of in CompactFactor)
+  // because we'd like to compact memory write footprint (????????)
+  std::unique_ptr<Variable[]> variables;
   std::unique_ptr<CompactFactor[]> compact_factors;
   std::unique_ptr<weight_id_t[]> compact_factors_weightids;
-  std::unique_ptr<factor_id_t[]> factor_ids;
+
+  // Factors and edges indexed by factor (sort by <factor, variable>)
+  std::unique_ptr<Factor[]> factors;
   std::unique_ptr<VariableInFactor[]> vifs;
 
   /**
@@ -133,15 +137,15 @@ class CompactFactorGraph {
 
   /*
    * Given a factor and variable assignment, returns corresponding categorical
-   * factor weight id, using proposal value for the variable with id vid.
+   * factor params, using proposal value for the variable with id vid.
    * For categorical weights, for each possible assignment, there is a
    * corresponding
    * indicator function and weight.
    */
-  weight_id_t get_categorical_weight_id(const variable_value_t assignments[],
-                                        const CompactFactor& fs,
-                                        variable_id_t vid,
-                                        variable_value_t proposal);
+  const FactorParams& get_categorical_factor_params(
+      const variable_value_t assignments[], const CompactFactor& fs,
+      variable_id_t vid = Variable::INVALID_ID,
+      variable_value_t proposal = Variable::INVALID_VALUE);
 
   /**
    * Given a variable, updates the weights associated with the factors that
@@ -153,31 +157,14 @@ class CompactFactorGraph {
                      double stepsize);
 
   /**
-   * Returns potential of the given factor
-   *
-   * does_change_evid = true, use the free assignment. Otherwise, use the
-   * evid assignement.
-   */
-  inline double potential(const CompactFactor& factor,
-                          const variable_value_t assignments[]);
-
-  /**
    * Returns log-linear weighted potential of the all factors for the given
    * variable using the propsal value.
-   *
-   * does_change_evid = true, use the free assignment. Otherwise, use the
-   * evid assignement.
    */
   inline double potential(const Variable& variable,
                           const variable_value_t proposal,
                           const variable_value_t assignments[],
                           const weight_value_t weight_values[]);
 };
-
-inline double CompactFactorGraph::potential(
-    const CompactFactor& factor, const variable_value_t assignments[]) {
-  return factor.potential(vifs.get(), assignments, -1, -1);
-}
 
 inline double CompactFactorGraph::potential(
     const Variable& variable, variable_value_t proposal,
@@ -199,7 +186,8 @@ inline double CompactFactorGraph::potential(
       for (factor_id_t i = 0; i < variable.n_factors; ++i) {
         weight_id_t wid = ws[i];
         pot += weight_values[wid] *
-               fs[i].potential(vifs.get(), assignments, variable.id, proposal);
+               fs[i].potential(vifs.get(), assignments, DEFAULT_FEATURE_VALUE,
+                               variable.id, proposal);
       }
       break;
     }
@@ -207,11 +195,12 @@ inline double CompactFactorGraph::potential(
       for (factor_id_t i = 0; i < variable.n_factors; ++i) {
         // get weight id associated with this factor and variable
         // assignment
-        weight_id_t wid = get_categorical_weight_id(assignments, fs[i],
-                                                    variable.id, proposal);
-        if (wid == Weight::INVALID_ID) continue;
-        pot += weight_values[wid] *
-               fs[i].potential(vifs.get(), assignments, variable.id, proposal);
+        FactorParams fp = get_categorical_factor_params(assignments, fs[i],
+                                                        variable.id, proposal);
+        if (fp.wid == Weight::INVALID_ID) continue;
+        pot += weight_values[fp.wid] *
+               fs[i].potential(vifs.get(), assignments, fp.feature_value,
+                               variable.id, proposal);
       }
       break;
     }
