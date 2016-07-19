@@ -537,6 +537,8 @@ def factorWeightDescriptionSqlExpr:
                           | { table: "C\(.ordinal)", column: "cid" } | asSqlExpr
                           ] | join(", ")) as $valueOrder
                     |
+                        .non_category_weight_cols as $non_category_weight_cols
+                    |
                     { SELECT:
                         [ ( .function_.variables[]
                         | { table: "f", column: .columnId } )
@@ -568,9 +570,8 @@ def factorWeightDescriptionSqlExpr:
                                 , { table: "f", column: . } ] } )
                         ]
                     , GROUP_BY:
-                        [ ( .function_.variables[]
-                        | { table: "f", column: .columnId } )
-                        ]
+                        [ ( .function_.variables[] | { table: "f", column: .columnId } ),
+                          ( $non_category_weight_cols[] | { table: "f", column: . } ) ]
                     } | asSql | asPrettySqlArg)
                 )\"" else # factors over boolean variables
                     { SELECT:

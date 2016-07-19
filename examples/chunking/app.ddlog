@@ -67,7 +67,3 @@ chunk(s, w, tag) :- word_features(s, w, f).
 # linear chains ###############################################################
 @weight(tag1, tag2)
 chunk(s, w1, tag1) ^ chunk(s, w2, tag2) :- w2 = w1 + 1.
-
-# skip chain ##################################################################
-@weight(tag1, tag2)
-chunk(s, w1, tag1) ^ chunk(s, w2, tag2) :- w1 < w2.

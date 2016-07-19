@@ -53,8 +53,9 @@ def ancestors(pid):
 # list descendants reachable via PID-PPID
 pids = descendants(PID)
 # as well as those in the same process group except descendants of the highest ancestor other than PID 1
+# if PID is a process group leader (PID == PGID)
 PGID = pgid_by_pid[PID] if PID in pgid_by_pid else PID
-if PGID in ps_by_pgid:
+if PGID == PID and PGID in ps_by_pgid:
     ppids = [p for p in ancestors(PID) if p not in ["0", "1"]]
     pids |= ps_by_pgid[PGID] - (
             descendants(ppids[0]) if len(ppids) > 0 else set()

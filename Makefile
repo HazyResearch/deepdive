@@ -9,6 +9,11 @@ BUILD_DIR = .build
 # path to the package to be built
 PACKAGE = $(dir $(STAGE_DIR))deepdive.tar.gz
 
+ifneq ($(shell which docker 2>/dev/null),)
+# do a containerized build by default if Docker is available
+.DEFAULT_GOAL := build--in-container
+
+else  # do a normal build by default without Docker
 .DEFAULT_GOAL := build
 
 # On Mac OS X, require GNU coreutils instead of continuing on BSD utilities with uncertainty
@@ -23,12 +28,24 @@ else
 endif
 endif
 
+endif  # Docker
+
+### build/test inside containers ##############################################
+build--in-container:
+	./DockerBuild/build-in-container
+test--in-container:
+	./DockerBuild/test-in-container-postgres \
+	    make -j test $(if $(ONLY),ONLY="$(ONLY)") $(if $(EXCEPT),EXCEPT="$(EXCEPT)")
+
 ### dependency recipes ########################################################
 
 .PHONY: depends
-depends:
+depends: .build/depends
+.build/depends: util/install.sh $(wildcard util/install/*)
 	# Installing and Checking dependencies...
-	util/install.sh _deepdive_build_deps _deepdive_runtime_deps
+	sha1sum $^ | diff -q $@ - || \
+	$< _deepdive_build_deps _deepdive_runtime_deps
+	sha1sum $^ >$@
 
 ### install recipes ###########################################################
 

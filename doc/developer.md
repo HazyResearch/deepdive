@@ -85,6 +85,84 @@ DeepDive source tree includes several git submodules and ports:
     cd deepdive
     ```
 
+##### <a name="build-test-docker"></a> Containerized builds and tests
+
+DeepDive build and tests can be done using [Docker](https://www.docker.com), which can simplify the development environment setup dramatically.
+
+* To build the source tree inside a container and create a new Docker image, run:
+
+    ```bash
+    make build--in-container
+    ```
+
+    Or, if you don't even have `make`, just run:
+
+    ```bash
+    ./DockerBuild/build-in-container
+    ```
+
+    This pulls the master image from Docker Hub ([netj/deepdive-build](https://hub.docker.com/r/netj/deepdive-build/)), then inside a fresh container, runs the build after applying the changes made to the current source tree.
+    This is the default for `make` (without any target argument) when Docker is available on your system.
+
+    CAVEAT: Note that only files that are tracked by git is reflected in the build inside containers.
+    Use `git add` to make sure any new files are also considered when transfering changes to containers.
+
+
+* To test the latest build, run:
+
+    ```bash
+    make test--in-container
+    ```
+
+    You can pass the `ONLY=` and `EXCEPT=` filters as you do for the normal builds (described below).
+
+
+    Or, the equivalent without `make` is:
+
+    ```bash
+    ./DockerBuild/test-in-container-postgres
+    ```
+
+    You can in fact override the entire test command with this:
+
+    ```bash
+    ./DockerBuild/test-in-container-postgres  make test ONLY=test/postgresql/*.bats
+    ```
+
+* To make the latest build the new master image (on your local machine), run:
+
+    ```bash
+    ./DockerBuild/update-master-image
+    ```
+
+    Until you run this command, new builds will always start from the master image, not from the latest build.
+    If your source tree has diverged a lot from it, it's a good idea to update the master image once the initial long build finishes and passes the tests.
+    That way each subsequent build won't have to repeat the same long build.
+
+    If you have permission, you can push your master image to DockerHub and have others start build from there by running:
+
+    ```bash
+    docker push netj/deepdive-build:master
+    ```
+
+* To inspect the build, run:
+
+    ```bash
+    ./DockerBuild/inspect-build
+    ```
+
+    You can pass a command to run as arguments:
+
+    ```bash
+    ./DockerBuild/inspect-build  make test
+    ```
+
+##### <a name="build-test-docker"></a> Normal builds and tests
+
+Running containerized builds and tests in Docker is the recommended way, but you are welcome to run normal builds directly on the host in the old way.
+Everything described here about normal builds in fact applies to the source tree inside the container.
+Moreover, normal build is the only way to produce releases for Mac and environments other than the one used in the master image.
+
 * To install all build and runtime dependencies, run:
 
     ```bash

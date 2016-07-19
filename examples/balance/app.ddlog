@@ -1,0 +1,12 @@
+yes (vote_id bigint).
+no  (vote_id bigint).
+
+whatever? (
+    candidate bigint
+).
+
+@weight(1)
+whatever(p) :- yes(_).
+
+@weight(-1)
+whatever(p) :- no(_).

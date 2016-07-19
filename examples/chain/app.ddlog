@@ -1,0 +1,21 @@
+heads (id bigint).
+tails (id bigint).
+unk (id bigint).
+
+tags? (
+    @key id bigint,
+    tag text
+).
+
+tags(id, "H") = TRUE :- heads(id).
+tags(id, "T") = TRUE :- tails(id).
+
+tags(id, "T") = FALSE :- heads(id).
+tags(id, "H") = FALSE :- tails(id).
+
+tags(id, "H") = NULL :- unk(id).
+tags(id, "T") = NULL :- unk(id).
+
+
+@weight(t1, t2)
+tags(id1, t1) ^ tags(id2, t2) :- [id2 = id1 + 1].
