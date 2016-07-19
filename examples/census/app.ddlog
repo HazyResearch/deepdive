@@ -1,0 +1,100 @@
+
+adult(
+    @key id int,
+    age int,
+    workclass text,
+    fnlwgt int,
+    education text,
+    education_num int,
+    marital_status text,
+    occupation text,
+    relationship text,
+    race text,
+    gender text,
+    capital_gain int,
+    capital_loss int,
+    hours_per_week int,
+    native_country text,
+    income_bracket text
+).
+
+
+rich? (
+    id int
+).
+
+
+@materialize
+rich(id) = if income_bracket = ">50K" then TRUE else FALSE end
+    :- adult(id, _, _, _, _, _, _, _, _, _, _, _, _, _, _, income_bracket).
+
+
+
+############# CATEGORICAL ###############
+
+@weight(workclass)
+rich(id) :- adult(id, _, workclass, _, _, _, _, _, _, _, _, _, _, _, _, income_bracket).
+
+@weight(education)
+rich(id) :- adult(id, _, _, _, education, _, _, _, _, _, _, _, _, _, _, income_bracket).
+
+@weight(marital_status)
+rich(id) :- adult(id, _, _, _, _, _, marital_status, _, _, _, _, _, _, _, _, income_bracket).
+
+@weight(occupation)
+rich(id) :- adult(id, _, _, _, _, _, _, occupation, _, _, _, _, _, _, _, income_bracket).
+
+@weight(relationship)
+rich(id) :- adult(id, _, _, _, _, _, _, _, relationship, _, _, _, _, _, _, income_bracket).
+
+@weight(race)
+rich(id) :- adult(id, _, _, _, _, _, _, _, _, race, _, _, _, _, _, income_bracket).
+
+@weight(gender)
+rich(id) :- adult(id, _, _, _, _, _, _, _, _, _, gender, _, _, _, _, income_bracket).
+
+@weight(native_country)
+rich(id) :- adult(id, _, _, _, _, _, _, _, _, _, _, _, _, _, native_country, income_bracket).
+
+
+
+############# CONTINUOUS ###############
+
+@weight("")
+@feature_value(age)
+rich(id) :- adult(id, age, _, _, _, _, _, _, _, _, _, _, _, _, _, income_bracket).
+
+@weight("")
+@feature_value(education_num)
+rich(id) :- adult(id, _, _, _, _, education_num, _, _, _, _, _, _, _, _, _, income_bracket).
+
+@weight("")
+@feature_value(capital_gain)
+rich(id) :- adult(id, _, _, _, _, _, _, _, _, _, _, capital_gain, _, _, _, income_bracket).
+
+@weight("")
+@feature_value(capital_loss)
+rich(id) :- adult(id, _, _, _, _, _, _, _, _, _, _, _, capital_loss, _, _, income_bracket).
+
+@weight("")
+@feature_value(hours_per_week)
+rich(id) :- adult(id, _, _, _, _, _, _, _, _, _, _, _, _, hours_per_week, _, income_bracket).
+
+
+
+############# BUCKETIZED ###############
+
+@weight(width_bucket(age, 18, 88, 10))
+rich(id) :- adult(id, age, _, _, _, _, _, _, _, _, _, _, _, _, _, income_bracket).
+
+
+
+############# COMPOSITE ###############
+
+
+@weight(education, occupation)
+rich(id) :- adult(id, _, _, _, education, _, occupation, _, _, _, _, _, _, _, _, income_bracket).
+
+
+@weight(race, occupation, width_bucket(age, 18, 88, 10))
+rich(id) :- adult(id, age, _, _, _, _, _, occupation, _, race, _, _, _, _, _, income_bracket).

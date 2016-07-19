@@ -384,6 +384,7 @@ def factorWeightDescriptionSqlExpr:
                       | .schema.variablesCategoryColumns[]
                       | { table: "F", column: "\($prefix)\(.)" } )
                     , ( .weight_.params[] | { table: "F", column: . } )
+                    , { table: "F", column: "factor_value", alias: "factor_value" }
                     ]
                 , FROM: [
                     { alias: "F", sql: "\(.input_query)" }
@@ -549,6 +550,7 @@ def factorWeightDescriptionSqlExpr:
                             expr: "ARRAY_AGG(\({ table: "C\(.ordinal)", column: "cid"
                                                } | asSqlExpr) ORDER BY \($valueOrder))" } )
                         , { alias: "weight_ids" , expr: "ARRAY_AGG(w.wid ORDER BY \($valueOrder))" }
+                        , { alias: "factor_values" , expr: "ARRAY_AGG(f.factor_value ORDER BY \($valueOrder))" }
                         ]
                     , FROM:
                         [ { alias: "w", table: .weightsTable }
@@ -578,6 +580,7 @@ def factorWeightDescriptionSqlExpr:
                         [ ( .function_.variables[]
                         | { table: "f", column: .columnId } )
                         , { alias: "weight_id", table: "w", column: "wid" }
+                        , { alias: "factor_value", table: "f", column: "factor_value" }
                         ]
                     , FROM:
                         [ { alias: "f", table: .factorsTable }
