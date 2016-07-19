@@ -8,7 +8,7 @@
 # $ export DEEPDIVE_NUM_PROCESSES=2
 # $ compute-execute input_sql=... command=... output_relation=...
 ##
-set -euo pipefail -x
+set -euo pipefail
 
 # load compute configuration
 eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \

@@ -41,7 +41,6 @@ pv_format="%N %t %b %a (%r)"
 pv_format_bytes=$pv_format; [[ -z $total_bytes ]] || pv_format_bytes+=" %p %e"
 pv_format_lines=$pv_format; [[ -z $total_lines ]] || pv_format_lines+=" %p %e"
 
-set -x
 if $DEEPDIVE_SHOW_PROGRESS && test -t 1 >/dev/tty; then
     # add some default pv(1) options
     PipeViewOpts+=(

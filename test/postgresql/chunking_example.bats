@@ -9,12 +9,6 @@
 : ${CHUNKING_TEST_REUSE_NUM_WORDS_TEST:=400}
 : ${CHUNKING_TEST_REUSE_MIN_F1SCORE:=70}
 
-exec 3>&2 # dup stderr as fd 3
-
-teardown() {
-    ps axf >&3
-}
-
 get_f1score() {
     printf '%.0f' $(
         result/eval.sh | tee /dev/stderr | sed -n '/^accuracy:/ s/.* FB1: *//p')
@@ -26,32 +20,7 @@ get_f1score() {
     DEEPDIVE_CONFIG_EXTRA='deepdive.calibration.holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT dd_id FROM dd_variables_chunk WHERE word_id > '${SUBSAMPLE_NUM_WORDS_TRAIN}'"' \
     deepdive compile
     deepdive model weights init
-    deepdive redo process/init/app data/words
-
-############################################
-exec 1>&3 2>&3 # tee to original stderr
-set -x
-    deepdive create table word_features
-    DEEPDIVE_LOAD_FORMAT=tsv \
-    timeout 1m \
-    deepdive compute execute input_sql='
-         SELECT R0.sent_id AS column_0
-              , R0.word_id AS column_1
-              , R0.word AS column_2
-              , R0.pos AS column_3
-              , R1.word AS column_4
-              , R1.pos AS column_5
-         FROM words R0
-            , words R1
-         WHERE R1.sent_id = R0.sent_id
-           AND R0.word_id = (R1.word_id + 1)
-           AND R0.word IS NOT NULL
-LIMIT 0
-         ' command='udf/ext_features.py' output_relation=word_features
-###########################
-
-    deepdive redo -v data/word_features
-    deepdive redo data/model/probabilities
+    deepdive redo process/init/app data/model/probabilities
     f1score=$(get_f1score)
     echo "f1score = $f1score"
     [[ $f1score -ge $CHUNKING_TEST_MIN_F1SCORE ]] ||
@@ -72,7 +41,7 @@ LIMIT 0
     deepdive model weights reuse  # taking care of all extraction and grounding for larger data
 
     # and do inference
-    deepdive redo -v data/model/probabilities
+    deepdive redo data/model/probabilities
 
     # check quality
     f1score=$(get_f1score)

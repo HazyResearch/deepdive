@@ -3,7 +3,7 @@
 # > eval "$(db-parse "$url")"
 # > db-psql [PSQL_OPTS...]
 ##
-set -eux
+set -eu
 
 PGPASSWORD="$DBPASSWORD" \
 exec psql -h "$DBHOST" -p "$DBPORT" -U "$DBUSER" "$@"
