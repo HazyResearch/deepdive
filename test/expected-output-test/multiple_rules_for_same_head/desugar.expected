@@ -7,6 +7,10 @@ T(a int).
 
 Q?(x int).
 
+Q1?(x int).
+
+Q_1?(x int).
+
 S(a) :-
     R(a, b),
     R(b, _),
@@ -137,4 +141,16 @@ T_2(a int).
 
 T__3(x) :-
     T(x).
+
+@weight(a)
+Q(a) => Q1(b) :-
+    S(a),
+    R(a, b),
+    S(b).
+
+@weight(a)
+Q(a) => Q_1(b) :-
+    S(a),
+    R(a, b),
+    S(b).
 

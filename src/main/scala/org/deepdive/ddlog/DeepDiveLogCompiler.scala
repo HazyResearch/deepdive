@@ -47,6 +47,16 @@ class DeepDiveLogCompiler( program : DeepDiveLog.Program, config : DeepDiveLog.C
   val representativeStatements : Set[Statement] =
     statementsByHeadName.values map { _(0) } toSet
 
+  def slugify(input: String): String = {
+    import java.text.Normalizer
+    Normalizer.normalize(input, Normalizer.Form.NFD)
+      .replaceAll("[^\\w\\s-]", "") // Remove all non-word, non-space or non-dash characters
+      .replace('-', ' ')            // Replace dashes with spaces
+      .trim                         // Trim leading/trailing whitespace (including what used to be leading/trailing dashes)
+      .replaceAll("\\s+", "_")      // Replace whitespace (including newlines and repetitions) with underscore
+      .toLowerCase                  // Lowercase the final results
+  }
+
   def optionalIndex(idx: Int) =
     if (idx < 1) "" else s"${idx}"
 
@@ -72,21 +82,33 @@ class DeepDiveLogCompiler( program : DeepDiveLog.Program, config : DeepDiveLog.C
   // Given an inference rule, resolve its name for the compiled inference block.
   def resolveInferenceBlockName(s: InferenceRule): String = {
     // how to map a rule to its basename
-    // TODO support @rule("name") annotation to override these generated names
-    def ruleBaseNameFor(s: InferenceRule) = s"${
-        // function name
-        s.head.function.getClass.getSimpleName.toLowerCase
-      }_${
-        // followed by variable names
-        s.head.variables map { case t => s"${if (t.isNegated) "not_" else ""}${t.atom.name}" } mkString("_")
-      }"
+    def ruleBaseNameFor(s: InferenceRule): String =
+      if (s.ruleName nonEmpty) {
+        slugify(s.ruleName getOrElse "rule")
+      } else {
+        s"inf_${
+          // function name
+          s.head.function.getClass.getSimpleName.toLowerCase
+        }_${
+          // followed by variable names
+          s.head.variables map { case t => s"${if (t.isNegated) "not_" else ""}${t.atom.name}" } mkString("_")
+        }"
+      }
     // find this rule's base name and all rules that share it
     val ruleBaseName = ruleBaseNameFor(s)
     val allInferenceRulesSharingHead = inferenceRules filter(ruleBaseNameFor(_) equals ruleBaseName)
-    s"inf${
-        // keep an index before the base name to prevent potential collision with user's name
-        optionalIndex(allInferenceRulesSharingHead indexOf s)
-      }_${ruleBaseName}"
+    if (allInferenceRulesSharingHead.length == 1) ruleBaseName // no possible name collision
+    else if (s.ruleName nonEmpty)
+      sys.error(s"""@name("${s.ruleName get}") repeated ${allInferenceRulesSharingHead.length} times""")
+    else {
+      // keep an index after the base name to prevent collision
+      s"${
+        // TODO finding safe prefix for every inference rule ahead of time will be more efficient
+        DeepDiveLogDesugarRewriter.findSafePrefix(ruleBaseName, inferenceRules map ruleBaseNameFor toSet)
+      }${
+        allInferenceRulesSharingHead indexOf s
+      }"
+    }
   }
 
   // Given a variable, resolve it.  TODO: This should give a warning,
