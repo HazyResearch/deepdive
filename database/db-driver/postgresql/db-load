@@ -22,14 +22,14 @@ do_load() {
         local i=1
         for source; do
             show_progress input_to "loading $table [$i/$nsources]" -- \
-            bash -euc 'sql=$1; exec db-execute "$sql" <'"$("$mkloadingexpr" /dev/stdin)" -- "$sql" <"$source" &
+            bash -euc 'sql=$1; exec db-execute "$sql" <'"$("$mkloadingexpr" "$source")" -- "$sql" &
             let ++i
         done
         wait
     else
         source=$1; shift
         exec show_progress input_to "loading $table" -- \
-        bash -euc 'sql=$1; exec db-execute "$sql" <'"$("$mkloadingexpr" /dev/stdin)" -- "$sql" <"$source"
+        bash -euc 'sql=$1; exec db-execute "$sql" <'"$("$mkloadingexpr" "$source")" -- "$sql"
     fi
 }
 
