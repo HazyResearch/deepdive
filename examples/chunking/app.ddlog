@@ -74,7 +74,7 @@ chunk(s, w1, tag1) ^ chunk(s, w2, tag2) :-
 # word embedding features ###############################################################
 
 @weight(tag, k)
-@value(vec[k])
+@feature_value(vec[k])
 chunk(s, w, tag) :-
   words(s, w, word, pos, _),
   word_vec(s, vec),

@@ -61,23 +61,23 @@ rich(id) :- adult(id, _, _, _, _, _, _, _, _, _, _, _, _, _, native_country, inc
 ############# CONTINUOUS ###############
 
 @weight("")
-@value(age)
+@feature_value(age)
 rich(id) :- adult(id, age, _, _, _, _, _, _, _, _, _, _, _, _, _, income_bracket).
 
 @weight("")
-@value(education_num)
+@feature_value(education_num)
 rich(id) :- adult(id, _, _, _, _, education_num, _, _, _, _, _, _, _, _, _, income_bracket).
 
 @weight("")
-@value(capital_gain)
+@feature_value(capital_gain)
 rich(id) :- adult(id, _, _, _, _, _, _, _, _, _, _, capital_gain, _, _, _, income_bracket).
 
 @weight("")
-@value(capital_loss)
+@feature_value(capital_loss)
 rich(id) :- adult(id, _, _, _, _, _, _, _, _, _, _, _, capital_loss, _, _, income_bracket).
 
 @weight("")
-@value(hours_per_week)
+@feature_value(hours_per_week)
 rich(id) :- adult(id, _, _, _, _, _, _, _, _, _, _, _, _, hours_per_week, _, income_bracket).
 
 
