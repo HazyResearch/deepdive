@@ -154,27 +154,3 @@ Q(a) => Q_1(b) :-
     R(a, b),
     S(b).
 
-@name("foo")
-@weight(a)
-Q(a) :-
-    S(a),
-    a > 1000.
-
-@name("foo")
-@weight(1.0)
-Q(a) :-
-    S(a),
-    a = 0.
-
-@name("foo1")
-@weight(1.0)
-Q(a) :-
-    S(a),
-    a = 1.
-
-@name("foo_1")
-@weight(1.0)
-Q(a) :-
-    S(a),
-    a = 2.
-

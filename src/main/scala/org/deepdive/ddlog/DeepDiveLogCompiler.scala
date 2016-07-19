@@ -83,7 +83,7 @@ class DeepDiveLogCompiler( program : DeepDiveLog.Program, config : DeepDiveLog.C
   def resolveInferenceBlockName(s: InferenceRule): String = {
     // how to map a rule to its basename
     def ruleBaseNameFor(s: InferenceRule): String =
-      if (!s.ruleName.isEmpty) {
+      if (s.ruleName nonEmpty) {
         slugify(s.ruleName getOrElse "rule")
       } else {
         s"inf_${
@@ -98,6 +98,8 @@ class DeepDiveLogCompiler( program : DeepDiveLog.Program, config : DeepDiveLog.C
     val ruleBaseName = ruleBaseNameFor(s)
     val allInferenceRulesSharingHead = inferenceRules filter(ruleBaseNameFor(_) equals ruleBaseName)
     if (allInferenceRulesSharingHead.length == 1) ruleBaseName // no possible name collision
+    else if (s.ruleName nonEmpty)
+      sys.error(s"""@name("${s.ruleName get}") repeated ${allInferenceRulesSharingHead.length} times""")
     else {
       // keep an index after the base name to prevent collision
       s"${

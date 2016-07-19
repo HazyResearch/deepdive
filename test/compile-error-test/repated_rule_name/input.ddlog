@@ -1,0 +1,11 @@
+S(a int).
+Q?(x int).
+
+# disallow repeating the same @name for more than one inference rule
+@name("foo")
+@weight(a)
+Q(a) :- S(a), a > 1000.
+
+@name("foo")
+@weight(1.0)
+Q(a) :- S(a), a = 0.
