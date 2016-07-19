@@ -19,6 +19,16 @@ COMMIT="$wipTag${commitFull:0:7}"
 escapedDockerHostMountpoint=$(@sh "$DOCKER_HOST_MOUNTPOINT")
 DOCKER_CONTAINER+=".$COMMIT.$$"
 
+# Make sure the git repo wasn't cloned using `git clone --reference`
+! [[ -s "$DOCKER_HOST_PATH"/.git/objects/info/alternates ]] ||
+    error '# Git repository cloned with `git clone --reference` is not supported' \
+          '# as git inside container cannot access the alternate repos on the host' \
+          '# Please run these commands to dissociate your git repo first:' \
+          "cd $(printf %q "$DOCKER_HOST_PATH")" \
+          'git repack -a -d' \
+          'mv -fv .git/objects/info/alternates{,~}' \
+          # See: http://stackoverflow.com/a/29081268/390044
+
 # default build command
 buildCommand=$DOCKER_BUILD_COMMAND
 [[ $# -eq 0 ]] || buildCommand=$(@sh "$@")
@@ -54,8 +64,10 @@ docker-run --name "$DOCKER_CONTAINER" \
     export PS4="+('"$DOCKER_CONTAINER"') "; set -eux
 
     : importing changes from host via git
+    ! [[ -s '"$escapedDockerHostMountpoint"'/.git/shallow ]] || # need to cope with shallow repos
+        git fetch --force --update-head-ok --prune --no-recurse-submodules
     git fetch --force --update-head-ok --prune --no-recurse-submodules '"$escapedDockerHostMountpoint"'
-    git submodule foreach sh -c "git fetch /mnt/\${PWD#\$1/}" -- "$PWD"
+    git submodule foreach sh -c '\''git fetch "$1/${PWD#$2/}"'\'' -- '"$escapedDockerHostMountpoint"' "$PWD"
     : syncing the container working directory with host
     git checkout --force FETCH_HEAD
     git clean -d --force
