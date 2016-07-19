@@ -1,7 +1,9 @@
-deepdive.schema {"relations" : {"S_2" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "T___1" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "T" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "S_1" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "T_2" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "T___2" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "Q" : {"columns" : {"x" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}, "T___3" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "S_0" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "T__3" : {"type" : "view", "columns" : {"column_0" : {"type" : "UNKNOWN", "index" : 0}}}, "T___0" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "R" : {"columns" : {"a" : {"type" : "int", "index" : 0}, "b" : {"type" : "int", "index" : 1}}}, "S" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}}}
+deepdive.schema {"relations" : {"Q_1" : {"columns" : {"x" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}, "S_2" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "T___1" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "T" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "Q1" : {"columns" : {"x" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}, "S_1" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "T_2" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "T___2" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "Q" : {"columns" : {"x" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}, "T___3" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "S_0" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "T__3" : {"type" : "view", "columns" : {"column_0" : {"type" : "UNKNOWN", "index" : 0}}}, "T___0" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "R" : {"columns" : {"a" : {"type" : "int", "index" : 0}, "b" : {"type" : "int", "index" : 1}}}, "S" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}}}
 
 deepdive.schema.variables {
 Q.dd_label: Boolean
+Q1.dd_label: Boolean
+Q_1.dd_label: Boolean
 
 }
 
@@ -199,7 +201,7 @@ WHERE R0.a > 0
 
 }
 
-deepdive.inference.factors.inf_istrue_Q {
+deepdive.inference.factors.inf_istrue_Q_0 {
 weight: """?(dd_weight_column_0)"""
 non_category_weight_cols: [
   dd_weight_column_0
@@ -224,7 +226,7 @@ function: """Imply(Q.R0.dd_label)"""
 
 }
 
-deepdive.inference.factors.inf_istrue_Q1 {
+deepdive.inference.factors.inf_istrue_Q_1 {
 weight: """1.0"""
 non_category_weight_cols: [
   
@@ -272,7 +274,7 @@ function: """Imply(!Q.R0.dd_label)"""
 
 }
 
-deepdive.inference.factors.inf_imply_Q_Q {
+deepdive.inference.factors.inf_imply_Q_Q__0 {
 weight: """?(dd_weight_column_0)"""
 non_category_weight_cols: [
   dd_weight_column_0
@@ -307,7 +309,7 @@ function: """Imply(Q.R0.dd_label, Q.R1.dd_label)"""
 
 }
 
-deepdive.inference.factors.inf_imply_Q_Q1 {
+deepdive.inference.factors.inf_imply_Q_Q__1 {
 weight: """-10.0"""
 non_category_weight_cols: [
   
@@ -342,7 +344,7 @@ function: """Imply(Q.R0.dd_label, Q.R1.dd_label)"""
 
 }
 
-deepdive.inference.factors.inf_imply_Q_Q2 {
+deepdive.inference.factors.inf_imply_Q_Q__2 {
 weight: """10.0"""
 non_category_weight_cols: [
   
@@ -388,6 +390,175 @@ input_relations: [
 style: sql_extractor
 output_relation: T__3
 materialize: false
+
+}
+
+deepdive.inference.factors.inf_imply_Q_Q1 {
+weight: """?(dd_weight_column_0)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+]
+input_query: """
+SELECT dd_id_0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+     , dd_id_1.dd_id AS "Q1.R1.dd_id"
+     , R1.x AS "Q1.R1.x"
+     , R0.x AS "dd_weight_column_0"
+     , (1)::float AS factor_value
+FROM Q R0
+   , Q1 R1
+   , S R2
+   , R R3
+   , S R4
+   , dd_variables_Q AS dd_id_0
+   , dd_variables_Q1 AS dd_id_1
+WHERE R2.a = R0.x
+  AND R3.a = R0.x
+  AND R3.b = R1.x
+  AND R4.a = R1.x
+  AND R0.x = dd_id_0.x
+  AND R1.x = dd_id_1.x
+"""
+input_relations: [
+  Q
+  Q1
+  S
+  R
+]
+function: """Imply(Q.R0.dd_label, Q1.R1.dd_label)"""
+
+}
+
+deepdive.inference.factors.inf_imply_Q_Q_1 {
+weight: """?(dd_weight_column_0)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+]
+input_query: """
+SELECT dd_id_0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+     , dd_id_1.dd_id AS "Q_1.R1.dd_id"
+     , R1.x AS "Q_1.R1.x"
+     , R0.x AS "dd_weight_column_0"
+     , (1)::float AS factor_value
+FROM Q R0
+   , Q_1 R1
+   , S R2
+   , R R3
+   , S R4
+   , dd_variables_Q AS dd_id_0
+   , dd_variables_Q_1 AS dd_id_1
+WHERE R2.a = R0.x
+  AND R3.a = R0.x
+  AND R3.b = R1.x
+  AND R4.a = R1.x
+  AND R0.x = dd_id_0.x
+  AND R1.x = dd_id_1.x
+"""
+input_relations: [
+  Q
+  Q_1
+  S
+  R
+]
+function: """Imply(Q.R0.dd_label, Q_1.R1.dd_label)"""
+
+}
+
+deepdive.inference.factors.foo__0 {
+weight: """?(dd_weight_column_0)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+]
+input_query: """
+SELECT dd_id_0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+     , R0.x AS "dd_weight_column_0"
+     , (1)::float AS factor_value
+FROM Q R0
+   , S R1
+   , dd_variables_Q AS dd_id_0
+WHERE R1.a = R0.x
+  AND R0.x > 1000
+  AND R0.x = dd_id_0.x
+"""
+input_relations: [
+  Q
+  S
+]
+function: """Imply(Q.R0.dd_label)"""
+
+}
+
+deepdive.inference.factors.foo__1 {
+weight: """1.0"""
+non_category_weight_cols: [
+  
+]
+input_query: """
+SELECT dd_id_0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+     , (1)::float AS factor_value
+FROM Q R0
+   , S R1
+   , dd_variables_Q AS dd_id_0
+WHERE R1.a = R0.x
+  AND R0.x = 0
+  AND R0.x = dd_id_0.x
+"""
+input_relations: [
+  Q
+  S
+]
+function: """Imply(Q.R0.dd_label)"""
+
+}
+
+deepdive.inference.factors.foo1 {
+weight: """1.0"""
+non_category_weight_cols: [
+  
+]
+input_query: """
+SELECT dd_id_0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+     , (1)::float AS factor_value
+FROM Q R0
+   , S R1
+   , dd_variables_Q AS dd_id_0
+WHERE R1.a = R0.x
+  AND R0.x = 1
+  AND R0.x = dd_id_0.x
+"""
+input_relations: [
+  Q
+  S
+]
+function: """Imply(Q.R0.dd_label)"""
+
+}
+
+deepdive.inference.factors.foo_1 {
+weight: """1.0"""
+non_category_weight_cols: [
+  
+]
+input_query: """
+SELECT dd_id_0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+     , (1)::float AS factor_value
+FROM Q R0
+   , S R1
+   , dd_variables_Q AS dd_id_0
+WHERE R1.a = R0.x
+  AND R0.x = 2
+  AND R0.x = dd_id_0.x
+"""
+input_relations: [
+  Q
+  S
+]
+function: """Imply(Q.R0.dd_label)"""
 
 }
 

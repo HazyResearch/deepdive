@@ -97,10 +97,16 @@ class DeepDiveLogCompiler( program : DeepDiveLog.Program, config : DeepDiveLog.C
     // find this rule's base name and all rules that share it
     val ruleBaseName = ruleBaseNameFor(s)
     val allInferenceRulesSharingHead = inferenceRules filter(ruleBaseNameFor(_) equals ruleBaseName)
-    s"${ruleBaseName}${
-        // keep an index before the base name to prevent potential collision with user's name
-        optionalIndex(allInferenceRulesSharingHead indexOf s)
+    if (allInferenceRulesSharingHead.length == 1) ruleBaseName // no possible name collision
+    else {
+      // keep an index after the base name to prevent collision
+      s"${
+        // TODO finding safe prefix for every inference rule ahead of time will be more efficient
+        DeepDiveLogDesugarRewriter.findSafePrefix(ruleBaseName, inferenceRules map ruleBaseNameFor toSet)
+      }${
+        allInferenceRulesSharingHead indexOf s
       }"
+    }
   }
 
   // Given a variable, resolve it.  TODO: This should give a warning,

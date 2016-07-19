@@ -4,6 +4,14 @@ import scala.language.postfixOps
 
 object DeepDiveLogDesugarRewriter {
 
+  // Finds a safe prefix that starts with given name that is guaranteed to have no collisions with other namesInUse
+  def findSafePrefix(name: String, namesInUse: Set[String], minLength: Int = 1, separator: String = "_"): String =
+    Stream.from(minLength) map { n =>
+      s"${name}${separator * n}"
+    } dropWhile { prefix =>
+      namesInUse exists {_ startsWith prefix}
+    } head
+
   // Rewrite function call rules whose output coincides with normal rules.
   def desugarUnionsImpliedByFunctionCallRules(program: DeepDiveLog.Program) = {
     def indexByFirst[a,b](pairs: Seq[(a,b)]): Map[a,List[b]] =
@@ -35,12 +43,7 @@ object DeepDiveLogDesugarRewriter {
 
     // determine a separator that does not create name clashes with existing heads for each relation to rewrite
     val prefixForRelation: Map[String, String] = relationsToDesugar map { name =>
-      name -> (
-        Stream.from(1) map { n => s"${name}${"_" * n}"
-        } dropWhile { prefix =>
-          relationNamesUsedInProgram exists {_ startsWith prefix}
-        } head
-      )
+      name -> (findSafePrefix(name, relationNamesUsedInProgram))
     } toMap
 
     // how to make names unique
