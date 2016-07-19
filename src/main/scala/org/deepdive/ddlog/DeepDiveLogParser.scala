@@ -180,7 +180,7 @@ case class InferenceRule(head: InferenceRuleHead,
     }
 
   def valueExpr: Option[Expr] =
-    annotations find (_ named "value") flatMap (_ expr)
+    annotations find (_ named "feature_value") flatMap (_ expr)
 
 }
 

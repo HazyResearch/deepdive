@@ -62,7 +62,7 @@ word_features +=
   word1 IS NOT NULL.
 
 @weight(f, tag)
-@value(f)
+@feature_value(f)
 chunk(s, w, tag) :-
                       words(s, w, _, _, _, _), tags(tag), # XXX just to make it compile. remove after fixing https://github.com/HazyResearch/ddlog/issues/72
   word_features(s, w, f).
