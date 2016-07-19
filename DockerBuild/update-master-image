@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# update-master-image -- Makes the latest build be the master Docker image
+##
+set -euo pipefail
+. "$(dirname "$0")"/DockerBuild.bash
+
+set -x
+
+# simply tag the latest build as master
+docker tag "$DOCKER_IMAGE" "$DOCKER_IMAGE_MASTER"
+
+# NOTE we don't publish it though
