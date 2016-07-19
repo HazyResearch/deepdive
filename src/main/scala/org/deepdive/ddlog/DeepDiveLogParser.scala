@@ -270,11 +270,8 @@ class DeepDiveLogParser extends JavaTokenParsers {
     ) named "function input/output type declaration"
 
   def functionImplementation : Parser[FunctionImplementationDeclaration] =
-    ( "implementation" ~ stringLiteralAsString ~ "handles" ~ ("tsv" | "json") ~ "lines" ^^ {
+    ( "implementation" ~ stringLiteralAsString ~ "handles" ~ ("tsj" | "tsv" | "json") ~ "lines" ^^ {
         case (_ ~ command ~ _ ~ style ~ _) => RowWiseLineHandler(command=command, style=style)
-      }
-    | "implementation" ~ stringLiteralAsString ~ "runs" ~ "as" ~ "plpy" ^^ {
-        case (_ ~ command ~ _ ~ _ ~ style) => RowWiseLineHandler(command=command, style=style)
       }
     ) named "function implementation declaration"
 

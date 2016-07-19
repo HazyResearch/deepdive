@@ -10,7 +10,7 @@ parallelism: ${PARALLELISM}
 input_relations: [
   sentences
 ]
-style: tsv_extractor
+style: tsj_extractor
 output_relation: people_mentions
 udf: """udf/ext_people.py"""
 input_batch_size: ${INPUT_BATCH_SIZE}
@@ -28,7 +28,7 @@ parallelism: ${PARALLELISM}
 input_relations: [
   people_mentions
 ]
-style: tsv_extractor
+style: tsj_extractor
 output_relation: has_spouse_candidates
 udf: """udf/ext_has_spouse.py"""
 input_batch_size: ${INPUT_BATCH_SIZE}
@@ -52,7 +52,7 @@ input_relations: [
   has_spouse_candidates
   people_mentions
 ]
-style: tsv_extractor
+style: tsj_extractor
 output_relation: has_spouse_features
 udf: """udf/ext_has_spouse_features.py"""
 input_batch_size: ${INPUT_BATCH_SIZE}

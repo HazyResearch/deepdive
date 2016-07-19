@@ -33,7 +33,7 @@ function ext_people
     over (sentence_id text, words text, ner_tags text)
  returns rows like people_mentions
  implementation "udf/ext_people.py"
-        handles tsv lines.
+        handles tsj lines.
 
 people_mentions += ext_people(s, ARRAY_TO_STRING(words, "~^~"), ARRAY_TO_STRING(ner_tags, "~^~")) :-
     sentences(_, _, words, _, _, _, ner_tags, _, s).
@@ -42,7 +42,7 @@ function ext_has_spouse
     over (sentence_id text, mid1 text, text1 text, mid2 text, text2 text)
  returns rows like has_spouse_candidates
  implementation "udf/ext_has_spouse.py"
-        handles tsv lines.
+        handles tsj lines.
 
 has_spouse_candidates += ext_has_spouse(s, p1_id, p1_text, p2_id, p2_text) :-
     people_mentions(s, _, _, p1_text, p1_id),
@@ -52,7 +52,7 @@ function ext_has_spouse_features
     over (words text, rid text, position1 int, length1 int, position2 int, length2 int)
  returns rows like has_spouse_features
  implementation "udf/ext_has_spouse_features.py"
-        handles tsv lines.
+        handles tsj lines.
 
 has_spouse_features += ext_has_spouse_features(ARRAY_TO_STRING(words, "~^~"), rid, p1idx, p1len, p2idx, p2len) :-
     sentences(_, _, words, _, _, _, _, _, s),
