@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# inspect-build -- Runs an interactive shell or given command inside a Docker
+#                  container attached to the latest build
+##
+set -euo pipefail
+. "$(dirname "$0")"/DockerBuild.bash ''
+
+DOCKER_CONTAINER+="-inspect.$$"
+
+# run given command
+[[ $# -gt 0 ]] || # or a shell depending on whether we're in a tty
+    if [[ -t 1 ]]
+    then set -- bash -i  # interactive shell in a tty
+    else set -- bash     # just a shell
+    fi
+
+set -x
+docker-run --name "$DOCKER_CONTAINER" \
+    --rm \
+    -- "$DOCKER_IMAGE" \
+    "$@"
