@@ -39,6 +39,10 @@ install__deepdive_build_deps() {
         python-software-properties
         # bash
         bison
+        # psycopg2
+        libreadline-dev
+        python-dev
+        libpq-dev
         # graphviz-devel
         autoconf pkg-config libtool
         # mindbender
