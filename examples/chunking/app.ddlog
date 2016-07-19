@@ -6,7 +6,7 @@ chunk?(
 tags(tag text).
 
 # input data ##################################################################
-words_raw(
+words(
   sent_id bigint,
   word_id bigint,
   word text,
@@ -14,56 +14,68 @@ words_raw(
   true_tag text
 ).
 
-words(
-  sent_id bigint,
-  word_id bigint,
+word_embedding(
   word text,
-  pos text,
-  true_tag text,
-  tag text
+  vec float[]
 ).
+
+vec_dims(idx int).
+
+
+word_vec(wid, vec):-
+  words(s, wid, word, pos, true_tag),
+  word_embedding(word_lower, vec),
+  word_lower = lower(word).
+
 
 # supervision / scope of tags #################################################
 chunk(s, word, tag) = (
-  if tag = tag_supervised then TRUE
-                          else NULL
-  end
+  if tag = true_tag then TRUE else FALSE end
 ) :-
-  words(s, word, _, pos, _, tag_supervised),
+  words(s, word, _, pos, true_tag),
   tags(tag).
 
-# TODO the following if-then-else can go directly to the supervision rule once DDlog supports true unification (tag_supervised = if ... end in the body)
-words(sent_id, word_id, word, pos, true_tag,
-             if true_tag = "B-UCP"        then NULL
-        else if true_tag = "I-UCP"        then NULL
-        else if strpos(true_tag, "-") > 0 then split_part(true_tag, "-", 2)
-        else if true_tag = "O"            then "O"
-        else                                   NULL
-        end) :-
-  words_raw(sent_id, word_id, word, pos, true_tag).
 
-# features ####################################################################
-word_features(
-  sent_id bigint,
-  word_id bigint,
-  feature text
-).
+# unigram features ###############################################################
 
-function ext_features
-  over (sent_id bigint, word_id1 bigint, word1 text, pos1 text, word2 text, pos2 text)
-  returns rows like word_features
-  implementation "udf/ext_features.py" handles tsv lines.
+@weight(tag, word)
+chunk(s, w, tag) :-
+  words(s, w, word, pos, _).
 
-word_features +=
-  ext_features(s, w1, word1, pos1, word2, pos2) :-
-  words(s, w1, word1, pos1, _, _),
-  words(s, w2, word2, pos2, _, _),
-  [w1 = w2 + 1],
-  word1 IS NOT NULL.
+@weight(tag, pos)
+chunk(s, w, tag) :-
+  words(s, w, word, pos, _).
 
-@weight(f, tag)
-chunk(s, w, tag) :- word_features(s, w, f).
+@weight(tag, pos1, pos2)
+chunk(s, w1, tag) :-
+  w2 = w1 + 1,
+  words(s, w1, word1, pos1, _),
+  words(s, w2, word2, pos2, _).
 
-# linear chains ###############################################################
+@weight(tag, pos1, pos2)
+chunk(s, w2, tag) :-
+  w2 = w1 + 1,
+  words(s, w1, word1, pos1, _),
+  words(s, w2, word2, pos2, _).
+
+
+# bigram features ###############################################################
+
 @weight(tag1, tag2)
 chunk(s, w1, tag1) ^ chunk(s, w2, tag2) :- w2 = w1 + 1.
+
+@weight(tag1, tag2, pos1, pos2)
+chunk(s, w1, tag1) ^ chunk(s, w2, tag2) :-
+  w2 = w1 + 1,
+  words(s, w1, word1, pos1, _),
+  words(s, w2, word2, pos2, _).
+
+
+# word embedding features ###############################################################
+
+@weight(tag, k)
+@feature_value(vec[k])
+chunk(s, w, tag) :-
+  words(s, w, word, pos, _),
+  word_vec(s, vec),
+  vec_dims(k).

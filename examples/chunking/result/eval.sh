@@ -12,8 +12,6 @@ deepdive sql "COPY (
         ON a.word_id = c.word_id
      WHERE b.expectation IS NULL
      ORDER BY a.word_id
-  ) TO STDOUT DELIMITER ' ';" >result
-
-python convert.py
+  ) TO STDOUT DELIMITER ' ';" > output
 
 ./conlleval.pl <output
