@@ -4,7 +4,7 @@
     <strong title="item_id: {{item.id}}">{{item.p1_text}} -- {{item.p2_text}}</strong>
     with expectation <strong>{{item.expectation | number:3}}</strong> appeared in:
     <blockquote>
-        <big mindtagger-word-array="item.tokens" array-format="postgres">
+        <big mindtagger-word-array="item.tokens" array-format="json">
             <mindtagger-highlight-words from="item.p1_start" to="item.p1_end" with-style="background-color: yellow;"/>
             <mindtagger-highlight-words from="item.p2_start" to="item.p2_end" with-style="background-color: cyan;"/>
         </big>
