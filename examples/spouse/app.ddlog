@@ -23,14 +23,6 @@ articles(
     content text
 ).
 
-@source
-spouses_dbpedia(
-    @key
-    person1_name text,
-    @key
-    person2_name text
-).
-
 ## NLP markup #################################################################
 @source
 sentences(
@@ -41,12 +33,19 @@ sentences(
     doc_id         text,
     @key
     sentence_index int,
+    @search_type("text[]")
     tokens         json,
+    @search_type("text[]")
     lemmas         json,
+    @search_type("text[]")
     pos_tags       json,
+    @search_type("text[]")
     ner_tags       json,
+    @search_type("int[]")
     doc_offsets    json,
+    @search_type("text[]")
     dep_types      json,
+    @search_type("int[]")
     dep_tokens     json
 ).
 
@@ -151,11 +150,6 @@ spouse_feature += extract_spouse_features(
     sentences(doc_id, sent_index, tokens, lemmas, pos_tags, ner_tags, _, dep_types, dep_tokens).
 ## Distant Supervision ########################################################
 
-spouses_dbpedia(
-    person1_name text,
-    person2_name text
-).
-
 @extraction
 spouse_label(
     @key
@@ -174,11 +168,21 @@ spouse_label(
 spouse_label(p1,p2, 0, NULL) :- spouse_candidate(p1, _, p2, _).
 
 # distant supervision using data from DBpedia
+
+@source
+spouses_dbpedia(
+    @key
+    person1_name text,
+    @key
+    person2_name text
+).
+
 spouse_label(p1,p2, 1, "from_dbpedia") :-
     spouse_candidate(p1, p1_name, p2, p2_name),
     spouses_dbpedia(n1, n2),
     [ lower(n1) = lower(p1_name), lower(n2) = lower(p2_name) ;
       lower(n2) = lower(p1_name), lower(n1) = lower(p2_name) ].
+
 
 # supervision by heuristic rules in a UDF
 function supervise over (
