@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# update-latest-image -- Makes the latest build be the master Docker image
+##
+set -euo pipefail
+. "$(dirname "$0")"/DockerBuild.bash
+
+tagFromGit=$(docker-tag-from-git)
+dockerImageBranchStable=$(printf "$DOCKER_IMAGE_BRANCH_FORMAT_STABLE" "$tagFromGit")
+
+set -x
+
+# simply tag the latest stable build for current branch as THE latest stable
+docker tag "$dockerImageBranchStable" "$DOCKER_IMAGE_LATEST_STABLE"
+
+# NOTE that we don't publish it
+#docker push "$DOCKER_IMAGE_LATEST_STABLE"

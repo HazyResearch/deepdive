@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# rebuild-latest-image-from-scratch -- Rebuilds and publishes master Docker image
+##
+set -euo pipefail
+. "$(dirname "$0")"/DockerBuild.bash
+Here=$(cd "$(dirname "$0")" && pwd)
+
+# default test command
+[[ $# -gt 0 ]] || set -- "$Here"/test-in-container
+
+cd "$DOCKER_HOST_PATH"
+
+# display a few things
+type docker
+docker -v
+pwd
+
+tagFromGit=$(docker-tag-from-git)
+dockerImageBranchBuild=$(printf "$DOCKER_IMAGE_BRANCH_FORMAT_BUILD" "$tagFromGit")
+
+set -x
+
+# build Docker image
+docker build \
+     --build-arg BRANCH=$(git rev-parse --abbrev-ref HEAD) \
+     --label COMMIT=$(git rev-parse HEAD) \
+     --tag "$dockerImageBranchBuild" \
+     .
+
+# run tests on it
+"$@"
+
+# tag it as latest stable and publish
+docker tag "$DOCKER_IMAGE_LATEST_BUILD" "$DOCKER_IMAGE_LATEST_STABLE"
+docker push "$DOCKER_IMAGE_LATEST_STABLE"

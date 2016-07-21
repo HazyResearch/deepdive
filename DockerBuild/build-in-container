@@ -2,11 +2,11 @@
 # build-in-container -- Builds changes made from host inside Docker container with the master image
 # $ build-in-container
 #
-# It is possible to run the build on a specific Docker image:
-# $ build-in-container DOCKER_IMAGE_MASTER
+# It is possible to run the build on a specific Docker image with TAG:
+# $ build-in-container TAG
 #
-# Also, make targets and flags can be specified as well:
-# $ build-in-container DOCKER_IMAGE_MASTER MAKE_TARGET...
+# Also, the build command can be overridden as well:
+# $ build-in-container TAG BUILD_COMMAND [ARG...]
 ##
 set -euo pipefail
 . "$(dirname "$0")"/DockerBuild.bash
@@ -15,9 +15,13 @@ set -euo pipefail
 wipTag=; [[ $(git status --porcelain | wc -l) -eq 0 ]] || wipTag="WIP-"
 wipDetails=$(git status --porcelain --branch | sed 's/^/    # /')
 commitFull=$(cd "$DOCKER_HOST_PATH" && git rev-parse HEAD)
-COMMIT="$wipTag${commitFull:0:7}"
+commitShort="$wipTag${commitFull:0:7}"
 escapedDockerHostMountpoint=$(@sh "$DOCKER_HOST_MOUNTPOINT")
-DOCKER_CONTAINER+=".$COMMIT.$$"
+tagFromGit=$(docker-tag-from-git)
+dockerContainerBuild+="$DOCKER_CONTAINER.$tagFromGit.build.$$"
+dockerImageBranchRun=$(printf "$DOCKER_IMAGE_BRANCH_FORMAT_RUN" "$tagFromGit")
+dockerImageBranchBuild=$(printf "$DOCKER_IMAGE_BRANCH_FORMAT_BUILD" "$tagFromGit")
+dockerImageBranchStable=$(printf "$DOCKER_IMAGE_BRANCH_FORMAT_STABLE" "$tagFromGit")
 
 # Make sure the git repo wasn't cloned using `git clone --reference`
 ! [[ -s "$DOCKER_HOST_PATH"/.git/objects/info/alternates ]] ||
@@ -28,6 +32,22 @@ DOCKER_CONTAINER+=".$COMMIT.$$"
           'git repack -a -d' \
           'mv -fv .git/objects/info/alternates{,~}' \
           # See: http://stackoverflow.com/a/29081268/390044
+
+# Allow overriding the Docker image to run build on
+if [[ $# -gt 0 ]]; then
+    Tag=$1; shift
+    dockerImageToRunBuild="$DOCKER_IMAGE:$Tag"
+else
+    # Find latest stable image to use
+    if [[ $(docker images -q "$dockerImageBranchStable" | wc -l) -gt 0 ]] ||
+        ( set -x; docker pull "$dockerImageBranchStable" ); then
+        # either the one for this branch if available
+        dockerImageToRunBuild=$dockerImageBranchStable
+    else
+        # or the latest for master
+        dockerImageToRunBuild=$DOCKER_IMAGE_LATEST_STABLE
+    fi
+fi
 
 # default build command
 buildCommand=$DOCKER_BUILD_COMMAND
@@ -55,13 +75,44 @@ patchCommands=$(
     ' -- "$PWD"
 )
 
-(
-trap 'docker rm -f "$DOCKER_CONTAINER"' EXIT
+Here=$(dirname "$0")
+on_exit() {
+    exitStatus=$?  # keep it to preserve the build's exit status
+    docker commit "$dockerContainerBuild" "$dockerImageBranchBuild".$$
+    docker rm -f "$dockerContainerBuild"
+    case $exitStatus in
+        0)  verdict=PASS
+            next-steps() {
+                echo '# Docker image '"$dockerImageBranchBuild"'-PASS now points to this build.'
+                echo '# Use `'"$Here"'/inspect-container` to open a shell or run commands in this build.'
+                echo '# Use `'"$Here"'/test-in-container` to run tests against this build.'
+            }
+            ;;
+        *)  verdict=FAIL
+            next-steps() {
+                echo '# Docker image '"$dockerImageBranchBuild"'-FAIL now points to this build.'
+                echo '# Use `'"$Here"'/inspect-container` to open a shell or run commands in this build.'
+            }
+    esac 2>/dev/null
+    docker tag "$dockerImageBranchBuild".$$ "$dockerImageBranchRun"
+    docker tag "$dockerImageBranchBuild".$$ "$dockerImageBranchBuild"
+    docker tag "$dockerImageBranchBuild".$$ "$dockerImageBranchBuild"-$verdict
+    docker tag "$dockerImageBranchBuild".$$ "$DOCKER_IMAGE_LATEST_BUILD"-$verdict
+    docker tag "$dockerImageBranchBuild".$$ "$DOCKER_IMAGE_LATEST_BUILD"
+    docker rmi -f "$dockerImageBranchBuild".$$
+    { set +x; } 2>/dev/null
+    echo '###############################################################################'
+    next-steps
+    echo '###############################################################################'
+    exit $exitStatus
+}
+trap on_exit EXIT
+
 set -x
-docker-run --name "$DOCKER_CONTAINER" \
-    -- "$DOCKER_IMAGE_MASTER" bash -c '# build COMMIT='"$wipTag$commitFull"'
+docker-run --name "$dockerContainerBuild" \
+    -- "$dockerImageToRunBuild" bash -c '# build COMMIT='"$wipTag$commitFull"'
 '"$wipDetails"'
-    export PS4="+('"$DOCKER_CONTAINER"') "; set -eux
+    export PS4="+('"$dockerContainerBuild"') "; set -eux
 
     : importing changes from host via git
     ! [[ -s '"$escapedDockerHostMountpoint"'/.git/shallow ]] || # need to cope with shallow repos
@@ -76,11 +127,3 @@ docker-run --name "$DOCKER_CONTAINER" \
 
     '"$buildCommand"'
     '
-
-docker commit "$DOCKER_CONTAINER" "$DOCKER_IMAGE"
-)
-
-echo '# Docker image '"$DOCKER_IMAGE"' has been updated to this build.'
-echo '# Use `inspect-build` to open a shell or run commands in this build.'
-echo '# Use `test-in-container` to run tests against this build.'
-echo '# Use `update-master-image` to start subsequent builds on top of this.'

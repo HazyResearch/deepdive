@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# docker-tag-from-git -- Generates a tag for Docker images and containers based on git branch
+##
+set -euo pipefail
+currentBranch=$(git rev-parse --abbrev-ref HEAD)
+echo $currentBranch # TODO sanitize currentBranch for docker tags

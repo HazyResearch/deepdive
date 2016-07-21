@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# inspect-container -- Runs an interactive shell or given command inside a
+#                      Docker container attached to a past build or test
+#
+# $ inspect-container [TAG]
+# Defaults to opening an interactive shell for the latest build or test
+# unless TAG (shown from `docker images`) is specified.  Here are some
+# example usages:
+# $ inspect-container BRANCH.latest-run
+# $ inspect-container latest
+# $ inspect-container latest-build
+# $ inspect-container latest-test
+# $ inspect-container BRANCH.latest-build
+# $ inspect-container BRANCH.latest-test-FAIL
+#
+# $ inspect-container TAG COMMAND [ARG...]
+# You can run a command instead of an interactive shell by passing it as
+# arguments after the TAG: For example, to push a release from the latest
+# build that passed all tests:
+# $ inspect-container latest-test-PASS  make release
+##
+set -euo pipefail
+. "$(dirname "$0")"/DockerBuild.bash
+
+tagFromGit=$(docker-tag-from-git)
+dockerContainerInspect+="$DOCKER_CONTAINER.$tagFromGit.inspect.$$"
+
+# allow overriding tag, but default to what has last run for current branch
+if [[ $# -gt 0 ]]; then
+    Tag=$1; shift
+    dockerImageToInspect="$DOCKER_IMAGE:$Tag"
+else
+    dockerImageToInspect=$(printf "$DOCKER_IMAGE_BRANCH_FORMAT_RUN" "$tagFromGit")
+fi
+
+# run given command
+[[ $# -gt 0 ]] || # or a shell depending on whether we're in a tty
+    if [[ -t 1 ]]
+    then set -- bash -i  # interactive shell in a tty
+    else set -- bash     # just a shell
+    fi
+
+set -x
+docker-run --name "$dockerContainerInspect" \
+    --rm \
+    -- "$dockerImageToInspect" \
+    "$@"
