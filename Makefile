@@ -106,8 +106,10 @@ build:
 	util/build/generate-build-info.sh >$(BUILD_INFO)
 
 # how to build external runtime dependencies to bundle
-.PHONY: bundled-runtime-dependencies
-bundled-runtime-dependencies extern/.build/bundled: extern/bundle-runtime-dependencies.sh
+.PHONY: extern bundled-runtime-dependencies
+extern \
+bundled-runtime-dependencies \
+extern/.build/bundled: extern/bundle-runtime-dependencies.sh extern/bundle.conf
 	PACKAGENAME=deepdive  $<
 $(PACKAGE): bundled-runtime-dependencies
 build: extern/.build/bundled
@@ -134,24 +136,21 @@ checkstyle:
 
 ### submodule build recipes ###################################################
 
+# submodules to build and the files to copy out from each of them
+include util/build/build-submodules.mk
+$(BUILD_SUBMODULE)/inference/dimmwitted.mk : COPY = dw
+$(BUILD_SUBMODULE)/util/mindbender.mk      : COPY = @prefix@/
+$(BUILD_SUBMODULE)/compiler/ddlog.mk       : COPY = target/scala-2.11/ddlog-assembly-0.1-SNAPSHOT.jar
+$(BUILD_SUBMODULE)/runner/mkmimo.mk        : COPY = mkmimo
+
+# XXX legacy targets kept to reduce surprise
 .PHONY: build-sampler
-build-sampler: build-dimmwitted
+build-sampler: build-submodule-dimmwitted
 .PHONY: build-dimmwitted
-build-dimmwitted:
-	@util/build/build-submodule-if-needed inference/dimmwitted dw
-build: build-dimmwitted
-
+build-dimmwitted: build-submodule-dimmwitted
 .PHONY: build-mindbender
-build-mindbender:
-	@util/build/build-submodule-if-needed util/mindbender @prefix@/
-build: build-mindbender
-
+build-mindbender: build-submodule-mindbender
 .PHONY: build-ddlog
-build-ddlog:
-	@util/build/build-submodule-if-needed compiler/ddlog target/scala-2.11/ddlog-assembly-0.1-SNAPSHOT.jar
-build: build-ddlog
-
+build-ddlog: build-submodule-ddlog
 .PHONY: build-mkmimo
-build-mkmimo:
-	@util/build/build-submodule-if-needed runner/mkmimo mkmimo
-build: build-mkmimo
+build-mkmimo: build-submodule-mkmimo
