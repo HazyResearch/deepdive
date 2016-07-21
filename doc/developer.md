@@ -163,6 +163,13 @@ Running containerized builds and tests in Docker is the recommended way, but you
 Everything described here about normal builds in fact applies to the source tree inside the container.
 Moreover, normal build is the only way to produce releases for Mac and environments other than the one used in the master image.
 
+* To disable the containerized builds even if you have Docker installed and to force normal build, simply set:
+
+    ```bash
+    export NO_DOCKER_BUILD=true
+    ```
+
+
 * To install all build and runtime dependencies, run:
 
     ```bash

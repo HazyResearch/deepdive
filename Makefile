@@ -9,7 +9,8 @@ BUILD_DIR = .build
 # path to the package to be built
 PACKAGE = $(dir $(STAGE_DIR))deepdive.tar.gz
 
-ifneq ($(shell which docker 2>/dev/null),)
+NO_DOCKER_BUILD ?= false
+ifneq ($(shell $(NO_DOCKER_BUILD) || which docker 2>/dev/null),)
 # do a containerized build by default if Docker is available
 .DEFAULT_GOAL := build--in-container
 
