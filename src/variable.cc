@@ -38,6 +38,9 @@ Variable &Variable::operator=(const Variable &other) {
           ? new std::unordered_map<variable_value_t, variable_value_index_t>(
                 *other.domain_map)
           : nullptr);
+  domain_list.reset(other.domain_list
+                        ? new std::vector<variable_value_t>(*other.domain_list)
+                        : nullptr);
   return *this;
 }
 

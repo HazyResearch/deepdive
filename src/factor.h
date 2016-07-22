@@ -346,7 +346,8 @@ class Factor {
   // An empty map takes 48 bytes, so we create it only as needed, i.e., when
   // func_id = FUNC_AND_CATEGORICAL
   // Allocated in binary_parser.read_factors. Never deallocated.
-  std::unordered_map<factor_weight_key_t, FactorParams> *factor_params;
+  std::unique_ptr<std::unordered_map<factor_weight_key_t, FactorParams>>
+      factor_params;
 
   /**
    * Turns out the no-arg constructor is still required, since we're
@@ -366,6 +367,8 @@ class Factor {
    * constructed from RawFactors during factor graph compilation.
    */
   Factor(const Factor &rf);
+
+  Factor &operator=(const Factor &variable);
 };
 
 /**
