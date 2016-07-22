@@ -25,19 +25,7 @@ Factor::Factor(factor_id_t id, feature_value_t feature_value,
       n_variables(n_variables),
       n_start_i_vif(INVALID_ID) {}
 
-Factor::Factor(const Factor &rf)
-    : id(rf.id),
-      feature_value(rf.feature_value),
-      weight_id(rf.weight_id),
-      func_id(rf.func_id),
-      n_variables(rf.n_variables),
-      n_start_i_vif(rf.n_start_i_vif) {
-  factor_params.reset(
-      rf.factor_params
-          ? new std::unordered_map<factor_weight_key_t, FactorParams>(
-                *rf.factor_params)
-          : nullptr);
-}
+Factor::Factor(const Factor &other) { *this = other; }
 
 Factor &Factor::operator=(const Factor &other) {
   id = other.id;

@@ -366,7 +366,7 @@ class Factor {
    * parameters such as id, weight_id, etc. since we expect Factors to be
    * constructed from RawFactors during factor graph compilation.
    */
-  Factor(const Factor &rf);
+  Factor(const Factor &other);
 
   Factor &operator=(const Factor &other);
 };
