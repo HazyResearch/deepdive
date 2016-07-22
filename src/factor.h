@@ -368,7 +368,7 @@ class Factor {
    */
   Factor(const Factor &rf);
 
-  Factor &operator=(const Factor &variable);
+  Factor &operator=(const Factor &other);
 };
 
 /**
