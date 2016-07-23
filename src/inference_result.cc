@@ -153,7 +153,7 @@ void InferenceResult::show_marginal_snippet(std::ostream &output) const {
           break;
 
         case DTYPE_CATEGORICAL: {
-          const auto &print_snippet = [this, &output, variable](
+          const auto &print_snippet = [this, &output, &variable](
               variable_value_t domain_value,
               variable_value_index_t domain_index) {
             output << "        @ " << domain_value << " -> EXP="
@@ -229,7 +229,7 @@ void InferenceResult::dump_marginals_in_text(std::ostream &text_output) const {
       }
 
       case DTYPE_CATEGORICAL: {
-        const auto &print_result = [this, &text_output, variable](
+        const auto &print_result = [this, &text_output, &variable](
             variable_value_t domain_value,
             variable_value_index_t domain_index) {
           text_output
