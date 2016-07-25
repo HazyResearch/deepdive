@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 from deepdive import *
 
+# for python 3 compatibility
+try:
+    xrange
+except NameError:
+    xrange = range
+
 @tsv_extractor
 @returns(lambda
         mention_id       = "text",
