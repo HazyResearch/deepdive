@@ -47,7 +47,7 @@ if ! [[ "${DEEPDIVE_SHELL:-}" -ef "$0" ]]; then
     export LC_ALL=en_US.UTF-8
 
     #  make sure DeepDive utilities are on PATH
-    PATH="$DEEPDIVE_HOME/util:$DEEPDIVE_HOME/bin:$DEEPDIVE_HOME/lib/bundled/.all/bin:$PATH"
+    PATH="$DEEPDIVE_HOME/util:$DEEPDIVE_HOME/bin:$PATH"
     export PATH
 
     #  make sure virtualenv in Python is available
