@@ -18,7 +18,7 @@ ps_by_pgid = {}
 pgid_by_pid = {}
 
 # take a snapshot of PIDs, PPIDs, PGIDs using ps command, and index them in a handy way
-ps_snapshot = subprocess.check_output(["ps", "ax", "-o", "ppid=,pid=,pgid="])
+ps_snapshot = subprocess.check_output(["ps", "ax", "-o", "ppid=,pid=,pgid="], universal_newlines=True)
 pid_self = str(os.getpid())
 for line in ps_snapshot.split("\n"):
     line = line.strip()
