@@ -199,8 +199,8 @@ def factorWeightDescriptionSqlExpr:
             "
           end
         , if $deepdive.calibration.observation_query then
-            # run user holdout query if configured
-            "\($deepdive.calibration.holdout_query)"
+            # run user observation query if configured
+            "\($deepdive.calibration.observation_query)"
           else empty
           end
         ] | map("deepdive sql \(asPrettySqlArg)") | join("\n"))
