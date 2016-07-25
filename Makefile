@@ -1,7 +1,5 @@
 # Makefile for DeepDive
 
-# install destination
-PREFIX = ~/local
 # path to the staging area
 STAGE_DIR = dist/stage
 # path to the area for keeping track of build
