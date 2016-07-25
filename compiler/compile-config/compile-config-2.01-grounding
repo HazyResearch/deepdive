@@ -334,7 +334,7 @@ def factorWeightDescriptionSqlExpr:
         , GROUP_BY: [ { table: "i", column: deepdiveVariableIdColumn } ]
         } | asSql | asPrettySqlArg) \\
         command=\("
-            sampler-dw text2bin domain /dev/stdin >(pbzip2 >domains.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
+            sampler-dw text2bin domain /dev/stdin /dev/stdout | pbzip2 >domains.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2
         " | @sh) \\
         output_relation=
         "
