@@ -12,7 +12,7 @@ SELECT hsi.p1_id
      , pm2.begin_index  AS p2_start
      , pm2.end_index    AS p2_end
 
-  FROM has_spouse_label_inference hsi
+  FROM has_spouse_inference hsi
      , person_mention             pm1
      , person_mention             pm2
      , sentences                  s
