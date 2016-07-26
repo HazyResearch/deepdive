@@ -11,3 +11,4 @@ RedirectTemp  /support  /#acknowledgment
 
 # redirect legacy URLs to new place
 RedirectMatch temp  (.*)/doc/(?:basics/walkthrough|basics|advanced|general)/(.*?)(?:\.html)?$  $1/$2
+RedirectMatch temp  (.*)/doc/(.*?)(?:\.html)?$                                                 $1/$2
