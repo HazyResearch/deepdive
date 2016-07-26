@@ -1,5 +1,7 @@
 # Makefile for DeepDive
 
+# install destination
+PREFIX = ~/local
 # path to the staging area
 STAGE_DIR = dist/stage
 # path to the area for keeping track of build
@@ -108,8 +110,6 @@ build:
 bundled-runtime-dependencies extern/.build/bundled: extern/bundle-runtime-dependencies.sh
 	PACKAGENAME=deepdive  $<
 $(PACKAGE): bundled-runtime-dependencies
-build: extern/.build/bundled
-
 
 ### test recipes #############################################################
 

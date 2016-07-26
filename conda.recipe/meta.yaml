@@ -1,0 +1,30 @@
+package:
+  name: deepdive
+  version: "0.8"
+
+source:
+  git_url: git@github.com:HazyResearch/deepdive.git
+  git_rev: "7fc9f9aaf47cbe03f98bc8c8c47be164176483a6"
+
+build:
+  script_env:
+    - USER
+
+requirements:
+  build:
+    - python
+    - setuptools
+    - coreutils =8.21
+    - cmake
+
+  run:
+    - python
+    - pyhocon =0.3.30
+    - coreutils =8.21
+    - moreutils =0.59
+    - jq =1.5
+    - graphviz =2.38.0
+    - bc =1.06
+    - pv =1.6.0
+    - pbzip2 =1.1.13
+    - bash =4.3.42
