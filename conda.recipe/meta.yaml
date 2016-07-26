@@ -3,8 +3,7 @@ package:
   version: "0.8"
 
 source:
-  git_url: git@github.com:HazyResearch/deepdive.git
-  git_rev: "ae2558a974e5367a086f28e762dc14846b00f0e6"
+  git_url: ../
 
 build:
   script_env:
