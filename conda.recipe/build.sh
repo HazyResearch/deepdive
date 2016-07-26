@@ -26,7 +26,7 @@ cat << EOF > ${PKG_NAME}-env-activate.sh
 #!/usr/bin/env bash
 
 export PRE_${PKG_NAME}_PATH=\$PATH
-export PATH=\$CONDA_PREFIX/util:$PATH
+export PATH=\$CONDA_PREFIX/util:\$PATH
 EOF
 
 cat << EOF > ${PKG_NAME}-env-deactivate.sh
