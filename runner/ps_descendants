@@ -3,6 +3,7 @@
 # $ ps_descendants PID
 ##
 
+from __future__ import print_function
 import sys,os,subprocess,re
 
 if len(sys.argv) != 2:
@@ -66,4 +67,4 @@ pids -= set([PID])
 
 # output PIDs
 if len(pids) > 0:
-    print "\n".join(pids)
+    print("\n".join(pids))
