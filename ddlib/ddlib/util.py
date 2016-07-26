@@ -1,5 +1,3 @@
-from future.utils import iteritems
-
 from collections import namedtuple,OrderedDict
 import re
 import sys
