@@ -8,6 +8,13 @@ source:
 build:
   script_env:
     - USER
+  number: 1
+
+test:
+  requires:
+    - examples/smoke
+  commands:
+    - deepdive run
 
 requirements:
   build:
