@@ -4,7 +4,7 @@ package:
 
 source:
   git_url: git@github.com:HazyResearch/deepdive.git
-  git_rev: "7fc9f9aaf47cbe03f98bc8c8c47be164176483a6"
+  git_rev: "ae2558a974e5367a086f28e762dc14846b00f0e6"
 
 build:
   script_env:
@@ -14,17 +14,17 @@ requirements:
   build:
     - python
     - setuptools
-    - coreutils =8.21
+    - coreutils ==8.21
     - cmake
 
   run:
     - python
-    - pyhocon =0.3.30
-    - coreutils =8.21
-    - moreutils =0.59
-    - jq =1.5
-    - graphviz =2.38.0
-    - bc =1.06
-    - pv =1.6.0
-    - pbzip2 =1.1.13
-    - bash =4.3.42
+    - pyhocon ==0.3.30
+    - coreutils ==8.21
+    - moreutils ==0.59
+    - jq ==1.5
+    - graphviz ==2.38.0
+    - bc ==1.06
+    - pv ==1.6.0
+    - pbzip2 ==1.1.13
+    - bash ==4.3.42
