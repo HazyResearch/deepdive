@@ -19,3 +19,25 @@ if [ "$(uname)" == "Darwin" ]; then
 fi
 
 make install PREFIX=$PREFIX
+
+# add the /util directory to the PATH inside this conda env
+# http://conda.pydata.org/docs/using/envs.html#saved-environment-variables
+cat << EOF > ${PKG_NAME}-env-activate.sh
+#!/usr/bin/env bash
+
+export PRE_${PKG_NAME}_PATH=\$PATH
+export PATH=\$CONDA_PREFIX/util:$PATH
+EOF
+
+cat << EOF > ${PKG_NAME}-env-deactivate.sh
+#!/usr/bin/env bash
+
+export PATH=\$PRE_${PKG_NAME}_PATH
+unset PRE_${PKG_NAME}_PATH
+EOF
+
+mkdir -p $PREFIX/etc/conda/activate.d
+mkdir -p $PREFIX/etc/conda/deactivate.d
+
+mv ${PKG_NAME}-env-activate.sh $PREFIX/etc/conda/activate.d
+mv ${PKG_NAME}-env-deactivate.sh $PREFIX/etc/conda/deactivate.d
