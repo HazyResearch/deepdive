@@ -144,4 +144,6 @@ stage .build/submodule/util/mindbender/@prefix@/                  mindbender/
 stage util/mindbender-wrapper.sh                                  bin/mindbender
 
 # runtime dependencies after building them from source
-[[ -e extern/.build/bundled ]] && stage extern/.build/bundled                                       lib/
+if [[ -e extern/.build/bundled ]]; then
+    stage extern/.build/bundled lib/
+fi
