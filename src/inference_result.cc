@@ -186,7 +186,7 @@ void InferenceResult::show_marginal_snippet(std::ostream &output) const {
 }
 
 void InferenceResult::show_marginal_histogram(std::ostream &output,
-                                              const size_t &bins) const {
+                                              const size_t bins) const {
   // show a histogram of inference results
   output << "INFERENCE CALIBRATION (QUERY BINS):" << std::endl;
   std::vector<num_variables_t> abc(bins + 1, 0);
@@ -207,13 +207,11 @@ void InferenceResult::show_marginal_histogram(std::ostream &output,
   }
   abc[bins - 1] += abc[bins];
 
-  // save ostream settings
-  const std::ios::fmtflags flags(output.flags());
-  const size_t prec = output.precision();
-
-  // set format for numbers
+  const std::ios::fmtflags flags(output.flags());  // save ostream settings
   output << std::fixed;  // specify number of decimals (rather than sig figs)
-  output << std::setprecision(1);  // 1 digit after decimal point
+
+  // save precision and set new one
+  const size_t prec = output.precision(std::max((int) ceil(log10(bins)), 1));
 
   for (size_t i = 0; i < bins; ++i) {
     output << "PROB BIN " << (float)i / bins << "~" << (float)(i + 1) / bins
