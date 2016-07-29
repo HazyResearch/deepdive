@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # jq -- a shebang interpreter for using jq executable files in a portable way
 set -e
 jq="$DEEPDIVE_HOME"/lib/bundled/.all/bin/jq  # XXX hardcoded to minimize overhead
