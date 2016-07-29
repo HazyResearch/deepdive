@@ -4,7 +4,7 @@ if [ "$(uname)" == "Darwin" ]; then
   export CXX=clang++
   export MACOSX_VERSION_MIN="10.9"
   CXXFLAGS="${CXXFLAGS} -mmacosx-version-min=${MACOSX_VERSION_MIN}"
-  CXXFLAGS="${CXXFLAGS} -Wno-error=unused-command-line-argument" 
+  CXXFLAGS="${CXXFLAGS} -Wno-error=unused-command-line-argument"
   export LDFLAGS="${LDFLAGS} -mmacosx-version-min=${MACOSX_VERSION_MIN}"
   export LINKFLAGS="${LDFLAGS}"
   export MACOSX_DEPLOYMENT_TARGET=10.9
