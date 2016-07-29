@@ -11,9 +11,10 @@ build:
   number: 1
 
 test:
-  requires:
+  files:
     - examples/smoke
   commands:
+    - cd examples/smoke
     - deepdive run
 
 requirements:
