@@ -211,7 +211,7 @@ void InferenceResult::show_marginal_histogram(std::ostream &output,
   output << std::fixed;  // specify number of decimals (rather than sig figs)
 
   // save precision and set new one
-  const size_t prec = output.precision(std::max((int) ceil(log10(bins)), 1));
+  const size_t prec = output.precision(std::max((int)ceil(log10(bins)), 1));
 
   for (size_t i = 0; i < bins; ++i) {
     output << "PROB BIN " << (float)i / bins << "~" << (float)(i + 1) / bins
