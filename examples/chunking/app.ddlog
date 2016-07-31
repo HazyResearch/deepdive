@@ -38,20 +38,24 @@ chunk(s, word, tag) = (
 
 # unigram features ###############################################################
 
+@name("current word")
 @weight(tag, word)
 chunk(s, w, tag) :-
   words(s, w, word, pos, _).
 
+@name("current pos tag")
 @weight(tag, pos)
 chunk(s, w, tag) :-
   words(s, w, word, pos, _).
 
+@name("current and next pos")
 @weight(tag, pos1, pos2)
 chunk(s, w1, tag) :-
   w2 = w1 + 1,
   words(s, w1, word1, pos1, _),
   words(s, w2, word2, pos2, _).
 
+@name("current and prev pos")
 @weight(tag, pos1, pos2)
 chunk(s, w2, tag) :-
   w2 = w1 + 1,
@@ -61,9 +65,11 @@ chunk(s, w2, tag) :-
 
 # bigram features ###############################################################
 
+@name("linear chain")
 @weight(tag1, tag2)
 chunk(s, w1, tag1) ^ chunk(s, w2, tag2) :- w2 = w1 + 1.
 
+@name("linear chain by pos")
 @weight(tag1, tag2, pos1, pos2)
 chunk(s, w1, tag1) ^ chunk(s, w2, tag2) :-
   w2 = w1 + 1,
@@ -73,6 +79,7 @@ chunk(s, w1, tag1) ^ chunk(s, w2, tag2) :-
 
 # word embedding features ###############################################################
 
+@name("word embedding")
 @weight(tag, k)
 @feature_value(vec[k])
 chunk(s, w, tag) :-
