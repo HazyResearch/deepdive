@@ -15,6 +15,7 @@ test:
     - examples/smoke
   commands:
     - cd examples/smoke
+    - echo 'postgresql://postgres@localhost/deepdive_smoke_\$USER' > examples/smoke/db.url
     - deepdive run
 
 requirements:
