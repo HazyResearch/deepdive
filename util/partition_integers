@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # partition_integers -- Partitions integer range into even ranges
 ##
+from __future__ import print_function
 import sys
 
 # python 3 compatibility
