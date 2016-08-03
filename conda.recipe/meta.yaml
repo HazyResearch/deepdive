@@ -36,6 +36,7 @@ requirements:
     - pv ==1.6.0
     - pbzip2 ==1.1.13
     - bash ==4.3.42
+    - gnuplot
 
 # # for building deepdive, not available as a conda package
 # # on a bare Ubuntu Xenial AMI:
