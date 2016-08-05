@@ -266,7 +266,7 @@ make -C doc/ deploy
 
 #### Building a conda package
 
-conda is a language-agnostic package and environment manager. [Read more about conda here](conda.pydata.org/docs/intro.html).
+conda is a language-agnostic package and environment manager. [Read more about conda here](http://conda.pydata.org/docs/intro.html).
 
 To build the Deepdive conda package:
 
