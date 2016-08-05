@@ -271,7 +271,7 @@ conda is a language-agnostic package and environment manager. [Read more about c
 To build the Deepdive conda package:
 
 1. Install Miniconda3 or another conda distribution.
-2. Run `conda install conda-build` to install the conda package builder. If this step fails due to a missing dependency, add a channel containing that dependency for your platform to your .condarc file and try again. Public channels are searchable at anaconda.org.
-3. Run `conda build conda.recipe` to build the package.
+2. Run `conda install conda-build` to install the conda package builder.
+3. Run `conda build conda.recipe` to build the package. If this step fails due to a missing dependency, add a channel containing that dependency for your platform to your .condarc file and try again. Public channels are searchable at anaconda.org.
 4. Activate your conda environment.
 5. Run `conda install <path-to-package>` to install the package. Deepdive will be installed into your conda environment's `bin/` and `util/` directories.
