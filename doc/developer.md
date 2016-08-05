@@ -59,6 +59,7 @@ DeepDive is written in several programming languages.
 * `shell/` contains the code for the general `deepdive` command-line interface.
 * `test/` at the top as well as `*/test/` under each subdirectory contain the test code.
 * `util/` contains other utilities for installation, build, and development.
+* `conda.recipe/` contains the conda recipe for building a redistributable Deepdive conda package.
 
 DeepDive build is controlled by several files:
 
@@ -263,4 +264,14 @@ To deploy changes to the main website, run:
 make -C doc/ deploy
 ```
 
+#### Building a conda package
 
+conda is a language-agnostic package and environment manager. [Read more about conda here](conda.pydata.org/docs/intro.html).
+
+To build the Deepdive conda package:
+
+1. Install Miniconda3 or another conda distribution.
+2. Run `conda install conda-build` to install the conda package builder. If this step fails due to a missing dependency, add a channel containing that dependency for your platform to your .condarc file and try again. Public channels are searchable at anaconda.org.
+3. Run `conda build conda.recipe` to build the package.
+4. Activate your conda environment.
+5. Run `conda install <path-to-package>` to install the package. Deepdive will be installed into your conda environment's `bin/` and `util/` directories.
