@@ -199,8 +199,8 @@ def factorWeightDescriptionSqlExpr:
             "
           end
         , if $deepdive.calibration.observation_query then
-            # run user holdout query if configured
-            "\($deepdive.calibration.holdout_query)"
+            # run user observation query if configured
+            "\($deepdive.calibration.observation_query)"
           else empty
           end
         ] | map("deepdive sql \(asPrettySqlArg)") | join("\n"))
@@ -334,7 +334,7 @@ def factorWeightDescriptionSqlExpr:
         , GROUP_BY: [ { table: "i", column: deepdiveVariableIdColumn } ]
         } | asSql | asPrettySqlArg) \\
         command=\("
-            sampler-dw text2bin domain /dev/stdin >(pbzip2 >domains.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
+            sampler-dw text2bin domain /dev/stdin /dev/stdout | pbzip2 >domains.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2
         " | @sh) \\
         output_relation=
         "
