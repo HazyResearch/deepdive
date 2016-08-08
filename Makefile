@@ -110,8 +110,6 @@ build:
 bundled-runtime-dependencies extern/.build/bundled: extern/bundle-runtime-dependencies.sh
 	PACKAGENAME=deepdive  $<
 $(PACKAGE): bundled-runtime-dependencies
-build: extern/.build/bundled
-
 
 ### test recipes #############################################################
 

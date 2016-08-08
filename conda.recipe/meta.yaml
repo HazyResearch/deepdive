@@ -1,0 +1,46 @@
+package:
+  name: deepdive
+  version: "0.8"
+
+source:
+  git_url: ../
+
+build:
+  script_env:
+    - USER
+  number: 1
+
+test:
+  files:
+    - examples/smoke
+  commands:
+    - cd examples/smoke
+    - echo 'postgresql://postgres@localhost/deepdive_smoke_\$USER' > db.url
+    - deepdive run
+
+requirements:
+  build:
+    - python
+    - setuptools
+    - coreutils ==8.21
+    - cmake
+
+  run:
+    - python
+    - pyhocon ==0.3.30
+    - coreutils ==8.21
+    - moreutils ==0.59
+    - jq ==1.5
+    - graphviz ==2.38.0
+    - bc ==1.06
+    - pv ==1.6.0
+    - pbzip2 ==1.1.13
+    - bash ==4.3.42
+    - gnuplot
+
+# # for building deepdive, not available as a conda package
+# # on a bare Ubuntu Xenial AMI:
+# sudo apt-get update
+# sudo apt-get install make
+# sudo apt-get install unzip
+# sudo apt-get install gcc
