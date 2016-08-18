@@ -23,15 +23,16 @@ class FactorGraphTest : public testing::Test {
 
   virtual void SetUp() {
     const char* argv[] = {
-        "dw",      "gibbs",
-        "-w",      "./test/biased_coin/graph.weights",
-        "-v",      "./test/biased_coin/graph.variables",
-        "-f",      "./test/biased_coin/graph.factors",
-        "-m",      "./test/biased_coin/graph.meta",
-        "-o",      ".",
-        "-l",      "100",
-        "-i",      "100",
-        "--alpha", "0.1",
+        "dw",          "gibbs",
+        "-w",          "./test/biased_coin/graph.weights",
+        "-v",          "./test/biased_coin/graph.variables",
+        "-f",          "./test/biased_coin/graph.factors",
+        "-m",          "./test/biased_coin/graph.meta",
+        "-o",          ".",
+        "-l",          "100",
+        "-i",          "100",
+        "--alpha",     "0.1",
+        "--reg_param", "0",
     };
     CmdParser cmd_parser(sizeof(argv) / sizeof(*argv), argv);
 

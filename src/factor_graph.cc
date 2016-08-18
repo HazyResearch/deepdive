@@ -192,6 +192,7 @@ void CompactFactorGraph::update_weight(const Variable &variable,
   CompactFactor *const fs = &compact_factors[variable.n_start_i_factors];
   const weight_id_t *const ws =
       &compact_factors_weightids[variable.n_start_i_factors];
+  double gradient;
   // for each factor
   for (num_edges_t i = 0; i < variable.n_factors; ++i) {
     // boolean variable
@@ -200,15 +201,13 @@ void CompactFactorGraph::update_weight(const Variable &variable,
         // only update weight when it is not fixed
         if (!infrs.weights_isfixed[ws[i]]) {
           // stochastic gradient ascent
-          // increment weight with stepsize * gradient of weight
-          // gradient of weight = E[f|D] - E[f], where D is evidence variables,
+          // decrement weight with stepsize * gradient of weight
+          // gradient of weight = E[f] - E[f|D], where D is evidence variables,
           // f is the factor function, E[] is expectation. Expectation is
-          // calculated
-          // using a sample of the variable.
-          infrs.weight_values[ws[i]] +=
-              stepsize *
-              (fs[i].potential(vifs.get(), infrs.assignments_evid.get()) -
-               fs[i].potential(vifs.get(), infrs.assignments_free.get()));
+          // calculated using a sample of the variable.
+          gradient = fs[i].potential(vifs.get(), infrs.assignments_free.get()) -
+                     fs[i].potential(vifs.get(), infrs.assignments_evid.get());
+          infrs.update_weight(ws[i], stepsize, gradient);
         }
         break;
       }
@@ -216,8 +215,8 @@ void CompactFactorGraph::update_weight(const Variable &variable,
         // two weights need to be updated
         // sample with evidence fixed, I0, with corresponding weight w1
         // sample without evidence unfixed, I1, with corresponding weight w2
-        // gradient of wd0 = f(I0) - I(w1==w2)f(I1)
-        // gradient of wd1 = I(w1==w2)f(I0) - f(I1)
+        // neg gradient of wd0 = f(I0) - I(w1==w2)f(I1)
+        // neg gradient of wd1 = I(w1==w2)f(I0) - f(I1)
         const FactorParams &fp1 =
             get_categorical_factor_params(infrs.assignments_evid.get(), fs[i]);
         const FactorParams &fp2 =
@@ -225,23 +224,23 @@ void CompactFactorGraph::update_weight(const Variable &variable,
         bool equal = (fp1.wid == fp2.wid);
 
         if (fp1.wid != Weight::INVALID_ID && !infrs.weights_isfixed[fp1.wid]) {
-          infrs.weight_values[fp1.wid] +=
-              stepsize *
-              (fs[i].potential(vifs.get(), infrs.assignments_evid.get(),
-                               fp1.feature_value) -
-               equal *
-                   fs[i].potential(vifs.get(), infrs.assignments_free.get(),
-                                   fp1.feature_value));
+          gradient =
+              -(fs[i].potential(vifs.get(), infrs.assignments_evid.get(),
+                                fp1.feature_value) -
+                equal *
+                    fs[i].potential(vifs.get(), infrs.assignments_free.get(),
+                                    fp1.feature_value));
+          infrs.update_weight(fp1.wid, stepsize, gradient);
         }
 
         if (fp2.wid != Weight::INVALID_ID && !infrs.weights_isfixed[fp2.wid]) {
-          infrs.weight_values[fp2.wid] +=
-              stepsize *
-              (equal *
-                   fs[i].potential(vifs.get(), infrs.assignments_evid.get(),
-                                   fp2.feature_value) -
-               fs[i].potential(vifs.get(), infrs.assignments_free.get(),
-                               fp2.feature_value));
+          gradient =
+              -(equal *
+                    fs[i].potential(vifs.get(), infrs.assignments_evid.get(),
+                                    fp2.feature_value) -
+                fs[i].potential(vifs.get(), infrs.assignments_free.get(),
+                                fp2.feature_value));
+          infrs.update_weight(fp2.wid, stepsize, gradient);
         }
         break;
       }

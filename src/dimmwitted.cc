@@ -190,7 +190,9 @@ void DimmWitted::learn() {
     // the average weights will be calculated and assigned to all factor graphs
     for (size_t i = 1; i < n_samplers_; ++i)
       infrs.merge_weights_from(samplers[i].infrs);
-    infrs.average_regularize_weights(current_stepsize);
+    if (n_samplers_ > 1) {
+      infrs.average_weights(n_samplers_);
+    }
     for (size_t i = 1; i < n_samplers_; ++i)
       infrs.copy_weights_to(samplers[i].infrs);
 
