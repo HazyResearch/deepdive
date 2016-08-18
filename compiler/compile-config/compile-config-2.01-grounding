@@ -391,6 +391,8 @@ def factorWeightDescriptionSqlExpr:
                     ]
                 } | asSql | asPrettySqlArg)
 
+            deepdive db analyze \(.factorsTable | @sh)
+
             # find distinct weights for the factors into a separate table
             deepdive create table \(.weightsTable | @sh) as \(
                 { SELECT:
@@ -408,6 +410,8 @@ def factorWeightDescriptionSqlExpr:
                     | { alias: "f", table: .factorsTable }
                     ]
                 } | asSql | asPrettySqlArg)
+
+            deepdive db analyze \(.weightsTable | @sh)
         "
     }
 })
