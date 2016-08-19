@@ -83,7 +83,7 @@ typedef double feature_value_t;
  */
 #define UNUSED(var) (void)(var)
 
-enum regularization { REG_L1, REG_L2 };
+enum regularization_t { REG_L1, REG_L2 };
 
 inline bool fast_exact_is_equal(double a, double b) {
   return (a <= b && b <= a);
