@@ -46,7 +46,7 @@ class CmdParser {
   double stepsize2;
   double decay;
   double reg_param;
-  enum regularization regularization;
+  regularization_t regularization;
 
   bool should_be_quiet;
   bool should_sample_evidence;

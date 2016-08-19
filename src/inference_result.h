@@ -17,7 +17,6 @@ class InferenceResult {
  private:
   const CompactFactorGraph &fg;
   const CmdParser &opts;
-  size_t weight_values_normalizer;
 
  public:
   num_variables_t nvars;   // number of variables
@@ -45,7 +44,7 @@ class InferenceResult {
   InferenceResult(const InferenceResult &other);
 
   void merge_weights_from(const InferenceResult &other);
-  void average_regularize_weights(double current_stepsize);
+  void average_weights(size_t count);
   void copy_weights_to(InferenceResult &other) const;
   void show_weights_snippet(std::ostream &output) const;
   void dump_weights_in_text(std::ostream &text_output) const;
@@ -55,6 +54,25 @@ class InferenceResult {
   void show_marginal_snippet(std::ostream &output) const;
   void show_marginal_histogram(std::ostream &output) const;
   void dump_marginals_in_text(std::ostream &text_output) const;
+
+  inline void update_weight(weight_id_t wid, double stepsize, double gradient) {
+    double weight = weight_values[wid];
+    switch (opts.regularization) {
+      case REG_L2: {
+        // bounded approx of 1 - opts.reg_param * stepsize
+        weight *= (1.0 / (1.0 + opts.reg_param * stepsize));
+        break;
+      }
+      case REG_L1: {
+        weight += opts.reg_param * (weight < 0);
+        break;
+      }
+      default:
+        std::abort();
+    }
+    weight -= stepsize * gradient;
+    weight_values[wid] = weight;
+  }
 
  private:
   InferenceResult(const CompactFactorGraph &fg, const CmdParser &opts);

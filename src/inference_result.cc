@@ -9,7 +9,6 @@ InferenceResult::InferenceResult(const CompactFactorGraph &fg,
                                  const CmdParser &opts)
     : fg(fg),
       opts(opts),
-      weight_values_normalizer(1),
       nvars(fg.size.num_variables),
       nweights(fg.size.num_weights),
       ntallies(0),
@@ -63,28 +62,12 @@ void InferenceResult::merge_weights_from(const InferenceResult &other) {
   assert(nweights == other.nweights);
   for (weight_id_t j = 0; j < nweights; ++j)
     weight_values[j] += other.weight_values[j];
-  ++weight_values_normalizer;
 }
 
-void InferenceResult::average_regularize_weights(double current_stepsize) {
+void InferenceResult::average_weights(size_t count) {
   for (weight_id_t j = 0; j < nweights; ++j) {
-    weight_values[j] /= weight_values_normalizer;
-    if (!weights_isfixed[j]) {
-      switch (opts.regularization) {
-        case REG_L2: {
-          weight_values[j] *= (1.0 / (1.0 + opts.reg_param * current_stepsize));
-          break;
-        }
-        case REG_L1: {
-          weight_values[j] += opts.reg_param * (weight_values[j] < 0);
-          break;
-        }
-        default:
-          std::abort();
-      }
-    }
+    weight_values[j] /= count;
   }
-  weight_values_normalizer = 1;
 }
 
 void InferenceResult::copy_weights_to(InferenceResult &other) const {
