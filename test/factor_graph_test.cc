@@ -20,6 +20,7 @@ class FactorGraphTest : public testing::Test {
  protected:
   std::unique_ptr<CompactFactorGraph> cfg;
   std::unique_ptr<InferenceResult> infrs;
+  std::unique_ptr<CmdParser> cmd_parser;
 
   virtual void SetUp() {
     const char* argv[] = {
@@ -34,17 +35,17 @@ class FactorGraphTest : public testing::Test {
         "--alpha",     "0.1",
         "--reg_param", "0",
     };
-    CmdParser cmd_parser(sizeof(argv) / sizeof(*argv), argv);
+    cmd_parser.reset(new CmdParser(sizeof(argv) / sizeof(*argv), argv));
 
     FactorGraph fg({18, 18, 1, 18});
-    fg.load_variables(cmd_parser.variable_file);
-    fg.load_weights(cmd_parser.weight_file);
-    fg.load_domains(cmd_parser.domain_file);
-    fg.load_factors(cmd_parser.factor_file);
+    fg.load_variables(cmd_parser->variable_file);
+    fg.load_weights(cmd_parser->weight_file);
+    fg.load_domains(cmd_parser->domain_file);
+    fg.load_factors(cmd_parser->factor_file);
     fg.safety_check();
 
     cfg.reset(new CompactFactorGraph(fg));
-    infrs.reset(new InferenceResult(*cfg, fg.weights.get(), cmd_parser));
+    infrs.reset(new InferenceResult(*cfg, fg.weights.get(), *cmd_parser));
   }
 };
 
