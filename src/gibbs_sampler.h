@@ -131,14 +131,20 @@ inline void GibbsSamplerThread::sample_sgd_single_variable(variable_id_t vid,
   Variable &variable = fg.variables[vid];
   if (variable.is_observation) return;
 
-  // sample the variable
-  variable_value_t proposal = draw_sample(
-      variable, infrs.assignments_evid.get(), infrs.weight_values.get());
+  variable_value_t proposal = 0;
 
+  // sample the variable with evidence unchanged
+  proposal = variable.is_evid
+                 ? variable.assignment_evid
+                 : draw_sample(variable, infrs.assignments_evid.get(),
+                               infrs.weight_values.get());
+
+  infrs.assignments_evid[variable.id] = proposal;
+
+  // sample the variable regardless of whether it's evidence
+  proposal = draw_sample(variable, infrs.assignments_free.get(),
+                         infrs.weight_values.get());
   infrs.assignments_free[variable.id] = proposal;
-
-  infrs.assignments_evid[variable.id] =
-      (variable.is_evid ? variable.assignment_evid : proposal);
 
   if (!learn_non_evidence && !variable.is_evid) return;
 
