@@ -22,16 +22,29 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
             [ -d factorgraph ] || error \"No factorgraph found\"
             # run inference engine for learning and inference
             flatten() { find -L \"$@\" -type f -size +0 -exec pbzip2 -c -d -k {} +; }
-            \($deepdive.sampler.sampler_cmd // "sampler-dw") \\
-                gibbs \\
-                --variables <(flatten factorgraph/variables) \\
-                --domains <(flatten factorgraph/domains) \\
-                --factors <(flatten factorgraph/factors) \\
-                --weights <(flatten factorgraph/weights) \\
-                --fg_meta factorgraph/meta \\
-                --outputFile weights \\
-                --n_threads $DEEPDIVE_NUM_PROCESSES \\
-                \($deepdive.sampler.sampler_args // "#")
+
+            \(if $deepdive.sampler.sampler_cmd == "numbskull" then "
+                mkdir -p flat
+                head -n 1 factorgraph/meta > flat/graph.meta
+                # TODO: save disk space
+                flatten factorgraph/variables > flat/graph.variables
+                flatten factorgraph/factors > flat/graph.factors
+                flatten factorgraph/weights > flat/graph.weights
+                flatten factorgraph/domains > flat/graph.domains
+                numbskull flat --output_dir weights \($deepdive.sampler.sampler_args // "#")
+            " else "
+                \($deepdive.sampler.sampler_cmd // "sampler-dw") \\
+                    gibbs \\
+                    --variables <(flatten factorgraph/variables) \\
+                    --domains <(flatten factorgraph/domains) \\
+                    --factors <(flatten factorgraph/factors) \\
+                    --weights <(flatten factorgraph/weights) \\
+                    --fg_meta factorgraph/meta \\
+                    --outputFile weights \\
+                    --n_threads $DEEPDIVE_NUM_PROCESSES \\
+                    \($deepdive.sampler.sampler_args // "#")
+            " end)
+
             mkdir -p probabilities
             mv -f weights/inference_result.out.text probabilities/
         "
@@ -50,18 +63,31 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                 # XXX this skipping may cause confusion
                 # run sampler for performing inference with given weights without learning
                 flatten() { find -L \"$@\" -type f -size +0 -exec pbzip2 -c -d -k {} +; }
-                \($deepdive.sampler.sampler_cmd // "sampler-dw") \\
-                    gibbs \\
-                    --variables <(flatten factorgraph/variables) \\
-                    --domains <(flatten factorgraph/domains) \\
-                    --factors <(flatten factorgraph/factors) \\
-                    --weights <(flatten factorgraph/weights) \\
-                    --fg_meta factorgraph/meta \\
-                    --outputFile weights \\
-                    --n_threads $DEEPDIVE_NUM_PROCESSES \\
-                    \($deepdive.sampler.sampler_args // "") \\
-                    -l 0 \\
-                    #
+
+                \(if $deepdive.sampler.sampler_cmd == "numbskull" then "
+                    mkdir -p flat
+                    head -n 1 factorgraph/meta > flat/graph.meta
+                    # TODO: save disk space
+                    flatten factorgraph/variables > flat/graph.variables
+                    flatten factorgraph/factors > flat/graph.factors
+                    flatten factorgraph/weights > flat/graph.weights
+                    flatten factorgraph/domains > flat/graph.domains
+                    numbskull flat --output_dir weights \($deepdive.sampler.sampler_args // "") -l 0  #
+                " else "
+                    \($deepdive.sampler.sampler_cmd // "sampler-dw") \\
+                        gibbs \\
+                        --variables <(flatten factorgraph/variables) \\
+                        --domains <(flatten factorgraph/domains) \\
+                        --factors <(flatten factorgraph/factors) \\
+                        --weights <(flatten factorgraph/weights) \\
+                        --fg_meta factorgraph/meta \\
+                        --outputFile weights \\
+                        --n_threads $DEEPDIVE_NUM_PROCESSES \\
+                        \($deepdive.sampler.sampler_args // "") \\
+                        -l 0 \\
+                        #
+                " end)
+
                 mkdir -p probabilities
                 mv -f weights/inference_result.out.text probabilities/
             fi
