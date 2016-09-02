@@ -537,24 +537,13 @@ def factorWeightDescriptionSqlExpr:
                     # weight parameters present in the data, hence a lot of joins! but doesn't waste the weights
                     # Assuming all var tables are categorical; TODO: Support mixed head.
                     echo \(
-                        # Order for parallel ARRAY_AGG expressions
-                        ( [ .function_.variables[]
-                          | { table: "C\(.ordinal)", column: "cid" } | asSqlExpr
-                          ] | join(", ")) as $valueOrder
-                    |
-                        .non_category_weight_cols as $non_category_weight_cols
-                    |
                     { SELECT:
                         [ ( .function_.variables[]
                         | { table: "f", column: .columnId } )
-                        , { alias: "num_weights", expr: "COUNT(w.wid)" }
-                        # arrays below are parallel (ensured by $valueOrder)
                         , ( .function_.variables[]
-                        | { alias: "c\(.ordinal)_ids",
-                            expr: "ARRAY_AGG(\({ table: "C\(.ordinal)", column: "cid"
-                                               } | asSqlExpr) ORDER BY \($valueOrder))" } )
-                        , { alias: "weight_ids" , expr: "ARRAY_AGG(w.wid ORDER BY \($valueOrder))" }
-                        , { alias: "feature_values" , expr: "ARRAY_AGG(f.feature_value ORDER BY \($valueOrder))" }
+                        | { table: "C\(.ordinal)", column: "cid" } )
+                        , { alias: "weight_id", table: "w", column: "wid" }
+                        , { alias: "feature_value", table: "f", column: "feature_value" }
                         ]
                     , FROM:
                         [ { alias: "w", table: .weightsTable }
@@ -575,9 +564,6 @@ def factorWeightDescriptionSqlExpr:
                         | { eq: [ { table: "w", column: . }
                                 , { table: "f", column: . } ] } )
                         ]
-                    , GROUP_BY:
-                        [ ( .function_.variables[] | { table: "f", column: .columnId } ),
-                          ( $non_category_weight_cols[] | { table: "f", column: . } ) ]
                     } | asSql | asPrettySqlArg)
                 )\"" else # factors over boolean variables
                     { SELECT:
