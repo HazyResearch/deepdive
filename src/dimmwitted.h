@@ -44,8 +44,7 @@ class DimmWitted {
    * n_datacopy number of factor graph copies. n_datacopy = 1 means only
    * keeping one factor graph.
    */
-  DimmWitted(std::unique_ptr<CompactFactorGraph> p_cfg, const Weight weights[],
-             const CmdParser& opts);
+  DimmWitted(FactorGraph* p_cfg, const Weight weights[], const CmdParser& opts);
 
   /**
    * Performs learning
@@ -80,7 +79,7 @@ class DimmWitted {
   void dump_weights();
 
  private:
-  num_epochs_t compute_n_epochs(num_epochs_t n_epoch);
+  size_t compute_n_epochs(size_t n_epoch);
 };
 
 }  // namespace dd

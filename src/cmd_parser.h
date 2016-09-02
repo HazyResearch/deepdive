@@ -37,11 +37,11 @@ class CmdParser {
   std::string output_folder;
   std::string domain_file;
 
-  num_epochs_t n_learning_epoch;
-  num_epochs_t n_inference_epoch;
+  size_t n_learning_epoch;
+  size_t n_inference_epoch;
   size_t n_datacopy;
   size_t n_threads;
-  num_epochs_t burn_in;
+  size_t burn_in;
   double stepsize;
   double stepsize2;
   double decay;
@@ -56,9 +56,9 @@ class CmdParser {
   std::string text2bin_mode;
   std::string text2bin_input;
   std::string text2bin_output;
-  factor_function_type_t text2bin_factor_func_id;
-  factor_arity_t text2bin_factor_arity;
-  std::vector<variable_value_t> text2bin_factor_variables_should_equal_to;
+  FACTOR_FUNCTION_TYPE text2bin_factor_func_id;
+  size_t text2bin_factor_arity;
+  std::vector<size_t> text2bin_factor_variables_should_equal_to;
 
   size_t num_errors() { return num_errors_; }
 

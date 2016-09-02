@@ -9,62 +9,73 @@
 
 namespace dd {
 
-class Variable;
-class RawVariable;
+// Used to store back refs to factors in a Variable at loading time.
+// Deallocated in FactorGraph.construct_index.
+class TempValueFactor {
+ public:
+  size_t value_dense;
+  size_t factor_id;
+
+  TempValueFactor(size_t value_dense_in, size_t factor_id_in)
+      : value_dense(value_dense_in), factor_id(factor_id_in){};
+
+  // Lexical sort order for indexing
+  bool operator<(const TempValueFactor& other) const {
+    return value_dense < other.value_dense ||
+           (value_dense == other.value_dense && factor_id < other.factor_id);
+  }
+};
 
 /**
- * A variable in the compiled factor graph.
+ * A variable in the factor graph.
  */
 class Variable {
  public:
-  variable_id_t id;  // variable id
-  variable_domain_type_t
-      domain_type;      // variable domain type, can be DTYPE_BOOLEAN or
-                        // DTYPE_CATEGORICAL
-  bool is_evid;         // whether the variable is evidence
-  bool is_observation;  // observed variable (fixed)
-  num_variable_values_t cardinality;  // cardinality
+  // While a categorical var has `cardinality` VariableValue objects,
+  // a boolean var only has one VariableValue object in FactorGraph.values
+  // and one entry in InferenceResult.sample_tallies.
+  // BOOLEAN_DENSE_VALUE is used to index into those arrays.
+  static constexpr size_t BOOLEAN_DENSE_VALUE = 0;
+  static constexpr size_t INVALID_ID = (size_t)-1;
+  static constexpr size_t INVALID_VALUE = (size_t)-1;
 
-  variable_value_t assignment_evid;  // assignment, while keeping evidence
-                                     // variables unchanged
-  variable_value_t assignment_free;  // assignment, free to change any variable
+  size_t id;                // variable id
+  DOMAIN_TYPE domain_type;  // can be DTYPE_BOOLEAN or DTYPE_CATEGORICAL
+  bool is_evid;             // whether the variable is evidence
+  size_t cardinality;       // cardinality; 2 for boolean
 
-  num_edges_t n_factors;          // number of factors the variable connects to
-  num_edges_t n_start_i_factors;  // id of the first factor
+  // After loading (Factorgraph.construct_index), all assignment values
+  // and all proposal values take the "dense" form:
+  // - Boolean: {0, 1}
+  // - Categorical: [0..cardinality)
+  size_t assignment_dense;
 
-  /*
-   * The values of categorical variables are stored in an array that looks
-   * roughly like this:
-   *
-   *   [v11 v12 ... v1m v21 ... v2n ...]
-   *
-   * where v1, v2 are two categorical variables, with domain 1-m, and 1-n
-   * respectively.
-   */
+  // We concatenate the list of "possible values" for each variable to form
+  // FactorGraph.values (also InferenceResults.sample_tallies).
+  // - For boolean, there is just one value, namely BOOLEAN_DENSE_VALUE
+  // - For categorical, there are `cardinality` values
+  //   - if domain is specified, it's the sorted list of domain values
+  //   - otherwise, it's [0..cardinality)
+  //
+  // var_val_base is the start position into those lists.
+  size_t var_val_base;
 
-  // n_start_i_tally is the start position for the variable values in the array
-  num_samples_t n_start_i_tally;
+  // Map from value to index in the domain vector.
+  // Populated at load time (FactorGraph.load_domains).
+  // Deallocated in FactorGraph.construct_index.
+  std::unique_ptr<std::unordered_map<size_t, size_t>> domain_map;
 
-  // map from value to index in the domain vector
-  std::unique_ptr<std::unordered_map<variable_value_t, variable_value_index_t>>
-      domain_map;
-
-  /**
-   * The inverse of domain_map, constructed on demand by get_domain_value_at
-   * (to save RAM) currently used only by bin2text
-   */
-  std::unique_ptr<std::vector<variable_value_t>> domain_list;
-
-  static constexpr variable_id_t INVALID_ID = (variable_id_t)-1;
-  static constexpr variable_value_t INVALID_VALUE = (variable_value_t)-1;
+  // Backrefs to factors (including factor's "equal_to" value).
+  // Populated at load time (FactorGraph.load_factors).
+  // Deallocated in FactorGraph.construct_index.
+  std::unique_ptr<std::vector<TempValueFactor>>
+      adjacent_factors;  // factor ids the variable connects to
 
   Variable();  // default constructor, necessary for
-               // CompactFactorGraph::variables
+               // FactorGraph::variables
 
-  Variable(variable_id_t id, variable_domain_type_t domain_type,
-           bool is_evidence, num_variable_values_t cardinality,
-           variable_value_t init_value, variable_value_t current_value,
-           bool is_observation);
+  Variable(size_t id, DOMAIN_TYPE domain_type, bool is_evidence,
+           size_t cardinality, size_t init_value);
 
   /**
    * Constructs a variable with only the important information from a
@@ -73,45 +84,41 @@ class Variable {
   Variable(const Variable& variable);
   Variable& operator=(const Variable& variable);
 
-  // get the index of the value
-  inline variable_value_index_t get_domain_index(variable_value_t v) const {
-    return domain_map ? domain_map->at(v) : v;
+  inline void add_value_factor(size_t value_dense, size_t factor_id) {
+    if (!adjacent_factors) {
+      adjacent_factors.reset(new std::vector<TempValueFactor>());
+    }
+    adjacent_factors->push_back(TempValueFactor(value_dense, factor_id));
   }
 
-  // inverse of get_domain_index
-  inline variable_value_t get_domain_value_at(variable_value_index_t idx) {
-    if (!domain_list && domain_map) {
-      domain_list.reset(new std::vector<variable_value_t>(domain_map->size()));
-      for (const auto& item : *domain_map) {
-        domain_list->at(item.second) = item.first;
-      }
-    }
-    return domain_list ? domain_list->at(idx) : idx;
+  inline bool is_boolean() const { return domain_type == DTYPE_BOOLEAN; }
+
+  inline size_t internal_cardinality() const {
+    return is_boolean() ? 1 : cardinality;
+  }
+
+  inline size_t var_value_offset(size_t value_dense) const {
+    return is_boolean() ? BOOLEAN_DENSE_VALUE : value_dense;
+  }
+
+  // get the index of the value
+  inline size_t get_domain_index(size_t v) const {
+    return domain_map ? domain_map->at(v) : v;
   }
 };
 
-/**
- * A variable in the raw factor graph.
- *
- * In addition to keeping track of all information a variable does, it also
- * tracks of the temporary vector of factor IDs for the purposes of
- * compilation.
- */
-class RawVariable : public Variable {
+class VariableValue {
  public:
-  std::vector<factor_id_t>
-      tmp_factor_ids;  // factor ids the variable connects to
+  size_t value;
+  // base offset into the factor index (FactorGraph.factor_index)
+  size_t factor_index_base;
+  // number of entries in the factor index
+  size_t factor_index_length;
 
-  RawVariable();  // default constructor, necessary for FactorGraph::variables
+  VariableValue() : VariableValue(Variable::INVALID_ID, -1, 0) {}
 
-  RawVariable(variable_id_t id, variable_domain_type_t domain_type,
-              bool is_evidence, num_variable_values_t cardinality,
-              variable_value_t init_value, variable_value_t current_value,
-              bool is_observation);
-
-  inline void add_factor_id(factor_id_t factor_id) {
-    tmp_factor_ids.push_back(factor_id);
-  }
+  VariableValue(size_t v, size_t base, size_t len)
+      : value(v), factor_index_base(base), factor_index_length(len) {}
 };
 
 /**
@@ -119,21 +126,24 @@ class RawVariable : public Variable {
  */
 class VariableInFactor {
  public:
-  variable_id_t vid;          // variable id
-  factor_arity_t n_position;  // position of the variable inside factor
-  // the variable's predicate value. A variable is "satisfied" if its value
-  // equals equal_to
-  variable_value_t equal_to;
+  size_t vid;  // variable id
+  // dense-form value binding to the var in the factor
+  // - Boolean: {0, 1} depending on wheter atom is negated in rule head
+  // - Categorical: [0..cardinality) depending on the var relation tuple
+  size_t dense_equal_to;
 
   /**
-   * Returns whether the variable's predicate is satisfied using the given value
+   * Returns whether the variable's predicate is satisfied using the given
+   * value.
+   * Applies to both boolean and categorical.
    */
-  bool satisfiedUsing(variable_value_t value) const;
+  inline bool satisfiedUsing(size_t dense_value) const {
+    return dense_equal_to == dense_value;
+  }
 
   VariableInFactor();
 
-  VariableInFactor(variable_id_t vid, factor_arity_t n_position,
-                   variable_value_t equal_to);
+  VariableInFactor(size_t vid, size_t dense_equal_to);
 };
 
 }  // namespace dd

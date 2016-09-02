@@ -17,14 +17,14 @@ class GibbsSamplerThread;
  */
 class GibbsSampler {
  private:
-  std::unique_ptr<CompactFactorGraph> pfg;
+  std::unique_ptr<FactorGraph> pfg;
   std::unique_ptr<InferenceResult> pinfrs;
   NumaNodes numa_nodes_;
   std::vector<GibbsSamplerThread> workers;
   std::vector<std::thread> threads;
 
  public:
-  CompactFactorGraph &fg;
+  FactorGraph &fg;
   InferenceResult &infrs;
 
   // number of threads
@@ -36,14 +36,14 @@ class GibbsSampler {
    * Constructs a GibbsSampler given factor graph, number of threads, and
    * node id.
    */
-  GibbsSampler(std::unique_ptr<CompactFactorGraph> pfg, const Weight weights[],
+  GibbsSampler(std::unique_ptr<FactorGraph> pfg, const Weight weights[],
                const NumaNodes &numa_nodes, size_t nthread, size_t nodeid,
                const CmdParser &opts);
 
   /**
    * Performs sample
    */
-  void sample(num_epochs_t i_epoch);
+  void sample(size_t i_epoch);
 
   /**
    * Performs SGD
@@ -62,7 +62,7 @@ class GibbsSampler {
 class GibbsSamplerThread {
  private:
   // shard and variable id range assigned to this one
-  variable_id_t start, end;
+  size_t start, end;
 
   // RNG seed
   unsigned short p_rand_seed[3];
@@ -71,7 +71,7 @@ class GibbsSamplerThread {
   std::vector<double> varlen_potential_buffer_;
 
   // references and cached flags
-  CompactFactorGraph &fg;
+  FactorGraph &fg;
   InferenceResult &infrs;
   bool sample_evidence;
   bool learn_non_evidence;
@@ -80,9 +80,8 @@ class GibbsSamplerThread {
   /**
    * Constructs a GibbsSamplerThread with given factor graph
    */
-  GibbsSamplerThread(CompactFactorGraph &fg, InferenceResult &infrs,
-                     size_t i_sharding, size_t n_sharding,
-                     const CmdParser &opts);
+  GibbsSamplerThread(FactorGraph &fg, InferenceResult &infrs, size_t i_sharding,
+                     size_t n_sharding, const CmdParser &opts);
 
   /**
    * Samples variables. The variables are divided into n_sharding equal
@@ -103,17 +102,16 @@ class GibbsSamplerThread {
   /**
    * Performs SGD by sampling a single variable with id vid
    */
-  inline void sample_sgd_single_variable(variable_id_t vid, double stepsize);
+  inline void sample_sgd_single_variable(size_t vid, double stepsize);
 
   /**
    * Samples a single variable with id vid
    */
-  inline void sample_single_variable(variable_id_t vid);
+  inline void sample_single_variable(size_t vid);
 
   // sample a single variable
-  inline variable_value_t draw_sample(Variable &variable,
-                                      const variable_value_t assignments[],
-                                      const double weight_values[]);
+  inline size_t draw_sample(Variable &variable, const size_t assignments[],
+                            const double weight_values[]);
 
   /**
     * Resets RNG seed to given values
@@ -121,7 +119,7 @@ class GibbsSamplerThread {
   void set_random_seed(unsigned short s0, unsigned short s1, unsigned short s2);
 };
 
-inline void GibbsSamplerThread::sample_sgd_single_variable(variable_id_t vid,
+inline void GibbsSamplerThread::sample_sgd_single_variable(size_t vid,
                                                            double stepsize) {
   // stochastic gradient ascent
   // gradient of weight = E[f|D] - E[f], where D is evidence variables,
@@ -129,13 +127,12 @@ inline void GibbsSamplerThread::sample_sgd_single_variable(variable_id_t vid,
   // using a sample of the variable.
 
   Variable &variable = fg.variables[vid];
-  if (variable.is_observation) return;
 
-  variable_value_t proposal = 0;
+  size_t proposal = 0;
 
   // sample the variable with evidence unchanged
   proposal = variable.is_evid
-                 ? variable.assignment_evid
+                 ? variable.assignment_dense
                  : draw_sample(variable, infrs.assignments_evid.get(),
                                infrs.weight_values.get());
 
@@ -151,38 +148,30 @@ inline void GibbsSamplerThread::sample_sgd_single_variable(variable_id_t vid,
   fg.update_weight(variable, infrs, stepsize);
 }
 
-inline void GibbsSamplerThread::sample_single_variable(variable_id_t vid) {
+inline void GibbsSamplerThread::sample_single_variable(size_t vid) {
   // this function uses the same sampling technique as in
   // sample_sgd_single_variable
 
   Variable &variable = fg.variables[vid];
-  if (variable.is_observation) return;
 
   if (!variable.is_evid || sample_evidence) {
-    variable_value_t proposal = draw_sample(
-        variable, infrs.assignments_evid.get(), infrs.weight_values.get());
+    size_t proposal = draw_sample(variable, infrs.assignments_evid.get(),
+                                  infrs.weight_values.get());
     infrs.assignments_evid[variable.id] = proposal;
 
     // bookkeep aggregates for computing marginals
     ++infrs.agg_nsamples[variable.id];
-    switch (variable.domain_type) {
-      case DTYPE_BOOLEAN:
-        infrs.agg_means[variable.id] += proposal;
-        break;
-      case DTYPE_CATEGORICAL:
-        ++infrs.categorical_tallies[variable.n_start_i_tally +
-                                    variable.get_domain_index(proposal)];
-        break;
-      default:
-        std::abort();
+    if (!variable.is_boolean() || proposal == 1) {
+      ++infrs.sample_tallies[variable.var_val_base +
+                             variable.var_value_offset(proposal)];
     }
   }
 }
 
-inline variable_value_t GibbsSamplerThread::draw_sample(
-    Variable &variable, const variable_value_t assignments[],
-    const double weight_values[]) {
-  variable_value_t proposal = 0;
+inline size_t GibbsSamplerThread::draw_sample(Variable &variable,
+                                              const size_t assignments[],
+                                              const double weight_values[]) {
+  size_t proposal = 0;
 
   switch (variable.domain_type) {
     case DTYPE_BOOLEAN: {
@@ -227,15 +216,9 @@ inline variable_value_t GibbsSamplerThread::draw_sample(
         }                                                                     \
       }                                                                       \
   } while (0)
-      if (variable.domain_map) {  // sparse domain
-        COMPUTE_PROPOSAL((const auto &entry
-                          : *variable.domain_map),
-                         entry.first, entry.second);
-      } else {  // dense domain, full values are implied
-        COMPUTE_PROPOSAL(
-            (variable_value_index_t i = 0; i < variable.cardinality; ++i), i,
-            i);
-      }
+      // All sparse values have been converted into dense values in FactorGraph.load_domains
+      COMPUTE_PROPOSAL((size_t i = 0; i < variable.cardinality; ++i), i, i);
+
       assert(proposal != Variable::INVALID_VALUE);
       break;
     }

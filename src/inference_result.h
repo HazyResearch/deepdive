@@ -8,36 +8,35 @@
 
 namespace dd {
 
-class CompactFactorGraph;
+class FactorGraph;
 
 /**
  * Encapsulates inference result statistics
  */
 class InferenceResult {
  private:
-  const CompactFactorGraph &fg;
+  const FactorGraph &fg;
   const CmdParser &opts;
 
  public:
-  num_variables_t nvars;   // number of variables
-  num_weights_t nweights;  // number of weights
-  num_tallies_t ntallies;
+  size_t nvars;     // number of variables
+  size_t nweights;  // number of weights
+  size_t ntallies;  // number of tallies
 
-  std::unique_ptr<num_samples_t[]>
-      categorical_tallies;  // this might be slow...
+  // tallies for each var value (see Variable.var_val_base)
+  std::unique_ptr<size_t[]> sample_tallies;
 
-  // array of sum of samples for each variable
-  std::unique_ptr<variable_value_t[]> agg_means;
   // array of number of samples for each variable
-  std::unique_ptr<num_samples_t[]> agg_nsamples;
-  // assignment to variables, see variable.h for more detail
-  std::unique_ptr<variable_value_t[]> assignments_free;
-  std::unique_ptr<variable_value_t[]> assignments_evid;
+  std::unique_ptr<size_t[]> agg_nsamples;
 
-  std::unique_ptr<weight_value_t[]> weight_values;  // array of weight values
+  // assignment to variables, see variable.h for more detail
+  std::unique_ptr<size_t[]> assignments_free;
+  std::unique_ptr<size_t[]> assignments_evid;
+
+  std::unique_ptr<double[]> weight_values;  // array of weight values
   std::unique_ptr<bool[]> weights_isfixed;  // array of whether weight is fixed
 
-  InferenceResult(const CompactFactorGraph &fg, const Weight weights[],
+  InferenceResult(const FactorGraph &fg, const Weight weights[],
                   const CmdParser &opts);
 
   // copy constructor
@@ -55,7 +54,7 @@ class InferenceResult {
   void show_marginal_histogram(std::ostream &output) const;
   void dump_marginals_in_text(std::ostream &text_output) const;
 
-  inline void update_weight(weight_id_t wid, double stepsize, double gradient) {
+  inline void update_weight(size_t wid, double stepsize, double gradient) {
     double weight = weight_values[wid];
     switch (opts.regularization) {
       case REG_L2: {
@@ -75,7 +74,7 @@ class InferenceResult {
   }
 
  private:
-  InferenceResult(const CompactFactorGraph &fg, const CmdParser &opts);
+  InferenceResult(const FactorGraph &fg, const CmdParser &opts);
 };
 
 }  // namespace dd

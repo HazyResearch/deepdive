@@ -10,16 +10,16 @@ namespace dd {
 
 TEST(FactorTest, ONE_VAR_FACTORS) {
   VariableInFactor vifs[1];
-  variable_value_t values[1];
-  variable_id_t vid;
-  variable_value_t propose;
+  size_t values[1];
+  size_t vid;
+  size_t propose;
 
   vifs[0].vid = 0;
-  vifs[0].equal_to = 1;
+  vifs[0].dense_equal_to = 1;
 
-  CompactFactor f;
-  f.n_variables = 1;
-  f.n_start_i_vif = 0;
+  Factor f;
+  f.num_vars = 1;
+  f.vif_base = 0;
 
   values[0] = 0;
   vid = 0;
@@ -61,19 +61,19 @@ TEST(FactorTest, ONE_VAR_FACTORS) {
 
 TEST(FactorTest, TWO_VAR_FACTORS) {
   VariableInFactor vifs[2];
-  variable_value_t values[2];
-  variable_id_t vid;
-  variable_value_t propose;
+  size_t values[2];
+  size_t vid;
+  size_t propose;
 
   vifs[0].vid = 0;
-  vifs[0].equal_to = 1;
+  vifs[0].dense_equal_to = 1;
 
   vifs[1].vid = 1;
-  vifs[1].equal_to = 1;
+  vifs[1].dense_equal_to = 1;
 
-  CompactFactor f;
-  f.n_variables = 2;
-  f.n_start_i_vif = 0;
+  Factor f;
+  f.num_vars = 2;
+  f.vif_base = 0;
 
   // CASE 1: True op True
   values[0] = 1;
@@ -158,19 +158,19 @@ TEST(FactorTest, TWO_VAR_FACTORS) {
 
 TEST(FactorTest, THREE_VAR_IMPLY) {
   VariableInFactor vifs[3];
-  variable_value_t values[3];
-  variable_id_t vid;
-  variable_value_t propose;
+  size_t values[3];
+  size_t vid;
+  size_t propose;
 
   // first test case: True /\ x => True, x propose to False, Expect 0
   vifs[0].vid = 0;
-  vifs[0].equal_to = 1;
+  vifs[0].dense_equal_to = 1;
 
   vifs[1].vid = 1;
-  vifs[1].equal_to = 1;
+  vifs[1].dense_equal_to = 1;
 
   vifs[2].vid = 2;
-  vifs[2].equal_to = 1;
+  vifs[2].dense_equal_to = 1;
 
   values[0] = 1;
   values[1] = 1;
@@ -179,9 +179,9 @@ TEST(FactorTest, THREE_VAR_IMPLY) {
   vid = 1;
   propose = 0;
 
-  CompactFactor f;
-  f.n_variables = 3;
-  f.n_start_i_vif = 0;
+  Factor f;
+  f.num_vars = 3;
+  f.vif_base = 0;
 
   EXPECT_NEAR(f.POTENTIAL_SIGN(FUNC_IMPLY_NATURAL)(vifs, values, vid, propose),
               0.0, EQ_TOL);
