@@ -216,7 +216,8 @@ inline size_t GibbsSamplerThread::draw_sample(Variable &variable,
         }                                                                     \
       }                                                                       \
   } while (0)
-      // All sparse values have been converted into dense values in FactorGraph.load_domains
+      // All sparse values have been converted into dense values in
+      // FactorGraph.load_domains
       COMPUTE_PROPOSAL((size_t i = 0; i < variable.cardinality; ++i), i, i);
 
       assert(proposal != Variable::INVALID_VALUE);

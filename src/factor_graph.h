@@ -131,7 +131,7 @@ inline double FactorGraph::potential(const Variable& variable, size_t proposal,
   // all adjacent factors in one chunk in factor_index
   for (size_t i = 0; i < var_value.factor_index_length; ++i) {
     size_t factor_id = factor_index[var_value.factor_index_base + i];
-    const Factor &factor = factors[factor_id];
+    const Factor& factor = factors[factor_id];
     double weight = weight_values[factor.weight_id];
     pot += weight *
            factor.potential(vifs.get(), assignments, variable.id, proposal);
