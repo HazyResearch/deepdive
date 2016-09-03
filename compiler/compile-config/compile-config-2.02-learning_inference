@@ -31,7 +31,7 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                 flatten factorgraph/factors > flat/graph.factors
                 flatten factorgraph/weights > flat/graph.weights
                 flatten factorgraph/domains > flat/graph.domains
-                numbskull flat --output_dir weights \($deepdive.sampler.sampler_args // "#")
+                numbskull flat --output_dir weights --threads $DEEPDIVE_NUM_PROCESSES \($deepdive.sampler.sampler_args // "#")
             " else "
                 \($deepdive.sampler.sampler_cmd // "sampler-dw") \\
                     gibbs \\
@@ -72,7 +72,7 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                     flatten factorgraph/factors > flat/graph.factors
                     flatten factorgraph/weights > flat/graph.weights
                     flatten factorgraph/domains > flat/graph.domains
-                    numbskull flat --output_dir weights \($deepdive.sampler.sampler_args // "") -l 0  #
+                    numbskull flat --output_dir weights --threads $DEEPDIVE_NUM_PROCESSES \($deepdive.sampler.sampler_args // "") -l 0  #
                 " else "
                     \($deepdive.sampler.sampler_cmd // "sampler-dw") \\
                         gibbs \\
