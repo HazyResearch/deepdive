@@ -59,7 +59,7 @@ class FactorGraph {
 
   // factors and each factor's variables (with "equal_to" values)
   std::unique_ptr<Factor[]> factors;
-  std::unique_ptr<VariableInFactor[]> vifs;
+  std::unique_ptr<FactorToVariable[]> vifs;
 
   // variables, each variable's values, and index into factor IDs
   // factor_index follows sort order of adjacent <var, val>
@@ -67,7 +67,7 @@ class FactorGraph {
   // construct_index)
   std::unique_ptr<Variable[]> variables;
   std::unique_ptr<size_t[]> factor_index;
-  std::unique_ptr<VariableValue[]> values;
+  std::unique_ptr<VariableToFactor[]> values;
 
   void load_weights(const std::string& filename);
   void load_variables(const std::string& filename);
@@ -83,7 +83,7 @@ class FactorGraph {
     return values[var.var_val_base + idx].value;
   }
 
-  inline const VariableInFactor& get_factor_vif_at(const Factor& factor,
+  inline const FactorToVariable& get_factor_vif_at(const Factor& factor,
                                                    size_t idx) const {
     return vifs[factor.vif_base + idx];
   }
@@ -124,9 +124,9 @@ inline double FactorGraph::potential(const Variable& variable, size_t proposal,
                                      const double weight_values[]) {
   double pot = 0.0;
 
-  VariableValue* const var_value_base = &values[variable.var_val_base];
+  VariableToFactor* const var_value_base = &values[variable.var_val_base];
   size_t offset = variable.var_value_offset(proposal);
-  const VariableValue& var_value = *(var_value_base + offset);
+  const VariableToFactor& var_value = *(var_value_base + offset);
 
   // all adjacent factors in one chunk in factor_index
   for (size_t i = 0; i < var_value.factor_index_length; ++i) {

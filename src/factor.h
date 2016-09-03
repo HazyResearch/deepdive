@@ -57,7 +57,7 @@ class Factor {
    * proposal the proposed value.
    */
   inline double potential(
-      const VariableInFactor vifs[], const size_t assignments[],
+      const FactorToVariable vifs[], const size_t assignments[],
       const size_t vid = Variable::INVALID_ID,
       const size_t proposal = Variable::INVALID_VALUE) const {
 #define RETURN_POTENTIAL_FOR(func_id)                                  \
@@ -91,7 +91,7 @@ class Factor {
   FRIEND_TEST(FactorTest, THREE_VAR_IMPLY);
 
   // whether a variable's value or proposal satisfies the is_equal condition
-  inline bool is_variable_satisfied(const VariableInFactor &vif,
+  inline bool is_variable_satisfied(const FactorToVariable &vif,
                                     const size_t &vid,
                                     const size_t assignments[],
                                     const size_t &proposal) const {
@@ -101,7 +101,7 @@ class Factor {
 
 #define DEFINE_POTENTIAL_SIGN_FOR(func_id)                       \
   inline double POTENTIAL_SIGN(func_id)(                         \
-      const VariableInFactor vifs[], const size_t assignments[], \
+      const FactorToVariable vifs[], const size_t assignments[], \
       const size_t vid, const size_t &proposal) const
 
   /** Return the value of the "equality test" of the variables in the factor,
@@ -110,7 +110,7 @@ class Factor {
    *
    */
   DEFINE_POTENTIAL_SIGN_FOR(FUNC_EQUAL) {
-    const VariableInFactor &vif = vifs[vif_base];
+    const FactorToVariable &vif = vifs[vif_base];
     /* We use the value of the first variable in the factor as the "gold"
      * standard" */
     const bool firstsat =
@@ -118,7 +118,7 @@ class Factor {
 
     /* Iterate over the factor variables */
     for (size_t i_vif = vif_base; i_vif < vif_base + num_vars; ++i_vif) {
-      const VariableInFactor &vif = vifs[i_vif];
+      const FactorToVariable &vif = vifs[i_vif];
       const bool satisfied =
           is_variable_satisfied(vif, vid, assignments, proposal);
       /* Early return as soon as we find a mismatch */
@@ -135,7 +135,7 @@ class Factor {
   DEFINE_POTENTIAL_SIGN_FOR(FUNC_AND) {
     /* Iterate over the factor variables */
     for (size_t i_vif = vif_base; i_vif < vif_base + num_vars; ++i_vif) {
-      const VariableInFactor &vif = vifs[i_vif];
+      const FactorToVariable &vif = vifs[i_vif];
       const bool satisfied =
           is_variable_satisfied(vif, vid, assignments, proposal);
       /* Early return as soon as we find a variable that is not satisfied */
@@ -148,7 +148,7 @@ class Factor {
   DEFINE_POTENTIAL_SIGN_FOR(FUNC_AND_CATEGORICAL) {
     /* Iterate over the factor variables */
     for (size_t i_vif = vif_base; i_vif < vif_base + num_vars; ++i_vif) {
-      const VariableInFactor &vif = vifs[i_vif];
+      const FactorToVariable &vif = vifs[i_vif];
       const bool satisfied =
           is_variable_satisfied(vif, vid, assignments, proposal);
       /* Early return as soon as we find a variable that is not satisfied */
@@ -165,7 +165,7 @@ class Factor {
   DEFINE_POTENTIAL_SIGN_FOR(FUNC_OR) {
     /* Iterate over the factor variables */
     for (size_t i_vif = vif_base; i_vif < vif_base + num_vars; ++i_vif) {
-      const VariableInFactor &vif = vifs[i_vif];
+      const FactorToVariable &vif = vifs[i_vif];
       const bool satisfied =
           is_variable_satisfied(vif, vid, assignments, proposal);
       /* Early return as soon as we find a variable that is satisfied */
@@ -190,7 +190,7 @@ class Factor {
     /* Compute the value of the body of the rule */
     bool bBody = true;
     for (size_t i_vif = vif_base; i_vif < vif_base + num_vars - 1; ++i_vif) {
-      const VariableInFactor &vif = vifs[i_vif];
+      const FactorToVariable &vif = vifs[i_vif];
       // If it is the proposal variable, we use the truth value of the proposal
       bBody &= is_variable_satisfied(vif, vid, assignments, proposal);
     }
@@ -200,7 +200,7 @@ class Factor {
       return 1;
     } else {
       // Compute the value of the head of the rule
-      const VariableInFactor &vif =
+      const FactorToVariable &vif =
           vifs[vif_base + num_vars - 1];  // encoding of the head, should
                                           // be more structured.
       const bool bHead = is_variable_satisfied(vif, vid, assignments, proposal);
@@ -224,7 +224,7 @@ class Factor {
     /* Compute the value of the body of the rule */
     bool bBody = true;
     for (size_t i_vif = vif_base; i_vif < vif_base + num_vars - 1; ++i_vif) {
-      const VariableInFactor &vif = vifs[i_vif];
+      const FactorToVariable &vif = vifs[i_vif];
       // If it is the proposal variable, we use the truth value of the proposal
       bBody &= is_variable_satisfied(vif, vid, assignments, proposal);
     }
@@ -234,7 +234,7 @@ class Factor {
       return 0;
     } else {
       // Compute the value of the head of the rule */
-      const VariableInFactor &vif =
+      const FactorToVariable &vif =
           vifs[vif_base + num_vars - 1];  // encoding of the head, should
                                           // be more structured.
       bool bHead = is_variable_satisfied(vif, vid, assignments, proposal);
@@ -249,7 +249,7 @@ class Factor {
                                        assignments, proposal);
     /* Compute the value of the body of the rule */
     for (size_t i_vif = vif_base; i_vif < vif_base + num_vars - 1; ++i_vif) {
-      const VariableInFactor &vif = vifs[i_vif];
+      const FactorToVariable &vif = vifs[i_vif];
       const bool satisfied =
           is_variable_satisfied(vif, vid, assignments, proposal);
       res += ((1 - satisfied) || bHead);
@@ -267,7 +267,7 @@ class Factor {
                                        assignments, proposal);
     /* Compute the value of the body of the rule */
     for (size_t i_vif = vif_base; i_vif < vif_base + num_vars - 1; ++i_vif) {
-      const VariableInFactor &vif = vifs[i_vif];
+      const FactorToVariable &vif = vifs[i_vif];
       const bool satisfied =
           is_variable_satisfied(vif, vid, assignments, proposal);
       res += ((1 - satisfied) || bHead);
@@ -283,7 +283,7 @@ class Factor {
                                        assignments, proposal);
     /* Compute the value of the body of the rule */
     for (size_t i_vif = vif_base; i_vif < vif_base + num_vars - 1; ++i_vif) {
-      const VariableInFactor &vif = vifs[i_vif];
+      const FactorToVariable &vif = vifs[i_vif];
       const bool satisfied =
           is_variable_satisfied(vif, vid, assignments, proposal);
       res += ((1 - satisfied) || bHead);

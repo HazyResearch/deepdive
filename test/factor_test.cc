@@ -9,7 +9,7 @@
 namespace dd {
 
 TEST(FactorTest, ONE_VAR_FACTORS) {
-  VariableInFactor vifs[1];
+  FactorToVariable vifs[1];
   size_t values[1];
   size_t vid;
   size_t propose;
@@ -60,7 +60,7 @@ TEST(FactorTest, ONE_VAR_FACTORS) {
 }
 
 TEST(FactorTest, TWO_VAR_FACTORS) {
-  VariableInFactor vifs[2];
+  FactorToVariable vifs[2];
   size_t values[2];
   size_t vid;
   size_t propose;
@@ -157,7 +157,7 @@ TEST(FactorTest, TWO_VAR_FACTORS) {
 }
 
 TEST(FactorTest, THREE_VAR_IMPLY) {
-  VariableInFactor vifs[3];
+  FactorToVariable vifs[3];
   size_t values[3];
   size_t vid;
   size_t propose;

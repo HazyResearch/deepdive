@@ -31,8 +31,8 @@ class TempValueFactor {
  */
 class Variable {
  public:
-  // While a categorical var has `cardinality` VariableValue objects,
-  // a boolean var only has one VariableValue object in FactorGraph.values
+  // While a categorical var has `cardinality` VariableToFactor objects,
+  // a boolean var only has one VariableToFactor object in FactorGraph.values
   // and one entry in InferenceResult.sample_tallies.
   // BOOLEAN_DENSE_VALUE is used to index into those arrays.
   static constexpr size_t BOOLEAN_DENSE_VALUE = 0;
@@ -107,7 +107,7 @@ class Variable {
   }
 };
 
-class VariableValue {
+class VariableToFactor {
  public:
   size_t value;
   // base offset into the factor index (FactorGraph.factor_index)
@@ -115,16 +115,16 @@ class VariableValue {
   // number of entries in the factor index
   size_t factor_index_length;
 
-  VariableValue() : VariableValue(Variable::INVALID_ID, -1, 0) {}
+  VariableToFactor() : VariableToFactor(Variable::INVALID_ID, -1, 0) {}
 
-  VariableValue(size_t v, size_t base, size_t len)
+  VariableToFactor(size_t v, size_t base, size_t len)
       : value(v), factor_index_base(base), factor_index_length(len) {}
 };
 
 /**
  * Encapsulates a variable inside a factor
  */
-class VariableInFactor {
+class FactorToVariable {
  public:
   size_t vid;  // variable id
   // dense-form value binding to the var in the factor
@@ -141,9 +141,9 @@ class VariableInFactor {
     return dense_equal_to == dense_value;
   }
 
-  VariableInFactor();
+  FactorToVariable();
 
-  VariableInFactor(size_t vid, size_t dense_equal_to);
+  FactorToVariable(size_t vid, size_t dense_equal_to);
 };
 
 }  // namespace dd

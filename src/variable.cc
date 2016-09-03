@@ -37,10 +37,10 @@ Variable &Variable::operator=(const Variable &other) {
   return *this;
 }
 
-VariableInFactor::VariableInFactor()
-    : VariableInFactor(Variable::INVALID_ID, Variable::INVALID_VALUE) {}
+FactorToVariable::FactorToVariable()
+    : FactorToVariable(Variable::INVALID_ID, Variable::INVALID_VALUE) {}
 
-VariableInFactor::VariableInFactor(size_t vid, size_t dense_equal_to)
+FactorToVariable::FactorToVariable(size_t vid, size_t dense_equal_to)
     : vid(vid), dense_equal_to(dense_equal_to) {}
 
 }  // namespace dd

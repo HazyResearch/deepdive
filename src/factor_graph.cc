@@ -46,10 +46,10 @@ FactorGraph::FactorGraph(const FactorGraphDescriptor &capacity)
       size(),
       weights(new Weight[capacity.num_weights]),
       factors(new Factor[capacity.num_factors]),
-      vifs(new VariableInFactor[capacity.num_edges]),
+      vifs(new FactorToVariable[capacity.num_edges]),
       variables(new Variable[capacity.num_variables]),
       factor_index(new size_t[capacity.num_edges]),
-      values(new VariableValue[capacity.num_values]) {}
+      values(new VariableToFactor[capacity.num_values]) {}
 
 void FactorGraph::construct_index() {
   size_t num_values = 0;
@@ -58,7 +58,7 @@ void FactorGraph::construct_index() {
   }
   size.num_values = capacity.num_values = num_values;
 
-  values.reset(new VariableValue[num_values]);
+  values.reset(new VariableToFactor[num_values]);
 
   size_t factor_index_base = 0, value_index_base = 0;
   std::vector<size_t> value_list;
@@ -71,7 +71,7 @@ void FactorGraph::construct_index() {
 
     if (v.is_boolean()) {
       values[value_index_base] =
-          VariableValue(Variable::BOOLEAN_DENSE_VALUE, 0, 0);
+          VariableToFactor(Variable::BOOLEAN_DENSE_VALUE, 0, 0);
       ++value_index_base;
     } else {
       if (v.domain_map) {
@@ -81,14 +81,14 @@ void FactorGraph::construct_index() {
           value_list.at(item.second) = item.first;
         }
         for (size_t j = 0; j < v.cardinality; ++j) {
-          values[value_index_base] = VariableValue(value_list[j], 0, 0);
+          values[value_index_base] = VariableToFactor(value_list[j], 0, 0);
           ++value_index_base;
         }
         v.domain_map.reset();  // reclaim memory
       } else {
         // implicit [0...(cardinality-1)] domain values
         for (size_t j = 0; j < v.cardinality; ++j) {
-          values[value_index_base] = VariableValue(j, 0, 0);
+          values[value_index_base] = VariableToFactor(j, 0, 0);
           ++value_index_base;
         }
       }
@@ -172,13 +172,13 @@ void FactorGraph::update_weight(const Variable &variable,
                                 InferenceResult &infrs, double stepsize) {
   // Look up the var-value-factor index to find adjacent factors
   // to this var and the evid|free values
-  VariableValue *const var_value_base = &values[variable.var_val_base];
+  VariableToFactor *const var_value_base = &values[variable.var_val_base];
   size_t offset_evid =
       variable.var_value_offset(infrs.assignments_evid[variable.id]);
   size_t offset_free =
       variable.var_value_offset(infrs.assignments_free[variable.id]);
-  const VariableValue &var_value_evid = *(var_value_base + offset_evid);
-  const VariableValue &var_value_free = *(var_value_base + offset_free);
+  const VariableToFactor &var_value_evid = *(var_value_base + offset_evid);
+  const VariableToFactor &var_value_free = *(var_value_base + offset_free);
 
   if (offset_free == offset_evid) {
     // all adjacent factors in one chunk in factor_index

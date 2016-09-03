@@ -118,7 +118,7 @@ void FactorGraph::load_factors(const std::string &filename) {
       // convert original var value into dense value
       size_t dense_val =
           variables[variable_id].get_domain_index(should_equal_to);
-      vifs[size.num_edges] = VariableInFactor(variable_id, dense_val);
+      vifs[size.num_edges] = FactorToVariable(variable_id, dense_val);
       // add to adjacency lists
       if (variables[variable_id].is_boolean()) {
         // normalize boolean var vals to 0 for indexing purpusoes
