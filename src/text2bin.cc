@@ -16,19 +16,18 @@
 namespace dd {
 
 // read variables and convert to binary format
-void text2bin_variables(std::string input_filename,
-                        std::string output_filename) {
+void text2binum_vars(std::string input_filename, std::string output_filename) {
   std::ifstream fin(input_filename);
   std::ofstream fout(output_filename, std::ios::binary);
-  num_variables_t count = 0;
+  size_t count = 0;
   std::string line;
   while (getline(fin, line)) {
     std::istringstream ss(line);
-    variable_id_t vid;
-    int var_role;
-    variable_value_t initial_value;
-    int var_type;
-    num_variable_values_t cardinality;
+    size_t vid;
+    size_t var_role;
+    size_t initial_value;
+    size_t var_type;
+    size_t cardinality;
     assert(ss >> vid);
     assert(ss >> var_role);
     assert(ss >> initial_value);
@@ -50,13 +49,13 @@ void text2bin_variables(std::string input_filename,
 void text2bin_weights(std::string input_filename, std::string output_filename) {
   std::ifstream fin(input_filename);
   std::ofstream fout(output_filename, std::ios::binary);
-  num_weights_t count = 0;
+  size_t count = 0;
   std::string line;
   while (getline(fin, line)) {
     std::istringstream ss(line);
-    weight_id_t wid;
-    int isfixed;
-    weight_value_t initial_value;
+    size_t wid;
+    size_t isfixed;
+    double initial_value;
     assert(ss >> wid);
     assert(ss >> isfixed);
     assert(ss >> initial_value);
@@ -109,105 +108,70 @@ static inline size_t parse_pgarray_or_die(
 
 // load factors
 // wid, vids
-void text2bin_factors(
-    std::string input_filename, std::string output_filename,
-    factor_function_type_t funcid, factor_arity_t arity_expected,
-    const std::vector<variable_value_t> &variables_should_equal_to) {
+void text2bin_factors(std::string input_filename, std::string output_filename,
+                      FACTOR_FUNCTION_TYPE funcid, size_t arity_expected,
+                      const std::vector<size_t> &variables_should_equal_to) {
   std::ifstream fin(input_filename);
   std::ofstream fout(output_filename, std::ios::binary);
-  num_edges_t total_edges = 0;
-  std::vector<variable_id_t> vids;
-  std::vector<variable_value_t> cids_per_wid;
-  std::vector<weight_id_t> wids;
-  std::vector<feature_value_t> feature_values;
+  size_t total_edges = 0;
+  std::vector<size_t> vids;
+  std::vector<size_t> values;
   std::string line;
-  std::string array_piece;
+
   while (getline(fin, line)) {
     std::string field;
     std::istringstream ss(line);
     vids.clear();
-    // factor type
+    values.clear();
+
+    // parse factor type
     uint16_t funcid_serialized = funcid;
-    write_be_or_die(fout, funcid_serialized);
-    // variable ids
-    factor_arity_t arity = 0;
+
+    // parse variable ids
+    size_t arity = 0;
     auto parse_variableid = [&vids, &arity,
                              &total_edges](const std::string &element) {
       vids.push_back(atol(element.c_str()));
       ++total_edges;
       ++arity;
     };
-    for (factor_arity_t i = 0; i < arity_expected; ++i) {
+    for (size_t i = 0; i < arity_expected; ++i) {
       assert(getline(ss, field, text_field_delim));
-      // try parsing as an array first
-      // FIXME remove this?  parsing vid arrays is probably broken since this
-      // doesn't create a cross product of factors but simply widens the arity
-      std::istringstream fieldinput(field);
-      if (parse_pgarray(fieldinput, parse_variableid) == UNDEFINED_COUNT) {
-        // otherwise, parse it as a single variable
-        parse_variableid(field);
+      parse_variableid(field);
+    }
+
+    // parse variable values (categorical only)
+    if (funcid == FUNC_AND_CATEGORICAL) {
+      auto parse_value = [&values](const std::string &element) {
+        values.push_back(atol(element.c_str()));
+      };
+      for (size_t i = 0; i < arity_expected; ++i) {
+        assert(getline(ss, field, text_field_delim));
+        parse_value(field);
       }
     }
+
+    // parse weight id
+    assert(getline(ss, field, text_field_delim));
+    size_t wid = atol(field.c_str());
+
+    // parse feature value
+    assert(getline(ss, field, text_field_delim));
+    double val = atof(field.c_str());
+
+    // write out record
+    write_be_or_die(fout, funcid_serialized);
     write_be_or_die(fout, arity);
-    for (factor_arity_t i = 0; i < vids.size(); ++i) {
+    for (size_t i = 0; i < vids.size(); ++i) {
       write_be_or_die(fout, vids[i]);
-      variable_value_t should_equal_to = variables_should_equal_to.at(i);
+      size_t should_equal_to = variables_should_equal_to.at(i);
+      if (funcid == FUNC_AND_CATEGORICAL) {
+        should_equal_to = values.at(i);
+      }
       write_be_or_die(fout, should_equal_to);
     }
-    // weight ids
-    switch (funcid) {
-      case FUNC_AND_CATEGORICAL: {
-        cids_per_wid.clear();
-        wids.clear();
-        feature_values.clear();
-        // IN  Format: NUM_WEIGHTS [VAR1 VAL ID] [VAR2 VAL ID] ... [WEIGHT ID]
-        // OUT Format: NUM_WEIGHTS [[VAR1_VALi, VAR2_VALi, ..., WEIGHTi]]
-        // 1. the run-length
-        assert(getline(ss, field, text_field_delim));
-        factor_weight_key_t num_weightids = atol(field.c_str());
-        write_be_or_die(fout, num_weightids);
-        // 2. parse var vals for each var
-        for (factor_arity_t i = 0; i < arity; ++i) {
-          assert(getline(ss, array_piece, text_field_delim));
-          std::istringstream ass(array_piece);
-          parse_pgarray_or_die(
-              ass, [&cids_per_wid](const std::string &element) {
-                variable_value_t cid = atoi(element.c_str());
-                cids_per_wid.push_back(cid);
-              }, num_weightids);
-        }
-        // 3. parse weights
-        assert(getline(ss, array_piece, text_field_delim));
-        std::istringstream ass(array_piece);
-        parse_pgarray_or_die(ass, [&wids](const std::string &element) {
-          weight_id_t wid = atol(element.c_str());
-          wids.push_back(wid);
-        }, num_weightids);
-        // 4. parse feature values
-        parse_pgarray_or_die(ss, [&feature_values](const std::string &element) {
-          feature_value_t val = atof(element.c_str());
-          feature_values.push_back(val);
-        }, num_weightids);
-        // 5. transpose into output format
-        for (factor_weight_key_t i = 0; i < num_weightids; ++i) {
-          for (factor_arity_t j = 0; j < arity; ++j) {
-            variable_value_t cid = cids_per_wid[j * num_weightids + i];
-            write_be_or_die(fout, cid);
-          }
-          write_be_or_die(fout, wids[i]);
-          write_be_or_die(fout, feature_values[i]);
-        }
-        break;
-      }
-      default:
-        // a single weight id
-        assert(getline(ss, field, text_field_delim));
-        weight_id_t wid = atol(field.c_str());
-        write_be_or_die(fout, wid);
-        assert(getline(ss, field, text_field_delim));
-        feature_value_t val = atof(field.c_str());
-        write_be_or_die(fout, val);
-    }
+    write_be_or_die(fout, wid);
+    write_be_or_die(fout, val);
   }
   std::cout << total_edges << std::endl;
 }
@@ -219,8 +183,8 @@ void text2bin_domains(std::string input_filename, std::string output_filename) {
   std::string line;
   while (getline(fin, line)) {
     std::istringstream ss(line);
-    variable_id_t vid;
-    num_variable_values_t cardinality;
+    size_t vid;
+    size_t cardinality;
     std::string domain;
     assert(ss >> vid);
     assert(ss >> cardinality);
@@ -230,7 +194,7 @@ void text2bin_domains(std::string input_filename, std::string output_filename) {
     // an array of domain values
     std::istringstream domain_input(domain);
     parse_pgarray_or_die(domain_input, [&fout](const std::string &subfield) {
-      variable_value_t value = atoi(subfield.c_str());
+      size_t value = atol(subfield.c_str());
       write_be_or_die(fout, value);
     }, cardinality);
   }
@@ -239,7 +203,7 @@ void text2bin_domains(std::string input_filename, std::string output_filename) {
 int text2bin(const CmdParser &args) {
   // common arguments
   if (args.text2bin_mode == "variable") {
-    text2bin_variables(args.text2bin_input, args.text2bin_output);
+    text2binum_vars(args.text2bin_input, args.text2bin_output);
   } else if (args.text2bin_mode == "weight") {
     text2bin_weights(args.text2bin_input, args.text2bin_output);
   } else if (args.text2bin_mode == "factor") {

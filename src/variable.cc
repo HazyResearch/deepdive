@@ -2,23 +2,21 @@
 
 namespace dd {
 
-Variable::Variable()
-    : Variable(INVALID_ID, DTYPE_BOOLEAN, false, 2, 0, 0, false) {}
+// To placate linker error "undefined reference"
+// http://stackoverflow.com/questions/8016780/undefined-reference-to-static-constexpr-char
+constexpr size_t Variable::INVALID_ID;
+constexpr size_t Variable::INVALID_VALUE;
 
-Variable::Variable(variable_id_t id, variable_domain_type_t domain_type,
-                   bool is_evidence, num_variable_values_t cardinality,
-                   variable_value_t init_value, variable_value_t current_value,
-                   bool is_observation)
+Variable::Variable() : Variable(INVALID_ID, DTYPE_BOOLEAN, false, 2, 0) {}
+
+Variable::Variable(size_t id, DOMAIN_TYPE domain_type, bool is_evidence,
+                   size_t cardinality, size_t init_value)
     : id(id),
       domain_type(domain_type),
       is_evid(is_evidence),
-      is_observation(is_observation),
       cardinality(cardinality),
-      assignment_evid(init_value),
-      assignment_free(current_value),
-      n_factors(0),
-      n_start_i_factors(-1),
-      n_start_i_tally(-1) {}
+      assignment_dense(init_value),
+      var_val_base(-1) {}
 
 Variable::Variable(const Variable &other) { *this = other; }
 
@@ -26,42 +24,23 @@ Variable &Variable::operator=(const Variable &other) {
   id = other.id;
   domain_type = other.domain_type;
   is_evid = other.is_evid;
-  is_observation = other.is_observation;
   cardinality = other.cardinality;
-  assignment_evid = other.assignment_evid;
-  assignment_free = other.assignment_free;
-  n_factors = other.n_factors;
-  n_start_i_factors = other.n_start_i_factors;
-  n_start_i_tally = other.n_start_i_tally;
-  domain_map.reset(
-      other.domain_map
-          ? new std::unordered_map<variable_value_t, variable_value_index_t>(
-                *other.domain_map)
+  assignment_dense = other.assignment_dense;
+  var_val_base = other.var_val_base;
+  domain_map.reset(other.domain_map ? new std::unordered_map<size_t, size_t>(
+                                          *other.domain_map)
+                                    : nullptr);
+  adjacent_factors.reset(
+      other.adjacent_factors
+          ? new std::vector<TempValueFactor>(*other.adjacent_factors)
           : nullptr);
-  domain_list.reset(other.domain_list
-                        ? new std::vector<variable_value_t>(*other.domain_list)
-                        : nullptr);
   return *this;
 }
 
-RawVariable::RawVariable() : Variable() {}
+FactorToVariable::FactorToVariable()
+    : FactorToVariable(Variable::INVALID_ID, Variable::INVALID_VALUE) {}
 
-RawVariable::RawVariable(variable_id_t id, variable_domain_type_t domain_type,
-                         bool is_evidence, num_variable_values_t cardinality,
-                         variable_value_t init_value,
-                         variable_value_t current_value, bool is_observation)
-    : Variable(id, domain_type, is_evidence, cardinality, init_value,
-               current_value, is_observation) {}
-
-bool VariableInFactor::satisfiedUsing(variable_value_t value) const {
-  return equal_to == value;
-}
-
-VariableInFactor::VariableInFactor()
-    : VariableInFactor(Variable::INVALID_ID, -1, Variable::INVALID_VALUE) {}
-
-VariableInFactor::VariableInFactor(variable_id_t vid, factor_arity_t n_position,
-                                   variable_value_t equal_to)
-    : vid(vid), n_position(n_position), equal_to(equal_to) {}
+FactorToVariable::FactorToVariable(size_t vid, size_t dense_equal_to)
+    : vid(vid), dense_equal_to(dense_equal_to) {}
 
 }  // namespace dd

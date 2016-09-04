@@ -15,7 +15,7 @@ namespace dd {
 // test fixture
 class SamplerTest : public testing::Test {
  protected:
-  std::unique_ptr<CompactFactorGraph> cfg;
+  std::unique_ptr<FactorGraph> cfg;
   std::unique_ptr<InferenceResult> infrs;
   std::unique_ptr<GibbsSamplerThread> sampler;
   std::unique_ptr<CmdParser> cmd_parser;
@@ -41,8 +41,9 @@ class SamplerTest : public testing::Test {
     fg.load_domains(cmd_parser->domain_file);
     fg.load_factors(cmd_parser->factor_file);
     fg.safety_check();
+    fg.construct_index();
 
-    cfg.reset(new CompactFactorGraph(fg));
+    cfg.reset(new FactorGraph(fg));
     infrs.reset(new InferenceResult(*cfg, fg.weights.get(), *cmd_parser));
     sampler.reset(new GibbsSamplerThread(*cfg, *infrs, 0, 1, *cmd_parser));
   }

@@ -119,22 +119,22 @@ FactorGraphDescriptor read_meta(const std::string &meta_file);
 /**
  * Loads weights from the given file into the given factor graph
  */
-num_weights_t read_weights(const std::string &filename, FactorGraph &);
+size_t read_weights(const std::string &filename, FactorGraph &);
 
 /**
  * Loads variables from the given file into the given factor graph
  */
-num_variables_t read_variables(const std::string &filename, FactorGraph &);
+size_t read_variables(const std::string &filename, FactorGraph &);
 
 /**
  * Loads factors from the given file into the given factor graph (original mode)
  */
-num_factors_t read_factors(const std::string &filename, FactorGraph &);
+size_t read_factors(const std::string &filename, FactorGraph &);
 
 /**
  * Loads domains for categorical variables
  */
-num_variables_t read_domains(const std::string &filename, FactorGraph &fg);
+size_t read_domains(const std::string &filename, FactorGraph &fg);
 
 }  // namespace dd
 

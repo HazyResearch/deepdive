@@ -19,7 +19,7 @@ awk <inference_result.out.weights.text '{
         expected=1.05
     }
     if ((weight > expected + eps) || (weight < expected - eps)) {
-        print "weight " id " not around " 2.1
+        print "weight " id " value " weight " not around " expected
         exit(1)
     }
 }'
@@ -31,7 +31,7 @@ awk <inference_result.out.text '{
     eps=0.03
     if (e == 1) {
     if ((prob > expected + eps) || (prob < expected - eps)) {
-        print "var " id " prob not near " 0.89
+        print "var " id " prob " prob " not near " expected
         exit(1)
     }
     }

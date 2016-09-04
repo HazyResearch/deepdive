@@ -29,8 +29,7 @@ TEST(BinaryFormatTest, read_variables) {
   EXPECT_EQ(fg.variables[1].domain_type, DTYPE_BOOLEAN);
   EXPECT_EQ(fg.variables[1].is_evid, true);
   EXPECT_EQ(fg.variables[1].cardinality, 2U);
-  EXPECT_EQ(fg.variables[1].assignment_evid, 1U);
-  EXPECT_EQ(fg.variables[1].assignment_free, 1U);
+  EXPECT_EQ(fg.variables[1].assignment_dense, 1U);
 }
 
 // test read_factors
@@ -42,9 +41,8 @@ TEST(BinaryFormatTest, read_factors) {
   EXPECT_EQ(fg.factors[0].id, 0U);
   EXPECT_EQ(fg.factors[0].weight_id, 0U);
   EXPECT_EQ(fg.factors[0].func_id, FUNC_ISTRUE);
-  EXPECT_EQ(fg.factors[0].n_variables, 1U);
-  EXPECT_EQ(fg.factors[1].tmp_variables.at(0).vid, 1U);
-  EXPECT_EQ(fg.factors[1].tmp_variables.at(0).n_position, 0U);
+  EXPECT_EQ(fg.factors[0].num_vars, 1U);
+  EXPECT_EQ(fg.get_factor_vif_at(fg.factors[1], 0).vid, 1U);
 }
 
 // test read_weights
@@ -59,18 +57,17 @@ TEST(BinaryFormatTest, read_weights) {
 
 // test read domains
 TEST(BinaryFormatTest, read_domains) {
-  num_variables_t num_variables = 3;
-  variable_value_index_t domain_sizes[] = {1, 2, 3};
+  size_t num_variables = 3;
+  size_t domain_sizes[] = {1, 2, 3};
   FactorGraph fg({num_variables, 1, 1, 1});
 
   // add variables
-  for (variable_id_t i = 0; i < num_variables; ++i) {
-    fg.variables[i] =
-        RawVariable(i, DTYPE_BOOLEAN, 0, domain_sizes[i], 0, 0, 0);
+  for (size_t i = 0; i < num_variables; ++i) {
+    fg.variables[i] = Variable(i, DTYPE_BOOLEAN, false, domain_sizes[i], 0);
   }
   fg.load_domains("./test/domains/graph.domains");
 
-  for (variable_id_t i = 0; i < num_variables; ++i) {
+  for (size_t i = 0; i < num_variables; ++i) {
     EXPECT_EQ(fg.variables[i].domain_map->size(), domain_sizes[i]);
   }
 
