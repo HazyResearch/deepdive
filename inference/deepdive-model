@@ -143,7 +143,7 @@ case $Command in
                             weights)
                                 # TODO load into a unique table, then create a view with the following name
                                 weightTableName=dd_graph_weights_reuse
-                                weightsReuseFlag="$DEEPDIVE_APP"/run/model/grounding/factor/weights.reuse
+                                weightsReuseFlag="$DEEPDIVE_APP"/run/model/grounding/weights.reuse
                                 deepdive create table "$weightTableName" "description:TEXT" "weight:DOUBLE PRECISION"
                                 rm -f "$weightsReuseFlag"
                                 # check if the kept weights are compatible
@@ -184,11 +184,11 @@ case $Command in
                 cd "$DEEPDIVE_APP"
                 case $What in
                     factorgraph)
-                        deepdive-mark todo process/grounding/variable_id_partition
+                        deepdive-mark todo process/grounding/variable_assign_id
                         rm -rfv run/model/{grounding,factorgraph{,.done}}
                         ;;
                     weights)
-                        rm -fv run/model/grounding/factor/weights.reuse
+                        rm -fv run/model/grounding/weights.reuse
                         deepdive-mark todo $(deepdive plan 2>&1 | grep '/dump_weights$')
                         ;;
                 esac
