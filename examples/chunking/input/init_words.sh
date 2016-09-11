@@ -3,7 +3,7 @@
 set -eu
 cd "$(dirname "$0")"
 
-if [[ -n ${SUBSAMPLE_NUM_WORDS_TRAIN:-} && -n ${SUBSAMPLE_NUM_WORDS_TEST:-} ]]; then
+if [[ -n ${SUBSAMPLE_NUM_WORDS_TRAIN:-1000} && -n ${SUBSAMPLE_NUM_WORDS_TEST:-1000} ]]; then
     head -n ${SUBSAMPLE_NUM_WORDS_TRAIN} ./train_null_terminated.txt
     head -n ${SUBSAMPLE_NUM_WORDS_TEST}   ./test_null_terminated.txt
 else

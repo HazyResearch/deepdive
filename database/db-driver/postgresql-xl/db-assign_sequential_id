@@ -5,16 +5,15 @@
 ##
 set -euo pipefail
 
+echo "PGXL is not longer supported."
+exit 1
+
 [[ $# -gt 0 ]] || usage "$0" "Missing TABLE"
 [[ $# -gt 1 ]] || usage "$0" "Missing COLUMN"
 [[ $# -gt 2 ]] || usage "$0" "Missing BEGIN_ID"
-Table=$1 Column=$2 BeginId=$3 Increment=${4:-1} OrderBy=${5:-}
+Table=$1 Column=$2 BeginId=$3 Increment=${4:-1}
 
 [[ $Increment -ne 0 ]] || usage "$0" "INCREMENT must be non-zero"
-
-[[ -z $OrderBy ]] ||
-    # Delegate to PostgreSQL's way of assigning sequence when there's an OrderBy
-    exec "$(dirname "$0")"/../postgresql/"$(basename "$0")" "$@"
 
 # Use a PostgreSQL-XL PL/pgSQL UDF to assign IDs fast
 # See: http://www.postgresql.org/docs/9.2/static/sql-createlanguage.html

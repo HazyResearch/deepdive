@@ -11,12 +11,13 @@ set -euo pipefail
 : ${POSTGRES_START_TIME:=4} # seconds
 
 # run a postgres container
+# we need plpython for ID assignment, hence infiniteblue/postgres, not _/postgres
 trap 'docker rm -f "$DOCKER_PGNAME"' EXIT
 set -x
 docker run --detach --name "$DOCKER_PGNAME" \
     --env POSTGRES_USER="$USER" \
     --env POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
-    postgres \
+    infiniteblue/postgres:9.5 \
     #
 
 # wait until postgres starts
@@ -24,7 +25,7 @@ postgres-has-started() {
     docker run --rm --name "$DOCKER_PGNAME.check" \
         --link "$DOCKER_PGNAME" \
         --env PGPASSWORD="$POSTGRES_PASSWORD" \
-        postgres \
+        infiniteblue/postgres:9.5 \
         psql -h "$DOCKER_PGNAME" -U "$USER" -l
 }
 sleep $POSTGRES_START_TIME  # give it some initial time to start
