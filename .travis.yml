@@ -32,7 +32,7 @@ before_install:
 
   # Pull Docker images
   - docker pull $DOCKER_IMAGE_MASTER;
-  - docker pull infiniteblue/postgres:9.5.0;  # we need plpython for ID assignment
+  - docker pull postgres:9.5;  # we need plpython for ID assignment
 
 install:
   # Build using Docker
