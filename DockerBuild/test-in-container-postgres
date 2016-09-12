@@ -25,7 +25,7 @@ postgres-has-started() {
     docker run --rm --name "$DOCKER_PGNAME.check" \
         --link "$DOCKER_PGNAME" \
         --env PGPASSWORD="$POSTGRES_PASSWORD" \
-        infiniteblue/postgres:9.5 \
+        infiniteblue/postgres:9.5.0 \
         psql -h "$DOCKER_PGNAME" -U "$USER" -l
 }
 sleep $POSTGRES_START_TIME  # give it some initial time to start
