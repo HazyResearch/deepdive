@@ -10,7 +10,7 @@ set -euo pipefail
 
 TABLE_CSV=$1 IdColumn=$2 PartColumn=${3:-0}
 
-
+# http://gpdb.docs.pivotal.io/4390/ref_guide/extensions/pl_python.html
 SQL="
     CREATE OR REPLACE FUNCTION seqassign(partid INT, reset BOOL, pids INT[], offsets BIGINT[])
     RETURNS BIGINT AS \$\$
@@ -24,9 +24,8 @@ SQL="
       return x + (partid << 48)
     \$\$ LANGUAGE plpythonu;
 
-    SELECT seqassign(1 << 16, true);
-
-    CREATE TEMP TABLE idstats(pid INT, tname TEXT, gpsid INT, total BIGINT);
+    CREATE TEMP TABLE idstats(pid INT, tname TEXT, gpsid INT, total BIGINT)
+      DISTRIBUTED BY (pid);
 "
 
 
@@ -34,12 +33,14 @@ for table in $(echo $TABLE_CSV | sed "s/,/ /g")
 do
     SQL="$SQL
     INSERT INTO idstats
-      SELECT $PartColumn, '$table', gp_segment_id, COUNT(1)
+      SELECT $PartColumn AS pid, '$table', gp_segment_id, COUNT(1)
       FROM $table
-      GROUP BY $PartColumn, gp_segment_id;"
+      GROUP BY pid, gp_segment_id;"
 done
 
 # http://stackoverflow.com/questions/22841206/calculating-cumulative-sum-in-postgresql
+# Use larger table idstats_distributor to ensure stats are processed by all segments.
+# Assuming 1000 rows cover all segments.
 SQL="$SQL
 CREATE TEMP TABLE idstats_rollup AS
   SELECT pid, gpsid, total, SUM(total) OVER (PARTITION BY pid ORDER BY gpsid) AS cum_total
@@ -48,26 +49,36 @@ CREATE TEMP TABLE idstats_rollup AS
     FROM idstats
     GROUP BY pid, gpsid
     ORDER BY pid, gpsid
-  ) t;
+  ) t
+  DISTRIBUTED BY (pid);
 
 CREATE TEMP TABLE idstats_bases AS
   SELECT
     gpsid,
     ARRAY_AGG(pid ORDER BY pid) as pids,
-    ARRAY_AGG(cum_total - total ORDER BY pid) as offsets
+    ARRAY_AGG((cum_total - total)::BIGINT ORDER BY pid) as offsets
   FROM idstats_rollup
-  GROUP BY gpsid;
+  GROUP BY gpsid
+  DISTRIBUTED RANDOMLY;
 
-SELECT seqassign(NULL, true, pids, offsets)
-  FROM idstats_bases
-  WHERE gpsid = gp_segment_id;
+CREATE TEMP TABLE idstats_distributor as
+  SELECT generate_series(1, 1000) id
+  DISTRIBUTED BY (id);
+
+ANALYZE idstats_bases;
+ANALYZE idstats_distributor;
+
+SELECT seqassign(gpsid, true, pids, offsets)
+  FROM idstats_bases a, idstats_distributor b
+  WHERE a.gpsid = b.gp_segment_id;
 
 "
 
 for table in $(echo $TABLE_CSV | sed "s/,/ /g")
 do
     SQL="$SQL
-    UPDATE $table SET $IdColumn = seqassign($PartColumn, false, NULL, NULL);"
+    UPDATE $table SET $IdColumn = seqassign($PartColumn, false, NULL::INT[], NULL::BIGINT[]);"
 done
+
 
 db-execute "$SQL"
