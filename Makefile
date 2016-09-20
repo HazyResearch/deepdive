@@ -113,10 +113,11 @@ dep:
 	cd tclap-1.2.1;\
 	./configure --prefix=`pwd`/../tclap;\
 	make;\
-	make install
+	make install;\
 	cd ..
 ifeq ($(UNAME), Linux)
 	# libnuma
+	echo "installing libnuma";\
 	cd lib;\
 	tar xf numactl-2.0.11.tar.gz;\
 	cd numactl-2.0.11;\
