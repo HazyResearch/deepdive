@@ -23,8 +23,8 @@ ifndef DEBUG
 CXXFLAGS += -Ofast
 endif
 # using NUMA for Linux
-CXXFLAGS += -I./lib/numactl-2.0.9/
-LDFLAGS += -L./lib/numactl-2.0.9/
+CXXFLAGS += -I./lib/numactl/include
+LDFLAGS += -L./lib/numactl/lib
 LDFLAGS += -Wl,-Bstatic -Wl,-Bdynamic
 LDLIBS += -lnuma -lrt -lpthread
 endif
@@ -113,7 +113,18 @@ dep:
 	cd tclap-1.2.1;\
 	./configure --prefix=`pwd`/../tclap;\
 	make;\
+	make install;\
+	cd ..
+ifeq ($(UNAME), Linux)
+	# libnuma
+	echo "installing libnuma";\
+	cd lib;\
+	tar xf numactl-2.0.11.tar.gz;\
+	cd numactl-2.0.11;\
+	./configure --prefix=`pwd`/../numactl;\
+	make;\
 	make install
+endif
 .PHONY: dep
 
 # how to clean
