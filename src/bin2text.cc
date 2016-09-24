@@ -22,14 +22,14 @@ namespace dd {
 
 void dump_variables(const FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
-  for (variable_id_t i = 0; i < fg.size.num_variables; ++i) {
+  for (size_t i = 0; i < fg.size.num_variables; ++i) {
     Variable &v = fg.variables[i];
     // variable id
     fout << v.id;
     // is_evidence
     fout << text_field_delim << (v.is_evid ? "1" : "0");
     // value
-    fout << text_field_delim << v.assignment_evid;
+    fout << text_field_delim << v.assignment_dense;
     // data type
     std::string type_str;
     switch (v.domain_type) {
@@ -51,19 +51,16 @@ void dump_variables(const FactorGraph &fg, const std::string &filename) {
 
 void dump_domains(const FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
-  for (variable_id_t i = 0; i < fg.size.num_variables; ++i) {
+  for (size_t i = 0; i < fg.size.num_variables; ++i) {
     Variable &v = fg.variables[i];
-    if (v.domain_map) {
+    if (!v.is_boolean()) {
       fout << v.id;
-      fout << text_field_delim << v.domain_map->size();
+      fout << text_field_delim << v.cardinality;
       fout << text_field_delim;
       fout << "{";
-      v.get_domain_value_at(0);  // trigger construction of domain_list
-      variable_value_t j = 0;
-      for (const auto &value : *v.domain_list) {
+      for (size_t j = 0; j < v.cardinality; j++) {
         if (j > 0) fout << ",";
-        fout << value;
-        ++j;
+        fout << fg.get_var_value_at(v, j);
       }
       fout << "}";
       fout << std::endl;
@@ -73,96 +70,36 @@ void dump_domains(const FactorGraph &fg, const std::string &filename) {
 
 void dump_factors(const FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
-  std::vector<variable_value_t> vals;
-  std::vector<weight_id_t> weights;
-  std::vector<feature_value_t> feature_values;
-  std::string element;
-  for (factor_id_t i = 0; i < fg.size.num_factors; ++i) {
+  for (size_t i = 0; i < fg.size.num_factors; ++i) {
     const auto &f = fg.factors[i];
-    // FIXME this output is lossy since it drops the f.func_id and
-    // f.tmp_variables[*].is_positive
-    // variable ids the factor is defined over
-    for (const auto &v : f.tmp_variables) {
-      fout << v.vid;
+
+    // var IDs
+    for (size_t j = 0; j < f.num_vars; ++j) {
+      const auto &vif = fg.get_factor_vif_at(f, j);
+      fout << vif.vid;
       fout << text_field_delim;
     }
-    switch (f.func_id) {
-      case FUNC_AND_CATEGORICAL: {
-        // Format: NUM_WEIGHTS [VAR1 VAL ID] [VAR2 VAL ID] ... [WEIGHT ID]
-        // transpose tuples; sort to ensure consistency
-        vals.clear();
-        weights.clear();
-        feature_values.clear();
-        vals.reserve(f.n_variables * f.factor_params->size());
-        weights.reserve(f.factor_params->size());
-        feature_values.reserve(f.factor_params->size());
-        std::map<factor_weight_key_t, FactorParams> ordered(
-            f.factor_params->begin(), f.factor_params->end());
-        factor_weight_key_t w = 0;
-        for (const auto &item : ordered) {
-          factor_weight_key_t key = item.first;
-          weight_id_t wid = item.second.wid;
-          feature_value_t fval = item.second.feature_value;
-          for (factor_arity_t k = f.n_variables; k > 0;) {
-            --k;  // turning it into a correct index
-            variable_id_t vid = f.tmp_variables.at(k).vid;
-            Variable &var = fg.variables[vid];
-            variable_value_t val_idx = key % var.cardinality;
-            variable_value_t val = var.get_domain_value_at(val_idx);
-            key = key / var.cardinality;
-            vals[w * f.n_variables + k] = val;
-          }
-          weights[w] = wid;
-          feature_values[w] = fval;
-          ++w;
-        }
-        // output num_weights
-        fout << f.factor_params->size();
+
+    // value IDs (for categorical only)
+    if (f.is_categorical()) {
+      for (size_t j = 0; j < f.num_vars; ++j) {
+        const auto &vif = fg.get_factor_vif_at(f, j);
+        fout << fg.get_var_value_at(fg.variables[vif.vid], vif.dense_equal_to);
         fout << text_field_delim;
-        // output values per var
-        for (factor_arity_t k = 0; k < f.n_variables; ++k) {
-          fout << "{";
-          for (factor_weight_key_t j = 0; j < f.factor_params->size(); ++j) {
-            if (j > 0) fout << ",";
-            fout << vals[j * f.n_variables + k];
-          }
-          fout << "}";
-          fout << text_field_delim;
-        }
-        // output weights
-        fout << "{";
-        factor_weight_key_t j = 0;
-        for (weight_id_t wid : weights) {
-          if (j > 0) fout << ",";
-          fout << wid;
-          ++j;
-        }
-        fout << "}";
-        fout << text_field_delim;
-        // output feature values
-        fout << "{";
-        j = 0;
-        for (feature_value_t fval : feature_values) {
-          if (j > 0) fout << ",";
-          fout << fval;
-          ++j;
-        }
-        fout << "}";
-        break;
       }
-      default:
-        // followed by a weight id
-        fout << f.weight_id;
-        fout << text_field_delim;
-        fout << f.feature_value;
     }
+
+    // weight ID and feature value
+    fout << f.weight_id;
+    fout << text_field_delim;
+    fout << f.feature_value;
     fout << std::endl;
   }
 }
 
 void dump_weights(const FactorGraph &fg, const std::string &filename) {
   std::ofstream fout(filename);
-  for (weight_id_t i = 0; i < fg.size.num_weights; ++i) {
+  for (size_t i = 0; i < fg.size.num_weights; ++i) {
     Weight &w = fg.weights[i];
     // weight id
     fout << w.id;

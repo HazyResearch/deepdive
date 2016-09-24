@@ -35,13 +35,6 @@ TODO polish the following
 
 * `factors*.tsv`
     1. vids: one or more depending on the given arity delimited by tabs, e.g., `0	1` for binary factors
-    2. wids
-        * when the factor function id is `FUNC_AND_CATEGORICAL`:
-            2. number of weights, e.g., `3`
-            3. num_vars columns of parallel var value arrays, e.g., `{1,2,3}	{2,3,4}`
-            4. wid array, e.g., `{100,101,102}`
-            5. feature value array, e.g., `{1.2,-4,5.4}`
-        * Otherwise:
-            2. wid, e.g., `100`
-            3. feature value, e.g., `3`
-
+    1b. value ids (present only for FUNC_AND_CATEGORICAL), e.g., `3  6`
+    2. wid, e.g., `100`
+    3. feature value, e.g., `3`

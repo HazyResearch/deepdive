@@ -12,15 +12,15 @@ namespace dd {
  */
 class Weight {
  public:
-  weight_id_t id;         // weight id
-  weight_value_t weight;  // weight value
-  bool isfixed;           // whether the weight is fixed
+  size_t id;      // weight id
+  double weight;  // weight value
+  bool isfixed;   // whether the weight is fixed
 
-  Weight(weight_id_t id, weight_value_t weight, bool isfixed);
+  Weight(size_t id, double weight, bool isfixed);
 
   Weight();
 
-  static constexpr weight_id_t INVALID_ID = (weight_id_t)-1;
+  static constexpr size_t INVALID_ID = (size_t)-1;
 };
 
 }  // namespace dd
