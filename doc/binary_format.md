@@ -39,13 +39,17 @@ This input enumerates all variables present in the factor graph where the follow
                                     //   a number for categorical variables
 
 ## Categorical Variable Domains Binary
-This input enumerates the domain of categorical variables, i.e., the values each variable can take.
+This input enumerates the domain of categorical variables (i.e., the values each variable can take)
+and the truthiness (soft evidence in data programming) for each value.
 The following fields are repeated for each variable.
 
     variableId      uint64_t    8   // the id of the variable this block describes
-    cardinality     uint64_t    8   // cardinality of the variable, which tells how many categoryValues follow
+    cardinality     uint64_t    8   // cardinality of the variable
+    valueReferences                 // references to values (one block per cardinality)
+
+### Value Reference of a Variable
     categoryValue   uint64_t    8   // a value (id) this variable can take
-    ...                             // categoryValue must appear exactly cardinality times
+    truthiness      double      8   // soft evidence weight; range in [0,1]
 
 
 

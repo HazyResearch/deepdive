@@ -9,6 +9,7 @@
 
 #define LOG_2 0.693147180559945
 #define MINUS_LOG_THRESHOLD -18.42
+#define LINEAR_ZERO_THRESHOLD 0.000001
 
 /**
  * To use, make with DEBUG flag turned on.
@@ -57,6 +58,10 @@ enum regularization_t { REG_L1, REG_L2 };
 
 inline bool fast_exact_is_equal(double a, double b) {
   return (a <= b && b <= a);
+}
+
+inline bool is_linear_zero(double x) {
+  return x <= LINEAR_ZERO_THRESHOLD && x >= -LINEAR_ZERO_THRESHOLD;
 }
 
 /**

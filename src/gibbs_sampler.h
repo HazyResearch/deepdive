@@ -75,6 +75,7 @@ class GibbsSamplerThread {
   InferenceResult &infrs;
   bool sample_evidence;
   bool learn_non_evidence;
+  bool is_noise_aware;
 
  public:
   /**
@@ -109,8 +110,12 @@ class GibbsSamplerThread {
    */
   inline void sample_single_variable(size_t vid);
 
-  // sample a single variable
-  inline size_t draw_sample(Variable &variable, const size_t assignments[],
+  // sample an "evidence" variable (parallel Gibbs conditioned on evidence)
+  inline size_t sample_evid(const Variable &variable);
+
+  // sample a single variable (regular Gibbs)
+  inline size_t draw_sample(const Variable &variable,
+                            const size_t assignments[],
                             const double weight_values[]);
 
   /**
@@ -126,33 +131,27 @@ inline void GibbsSamplerThread::sample_sgd_single_variable(size_t vid,
   // f is the factor function, E[] is expectation. Expectation is calculated
   // using a sample of the variable.
 
-  Variable &variable = fg.variables[vid];
+  const Variable &variable = fg.variables[vid];
 
-  size_t proposal = 0;
-
-  // sample the variable with evidence unchanged
-  proposal = variable.is_evid
-                 ? variable.assignment_dense
-                 : draw_sample(variable, infrs.assignments_evid.get(),
-                               infrs.weight_values.get());
-
-  infrs.assignments_evid[variable.id] = proposal;
-
-  // sample the variable regardless of whether it's evidence
-  proposal = draw_sample(variable, infrs.assignments_free.get(),
-                         infrs.weight_values.get());
+  // pick a value for the regular Gibbs chain
+  size_t proposal = draw_sample(variable, infrs.assignments_free.get(),
+                                infrs.weight_values.get());
   infrs.assignments_free[variable.id] = proposal;
 
-  if (!learn_non_evidence && !variable.is_evid) return;
+  // pick a value for the (parallel) evid Gibbs chain
+  infrs.assignments_evid[variable.id] = sample_evid(variable);
 
-  fg.update_weight(variable, infrs, stepsize);
+  if (!learn_non_evidence && !variable.is_evid && !variable.has_truthiness())
+    return;
+
+  fg.sgd_on_variable(variable, infrs, stepsize, is_noise_aware);
 }
 
 inline void GibbsSamplerThread::sample_single_variable(size_t vid) {
   // this function uses the same sampling technique as in
   // sample_sgd_single_variable
 
-  Variable &variable = fg.variables[vid];
+  const Variable &variable = fg.variables[vid];
 
   if (!variable.is_evid || sample_evidence) {
     size_t proposal = draw_sample(variable, infrs.assignments_evid.get(),
@@ -168,7 +167,28 @@ inline void GibbsSamplerThread::sample_single_variable(size_t vid) {
   }
 }
 
-inline size_t GibbsSamplerThread::draw_sample(Variable &variable,
+inline size_t GibbsSamplerThread::sample_evid(const Variable &variable) {
+  if (!is_noise_aware && variable.is_evid) {
+    // direct assignment of hard "evidence"
+    return variable.assignment_dense;
+  } else if (is_noise_aware && variable.has_truthiness()) {
+    // truthiness-weighted sample of soft "evidence" values
+    double r = erand48(p_rand_seed);
+    double sum = 0;
+    for (size_t i = 0; i < variable.cardinality; ++i) {
+      double truthiness = fg.values[variable.var_val_base + i].truthiness;
+      sum += truthiness;
+      if (sum >= r) return i;
+    }
+    return 0;
+  } else {
+    // Gibbs sample on the assignments_evid chain
+    return draw_sample(variable, infrs.assignments_evid.get(),
+                       infrs.weight_values.get());
+  }
+}
+
+inline size_t GibbsSamplerThread::draw_sample(const Variable &variable,
                                               const size_t assignments[],
                                               const double weight_values[]) {
   size_t proposal = 0;

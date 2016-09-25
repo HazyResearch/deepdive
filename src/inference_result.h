@@ -29,8 +29,26 @@ class InferenceResult {
   // array of number of samples for each variable
   std::unique_ptr<size_t[]> agg_nsamples;
 
-  // assignment to variables, see variable.h for more detail
+  // Vanilla / traditional Gibbs chain
+  // NOT used for inference (traditional "Gibbs sampling")
+  // NOT used for inference (traditional "Gibbs sampling")
+  // NOT used for inference (traditional "Gibbs sampling")
+  // GUESS WHAT'S USED INSTEAD? assignments_evid
+  // GIBBS IS WEAK FOR CORRELATIONS / MULTI-VAR FACTORS,
+  // BUT IS THAT THE BEST WAY TO ADDRESS THE WEAKNESS?
   std::unique_ptr<size_t[]> assignments_free;
+
+  // separate Gibbs chain CONDITIONED ON EVIDENCE
+  // used for inference (traditional "Gibbs sampling")
+  // withtout this, test/partial_observation would fail
+  // TODO: HAVING BOTH assignments_free AND assignments_evid
+  // IS VERY VERY CONFUSING AND UNNERVING. WE HAVE TO CLEAN
+  // THEM UP. WE HAVE TO MORE PRECISELY DEFINE "evidence",
+  // "observation", "training data" etc.
+  // THIS IS GETTING PARTICULARLY MESSY AS WE MAKE
+  // LEARNING "NOISE-AWARE".
+  // MAYBE test/partial_observation SHOULD BE CONSIDERED PATHOLOGICAL
+  // AND NOT REPRESENTATIVE OF REAL-WORLD APPLICATIONS.
   std::unique_ptr<size_t[]> assignments_evid;
 
   std::unique_ptr<double[]> weight_values;  // array of weight values

@@ -103,6 +103,9 @@ CmdParser::CmdParser(
     TCLAP::MultiSwitchArg learn_non_evidence_(
         "", "learn_non_evidence", "sample non-evidence variables in learning",
         cmd_);
+    TCLAP::MultiSwitchArg noise_aware_(
+        "", "noise_aware",
+        "learn using noisy/soft evidence instead of hard evidence", cmd_);
 
     cmd_.parse(argc, argv);
 
@@ -160,6 +163,7 @@ CmdParser::CmdParser(
     should_be_quiet = quiet_.getValue() > 0;
     should_sample_evidence = sample_evidence_.getValue() > 0;
     should_learn_non_evidence = learn_non_evidence_.getValue() > 0;
+    is_noise_aware = noise_aware_.getValue() > 0;
 
   } else if (app_name == "text2bin") {
     TCLAP::CmdLine cmd_("DimmWitted text2bin", ' ', DimmWittedVersion);
@@ -260,6 +264,7 @@ std::ostream& operator<<(std::ostream& stream, const CmdParser& args) {
   stream << "# n_threads          : " << args.n_threads << std::endl;
   stream << "# learn_non_evidence : " << args.should_learn_non_evidence
          << std::endl;
+  stream << "# is_noise_aware     : " << args.is_noise_aware << std::endl;
   stream << "################################################" << std::endl;
   return stream;
 }

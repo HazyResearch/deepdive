@@ -16,6 +16,7 @@ Variable::Variable(size_t id, DOMAIN_TYPE domain_type, bool is_evidence,
       is_evid(is_evidence),
       cardinality(cardinality),
       assignment_dense(init_value),
+      total_truthiness(0),
       var_val_base(-1) {}
 
 Variable::Variable(const Variable &other) { *this = other; }
@@ -26,10 +27,12 @@ Variable &Variable::operator=(const Variable &other) {
   is_evid = other.is_evid;
   cardinality = other.cardinality;
   assignment_dense = other.assignment_dense;
+  total_truthiness = other.total_truthiness;
   var_val_base = other.var_val_base;
-  domain_map.reset(other.domain_map ? new std::unordered_map<size_t, size_t>(
-                                          *other.domain_map)
-                                    : nullptr);
+  domain_map.reset(
+      other.domain_map
+          ? new std::unordered_map<size_t, TempVarValue>(*other.domain_map)
+          : nullptr);
   adjacent_factors.reset(
       other.adjacent_factors
           ? new std::vector<TempValueFactor>(*other.adjacent_factors)

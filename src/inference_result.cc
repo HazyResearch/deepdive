@@ -31,7 +31,7 @@ InferenceResult::InferenceResult(const FactorGraph &fg, const Weight weights[],
     const Variable &variable = fg.variables[t];
     assignments_free[variable.id] =
         variable.is_evid ? variable.assignment_dense : 0;
-    assignments_evid[variable.id] = variable.assignment_dense;
+    assignments_evid[variable.id] = assignments_free[variable.id];
   }
 
   clear_variabletally();

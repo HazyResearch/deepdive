@@ -44,7 +44,8 @@ GibbsSamplerThread::GibbsSamplerThread(FactorGraph &fg, InferenceResult &infrs,
       fg(fg),
       infrs(infrs),
       sample_evidence(opts.should_sample_evidence),
-      learn_non_evidence(opts.should_learn_non_evidence) {
+      learn_non_evidence(opts.should_learn_non_evidence),
+      is_noise_aware(opts.is_noise_aware) {
   set_random_seed(rand(), rand(), rand());
   size_t nvar = fg.size.num_variables;
   // calculates the start and end id in this partition
@@ -62,12 +63,15 @@ void GibbsSamplerThread::set_random_seed(unsigned short seed0,
 }
 
 void GibbsSamplerThread::sample() {
-  for (size_t vid = start; vid < end; ++vid) sample_single_variable(vid);
+  for (size_t vid = start; vid < end; ++vid) {
+    sample_single_variable(vid);
+  }
 }
 
 void GibbsSamplerThread::sample_sgd(double stepsize) {
-  for (size_t vid = start; vid < end; ++vid)
+  for (size_t vid = start; vid < end; ++vid) {
     sample_sgd_single_variable(vid, stepsize);
+  }
 }
 
 }  // namespace dd

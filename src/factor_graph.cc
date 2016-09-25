@@ -62,33 +62,42 @@ void FactorGraph::construct_index() {
 
   size_t factor_index_base = 0, value_index_base = 0;
   std::vector<size_t> value_list;
+  std::vector<double> truthiness_list;
 
   // For each variable, sort and uniq adjacent factors by value.
   // We deallocate "domain_map" and "adjacent_factors".
   for (size_t i = 0; i < size.num_variables; ++i) {
     Variable &v = variables[i];
     v.var_val_base = value_index_base;
+    v.total_truthiness = 0;
 
     if (v.is_boolean()) {
+      // NOTE: we don't support truthiness for boolean vars
       values[value_index_base] =
-          VariableToFactor(Variable::BOOLEAN_DENSE_VALUE, 0, 0);
+          VariableToFactor(Variable::BOOLEAN_DENSE_VALUE, 0, 0, 0);
       ++value_index_base;
     } else {
       if (v.domain_map) {
         // explicitly listed domain values; recover the list from map.
         value_list.assign(v.cardinality, Variable::INVALID_VALUE);
+        truthiness_list.assign(v.cardinality, 0);
         for (const auto &item : *v.domain_map) {
-          value_list.at(item.second) = item.first;
+          value_list.at(item.second.index) = item.first;
+          truthiness_list.at(item.second.index) = item.second.truthiness;
+          v.total_truthiness += item.second.truthiness;
         }
         for (size_t j = 0; j < v.cardinality; ++j) {
-          values[value_index_base] = VariableToFactor(value_list[j], 0, 0);
+          values[value_index_base] =
+              VariableToFactor(value_list[j], truthiness_list[j], 0, 0);
           ++value_index_base;
         }
         v.domain_map.reset();  // reclaim memory
       } else {
         // implicit [0...(cardinality-1)] domain values
+        // TODO: this branch should be deprecated; i.e., require domains for all
+        // categorical vars
         for (size_t j = 0; j < v.cardinality; ++j) {
-          values[value_index_base] = VariableToFactor(j, 0, 0);
+          values[value_index_base] = VariableToFactor(j, 0, 0, 0);
           ++value_index_base;
         }
       }
@@ -152,6 +161,7 @@ FactorGraph::FactorGraph(const FactorGraph &other)
 
 // Inline by defined here; accessible only from current file.
 inline void FactorGraph::sgd_on_factor(size_t factor_id, double stepsize,
+                                       size_t vid, size_t evidence_value,
                                        InferenceResult &infrs) {
   const Factor &factor = factors[factor_id];
   if (infrs.weights_isfixed[factor.weight_id]) {
@@ -162,62 +172,64 @@ inline void FactorGraph::sgd_on_factor(size_t factor_id, double stepsize,
   // gradient of weight = E[f] - E[f|D], where D is evidence variables,
   // f is the factor function, E[] is expectation. Expectation is
   // calculated using a sample of the variable.
-  double pot_evid = factor.potential(vifs.get(), infrs.assignments_evid.get());
+  double pot_evid = factor.potential(vifs.get(), infrs.assignments_evid.get(),
+                                     vid, evidence_value);
   double pot_free = factor.potential(vifs.get(), infrs.assignments_free.get());
   double gradient = pot_free - pot_evid;
   infrs.update_weight(factor.weight_id, stepsize, gradient);
 }
 
-void FactorGraph::update_weight(const Variable &variable,
-                                InferenceResult &infrs, double stepsize) {
-  // Look up the var-value-factor index to find adjacent factors
-  // to this var and the evid|free values
-  VariableToFactor *const var_value_base = &values[variable.var_val_base];
-  size_t offset_evid =
-      variable.var_value_offset(infrs.assignments_evid[variable.id]);
-  size_t offset_free =
-      variable.var_value_offset(infrs.assignments_free[variable.id]);
-  const VariableToFactor &var_value_evid = *(var_value_base + offset_evid);
-  const VariableToFactor &var_value_free = *(var_value_base + offset_free);
-
-  if (offset_free == offset_evid) {
-    // all adjacent factors in one chunk in factor_index
-    for (size_t i = 0; i < var_value_evid.factor_index_length; ++i) {
-      size_t factor_id = factor_index[var_value_evid.factor_index_base + i];
-      sgd_on_factor(factor_id, stepsize, infrs);
+void FactorGraph::sgd_on_variable(const Variable &variable,
+                                  InferenceResult &infrs, double stepsize,
+                                  bool is_noise_aware) {
+  if (variable.is_boolean()) {
+    // boolean: for each factor {learn}
+    // NOTE: boolean vars do not support truthiness / noise-aware learning
+    const VariableToFactor &vv = values[variable.var_val_base];
+    for (size_t j = 0; j < vv.factor_index_length; ++j) {
+      size_t factor_id = factor_index[vv.factor_index_base + j];
+      sgd_on_factor(factor_id, stepsize, variable.id, variable.assignment_dense,
+                    infrs);
     }
   } else {
-    // adjacent factors appear in two chunks. merge and dedupe them.
-    size_t factor_id, last_factor_id = Factor::INVALID_ID;
-    size_t i = 0, j = 0;
-    while (i < var_value_evid.factor_index_length &&
-           j < var_value_free.factor_index_length) {
-      factor_id = factor_index[var_value_evid.factor_index_base + i];
-      if (factor_id > factor_index[var_value_free.factor_index_base + j]) {
-        factor_id = factor_index[var_value_free.factor_index_base + j];
-        ++j;
-      } else {
-        ++i;
+    // categorical: for each evidence value { for each factor {learn} }
+    size_t proposal = infrs.assignments_free[variable.id];
+    for (size_t val = 0; val < variable.internal_cardinality(); ++val) {
+      // skip non-evidence values
+      if (!is_noise_aware && val != variable.assignment_dense) continue;
+
+      const VariableToFactor &ev = values[variable.var_val_base + val];
+      if (is_noise_aware && is_linear_zero(ev.truthiness)) continue;
+
+      double truthiness = is_noise_aware ? ev.truthiness : 1;
+
+      // run SGD on all factors "activated" by this evidence value
+      for (size_t j = 0; j < ev.factor_index_length; ++j) {
+        size_t factor_id = factor_index[ev.factor_index_base + j];
+        sgd_on_factor(factor_id, stepsize * truthiness, variable.id, val,
+                      infrs);
       }
-      if (factor_id != last_factor_id) {
-        sgd_on_factor(factor_id, stepsize, infrs);
-        last_factor_id = factor_id;
+
+      // run SGD on all factors "activated" by proposal value
+      // NOTE: Current ddlog inference rule syntax implies that this list
+      //       of factors would overlap the above list only if the factor
+      //       connects tuple [var=val] and tuple [var=proposal], which sensible
+      //       ddlog inference rules would never generate.
+      //       Hence we assume that there is no overlap.
+      //       This may change in the future as we introduce fancier factor
+      //       types.
+
+      // skip if we have just processed the same list of factors
+      // NOTE: not skipping before the first loop because ... assignments_evid!
+      if (val == proposal) continue;
+
+      const VariableToFactor &pv = values[variable.var_val_base + proposal];
+      for (size_t j = 0; j < pv.factor_index_length; ++j) {
+        size_t factor_id = factor_index[pv.factor_index_base + j];
+        sgd_on_factor(factor_id, stepsize * truthiness, variable.id, val,
+                      infrs);
       }
-    }
-    while (i < var_value_evid.factor_index_length) {
-      factor_id = factor_index[var_value_evid.factor_index_base + i];
-      if (factor_id != last_factor_id) {
-        sgd_on_factor(factor_id, stepsize, infrs);
-      }
-      ++i;
-    }
-    while (j < var_value_free.factor_index_length) {
-      factor_id = factor_index[var_value_free.factor_index_base + j];
-      if (factor_id != last_factor_id) {
-        sgd_on_factor(factor_id, stepsize, infrs);
-      }
-      ++j;
-    }
+    }  // end for
   }
 }
 

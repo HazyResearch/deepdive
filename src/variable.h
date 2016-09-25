@@ -26,6 +26,12 @@ class TempValueFactor {
   }
 };
 
+// Used as value in Variable.domain_map
+typedef struct {
+  size_t index;
+  double truthiness;
+} TempVarValue;
+
 /**
  * A variable in the factor graph.
  */
@@ -50,6 +56,9 @@ class Variable {
   // - Categorical: [0..cardinality)
   size_t assignment_dense;
 
+  // Sum of all values' truthiness
+  double total_truthiness;
+
   // We concatenate the list of "possible values" for each variable to form
   // FactorGraph.values (also InferenceResults.sample_tallies).
   // - For boolean, there is just one value, namely BOOLEAN_DENSE_VALUE
@@ -63,7 +72,7 @@ class Variable {
   // Map from value to index in the domain vector.
   // Populated at load time (FactorGraph.load_domains).
   // Deallocated in FactorGraph.construct_index.
-  std::unique_ptr<std::unordered_map<size_t, size_t>> domain_map;
+  std::unique_ptr<std::unordered_map<size_t, TempVarValue>> domain_map;
 
   // Backrefs to factors (including factor's "equal_to" value).
   // Populated at load time (FactorGraph.load_factors).
@@ -93,6 +102,10 @@ class Variable {
 
   inline bool is_boolean() const { return domain_type == DTYPE_BOOLEAN; }
 
+  inline bool has_truthiness() const {
+    return !is_linear_zero(total_truthiness);
+  }
+
   inline size_t internal_cardinality() const {
     return is_boolean() ? 1 : cardinality;
   }
@@ -103,22 +116,29 @@ class Variable {
 
   // get the index of the value
   inline size_t get_domain_index(size_t v) const {
-    return domain_map ? domain_map->at(v) : v;
+    return domain_map ? domain_map->at(v).index : v;
   }
 };
 
 class VariableToFactor {
  public:
+  // original (sparse) value as assigned by DD grounding
   size_t value;
+  // soft evidence weight. range: [0, 1].
+  // NOTE: for categorical only
+  double truthiness;
   // base offset into the factor index (FactorGraph.factor_index)
   size_t factor_index_base;
   // number of entries in the factor index
   size_t factor_index_length;
 
-  VariableToFactor() : VariableToFactor(Variable::INVALID_ID, -1, 0) {}
+  VariableToFactor() : VariableToFactor(Variable::INVALID_ID, 0, -1, 0) {}
 
-  VariableToFactor(size_t v, size_t base, size_t len)
-      : value(v), factor_index_base(base), factor_index_length(len) {}
+  VariableToFactor(size_t v, double t, size_t base, size_t len)
+      : value(v),
+        truthiness(t),
+        factor_index_base(base),
+        factor_index_length(len) {}
 };
 
 /**

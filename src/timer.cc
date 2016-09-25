@@ -9,7 +9,11 @@ int clock_gettime(int /*clk_id*/, struct timespec *t) {
   t->tv_nsec = now.tv_usec * 1000;
   return 0;
 }
+
+#ifndef CLOCK_MONOTONIC
 #define CLOCK_MONOTONIC 0
+#endif
+
 #endif
 
 namespace dd {
