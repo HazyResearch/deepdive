@@ -5,12 +5,12 @@ set -eu
 # variables,
 # 1 weight, 18 factors, and 18 edges.
 # Variables of id 0-8 are soft evidence;
-# truthiness total: 2.0 positve, 0.5 negative
+# truthiness total: 7.2 positve, 1.8 negative
 
 # check results
 
 # all weights should be around +/-0.7
-# e ^ 0.7 / e ^ -0.7 = 2.0 / 0.5
+# e ^ 0.7 / e ^ -0.7 = 7.2 / 1.8
 awk <inference_result.out.weights.text '{
     wid=$1; weight=$2;
     eps=0.1

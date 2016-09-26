@@ -1,1 +1,1 @@
--l 2000 -i 2000 --alpha 0.1 --diminish 0.995 --sample_evidence --reg_param 0 --noise_aware
+-l 2000 -i 2000 --alpha 0.01 --diminish 0.995 --sample_evidence --reg_param 0 --noise_aware
