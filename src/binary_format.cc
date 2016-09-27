@@ -141,6 +141,9 @@ void FactorGraph::load_factors(const std::string &filename) {
 
 void FactorGraph::load_domains(const std::string &filename) {
   std::ifstream file(filename, std::ios::binary);
+
+  size_t value;
+  double truthiness;
   while (file && file.peek() != EOF) {
     // read field to find which categorical variable this block is for
     size_t vid;
@@ -149,21 +152,18 @@ void FactorGraph::load_domains(const std::string &filename) {
     // read all category values for this variables
     size_t domain_size;
     read_be_or_die(file, domain_size);
+
+    assert(!variable.is_boolean());
     assert(variable.cardinality == domain_size);
-    std::vector<size_t> domain_list(domain_size);
-    variable.domain_map.reset(new std::unordered_map<size_t, size_t>());
+
+    variable.domain_map.reset(new std::unordered_map<size_t, TempVarValue>());
     for (size_t i = 0; i < domain_size; ++i) {
-      size_t value;
       read_be_or_die(file, value);
-      domain_list[i] = value;
+      read_be_or_die(file, truthiness);
+      assert(truthiness >= 0 && truthiness <= 1);
+      (*variable.domain_map)[value] = {i, truthiness};
     }
 
-    // populate the mapping from value to index
-    std::sort(domain_list.begin(), domain_list.end());
-
-    for (size_t i = 0; i < domain_size; ++i) {
-      (*variable.domain_map)[domain_list[i]] = i;
-    }
     // convert original var value into dense value
     if (variable.assignment_dense) {
       variable.assignment_dense =

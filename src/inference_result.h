@@ -29,8 +29,10 @@ class InferenceResult {
   // array of number of samples for each variable
   std::unique_ptr<size_t[]> agg_nsamples;
 
-  // assignment to variables, see variable.h for more detail
+  // vanilla / traditional Gibbs chain
   std::unique_ptr<size_t[]> assignments_free;
+
+  // separate Gibbs chain CONDITIONED ON EVIDENCE
   std::unique_ptr<size_t[]> assignments_evid;
 
   std::unique_ptr<double[]> weight_values;  // array of weight values

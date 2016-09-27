@@ -50,18 +50,18 @@ class FactorGraphTest : public testing::Test {
   }
 };
 
-// test update_weight function
-TEST_F(FactorGraphTest, update_weight) {
+// test sgd_on_variable function
+TEST_F(FactorGraphTest, sgd_on_variable) {
   infrs->assignments_free[cfg->variables[0].id] = 0;
 
-  cfg->update_weight(cfg->variables[0], *infrs, 0.1);
+  cfg->sgd_on_variable(cfg->variables[0], *infrs, 0.1, false);
   std::cout << "The weight value is: " << infrs->weight_values[0] << std::endl;
   EXPECT_EQ(infrs->weight_values[0], 0.2);
 
-  cfg->update_weight(cfg->variables[10], *infrs, 0.1);
+  cfg->sgd_on_variable(cfg->variables[10], *infrs, 0.1, false);
   EXPECT_EQ(infrs->weight_values[0], 0.2);
 
-  cfg->update_weight(cfg->variables[10], *infrs, 0.1);
+  cfg->sgd_on_variable(cfg->variables[10], *infrs, 0.1, false);
   EXPECT_EQ(infrs->weight_values[0], 0.2);
 }
 

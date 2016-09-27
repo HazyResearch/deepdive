@@ -1,1 +1,1 @@
--l 500 -i 500 --alpha 0.1 --learn_non_evidence --reg_param 0
+-l 500 -i 500 --alpha 0.1 --reg_param 0

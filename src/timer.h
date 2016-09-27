@@ -14,7 +14,10 @@
 // clock_gettime is not implemented on OSX
 int clock_gettime(int /*clk_id*/, struct timespec *t);
 
+#ifndef CLOCK_MONOTONIC
 #define CLOCK_MONOTONIC 0
+#endif
+
 #endif
 
 #include <time.h>

@@ -181,22 +181,47 @@ void text2bin_domains(std::string input_filename, std::string output_filename) {
   std::ifstream fin(input_filename);
   std::ofstream fout(output_filename, std::ios::binary);
   std::string line;
+  std::vector<size_t> value_list;
+  std::vector<double> truthiness_list;
   while (getline(fin, line)) {
     std::istringstream ss(line);
     size_t vid;
     size_t cardinality;
-    std::string domain;
+    std::string domain_string, truthy_string;
     assert(ss >> vid);
     assert(ss >> cardinality);
-    assert(ss >> domain);
+    assert(ss >> domain_string);
+    assert(ss >> truthy_string);
+
+    value_list.reserve(cardinality);
+    truthiness_list.reserve(cardinality);
+
+    // an array of domain values
+    std::istringstream domain_input(domain_string);
+    size_t i = 0;
+    parse_pgarray_or_die(
+        domain_input, [&i, &value_list](const std::string &subfield) {
+          size_t value = atol(subfield.c_str());
+          value_list[i] = value;
+          ++i;
+        }, cardinality);
+
+    // an array of truthiness
+    std::istringstream truthy_input(truthy_string);
+    i = 0;
+    parse_pgarray_or_die(
+        truthy_input, [&i, &truthiness_list](const std::string &subfield) {
+          double truthiness = atof(subfield.c_str());
+          truthiness_list[i] = truthiness;
+          ++i;
+        }, cardinality);
+
     write_be_or_die(fout, vid);
     write_be_or_die(fout, cardinality);
-    // an array of domain values
-    std::istringstream domain_input(domain);
-    parse_pgarray_or_die(domain_input, [&fout](const std::string &subfield) {
-      size_t value = atol(subfield.c_str());
-      write_be_or_die(fout, value);
-    }, cardinality);
+    for (i = 0; i < cardinality; ++i) {
+      write_be_or_die(fout, value_list[i]);
+      write_be_or_die(fout, truthiness_list[i]);
+    }
   }
 }
 

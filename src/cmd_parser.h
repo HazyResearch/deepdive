@@ -52,6 +52,10 @@ class CmdParser {
   bool should_sample_evidence;
   bool should_learn_non_evidence;
 
+  // when on, train with VariableToFactor.truthiness instead of
+  // Variable.assignment_dense
+  bool is_noise_aware;
+
   // text2bin specific members
   std::string text2bin_mode;
   std::string text2bin_input;

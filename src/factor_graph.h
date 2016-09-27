@@ -103,12 +103,12 @@ class FactorGraph {
    * Used in learning phase, after sampling one variable,
    * update corresponding weights (stochastic gradient descent).
    */
-  void update_weight(const Variable& variable, InferenceResult& infrs,
-                     double stepsize);
+  void sgd_on_variable(const Variable& variable, InferenceResult& infrs,
+                       double stepsize, bool is_noise_aware);
 
   // perform SGD step for weight learning on one factor
-  inline void sgd_on_factor(size_t factor_id, double stepsize,
-                            InferenceResult& infrs);
+  inline void sgd_on_factor(size_t factor_id, double stepsize, size_t vid,
+                            size_t evidence_value, InferenceResult& infrs);
 
   /**
    * Returns log-linear weighted potential of the all factors for the given

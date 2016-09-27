@@ -37,7 +37,7 @@ ifndef DEBUG
 CXXFLAGS += -O3
 endif
 # optimization
-CXXFLAGS += -stdlib=libc++ -mmacosx-version-min=10.7
+CXXFLAGS += -stdlib=libc++
 CXXFLAGS += -flto
 endif
 

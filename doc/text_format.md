@@ -20,11 +20,12 @@ TODO polish the following
     4. variable type (`0` for Boolean, `1` for categorical)
     5. cardinality
 
-## Domains TSV
+## Categorical Domains TSV
 * `domains*.tsv`
     1. vid, e.g., `0`
-    2. cardinality, e.g., `3`.
-    3. array of domain values, e.g., `{2,4,8}`.
+    2. cardinality, e.g., `3`
+    3. array of domain values, e.g., `{2,4,8}`
+    4. array of truthiness values, e.g., `{0.1,0,0.9}`
 
 
 ## Factors TSV
