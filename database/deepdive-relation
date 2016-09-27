@@ -70,8 +70,9 @@ case $Mode in
             else
                 if .variable_type then
                     .columns
-                    # variable relations have implied label column
+                    # variable relations have implied internal columns
                     + { dd_label: { type: "BOOLEAN", index: (.columns|length+1) } }
+                    + { dd_truthiness: { type: "FLOAT", index: (.columns|length+1) } }
                 else
                     .columns
                 end |
