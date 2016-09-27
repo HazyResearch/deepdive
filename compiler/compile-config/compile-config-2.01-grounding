@@ -183,6 +183,7 @@ def factorWeightDescriptionSqlExpr:
         mkdir -p \"$varPath\"
         cd \"$varPath\"
         find . -name 'variables.\(.pid).part-*.bin.bz2' -exec rm -rf {} +
+        find . -name 'nvars.\(.pid).part-*' -exec rm -rf {} +
         export DEEPDIVE_LOAD_FORMAT=tsv
         export DEEPDIVE_UNLOAD_MATERIALIZED=false
 
@@ -544,6 +545,7 @@ def factorWeightDescriptionSqlExpr:
             mkdir -p \"$facPath\"
             cd \"$facPath\"
             find . \\( -name  'weights.part-*.bin.bz2' \\
+                    -o -name  'nweights.part-*'        \\
                    \\) -exec rm -rf {} +
             export DEEPDIVE_LOAD_FORMAT=tsv
             export DEEPDIVE_UNLOAD_MATERIALIZED=false
