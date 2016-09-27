@@ -13,10 +13,11 @@ sql: """
 SELECT R0.sent_id AS column_0
      , R0.word_id AS column_1
      , R1.tag AS column_2
-     ,
+     , 
 CASE WHEN R1.tag = R0.tag THEN true
      ELSE NULL
 END AS column_3
+     , 1.0 AS column_4
 FROM words R0
    , tags R1
 """
@@ -37,7 +38,7 @@ SELECT R0.sent_id AS column_0
      , R0.word AS column_2
      , R0.pos AS column_3
      , R0.true_tag AS column_4
-     ,
+     , 
 CASE WHEN R0.true_tag = 'B-UCP' THEN NULL
      WHEN R0.true_tag = 'I-UCP' THEN NULL
      WHEN strpos(R0.true_tag, '-') > 0 THEN split_part(R0.true_tag, '-', 2)
@@ -119,7 +120,7 @@ function: """AndCategorical(chunk.R0.dd_label)"""
 deepdive.inference.factors.linear_chain {
 weight: """?(dd_weight_column_0, dd_weight_column_1)"""
 non_category_weight_cols: [
-
+  
 ]
 input_query: """
 SELECT dd_id_0.dd_id AS "chunk.R0.dd_id"
@@ -166,7 +167,7 @@ function: """AndCategorical(chunk.R0.dd_label, chunk.R1.dd_label)"""
 deepdive.inference.factors.phony_rule {
 weight: """?(dd_weight_column_0, dd_weight_column_1)"""
 non_category_weight_cols: [
-
+  
 ]
 input_query: """
 SELECT dd_id_0.dd_id AS "chunk.R0.dd_id"

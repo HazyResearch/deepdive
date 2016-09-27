@@ -164,6 +164,7 @@ case class FunctionCallRule(output: String,
                            ) extends RuleWithConjunctiveQuery
 case class SupervisionRule(headName: String,
                            supervision: Expr,
+                           truthiness: Option[Expr],
                            q: ConjunctiveQuery,
                            annotations: List[Annotation] = List.empty
                           ) extends RuleWithConjunctiveQuery
@@ -402,9 +403,9 @@ class DeepDiveLogParser extends JavaTokenParsers {
           InferenceRule(head = head, q = cq)
       }
     | // supervision rule with equal sign
-      relationName ~ conjunctiveQueryHeadTerms ~ ("=" ~> expr) ~ conjunctiveQueryBody() ^^ {
-        case h ~ ts ~ sup ~ cq =>
-          SupervisionRule(headName = h, supervision = sup, q = cq.copy(headTerms = ts))
+      relationName ~ conjunctiveQueryHeadTerms ~ ("=" ~> expr) ~ opt("@" ~> expr) ~ conjunctiveQueryBody() ^^ {
+        case h ~ ts ~ sup ~ truthy ~ cq =>
+          SupervisionRule(headName = h, supervision = sup, truthiness = truthy, q = cq.copy(headTerms = ts))
       }
     | // function call with += sign between head and function call
       relationName ~ ("+=" ~> functionName) ~ conjunctiveQuery ^^ {
@@ -481,7 +482,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
       anno => (anno named "label") && (anno.exprs.size == 1)
     } =>
       val labelExpr = (rule.annotations find (_ named "label") flatMap (_ expr) get)
-      SupervisionRule(headName = rule.headName, supervision = labelExpr, q = rule.q,
+      SupervisionRule(headName = rule.headName, supervision = labelExpr, truthiness = None, q = rule.q,
         annotations = rule.annotations filterNot (_ named "label"))
 
     case rule: ExtractionRule => rule

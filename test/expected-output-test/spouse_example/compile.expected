@@ -80,6 +80,7 @@ deepdive.extraction.extractors.ext_has_spouse {
 sql: """
 SELECT R0.relation_id AS column_0
      , R0.is_true AS column_1
+     , 1.0 AS column_2
 FROM has_spouse_candidates R0
 """
 input_relations: [

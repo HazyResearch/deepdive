@@ -466,9 +466,9 @@ class QueryCompiler(cq : ConjunctiveQuery, hackFrom: List[String] = Nil, hackWhe
 
     compileExtractorBlock(stmt, stmts, stmt.headName,
       stmts map { case stmt => stmt.q.copy(
-        headTerms = stmt.q.headTerms :+ stmt.supervision,
+        headTerms = stmt.q.headTerms :+ stmt.supervision :+ (stmt.truthiness.getOrElse(DoubleConst(1))),
         headTermAliases = {
-          stmt.q.headTermAliases orElse { Some(stmt.q.headTerms map (_ => None)) } map { _ :+ Some(deepdiveVariableLabelColumn) }
+          stmt.q.headTermAliases orElse { Some(stmt.q.headTerms map (_ => None)) } map { _ ::: List(Some(deepdiveVariableLabelColumn), Some(deepdiveVariableLabelTruthinessColumn)) }
         },
         isDistinct = false // XXX no need to take DISTINCT here since DeepDive will have to do it anyway
       ) }
@@ -684,6 +684,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   val deepdiveWeightColumnPrefix = "dd_weight_column_"
   val deepdiveVariableIdColumn = "dd_id"
   val deepdiveVariableLabelColumn = "dd_label"
+  val deepdiveVariableLabelTruthinessColumn = "dd_truthiness"
   val deepdivePrefixForVariablesIdsTable = "dd_variables_"
 
   // entry point for compilation

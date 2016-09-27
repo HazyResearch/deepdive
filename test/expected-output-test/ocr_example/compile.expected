@@ -10,6 +10,7 @@ deepdive.extraction.extractors.ext_q1 {
 sql: """
 SELECT R0.wid AS column_0
      , R0.val AS column_1
+     , 1.0 AS column_2
 FROM label1 R0
 """
 input_relations: [
@@ -25,6 +26,7 @@ deepdive.extraction.extractors.ext_q2 {
 sql: """
 SELECT R0.wid AS column_0
      , R0.val AS column_1
+     , 1.0 AS column_2
 FROM label2 R0
 """
 input_relations: [
