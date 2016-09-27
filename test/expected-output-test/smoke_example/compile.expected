@@ -10,6 +10,7 @@ deepdive.extraction.extractors.ext_smoke {
 sql: """
 SELECT R0.person_id AS column_0
      , R0.smokes AS column_1
+     , 1.0 AS column_2
 FROM person_smokes R0
 """
 input_relations: [
@@ -25,6 +26,7 @@ deepdive.extraction.extractors.ext_cancer {
 sql: """
 SELECT R0.person_id AS column_0
      , R0.has_cancer AS column_1
+     , 1.0 AS column_2
 FROM person_has_cancer R0
 """
 input_relations: [
@@ -39,7 +41,7 @@ materialize: false
 deepdive.inference.factors.inf_imply_smoke_cancer {
 weight: """0.5"""
 non_category_weight_cols: [
-
+  
 ]
 input_query: """
 SELECT dd_id_0.dd_id AS "smoke.R0.dd_id"
@@ -69,7 +71,7 @@ function: """Imply(smoke.R0.dd_label, cancer.R1.dd_label)"""
 deepdive.inference.factors.inf_imply_smoke_smoke {
 weight: """0.4"""
 non_category_weight_cols: [
-
+  
 ]
 input_query: """
 SELECT dd_id_0.dd_id AS "smoke.R0.dd_id"

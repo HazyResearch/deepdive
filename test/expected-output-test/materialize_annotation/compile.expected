@@ -24,6 +24,7 @@ deepdive.extraction.extractors.ext_VQ {
 sql: """
 SELECT R0.x AS column_0
      , true AS column_1
+     , 1.0 AS column_2
 FROM D R0
 """
 input_relations: [
@@ -56,6 +57,7 @@ SELECT R0.x AS column_0
 CASE WHEN length(R0.x) > 5 THEN true
      ELSE NULL
 END AS column_1
+     , 1.0 AS column_2
 FROM D R0
 """
 input_relations: [

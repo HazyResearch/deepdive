@@ -13,6 +13,7 @@ CASE WHEN R0.l > 0 THEN true
      WHEN R0.l < 0 THEN false
      ELSE NULL
 END AS column_1
+     , 1.0 AS column_2
 FROM labels_resolved R0
 """
 input_relations: [
