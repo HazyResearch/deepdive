@@ -4,6 +4,7 @@
 
 def deepdiveVariableIdColumn                :  "dd_id"                          ;
 def deepdiveVariableLabelColumn             :  "dd_label"                       ;
+def deepdiveVariableLabelTruthinessColumn   :  "dd_truthiness"                  ;
 def deepdiveVariableExpectationColumn       :  "expectation"                    ;
 def deepdiveVariableInternalLabelColumn     :  "dd__label"                      ;
 def deepdiveVariableInternalFrequencyColumn :  "dd__count"                      ;

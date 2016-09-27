@@ -282,6 +282,7 @@ def factorWeightDescriptionSqlExpr:
             [ { alias: "vid", expr: "i.\(deepdiveVariableIdColumn | asSqlIdent) & ((1::bigint << 48) - 1)" }
             , { alias: "cardinality", expr: "COUNT(c.cid)" }
             , { alias: "cids", expr: "ARRAY_AGG(c.cid ORDER BY c.cid)" }
+            , { alias: "truthiness", expr: "ARRAY_AGG(COALESCE(v.\(deepdiveVariableLabelTruthinessColumn), 0) ORDER BY c.cid)" }
             ]
         , FROM: [ { alias: "v", table: .variablesTable } ]
         , JOIN:
