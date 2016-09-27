@@ -44,6 +44,7 @@
         echo p1_id:text
         echo p2_id:text
         echo dd_label:BOOLEAN
+        echo dd_truthiness:FLOAT
     ) -
 }
 
