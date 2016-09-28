@@ -60,6 +60,7 @@ class CmdParser {
   std::string text2bin_mode;
   std::string text2bin_input;
   std::string text2bin_output;
+  std::string text2bin_count_output;
   FACTOR_FUNCTION_TYPE text2bin_factor_func_id;
   size_t text2bin_factor_arity;
   std::vector<size_t> text2bin_factor_variables_should_equal_to;

@@ -16,9 +16,11 @@
 namespace dd {
 
 // read variables and convert to binary format
-void text2binum_vars(std::string input_filename, std::string output_filename) {
+void text2binum_vars(std::string input_filename, std::string output_filename,
+                     std::string count_filename) {
   std::ifstream fin(input_filename);
   std::ofstream fout(output_filename, std::ios::binary);
+  std::ofstream fout_count(count_filename);
   size_t count = 0;
   std::string line;
   while (getline(fin, line)) {
@@ -42,13 +44,15 @@ void text2binum_vars(std::string input_filename, std::string output_filename) {
     write_be_or_die(fout, cardinality);
     ++count;
   }
-  std::cout << count << std::endl;
+  fout_count << count << std::endl;
 }
 
 // convert weights
-void text2bin_weights(std::string input_filename, std::string output_filename) {
+void text2bin_weights(std::string input_filename, std::string output_filename,
+                      std::string count_filename) {
   std::ifstream fin(input_filename);
   std::ofstream fout(output_filename, std::ios::binary);
+  std::ofstream fout_count(count_filename);
   size_t count = 0;
   std::string line;
   while (getline(fin, line)) {
@@ -65,7 +69,7 @@ void text2bin_weights(std::string input_filename, std::string output_filename) {
     write_be_or_die(fout, initial_value);
     ++count;
   }
-  std::cout << count << std::endl;
+  fout_count << count << std::endl;
 }
 
 constexpr size_t UNDEFINED_COUNT = (size_t)-1;
@@ -110,9 +114,11 @@ static inline size_t parse_pgarray_or_die(
 // wid, vids
 void text2bin_factors(std::string input_filename, std::string output_filename,
                       FACTOR_FUNCTION_TYPE funcid, size_t arity_expected,
-                      const std::vector<size_t> &variables_should_equal_to) {
+                      const std::vector<size_t> &variables_should_equal_to,
+                      std::string count_filename) {
   std::ifstream fin(input_filename);
   std::ofstream fout(output_filename, std::ios::binary);
+  std::ofstream fout_count(count_filename);
   size_t total_edges = 0;
   std::vector<size_t> vids;
   std::vector<size_t> values;
@@ -173,13 +179,16 @@ void text2bin_factors(std::string input_filename, std::string output_filename,
     write_be_or_die(fout, wid);
     write_be_or_die(fout, val);
   }
-  std::cout << total_edges << std::endl;
+  fout_count << total_edges << std::endl;
 }
 
 // read categorical variable domains and convert to binary format
-void text2bin_domains(std::string input_filename, std::string output_filename) {
+void text2bin_domains(std::string input_filename, std::string output_filename,
+                      std::string count_filename) {
   std::ifstream fin(input_filename);
   std::ofstream fout(output_filename, std::ios::binary);
+  std::ofstream fout_count(count_filename);
+  size_t count = 0;
   std::string line;
   std::vector<size_t> value_list;
   std::vector<double> truthiness_list;
@@ -222,21 +231,27 @@ void text2bin_domains(std::string input_filename, std::string output_filename) {
       write_be_or_die(fout, value_list[i]);
       write_be_or_die(fout, truthiness_list[i]);
     }
+    ++count;
   }
+  fout_count << count << std::endl;
 }
 
 int text2bin(const CmdParser &args) {
   // common arguments
   if (args.text2bin_mode == "variable") {
-    text2binum_vars(args.text2bin_input, args.text2bin_output);
+    text2binum_vars(args.text2bin_input, args.text2bin_output,
+                    args.text2bin_count_output);
   } else if (args.text2bin_mode == "weight") {
-    text2bin_weights(args.text2bin_input, args.text2bin_output);
+    text2bin_weights(args.text2bin_input, args.text2bin_output,
+                     args.text2bin_count_output);
   } else if (args.text2bin_mode == "factor") {
     text2bin_factors(args.text2bin_input, args.text2bin_output,
                      args.text2bin_factor_func_id, args.text2bin_factor_arity,
-                     args.text2bin_factor_variables_should_equal_to);
+                     args.text2bin_factor_variables_should_equal_to,
+                     args.text2bin_count_output);
   } else if (args.text2bin_mode == "domain") {
-    text2bin_domains(args.text2bin_input, args.text2bin_output);
+    text2bin_domains(args.text2bin_input, args.text2bin_output,
+                     args.text2bin_count_output);
   } else {
     std::cerr << "Unsupported type" << std::endl;
     return 1;

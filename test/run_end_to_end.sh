@@ -6,7 +6,7 @@ set -euo pipefail
 for what in variable domain factor weight; do
     for tsv in "$what"s*.tsv; do
         [[ -e "$tsv" ]] || continue
-        dw text2bin "$what" "$tsv" graph."${tsv%.tsv}" $(
+        dw text2bin "$what" "$tsv" graph."${tsv%.tsv}" /dev/stderr $(
             # use extra text2bin args if specified
             ! [[ -e "${tsv%.tsv}".text2bin-args ]] || cat "${tsv%.tsv}".text2bin-args
         )
