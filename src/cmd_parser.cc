@@ -176,6 +176,9 @@ CmdParser::CmdParser(
     TCLAP::UnlabeledValueArg<std::string> text2bin_output_(
         "output", "path to an output file", true, "/dev/stdout",
         "output_file_path", cmd_);
+    TCLAP::UnlabeledValueArg<std::string> text2bin_count_output_(
+        "count_output", "path to a count output file", true, "/dev/stderr",
+        "count_output_file_path", cmd_);
 
     //  factor-specific arguments
     // TODO turn these into labeled args
@@ -201,6 +204,7 @@ CmdParser::CmdParser(
     text2bin_mode = text2bin_mode_.getValue();
     text2bin_input = text2bin_input_.getValue();
     text2bin_output = text2bin_output_.getValue();
+    text2bin_count_output = text2bin_count_output_.getValue();
     text2bin_factor_func_id =
         static_cast<FACTOR_FUNCTION_TYPE>(text2bin_factor_func_id_.getValue());
     text2bin_factor_arity = text2bin_factor_arity_.getValue();
