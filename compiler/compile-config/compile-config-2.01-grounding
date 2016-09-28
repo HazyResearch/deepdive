@@ -245,8 +245,7 @@ def factorWeightDescriptionSqlExpr:
                 } }
             } | asSql | asPrettySqlArg) \\
             command=\("
-                sampler-dw text2bin variable /dev/stdin >(pbzip2 >variables.\(.pid).part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2) |
-                tee nvars.\(.pid).part-${DEEPDIVE_CURRENT_PROCESS_INDEX}
+                sampler-dw text2bin variable /dev/stdin /dev/stdout nvars.\(.pid).part-${DEEPDIVE_CURRENT_PROCESS_INDEX} | pbzip2 >variables.\(.pid).part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2
             " | @sh) \\
             output_relation=
         "
@@ -311,7 +310,7 @@ def factorWeightDescriptionSqlExpr:
         , GROUP_BY: [ { table: "i", column: deepdiveVariableIdColumn } ]
         } | asSql | asPrettySqlArg) \\
         command=\("
-            sampler-dw text2bin domain /dev/stdin /dev/stdout | pbzip2 >domains.\(.pid).part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2
+            sampler-dw text2bin domain /dev/stdin /dev/stdout /dev/null | pbzip2 >domains.\(.pid).part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2
         " | @sh) \\
         output_relation=
         "
@@ -519,12 +518,11 @@ def factorWeightDescriptionSqlExpr:
                 command=\("
                     # also record the factor count
                     tee >(wc -l >nfactors.\(.pid).part-${DEEPDIVE_CURRENT_PROCESS_INDEX}) |
-                    sampler-dw text2bin factor /dev/stdin >(pbzip2 >factors.\(.pid).part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2) \\
+                    sampler-dw text2bin factor /dev/stdin /dev/stdout nedges.\(.pid).part-${DEEPDIVE_CURRENT_PROCESS_INDEX} \\
                         $\(.function_.name)Factor \\
                         $numVariablesForFactor \\
-                        $areVariablesPositive |
-                    # and the edge count
-                    tee nedges.\(.pid).part-${DEEPDIVE_CURRENT_PROCESS_INDEX}
+                        $areVariablesPositive \\
+                        | pbzip2 >factors.\(.pid).part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2
                 " | @sh) \\
                 output_relation=
         "
@@ -582,8 +580,7 @@ def factorWeightDescriptionSqlExpr:
                     } | asSql | asPrettySqlArg)
                 fi)\" \\
                 command=\("
-                    sampler-dw text2bin weight /dev/stdin >(pbzip2 >weights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2) |
-                    tee nweights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}
+                    sampler-dw text2bin weight /dev/stdin /dev/stdout nweights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX} | pbzip2 >weights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2
                 " | @sh) \\
                 output_relation=
         "

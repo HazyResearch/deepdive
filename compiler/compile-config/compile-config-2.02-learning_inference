@@ -108,7 +108,7 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                                 }
                         } | asSql | asPrettySqlArg) \\
                     command=\("
-                        sampler-dw text2bin weight /dev/stdin /dev/stdout | pbzip2 >$TARGET_WEIGHT_DIR/weights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2
+                        sampler-dw text2bin weight /dev/stdin /dev/stdout /dev/null | pbzip2 >$TARGET_WEIGHT_DIR/weights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2
                     " | @sh) \\
                     output_relation=
 
