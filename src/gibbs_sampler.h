@@ -141,7 +141,8 @@ inline void GibbsSamplerThread::sample_sgd_single_variable(size_t vid,
   // pick a value for the (parallel) evid Gibbs chain
   infrs.assignments_evid[variable.id] = sample_evid(variable);
 
-  if (!learn_non_evidence && !variable.is_evid && !variable.has_truthiness())
+  if (!learn_non_evidence && ((!is_noise_aware && !variable.is_evid) ||
+                              (is_noise_aware && !variable.has_truthiness())))
     return;
 
   fg.sgd_on_variable(variable, infrs, stepsize, is_noise_aware);
