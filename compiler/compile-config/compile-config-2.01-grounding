@@ -650,7 +650,7 @@ def factorWeightDescriptionSqlExpr:
             export numVariablesForFactor=\(.function_.variables | length)
             export areVariablesPositive=\(.function_.variables | map(if .isNegated then "0" else "1" end) | join(" ") | @sh)
 
-            deepdive create view \(.factorsTable + "_sharding_domain" | @sh) as \(
+            deepdive create view \(.factorsTable + "_sharding" | @sh) as \(
             if .function_.isCategorical then
                 "\"$(
                     # categorical factor need to find exact combinations of category values and
