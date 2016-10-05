@@ -20,6 +20,7 @@ adult(
 
 
 rich? (
+    @partition
     id int
 ).
 

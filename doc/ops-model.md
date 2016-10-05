@@ -84,7 +84,7 @@ deepdive model ground
 The above can be viewed as a shorthand for executing the following [built-in processes](ops-execution.md#built-in-data-flow-nodes):
 
 ```bash
-deepdive redo process/grounding/variable_id_partition process/grounding/combine_factorgraph
+deepdive redo process/grounding/variable_assign_id process/grounding/combine_factorgraph
 ```
 
 Grounding generates a set of files for each variable and factor under `run/model/grounding/`.

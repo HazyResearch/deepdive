@@ -14,39 +14,120 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
     # learning weights and doing inference (since we had to load the graph anyway)
     "process/model/learning": {
         dependencies_: ["model/factorgraph"],
-        output_: ["model/weights"],
+        output_: ["model/weights", "data/model/weights"],
         style: "cmd_extractor",
-        cmd: ": ${DEEPDIVE_NUM_PROCESSES:=$(nproc --ignore=1)}
-            mkdir -p ../../../model && cd ../../../model
-            mkdir -p weights
-            [ -d factorgraph ] || error \"No factorgraph found\"
+        cmd: "
+        export DEEPDIVE_LOAD_FORMAT=tsv
+        : ${DEEPDIVE_NUM_PROCESSES:=$(nproc --ignore=1)}
+        : ${DEEPDIVE_RESULTS_DIR:=\"$DEEPDIVE_APP\"/run/model/results}
+        : ${DEEPDIVE_FACTORGRAPH_DIR:=\"$DEEPDIVE_APP\"/run/model/factorgraph}
+
+        flatten() { find -L \"$@\" -type f -size +0 -exec pbzip2 -c -d -k {} +; }
+
+        for pid in $(seq 0 \($deepdive.sampler.partitions - 1)); do
+            mkdir -p $DEEPDIVE_RESULTS_DIR/$pid
+            cd $DEEPDIVE_RESULTS_DIR/$pid
+
+            FGDIR=$DEEPDIVE_FACTORGRAPH_DIR/$pid
+
+            [ -d $FGDIR ] || error \"No factorgraph found\"
+
             # run inference engine for learning and inference
-            flatten() { find -L \"$@\" -type f -size +0 -exec pbzip2 -c -d -k {} +; }
+
+            if [ $pid -gt 0 ]; then
+                # use weights learned from previous shard
+                WEIGHT_DIR=weights_hot
+            else
+                WEIGHT_DIR=weights
+            fi
+
+            # if there are multiple shards, we suppress inference (-i 0)
 
             \(if $deepdive.sampler.sampler_cmd == "numbskull" then "
-                mkdir -p flat
-                head -n 1 factorgraph/meta > flat/graph.meta
+                mkdir -p $FGDIR/flat
+                head -n 1 $FGDIR/meta > $FGDIR/flat/graph.meta
                 # TODO: save disk space
-                flatten factorgraph/variables > flat/graph.variables
-                flatten factorgraph/factors > flat/graph.factors
-                flatten factorgraph/weights > flat/graph.weights
-                flatten factorgraph/domains > flat/graph.domains
-                numbskull flat --output_dir weights --threads $DEEPDIVE_NUM_PROCESSES \($deepdive.sampler.sampler_args // "#")
+                flatten $FGDIR/variables > $FGDIR/flat/graph.variables
+                flatten $FGDIR/factors > $FGDIR/flat/graph.factors
+                flatten $FGDIR/$WEIGHT_DIR > $FGDIR/flat/graph.weights
+                flatten $FGDIR/domains > $FGDIR/flat/graph.domains
+                numbskull $FGDIR/flat \\
+                    --output_dir . \\
+                    --threads $DEEPDIVE_NUM_PROCESSES \\
+                    \($deepdive.sampler.sampler_args // "") \\
+                    \(if $deepdive.sampler.partitions > 1 then "-i 0" else "" end) \\
+                    #
             " else "
-                \($deepdive.sampler.sampler_cmd // "sampler-dw") \\
+                \($deepdive.sampler.sampler_cmd) \\
                     gibbs \\
-                    --variables <(flatten factorgraph/variables) \\
-                    --domains <(flatten factorgraph/domains) \\
-                    --factors <(flatten factorgraph/factors) \\
-                    --weights <(flatten factorgraph/weights) \\
-                    --fg_meta factorgraph/meta \\
-                    --outputFile weights \\
+                    --variables <(flatten $FGDIR/variables) \\
+                    --domains <(flatten $FGDIR/domains) \\
+                    --factors <(flatten $FGDIR/factors) \\
+                    --weights <(flatten $FGDIR/$WEIGHT_DIR) \\
+                    --fg_meta $FGDIR/meta \\
+                    --outputFile . \\
                     --n_threads $DEEPDIVE_NUM_PROCESSES \\
-                    \($deepdive.sampler.sampler_args // "#")
+                    \($deepdive.sampler.sampler_args // "") \\
+                    \(if $deepdive.sampler.partitions > 1 then "-i 0" else "" end) \\
+                    #
             " end)
 
-            mkdir -p probabilities
-            mv -f weights/inference_result.out.text probabilities/
+            # load weights to database
+            deepdive create table \(deepdiveInferenceResultWeightsTable | @sh) \\
+                wid:BIGINT:'PRIMARY KEY' \\
+                weight:'DOUBLE PRECISION' \\
+                #
+            cat inference_result.out.weights.text |
+            tr \(" "|@sh) \("\\t"|@sh) |
+            deepdive load \(deepdiveInferenceResultWeightsTable | @sh) /dev/stdin
+            deepdive db analyze \(deepdiveInferenceResultWeightsTable | @sh)
+            mv inference_result.out.weights.text inference_result.out.weights.text.learned
+
+            \(if $deepdive.sampler.partitions > 1 then "
+                # dump weights back out for next-shard learning or inference step
+                if [ $pid -lt \($deepdive.sampler.partitions - 1) ]; then
+                    # not last shard: dump for next-shard learning
+                    export TARGET_WEIGHT_DIR=$DEEPDIVE_FACTORGRAPH_DIR/$(($pid+1))/weights_hot
+                else
+                    export TARGET_WEIGHT_DIR=$DEEPDIVE_FACTORGRAPH_DIR/learned_weights
+                fi
+
+                mkdir -p $TARGET_WEIGHT_DIR
+                deepdive compute execute \\
+                    input_sql=\(
+                        { SELECT:
+                            [ { table: "w", column: "wid" }
+                            , { expr: "CASE WHEN isfixed THEN 1 ELSE 0 END" }
+                            , { expr: "COALESCE(r.weight, w.initvalue, 0)" }
+                            ]
+                        , FROM: [ { alias: "w", table: deepdiveGlobalWeightsTable } ]
+                        , JOIN: { LEFT_OUTER: { alias: "r", table: deepdiveInferenceResultWeightsTable }
+                                , ON: { eq: [ { table: "r", column: "wid" }
+                                            , { table: "w", column: "wid" }
+                                            ] }
+                                }
+                        } | asSql | asPrettySqlArg) \\
+                    command=\("
+                        sampler-dw text2bin weight /dev/stdin /dev/stdout /dev/null | pbzip2 >$TARGET_WEIGHT_DIR/weights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2
+                    " | @sh) \\
+                    output_relation=
+
+            " else "" end)
+
+        done
+
+        deepdive create view \(deepdiveInferenceResultWeightsMappingView | @sh) as \(
+            { SELECT:
+                [ { expr: "\"w\".*" }
+                , { table: "r", column: "weight" }
+                ]
+            , FROM: { alias: "w", table: deepdiveGlobalWeightsTable }
+            , JOIN: { INNER: { alias: "r", table: deepdiveInferenceResultWeightsTable }
+                    , ON: { eq: [ { table: "r", column: "wid" }
+                                , { table: "w", column: "wid" }
+                                ] } }
+            , ORDER_BY: { expr: "ABS(\"r\".\"weight\")", order: "DESC" }
+            } | asSql | asPrettySqlArg)
         "
     },
 
@@ -55,89 +136,93 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         dependencies_: ["model/factorgraph", "model/weights"],
         output_: ["model/probabilities"],
         style: "cmd_extractor",
-        cmd: ": ${DEEPDIVE_NUM_PROCESSES:=$(nproc --ignore=1)}
-            mkdir -p ../../../model && cd ../../../model
-            [ -d factorgraph ] || error \"No factorgraph found\"
-            if [[ factorgraph/weights -nt probabilities/inference_result.out.text ]]; then
-                # no need to run inference unless the weights are fresher
+        cmd: "
+        : ${DEEPDIVE_NUM_PROCESSES:=$(nproc --ignore=1)}
+        : ${DEEPDIVE_RESULTS_DIR:=\"$DEEPDIVE_APP\"/run/model/results}
+        : ${DEEPDIVE_FACTORGRAPH_DIR:=\"$DEEPDIVE_APP\"/run/model/factorgraph}
+
+        flatten() { find -L \"$@\" -type f -size +0 -exec pbzip2 -c -d -k {} +; }
+
+        # need to run inference only if learning step was deferred because there are multiple shards
+        \(if $deepdive.sampler.partitions > 1 then "
+            for pid in $(seq 0 \($deepdive.sampler.partitions - 1)); do
+
+                mkdir -p $DEEPDIVE_RESULTS_DIR/$pid
+                cd $DEEPDIVE_RESULTS_DIR/$pid
+
+                FGDIR=$DEEPDIVE_FACTORGRAPH_DIR/$pid
+
+                [ -d $FGDIR ] || error \"No factorgraph found\"
+
                 # XXX this skipping may cause confusion
-                # run sampler for performing inference with given weights without learning
-                flatten() { find -L \"$@\" -type f -size +0 -exec pbzip2 -c -d -k {} +; }
+                # run sampler for inference with given weights without learning
+                LEARNED_WEIGHTS=$DEEPDIVE_FACTORGRAPH_DIR/learned_weights
 
                 \(if $deepdive.sampler.sampler_cmd == "numbskull" then "
-                    mkdir -p flat
-                    head -n 1 factorgraph/meta > flat/graph.meta
-                    # TODO: save disk space
-                    flatten factorgraph/variables > flat/graph.variables
-                    flatten factorgraph/factors > flat/graph.factors
-                    flatten factorgraph/weights > flat/graph.weights
-                    flatten factorgraph/domains > flat/graph.domains
-                    numbskull flat --output_dir weights --threads $DEEPDIVE_NUM_PROCESSES \($deepdive.sampler.sampler_args // "") -l 0  #
+                    mkdir -p $FGDIR/flat
+                    if [ $FGDIR/meta -nt $FGDIR/flat/graph.meta ]; then
+                        head -n 1 $FGDIR/meta > $FGDIR/flat/graph.meta
+                        flatten $FGDIR/variables > $FGDIR/flat/graph.variables
+                        flatten $FGDIR/factors > $FGDIR/flat/graph.factors
+                        flatten $FGDIR/domains > $FGDIR/flat/graph.domains
+                    fi
+                    flatten $LEARNED_WEIGHTS > $FGDIR/flat/graph.weights
+                    numbskull $FGDIR/flat \\
+                        --output_dir . \\
+                        --threads $DEEPDIVE_NUM_PROCESSES \\
+                        \($deepdive.sampler.sampler_args // "") \\
+                        -l 0 \\
+                        #
                 " else "
-                    \($deepdive.sampler.sampler_cmd // "sampler-dw") \\
+                    \($deepdive.sampler.sampler_cmd) \\
                         gibbs \\
-                        --variables <(flatten factorgraph/variables) \\
-                        --domains <(flatten factorgraph/domains) \\
-                        --factors <(flatten factorgraph/factors) \\
-                        --weights <(flatten factorgraph/weights) \\
-                        --fg_meta factorgraph/meta \\
-                        --outputFile weights \\
+                        --variables <(flatten $FGDIR/variables) \\
+                        --domains <(flatten $FGDIR/domains) \\
+                        --factors <(flatten $FGDIR/factors) \\
+                        --weights <(flatten $LEARNED_WEIGHTS) \\
+                        --fg_meta $FGDIR/meta \\
+                        --outputFile . \\
                         --n_threads $DEEPDIVE_NUM_PROCESSES \\
                         \($deepdive.sampler.sampler_args // "") \\
                         -l 0 \\
                         #
                 " end)
 
-                mkdir -p probabilities
-                mv -f weights/inference_result.out.text probabilities/
-            fi
+            done
+
+        " else "
+            echo Skipping process/model/inference because it was inlined in process/model/learning
+        " end)
         "
     },
 
-    # loading learning/inference results back to database
-    "process/model/load_weights": {
-        dependencies_: ["model/weights"],
-        output_: ["data/model/weights"],
-        style: "cmd_extractor",
-        cmd: "mkdir -p ../../../model && cd ../../../model
-            # load weights to database
-            deepdive create table \(deepdiveInferenceResultWeightsTable | @sh) \\
-                wid:BIGINT:'PRIMARY KEY' \\
-                weight:'DOUBLE PRECISION' \\
-                #
-            cat weights/inference_result.out.weights.text |
-            tr \(" "|@sh) \("\\t"|@sh) | DEEPDIVE_LOAD_FORMAT=tsv \\
-            deepdive load \(deepdiveInferenceResultWeightsTable | @sh) /dev/stdin
-
-            # create views
-            deepdive create view \(deepdiveInferenceResultWeightsMappingView | @sh) as \(
-                { SELECT:
-                    [ { expr: "\"w\".*" }
-                    , { table: "r", column: "weight" }
-                    ]
-                , FROM: { alias: "w", table: deepdiveGlobalWeightsTable }
-                , JOIN: { INNER: { alias: "r", table: deepdiveInferenceResultWeightsTable }
-                        , ON: { eq: [ { table: "r", column: "wid" }
-                                    , { table: "w", column: "wid" }
-                                    ] } }
-                , ORDER_BY: { expr: "ABS(\"r\".\"weight\")", order: "DESC" }
-                } | asSql | asPrettySqlArg)
-        "
-    },
     "process/model/load_probabilities": {
         dependencies_: ["model/probabilities"],
         output_: ["data/model/probabilities"],
         style: "cmd_extractor",
-        cmd: "mkdir -p ../../../model && cd ../../../model
+        cmd: "
+            : ${DEEPDIVE_RESULTS_DIR:=\"$DEEPDIVE_APP\"/run/model/results}
+
             # load weights to database
             deepdive create table \(deepdiveInferenceResultVariablesTable | @sh) \\
                 vid:BIGINT \\
                 cid:BIGINT \\
                 prb:'DOUBLE PRECISION' \\
                 #
-            cat probabilities/inference_result.out.text |
-            tr \(" "|@sh) \("\\t"|@sh) | DEEPDIVE_LOAD_FORMAT=tsv \\
-            deepdive load \(deepdiveInferenceResultVariablesTable | @sh) /dev/stdin
+
+            # restore shard ID to the vids
+            for pid in $(seq 0 \($deepdive.sampler.partitions - 1)); do
+                cd $DEEPDIVE_RESULTS_DIR/$pid
+
+                AWK_CMD='{printf \"%s\\t%s\\t%s\\n\", SHARD_BASE + $1, $2, $3}'
+
+                cat inference_result.out.text |
+                awk -v SHARD_BASE=$(($pid << 48)) \"$AWK_CMD\" |
+                DEEPDIVE_LOAD_FORMAT=tsv \\
+                deepdive load \(deepdiveInferenceResultVariablesTable | @sh) /dev/stdin
+            done
+
+            deepdive db analyze \(deepdiveInferenceResultVariablesTable | @sh)
 
             # create a view for each app schema variable
             \([ $deepdive.schema.variables_[] | "

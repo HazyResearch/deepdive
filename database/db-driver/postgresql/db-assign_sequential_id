@@ -1,60 +1,36 @@
 #!/usr/bin/env bash
 # db-assign_sequential_id -- Assigns a unique integer to every row for a table using PostgreSQL sequence generator
 # > eval "$(db-parse "$url")"
-# > db-assign_sequential_id TABLE COLUMN BEGIN_ID [INCREMENT] [ORDER_BY]
+# > db-assign_sequential_id TABLE ID_COLUMN [PART_ID_COLUMN]
 ##
 set -euo pipefail
 
-[[ $# -gt 0 ]] || usage "$0" "Missing TABLE"
-[[ $# -gt 1 ]] || usage "$0" "Missing COLUMN"
-[[ $# -gt 2 ]] || usage "$0" "Missing BEGIN_ID"
-Table=$1 Column=$2 BeginId=$3 Increment=${4:-1} OrderBy=${5:-}
+[[ $# -gt 0 ]] || usage "$0" "Missing TABLE_CSV"
+[[ $# -gt 1 ]] || usage "$0" "Missing ID_COLUMN"
 
-[[ $Increment -ne 0 ]] || usage "$0" "INCREMENT must be non-zero"
+TABLE_CSV=$1 IdColumn=$2 PartColumn=${3:-0}
 
-if [[ -z $OrderBy ]]; then # no constraint for ordering rows
-    # Use PostgreSQL sequence generator named after the table and column
-    # See: http://www.postgresql.org/docs/current/static/sql-createsequence.html
-    seq="dd_seq_${Table}_${Column}"
-    minMaxValues=
-    if   [[ $Increment -gt 0 && $BeginId -le 0 ]]; then minMaxValues="MINVALUE $BeginId NO MAXVALUE"
-    elif [[ $Increment -lt 0 && $BeginId -ge 0 ]]; then minMaxValues="NO MINVALUE MAXVALUE $BeginId"
-    fi
-    db-execute "
-        DROP SEQUENCE IF EXISTS $seq CASCADE;
-        CREATE TEMPORARY SEQUENCE $seq INCREMENT BY $Increment $minMaxValues START $BeginId NO CYCLE;
 
-        UPDATE $Table SET $Column = nextval('$seq');
-    "
+SQL="
+    CREATE OR REPLACE FUNCTION seqassign(partid INT, reset BOOL)
+    RETURNS BIGINT AS \$\$
+      if reset:
+        for pid in range(partid):
+          SD[pid] = 0
+        return 0
 
-else # ORDER BY given COLUMNs
+      x = SD[partid]
+      SD[partid] += 1
+      return x + (partid << 48)
+    \$\$ LANGUAGE plpythonu;
 
-    # find existing columns in the target table
-    eval "columns=(
-    $(db-execute '\d '"$Table" --tuples-only --no-align --field-separator=$'\t' | cut -f1 # TODO | escape4sh
-    )
-    )"
-    set --
-    for col in "${columns[@]}"; do
-        if [[ $col = $Column ]]; then
-            # use ROW_NUMBER() OVER ORDER BY with given clause
-            set -- "$@" "$BeginId + $Increment * ((ROW_NUMBER() OVER (ORDER BY $OrderBy)) - 1) AS \"${col//\"/\"\"}\""
-        else
-            set -- "$@" "\"${col//\"/\"\"}\""
-        fi
-    done
+    SELECT seqassign(1 << 16, true);
+"
 
-    # create a temporary table like the original one
-    newTable="dd_tmpseq_$Table"
-    db-create-table-like "$newTable" "$Table"
+for table in $(echo $TABLE_CSV | sed "s/,/ /g")
+do
+    SQL="$SQL
+    UPDATE $table SET $IdColumn = seqassign($PartColumn, false);"
+done
 
-    # copy rows into the temporary and replace the target table
-    columnsToProject=$(printf "%s, " "$@")
-    columnsToProject=${columnsToProject%, }  # dropping last comma
-    db-execute "
-        INSERT INTO $newTable SELECT $columnsToProject FROM $Table;
-        DROP TABLE $Table;
-        ALTER TABLE $newTable RENAME TO $Table;
-    "
-
-fi
+db-execute "$SQL"
