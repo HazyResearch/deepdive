@@ -52,6 +52,8 @@ def factorWeightDescriptionSqlExpr:
             | { alias: "_\(.)", table: "v", column: . })
             , { alias: "count", expr: "COUNT(1)"             }
             , { alias: "cid"  , expr: "CAST(NULL AS BIGINT)" }
+            # thodrek change
+            , { alias: "partition_key", expr: "CAST(NULL AS TEXT)"}
             ]
         , FROM: [ { alias: "v", table: .variablesTable } ]
         , GROUP_BY: [ .variablesCategoryColumns[] |         { table: "v", column: . }   ]
@@ -82,6 +84,7 @@ def factorWeightDescriptionSqlExpr:
                 end) }
             , { alias: deepdiveVariableInternalFrequencyColumn, expr: "COUNT(1)" }
             , { alias: deepdiveVariableIdColumn, expr: "CAST(NULL AS BIGINT)" }
+            , { alias: "partition_key", expr: "CAST(NULL AS TEXT)"}
             ]
         , FROM: [ { alias: "v", table: .variablesTable } ]
         , JOIN:
@@ -208,6 +211,82 @@ def factorWeightDescriptionSqlExpr:
     }
 }
 
+# thodrek
+## variable/*/view
+# Then each variable table is converted into a view for the inference engine.
+| .deepdive_.execution.processes += merge($deepdive.schema.variables_[] | {
+    "process/grounding/variable/\(.variableName)/view": {
+        dependencies_: [
+            "process/grounding/variable_holdout"
+          # XXX below can be omitted for now
+          #, "process/grounding/variable/\(.variableName)/assign_id"
+        ],
+        style: "cmd_extractor", cmd: "
+        : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
+
+        varPath=\"$DEEPDIVE_GROUNDING_DIR\"/variable/\(.variableName | @sh)
+        mkdir -p \"$varPath\"
+        cd \"$varPath\"
+        export DEEPDIVE_LOAD_FORMAT=tsv
+        export DEEPDIVE_UNLOAD_MATERIALIZED=false
+
+        # thodrek: create view for necessary sampler input
+        deepdive create view \(.variablesIdsTable + "_sharding" | @sh) as \(
+        { SELECT:
+                [ { column: "vid" }
+                , { column: "variable_role" }
+                , { alias: "init_value", expr:
+                    "CASE WHEN variable_role = 0 THEN 0
+                          ELSE (\(
+                            if   .variableType == "boolean"     then "CASE WHEN label THEN 1 ELSE 0 END"
+                            elif .variableType == "categorical" then "label"
+                            else error("Internal error: Unknown variableType: \(.variableType)")
+                            end
+                            ))
+                      END" }
+                , { column: "variable_type" }
+                , { column: "cardinality" }
+                , { column: "partition_key" }
+                ]
+            , FROM: { alias: "variables", sql:
+                { SELECT:
+                    [ { alias: "vid", table: "i", column: deepdiveVariableIdColumn }
+                    , { alias: "variable_role", expr:
+                          "CASE WHEN observation.variable_id IS NOT NULL
+                                 AND \"i\".\(deepdiveVariableInternalLabelColumn | asSqlIdent) IS NOT NULL THEN 2
+                                WHEN holdout.variable_id IS NOT NULL THEN 0
+                                WHEN \"i\".\(deepdiveVariableInternalLabelColumn | asSqlIdent) IS NOT NULL THEN 1
+                                ELSE 0
+                            END" }
+                    , { alias: "label", table: "i", column: deepdiveVariableInternalLabelColumn }
+                    , { alias: "variable_type", expr:
+                            ( if .variableType == "boolean"     then 0
+                            elif .variableType == "categorical" then 1
+                            else error("Internal error: Unknown variableType: \(.variableType)")
+                            end) }
+                    , { alias: "cardinality", expr:
+                            ( if .variableType == "boolean"     then 2
+                            elif .variableType == "categorical" then "\"i\".\"dd__count\"" # TODO count the number of actual distinct values by .variablesCategoryColumns for this row
+                            else error("Internal error: Unknown variableType: \(.variableType)")
+                            end) }
+                    , { table: "i", column: "partition_key" }
+                    ]
+                , FROM: { alias: "i", table: .variablesIdsTable }
+                , JOIN:
+                    [ { LEFT_OUTER: { alias: "holdout", table: deepdiveGlobalHoldoutTable }
+                      , ON: { eq: [ { table: "i", column: deepdiveVariableIdColumn }
+                                  , { table: "holdout"  , column: "variable_id" } ] } }
+                    , { LEFT_OUTER: { alias: "observation", table: deepdiveGlobalObservationTable }
+                      , ON: { eq: [ { table: "i"  , column: deepdiveVariableIdColumn }
+                                  , { table: "observation", column: "variable_id" } ] } }
+                    ]
+                } }
+            } | asSql | asPrettySqlArg)
+        "  
+    }
+
+})
+
 ## variable/*/dump
 # Then each variable table is dumped into a set of binary files for the inference engine.
 | .deepdive_.execution.processes += merge($deepdive.schema.variables_[] | {
@@ -287,6 +366,50 @@ def factorWeightDescriptionSqlExpr:
 
 })
 
+# thodrek: variable/*/view_domains
+# For each categorical variable we generate an extra input view for the inference engine that holds the domains.
+| .deepdive_.execution.processes += merge($deepdive.schema.variables_[]
+    | select(.variableType == "categorical") | {
+    "process/grounding/variable/\(.variableName)/view_domains": {
+        dependencies_: [
+            "process/grounding/variable/\(.variableName)/assign_id"
+        ],
+        style: "cmd_extractor", cmd: "
+        : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
+        varPath=\"$DEEPDIVE_GROUNDING_DIR\"/variable/\(.variableName | @sh)
+        mkdir -p \"$varPath\"
+        cd \"$varPath\"
+        export DEEPDIVE_LOAD_FORMAT=tsv
+        export DEEPDIVE_UNLOAD_MATERIALIZED=false
+        deepdive create view \(.variablesIdsTable + "_sharding_domain" | @sh) as \(
+        { SELECT:
+            [ { alias: "vid",  table: "i", column: deepdiveVariableIdColumn }
+            , { alias: "cardinality", expr: "COUNT(c.cid)" }
+            , { alias: "cids", expr: "ARRAY_AGG(c.cid ORDER BY c.cid)" }
+            ]
+        , FROM: [ { alias: "v", table: .variablesTable } ]
+        , JOIN:
+            # variable ids
+            [ { INNER: { alias: "i", table: .variablesIdsTable }
+              , ON: { and:  [ .variablesKeyColumns[]
+                            | { eq: [ { table: "i", column: . }
+                                    , { table: "v", column: . }
+                                    ] }
+                            ] } }
+            # category ids are necessary to find the inference result corresponding to the variable
+            , { INNER: { alias: "c", table: .variablesCategoriesTable }
+              , ON: { and:  [ .variablesCategoryColumns[]
+                            | { eq: [ { table: "c", column: "_\(.)" }
+                                    , { table: "v", column: . }
+                                    ] }
+                            ] } }
+            ]
+        , GROUP_BY: [ { table: "i", column: deepdiveVariableIdColumn } ]
+        } | asSql | asPrettySqlArg)
+	"
+    }
+
+})
 
 ## variable/*/dump_domains
 # Each categorical variable dumps an extra input for the inference engine that holds the domains.
@@ -385,6 +508,8 @@ def factorWeightDescriptionSqlExpr:
                       | { table: "F", column: "\($prefix)\(.)" } )
                     , ( .weight_.params[] | { table: "F", column: . } )
                     , { table: "F", column: "feature_value", alias: "feature_value" }
+                    # thodrek change
+                    , { alias: "partition_key", expr: "CAST(NULL AS TEXT)"}
                     ]
                 , FROM: [
                     { alias: "F", sql: "\(.input_query)" }
@@ -503,6 +628,87 @@ def factorWeightDescriptionSqlExpr:
     }
 }
 
+#thodrek
+## factor/*/view
+# The factors are dumped into a set of binary files for the inference engine.
+| .deepdive_.execution.processes += merge($deepdive.inference.factors_[] | {
+    # add a process for grounding factors and weights
+    "process/grounding/factor/\(.factorName)/view": {
+        dependencies_: [
+            "process/grounding/factor/\(.factorName)/assign_weight_id"
+        ],
+        style: "cmd_extractor", cmd: "
+            : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
+            facPath=\"$DEEPDIVE_GROUNDING_DIR\"/factor/\(.factorName | @sh)
+            mkdir -p \"$facPath\"
+            cd \"$facPath\"
+            export DEEPDIVE_LOAD_FORMAT=tsv
+            export DEEPDIVE_UNLOAD_MATERIALIZED=false
+
+            # named codes used by sampler
+            export \(.function_.name)Factor=\(.function_.id)  # factor function id
+            export numVariablesForFactor=\(.function_.variables | length)
+            export areVariablesPositive=\(.function_.variables | map(if .isNegated then "0" else "1" end) | join(" ") | @sh)
+
+            deepdive create view \(.factorsTable + "_sharding_domain" | @sh) as \(
+            if .function_.isCategorical then
+                "\"$(
+                    # categorical factor need to find exact combinations of category values and
+                    # weight parameters present in the data, hence a lot of joins! but doesn't waste the weights
+                    # Assuming all var tables are categorical; TODO: Support mixed head.
+                    echo \(
+                    { SELECT:
+                        [ ( .function_.variables[]
+                        | { table: "f", column: .columnId } )
+                        , ( .function_.variables[]
+                        | { table: "C\(.ordinal)", column: "cid" } )
+                        , { alias: "weight_id", table: "w", column: "wid" }
+                        , { alias: "feature_value", table: "f", column: "feature_value" }
+                        , { alias: "partition_key", table: "f", column: "partition_key" }
+                        ]
+                    , FROM:
+                        [ { alias: "w", table: .weightsTable }
+                        , { alias: "f", table: .factorsTable }
+                        ]
+                    , JOIN: [(.function_.variables[]
+                        | "C\(.ordinal)" as $ctable
+                        | .columnPrefix as $prefix
+                        | { INNER: { alias: $ctable, table: .schema.variablesCategoriesTable }
+                          , ON: { and: [ .schema.variablesCategoryColumns[]
+                                 | { eq: [ { table: $ctable, column: "_\(.)" }
+                                         , { table: "f", column: "\($prefix)\(.)" }
+                                         ] }
+                                 ] } }
+                        )]
+                    , WHERE:
+                        [ ( .weight_.params[]
+                        | { eq: [ { table: "w", column: . }
+                                , { table: "f", column: . } ] } )
+                        ]
+                    } | asSql | asPrettySqlArg)
+                )\"" else # factors over boolean variables
+                    { SELECT:
+                        [ ( .function_.variables[]
+                        | { table: "f", column: .columnId } )
+                        , { alias: "weight_id", table: "w", column: "wid" }
+                        , { alias: "feature_value", table: "f", column: "feature_value" }
+                        , { alias: "partition_key", table: "f", column: "partition_key" }
+                        ]
+                    , FROM:
+                        [ { alias: "f", table: .factorsTable }
+                        , { alias: "w", table: .weightsTable }
+                        ]
+                    , WHERE:
+                        [ ( .weight_.params[]
+                        | { eq: [ { table: "w", column: . }
+                                , { table: "f", column: . } ] } )
+                        ]
+                    } | asSql | asPrettySqlArg
+            end)
+            "
+    }
+})
+
 ## factor/*/dump
 # The factors are dumped into a set of binary files for the inference engine.
 | .deepdive_.execution.processes += merge($deepdive.inference.factors_[] | {
@@ -594,6 +800,34 @@ def factorWeightDescriptionSqlExpr:
                     tee nedges.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}
                 " | @sh) \\
                 output_relation=
+        "
+    }
+})
+
+## factor/*/view_weights
+# The factors and weights are dumped into a set of view for the inference engine.
+| .deepdive_.execution.processes += merge($deepdive.inference.factors_[] | {
+    # add a process for grounding factors and weights
+    "process/grounding/factor/\(.factorName)/view_weights": {
+        dependencies_: [
+            "process/grounding/factor/\(.factorName)/assign_weight_id"
+        ],
+        style: "cmd_extractor", cmd: "
+            : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
+            facPath=\"$DEEPDIVE_GROUNDING_DIR\"/factor/\(.factorName | @sh)
+            mkdir -p \"$facPath\"
+            cd \"$facPath\"
+            export DEEPDIVE_LOAD_FORMAT=tsv
+            export DEEPDIVE_UNLOAD_MATERIALIZED=false
+
+            deepdive create view \(.weightsTable + "_sharding" | @sh) as \(
+            { SELECT:
+                        [ { column: "wid" }
+                        , { expr: "CASE WHEN isfixed THEN 1 ELSE 0 END" }
+                        , { expr: "COALESCE(initvalue, 0)" }
+                        ]
+                    , FROM: [ { table: .weightsTable } ]
+                    } | asSql | asPrettySqlArg)     
         "
     }
 })
