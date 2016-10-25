@@ -43,6 +43,7 @@ test--in-container:
 depends: .build/depends
 .build/depends: util/install.sh $(wildcard util/install/*)
 	# Installing and Checking dependencies...
+	mkdir -p $(@D)
 	sha1sum $^ | diff -q $@ - || \
 	$< _deepdive_build_deps _deepdive_runtime_deps
 	sha1sum $^ >$@
@@ -105,11 +106,27 @@ build:
 	# record version and build info
 	util/build/generate-build-info.sh >$(BUILD_INFO)
 
+# ensure some submodules required by stage.sh is there
+build: \
+    extern/buildkit/install-shared-libraries-required-by \
+    extern/buildkit/generate-wrapper-for-libdirs \
+    #
+extern/buildkit/%:
+	git submodule update --init extern/buildkit
+
 # how to build external runtime dependencies to bundle
-.PHONY: bundled-runtime-dependencies
+.PHONY: bundled-runtime-dependencies all-bundled-runtime-dependencies no-bundled-runtime-dependencies
 bundled-runtime-dependencies extern/.build/bundled: extern/bundle-runtime-dependencies.sh
 	PACKAGENAME=deepdive  $<
 $(PACKAGE): bundled-runtime-dependencies
+build: extern/.build/bundled
+# bundle all unless overridden with `make no-bundled-runtime-dependencies`
+extern/bundle-runtime-dependencies.sh: extern/bundle.conf
+all-bundled-runtime-dependencies \
+extern/bundle.conf:
+	ln -sfn bundle-all.conf extern/bundle.conf
+no-bundled-runtime-dependencies:
+	ln -sfn bundle-none.conf extern/bundle.conf
 
 ### test recipes #############################################################
 

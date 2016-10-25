@@ -18,6 +18,7 @@ if [ "$(uname)" == "Darwin" ]; then
   # for graphviz, also brew install autogen libtool
 fi
 
+make no-bundled-runtime-dependencies
 make install PREFIX=$PREFIX
 
 # add the /util directory to the PATH inside this conda env
