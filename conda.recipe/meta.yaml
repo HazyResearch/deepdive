@@ -22,19 +22,21 @@ requirements:
   build:
     - python
     - setuptools
-    - coreutils ==8.21
+    - coreutils >=8.21
     - cmake
+    - unzip
+    - gnu-wget
 
   run:
     - python
-    - pyhocon ==0.3.30
-    - coreutils ==8.21
-    - moreutils ==0.59
+    - pyhocon
+    - coreutils >=8.21
+    - moreutils >=0.59
     - jq ==1.5
-    - graphviz ==2.38.0
-    - bc ==1.06
-    - pv ==1.6.0
-    - pbzip2 ==1.1.13
+    - graphviz >=2.38.0
+    - bc
+    - pv >=1.6.0
+    - pbzip2
     - bash ==4.3.42
     - gnuplot
 
