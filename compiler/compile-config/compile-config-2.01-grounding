@@ -510,6 +510,7 @@ def factorWeightDescriptionSqlExpr:
                     , { table: "F", column: "feature_value", alias: "feature_value" }
                     # thodrek change
                     , { alias: "partition_key", expr: "CAST(NULL AS TEXT)"}
+                    , { alias: "fid", expr: "nextval('fid_seq')"}
                     ]
                 , FROM: [
                     { alias: "F", sql: "\(.input_query)" }
@@ -665,6 +666,7 @@ def factorWeightDescriptionSqlExpr:
                         , { alias: "weight_id", table: "w", column: "wid" }
                         , { alias: "feature_value", table: "f", column: "feature_value" }
                         , { alias: "partition_key", table: "f", column: "partition_key" }
+                        , { alias: "fid", table: "f", column: "fid"}
                         ]
                     , FROM:
                         [ { alias: "w", table: .weightsTable }
@@ -693,6 +695,7 @@ def factorWeightDescriptionSqlExpr:
                         , { alias: "weight_id", table: "w", column: "wid" }
                         , { alias: "feature_value", table: "f", column: "feature_value" }
                         , { alias: "partition_key", table: "f", column: "partition_key" }
+                        , { alias: "fid", table: "f", column: "fid"}
                         ]
                     , FROM:
                         [ { alias: "f", table: .factorsTable }

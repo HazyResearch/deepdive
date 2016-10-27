@@ -17,6 +17,8 @@
 
         deepdive db init
 
+        deepdive sql 'CREATE SEQUENCE fid_seq'
+
         # run legacy schema.sql
         if [[ -r schema.sql ]]; then
             deepdive db prompt <schema.sql
