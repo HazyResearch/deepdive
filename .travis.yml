@@ -29,7 +29,7 @@ before_install:
   - export DOCKER_IMAGE=netj/deepdive-build;
 
   # Pull Docker images
-  - docker pull $DOCKER_IMAGE_MASTER;
+  - docker pull $DOCKER_IMAGE;
   - docker pull postgres:9.5;  # we need plpython for ID assignment
 
 install:
