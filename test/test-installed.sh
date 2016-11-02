@@ -22,6 +22,9 @@ echo "Testing DeepDive installed at: $DEEPDIVE_HOME"
 # TODO read these default values from somewhere else
 echo "Testing against database TEST_DBNAME=${TEST_DBNAME:-deepdive_test_$USER} running at TEST_DBHOST=${TEST_DBHOST:-localhost}"
 
+# make sure numeric handling are done in the expected way
+export LC_NUMERIC=C
+
 # run tests
 [[ $# -gt 0 ]] || set -- $(test/enumerate-tests.sh | grep -v scalatests)
 echo "Running $(test/bats/bin/bats -c "$@") tests defined in $# .bats files: $*"
