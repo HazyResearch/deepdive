@@ -1,6 +1,0 @@
-FROM postgres:9.5
-
-RUN apt-get update \
-  && apt-get install -y postgresql-server-dev-${PG_MAJOR} postgresql-plpython-${PG_MAJOR}
-
-RUN echo 'PGPASSWORD="$POSTGRES_PASSWORD" psql -U $POSTGRES_USER template1 -c "CREATE EXTENSION plpythonu;"' > /docker-entrypoint-initdb.d/plpythonu.sh

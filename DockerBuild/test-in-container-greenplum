@@ -6,6 +6,7 @@
 set -euo pipefail
 . "$(dirname "$0")"/DockerBuild.bash
 
+: ${GREENPLUM_DOCKER_IMAGE:=pivotaldata/gpdb-base}  # Docker image name holding Greeplum
 : ${DOCKER_GPNAME:=test-greenplum.$$}
 : ${GREENPLUM_USER:=gpadmin}
 : ${GREENPLUM_PASSWORD:=pivotal}
@@ -16,7 +17,7 @@ trap 'docker rm -f "$DOCKER_GPNAME"' EXIT
 set -x
 docker run --detach --name "$DOCKER_GPNAME" \
     --publish 5432 \
-    pivotaldata/gpdb-base \
+    "$GREENPLUM_DOCKER_IMAGE" \
     #
 
 # wait until postgres starts
@@ -24,7 +25,7 @@ postgres-has-started() {
     docker run --rm --name "$DOCKER_GPNAME.check" \
         --link "$DOCKER_GPNAME" \
         --env PGPASSWORD="$GREENPLUM_PASSWORD" \
-        pivotaldata/gpdb-base \
+        "$GREENPLUM_DOCKER_IMAGE" \
         psql -h "$DOCKER_GPNAME" -U "$GREENPLUM_USER" -l
 }
 sleep $GREENPLUM_START_TIME  # give it some initial time to start
