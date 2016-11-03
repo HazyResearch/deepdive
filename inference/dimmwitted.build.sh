@@ -15,6 +15,7 @@ case $(uname) in
             gxx_is_recent_enough() {
                 set -x
                 local gxx_current_version=$("$CXX" --version | head -1 | sed '
+                    s/[[:space:]][0-9]*$//
                     s/.*[[:space:]]//
                     /^[0-9]*\(\.[0-9]*\)*/!d
                     s/\([0-9]*\)\.\([0-9]*\).*/\1.\2/

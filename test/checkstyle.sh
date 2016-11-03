@@ -39,25 +39,24 @@ textfiles=(
 $(git ls-files | xargs file --mime-type | grep text/ | cut -d: -f1)
 )
 
-CHECKING "All text files should have EOL (end of line) at the end"
-NO find "${textfiles[@]}" -type f \
-    -exec sh -c '[ `tail -1 "$1" | wc -l` -eq 0 ]' -- {} \; -print
-
-CHECKING "All text files should have Unix line endings"
-NO git grep -l -I $'\r''$'
-
-CHECKING "No text file should have trailing spaces"
-NO grep -l '[[:space:]]\+$' -- "${textfiles[@]}"
+#CHECKING "All text files should have EOL (end of line) at the end"
+#NO find "${textfiles[@]}" -type f \
+#    -exec sh -c '[ `tail -1 "$1" | wc -l` -eq 0 ]' -- {} \; -print
+#
+#CHECKING "All text files should have Unix line endings"
+#NO git grep -l -I $'\r''$'
+#
+#CHECKING "No text file should have trailing spaces"
+#NO grep -l '[[:space:]]\+$' -- "${textfiles[@]}"
 
 CHECKING "All code should use spaces instead of tab character"
-NO git grep -l -I '^[[:space:]]*'$'\t' -- \
-    src/{main,test}/{scala,python}/ \
-    util/ \
-    ddlib/!(Makefile) \
-    examples/*{,/*}/{udf/,*.{sh,py,md}} \
-    mln/ \
-    doc/!(Makefile) \
-    #
+NO find "${textfiles[@]}" -type f \
+    \
+    ! -name '.gitmodules' \
+    ! -name 'Makefile' ! -name '*.mk' \
+    ! -path compiler/compile-code/compile-code-Makefile \
+    \
+    -exec grep -l '^[[:space:]]*'$'\t' {} +
 
 ###############################################################################
 color green echo >&2 "# NO CODING STYLE VIOLATIONS! :)"

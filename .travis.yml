@@ -25,52 +25,54 @@ before_install:
   # Check coding style before performing the build and tests
   - make checkstyle;
 
-  # Have Docker build scripts use and update the correct images
-  - export DOCKER_IMAGE=netj/deepdive-build;
-    export DOCKER_IMAGE_MASTER=$DOCKER_IMAGE:master;
-    export DOCKER_IMAGE_TEST_PREFIX=$DOCKER_IMAGE:travis.$TRAVIS_JOB_NUMBER-${TRAVIS_COMMIT:0:7}-test.;
+  # Have Docker build scripts use and update the correct images (these can override DockerBuild.conf)
+  - export DOCKER_IMAGE=hazyresearch/deepdive-build;
+  - export POSTGRES_DOCKER_IMAGE=hazyresearch/postgres;
 
   # Pull Docker images
-  - docker pull $DOCKER_IMAGE_MASTER;
-  - docker pull postgres;
+  - docker pull $DOCKER_IMAGE;
+  - docker pull $POSTGRES_DOCKER_IMAGE;
 
 install:
   # Build using Docker
-  - make build--in-container;
+  - ./DockerBuild/build-in-container
   # TODO tag the $DOCKER_IMAGE with TRAVIS environment
 
 script:
   # Run all tests using Docker
-  - make test--in-container;
+  - ./DockerBuild/test-in-container-postgres
 
   # Check broken links in documentation
   # TODO check only when doc/ has changed
   #- make -C doc/ linkcheck
 
 after_script:
-    # decide which test result image to push
-  - DOCKER_IMAGE_TO_PUSH=$DOCKER_IMAGE_TEST_PREFIX;
-    if [[ $TRAVIS_TEST_RESULT = 0 ]];
-    then DOCKER_IMAGE_TO_PUSH+=PASS;
-    else DOCKER_IMAGE_TO_PUSH+=FAIL;
-    fi;
+  - docker login -e "$encrypted_DOCKER_EMAIL" -u "$encrypted_DOCKER_USERNAME" -p "$encrypted_DOCKER_PASSWORD";
+
     # decide what tag to use
-  - if [[ $TRAVIS_PULL_REQUEST = false ]];
-    then tag=travis.$TRAVIS_BRANCH;
-    else tag=travis-pr$TRAVIS_PULL_REQUEST;
+  - if [[ $TRAVIS_TEST_RESULT = 0 ]];
+    then verdict=PASS;
+    else verdict=FAIL;
     fi;
-    tag=$(echo -n "$tag" | tr -c 'A-Za-z0-9_.-' _);
 
     # push the test result
-  - docker login -e "$encrypted_DOCKER_EMAIL" -u "$encrypted_DOCKER_USERNAME" -p "$encrypted_DOCKER_PASSWORD";
-  - docker tag $DOCKER_IMAGE_TO_PUSH $DOCKER_IMAGE:$tag;
-    docker push $DOCKER_IMAGE:$tag;
+  - if [[ $TRAVIS_PULL_REQUEST = false ]];
+    then docker tag $DOCKER_IMAGE:latest-test  $DOCKER_IMAGE:$TRAVIS_BRANCH.latest-test;
+         docker push                           $DOCKER_IMAGE:$TRAVIS_BRANCH.latest-test;
+         docker tag $DOCKER_IMAGE:latest-test  $DOCKER_IMAGE:$TRAVIS_BRANCH.latest-test-$verdict;
+         docker push                           $DOCKER_IMAGE:$TRAVIS_BRANCH.latest-test-$verdict;
+    else docker tag $DOCKER_IMAGE:latest-test  $DOCKER_IMAGE:pr$TRAVIS_PULL_REQUEST-test;
+         docker push                           $DOCKER_IMAGE:pr$TRAVIS_PULL_REQUEST-test;
+    fi;
 
     # update the master image with the successful build
-  - case $TRAVIS_EVENT_TYPE-$TRAVIS_BRANCH-$TRAVIS_TEST_RESULT in
-        push-master-0)
-            docker tag $DOCKER_IMAGE $DOCKER_IMAGE_MASTER;
-            docker push $DOCKER_IMAGE_MASTER ;;
+  - case $TRAVIS_EVENT_TYPE-$TRAVIS_BRANCH-$verdict in
+        push-master-PASS)
+            docker tag $DOCKER_IMAGE:latest-build $DOCKER_IMAGE:latest;
+            docker push                           $DOCKER_IMAGE:latest;;
+        push-*-PASS)
+            docker tag $DOCKER_IMAGE:latest-build $DOCKER_IMAGE:$TRAVIS_BRANCH.latest;
+            docker push                           $DOCKER_IMAGE:$TRAVIS_BRANCH.latest;
     esac;
 
 ## update GitHub releases for some select branches (master and v*.*.x)

@@ -9,7 +9,8 @@ BUILD_DIR = .build
 # path to the package to be built
 PACKAGE = $(dir $(STAGE_DIR))deepdive.tar.gz
 
-ifneq ($(shell which docker 2>/dev/null),)
+NO_DOCKER_BUILD ?= false
+ifneq ($(shell $(NO_DOCKER_BUILD) || which docker 2>/dev/null),)
 # do a containerized build by default if Docker is available
 .DEFAULT_GOAL := build--in-container
 
@@ -43,6 +44,7 @@ test--in-container:
 depends: .build/depends
 .build/depends: util/install.sh $(wildcard util/install/*)
 	# Installing and Checking dependencies...
+	mkdir -p $(@D)
 	sha1sum $^ | diff -q $@ - || \
 	$< _deepdive_build_deps _deepdive_runtime_deps
 	sha1sum $^ >$@
@@ -105,13 +107,29 @@ build:
 	# record version and build info
 	util/build/generate-build-info.sh >$(BUILD_INFO)
 
+# ensure some submodules required by stage.sh is there
+build: \
+    extern/buildkit/install-shared-libraries-required-by \
+    extern/buildkit/generate-wrapper-for-libdirs \
+    #
+extern/buildkit/%:
+	git submodule update --init extern/buildkit
+
 # how to build external runtime dependencies to bundle
-.PHONY: bundled-runtime-dependencies
-bundled-runtime-dependencies extern/.build/bundled: extern/bundle-runtime-dependencies.sh
+.PHONY: extern bundled-runtime-dependencies all-bundled-runtime-dependencies no-bundled-runtime-dependencies
+extern \
+bundled-runtime-dependencies \
+extern/.build/bundled: extern/bundle-runtime-dependencies.sh extern/bundle.conf
 	PACKAGENAME=deepdive  $<
 $(PACKAGE): bundled-runtime-dependencies
 build: extern/.build/bundled
-
+# bundle all unless overridden with `make no-bundled-runtime-dependencies`
+extern/bundle-runtime-dependencies.sh: extern/bundle.conf
+all-bundled-runtime-dependencies \
+extern/bundle.conf:
+	ln -sfn bundle-all.conf extern/bundle.conf
+no-bundled-runtime-dependencies:
+	ln -sfn bundle-none.conf extern/bundle.conf
 
 ### test recipes #############################################################
 
@@ -134,24 +152,21 @@ checkstyle:
 
 ### submodule build recipes ###################################################
 
+# submodules to build and the files to copy out from each of them
+include util/build/build-submodules.mk
+$(BUILD_SUBMODULE)/inference/dimmwitted.mk : COPY = dw
+$(BUILD_SUBMODULE)/util/mindbender.mk      : COPY = @prefix@/
+$(BUILD_SUBMODULE)/compiler/ddlog.mk       : COPY = target/scala-2.11/ddlog-assembly-0.1-SNAPSHOT.jar
+$(BUILD_SUBMODULE)/runner/mkmimo.mk        : COPY = mkmimo
+
+# XXX legacy targets kept to reduce surprise
 .PHONY: build-sampler
-build-sampler: build-dimmwitted
+build-sampler: build-submodule-dimmwitted
 .PHONY: build-dimmwitted
-build-dimmwitted:
-	@util/build/build-submodule-if-needed inference/dimmwitted dw
-build: build-dimmwitted
-
+build-dimmwitted: build-submodule-dimmwitted
 .PHONY: build-mindbender
-build-mindbender:
-	@util/build/build-submodule-if-needed util/mindbender @prefix@/
-build: build-mindbender
-
+build-mindbender: build-submodule-mindbender
 .PHONY: build-ddlog
-build-ddlog:
-	@util/build/build-submodule-if-needed compiler/ddlog target/scala-2.11/ddlog-assembly-0.1-SNAPSHOT.jar
-build: build-ddlog
-
+build-ddlog: build-submodule-ddlog
 .PHONY: build-mkmimo
-build-mkmimo:
-	@util/build/build-submodule-if-needed runner/mkmimo mkmimo
-build: build-mkmimo
+build-mkmimo: build-submodule-mkmimo

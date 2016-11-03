@@ -61,6 +61,8 @@ deepdive db analyze \"${output_relation}\"
                         # are not declared in the schema, but are expected to be
                         # produced by the sql query the label column
                         .columns[deepdiveVariableLabelColumn] = { index: (.columns | length), type: "BOOLEAN" }
+                        |
+                        .columns[deepdiveVariableLabelTruthinessColumn] = { index: (.columns | length), type: "FLOAT" }
                     end
                     | .columns | to_entries | sort_by(.value.index)[]
                     | { alias: .key, table: "R", column: "column_\(.value.index)" }

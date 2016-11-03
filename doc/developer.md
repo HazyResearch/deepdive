@@ -101,14 +101,14 @@ DeepDive build and tests can be done using [Docker](https://www.docker.com), whi
     ./DockerBuild/build-in-container
     ```
 
-    This pulls the master image from Docker Hub ([netj/deepdive-build](https://hub.docker.com/r/netj/deepdive-build/)), then inside a fresh container, runs the build after applying the changes made to the current source tree.
-    This is the default for `make` (without any target argument) when Docker is available on your system.
+    This pulls the `latest` image from Docker Hub ([hazyresearch/deepdive-build](https://hub.docker.com/r/hazyresearch/deepdive-build/)), then inside a fresh container, runs the build after applying changes made to the current source tree.
+    This is the default behavior for `make` (without any target argument) when Docker is available on your system.
 
     CAVEAT: Note that only files that are tracked by git is reflected in the build inside containers.
     Use `git add` to make sure any new files are also considered when transfering changes to containers.
 
 
-* To test the latest build, run:
+* To test the most recent build, run:
 
     ```bash
     make test--in-container
@@ -129,32 +129,33 @@ DeepDive build and tests can be done using [Docker](https://www.docker.com), whi
     ./DockerBuild/test-in-container-postgres  make test ONLY=test/postgresql/*.bats
     ```
 
-* To make the latest build the new master image (on your local machine), run:
+* To inspect the most recent build or test, run:
 
     ```bash
-    ./DockerBuild/update-master-image
-    ```
-
-    Until you run this command, new builds will always start from the master image, not from the latest build.
-    If your source tree has diverged a lot from it, it's a good idea to update the master image once the initial long build finishes and passes the tests.
-    That way each subsequent build won't have to repeat the same long build.
-
-    If you have permission, you can push your master image to DockerHub and have others start build from there by running:
-
-    ```bash
-    docker push netj/deepdive-build:master
-    ```
-
-* To inspect the build, run:
-
-    ```bash
-    ./DockerBuild/inspect-build
+    ./DockerBuild/inspect-container
     ```
 
     You can pass a command to run as arguments:
 
     ```bash
-    ./DockerBuild/inspect-build  make test
+    ./DockerBuild/inspect-container latest-run  make test
+    ```
+
+* The most recent image for the current branch is automatically updated after the most recent test finishes successfully.
+    To make it also the new `latest` image for all other branches on your local machine, run:
+
+    ```bash
+    ./DockerBuild/update-latest-image
+    ```
+
+    Until you run this command, new builds will always start from the `latest` image from the central Docker Hub, not from the latest build on your local machine.
+    If your source tree has diverged a lot from the master branch, it's a good idea to update the latest image once the initial long build finishes and passes all tests.
+    That way builds for your branches won't have to repeat the same long build.
+
+    If you have permission, you can push your master image to DockerHub and have others start build from there by running:
+
+    ```bash
+    docker push hazyresearch/deepdive-build
     ```
 
 ##### <a name="build-test-docker"></a> Normal builds and tests
@@ -162,6 +163,13 @@ DeepDive build and tests can be done using [Docker](https://www.docker.com), whi
 Running containerized builds and tests in Docker is the recommended way, but you are welcome to run normal builds directly on the host in the old way.
 Everything described here about normal builds in fact applies to the source tree inside the container.
 Moreover, normal build is the only way to produce releases for Mac and environments other than the one used in the master image.
+
+* To disable the containerized builds even if you have Docker installed and to force normal build, simply set:
+
+    ```bash
+    export NO_DOCKER_BUILD=true
+    ```
+
 
 * To install all build and runtime dependencies, run:
 
@@ -262,5 +270,3 @@ To deploy changes to the main website, run:
 ```bash
 make -C doc/ deploy
 ```
-
-

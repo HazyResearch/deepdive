@@ -1,94 +1,84 @@
 #!/usr/bin/env bash
 # db-assign_sequential_id -- Assigns a unique integer to every row for a table using PostgreSQL sequence generator
 # > eval "$(db-parse "$url")"
-# > db-assign_sequential_id TABLE COLUMN BEGIN_ID [INCREMENT] [ORDER_BY...]
+# > db-assign_sequential_id TABLE ID_COLUMN [PART_ID_COLUMN]
 ##
 set -euo pipefail
 
-[[ $# -gt 0 ]] || usage "$0" "Missing TABLE"
-[[ $# -gt 1 ]] || usage "$0" "Missing COLUMN"
-[[ $# -gt 2 ]] || usage "$0" "Missing BEGIN_ID"
-Table=$1 Column=$2 BeginId=$3 Increment=${4:-1} OrderBy=${5:-}
+[[ $# -gt 0 ]] || usage "$0" "Missing TABLE_CSV"
+[[ $# -gt 1 ]] || usage "$0" "Missing ID_COLUMN"
 
-[[ $Increment -ne 0 ]] || usage "$0" "INCREMENT must be non-zero"
+TABLE_CSV=$1 IdColumn=$2 PartColumn=${3:-0}
 
-# Use Greenplum PL/pgSQL and PL/Python UDFs to assign IDs fast
-# See: http://www.postgresql.org/docs/8.2/static/sql-createlanguage.html
-# See: http://www.postgresql.org/docs/8.2/static/plpgsql-overview.html
-# See: http://www.postgresql.org/docs/8.2/static/plpython-funcs.html
-if [[ -z $OrderBy ]] && db-supports_pg_lang "plpgsql" && db-supports_pg_lang "plpythonu"; then
-    db-execute "
-    CREATE OR REPLACE FUNCTION fast_seqassign_init()
-    RETURNS INT AS \$\$
-      if 'cur_id' in SD:
-        SD.pop('cur_id')
-      return 0
-    \$\$ LANGUAGE plpythonu;
-
-    CREATE OR REPLACE FUNCTION fast_seqassign_next(startid BIGINT, increment BIGINT, this_gpsid INT, gpsids INT[], cumulative_cnts BIGINT[], cnts BIGINT[])
+# http://gpdb.docs.pivotal.io/4390/ref_guide/extensions/pl_python.html
+SQL="
+    CREATE OR REPLACE FUNCTION seqassign(partid INT, reset BOOL, pids INT[], offsets BIGINT[])
     RETURNS BIGINT AS \$\$
-      if 'cur_id' not in SD:
-        for gpsid, cumulative_cnt, cnt in zip(gpsids, cumulative_cnts, cnts):
-          if gpsid == this_gpsid:
-            # find the id range using the cumulative count and the size of this segment
-            SD['cur_id'] = startid + increment * (cumulative_cnt - cnt)
-            SD['end_id'] = startid + increment *  cumulative_cnt
-            break
-        if 'cur_id' not in SD:
-          # XXX no segment was found
-          plpy.fatal('No non-empty id range was assigned for segment %s in the initial partition' % str(this_gpsid))
-      # generate fresh id as long as it's within the assigned range
-      id = SD['cur_id']
-      if id != SD['end_id']:
-        SD['cur_id'] += increment
-        return id
-      else:
-        plpy.fatal('Insufficient id range was assigned for segment %s' % str(this_gpsid))
+      if reset:
+        for i, pid in enumerate(pids):
+          SD[pid] = offsets[i]
+        return 0
+
+      x = SD[partid]
+      SD[partid] += 1
+      return x + (partid << 48)
     \$\$ LANGUAGE plpythonu;
 
-    CREATE OR REPLACE FUNCTION fast_seqassign(tname CHARACTER VARYING, cname CHARACTER VARYING, startid BIGINT, increment BIGINT)
-    RETURNS TEXT AS \$\$
-    BEGIN
-      EXECUTE 'CREATE TEMPORARY VIEW dd_tmp_id_ranges_by_gpsid AS
-               SELECT gpsid
-                    , cnt
-                    , SUM(cnt) OVER (ORDER BY gpsid) AS cumulative_cnt
-                 FROM (
-                    SELECT gp_segment_id AS gpsid
-                         , COUNT(1)      AS cnt
-                      FROM ' || QUOTE_IDENT(tname) || '
-                     GROUP BY gpsid
-                     ORDER BY gpsid
-                 ) histogram;';
-      DECLARE
-        gpsids          INT[]    := ARRAY(SELECT gpsid          FROM dd_tmp_id_ranges_by_gpsid ORDER BY gpsid);
-        cumulative_cnts BIGINT[] := ARRAY(SELECT cumulative_cnt FROM dd_tmp_id_ranges_by_gpsid ORDER BY gpsid);
-        cnts            BIGINT[] := ARRAY(SELECT cnt            FROM dd_tmp_id_ranges_by_gpsid ORDER BY gpsid);
-        update_query    TEXT;
-      BEGIN
-        EXECUTE 'SELECT fast_seqassign_init();';
-        update_query := 'UPDATE ' || tname || ' SET ' || cname || ' = fast_seqassign_next(
-            ' || startid || ',
-            ' || increment || ',
-            gp_segment_id,
-            ARRAY[' || ARRAY_TO_STRING(         gpsids, ',')::TEXT || '],
-            ARRAY[' || ARRAY_TO_STRING(cumulative_cnts, ',')::TEXT || '],
-            ARRAY[' || ARRAY_TO_STRING(           cnts, ',')::TEXT || ']
-          );';
-        IF update_query::TEXT IS NOT NULL THEN
-          -- update_query IS NULL for empty tables, hence this guard is necessary
-          EXECUTE update_query;
-        END IF;
-        RETURN 'fast_seqassign done for segments [' || ARRAY_TO_STRING(gpsids, ',') || ']' ||
-               ' with counts [' || ARRAY_TO_STRING(cnts, ',') || ']';
-      END;
-    END;
-    \$\$ LANGUAGE 'plpgsql';
-
-    SELECT fast_seqassign('$Table', '$Column', $BeginId, $Increment);
+    CREATE TEMP TABLE idstats(pid INT, tname TEXT, gpsid INT, total BIGINT)
+      DISTRIBUTED BY (pid);
 "
 
-else # if either plpgsql or plpythonu is not available
-    # Delegate to PostgreSQL's way of assigning sequence
-    exec "$(dirname "$0")"/../postgresql/"$(basename "$0")" "$@"
-fi
+
+for table in $(echo $TABLE_CSV | sed "s/,/ /g")
+do
+    SQL="$SQL
+    INSERT INTO idstats
+      SELECT $PartColumn AS pid, '$table', gp_segment_id, COUNT(1)
+      FROM $table
+      GROUP BY pid, gp_segment_id;"
+done
+
+# http://stackoverflow.com/questions/22841206/calculating-cumulative-sum-in-postgresql
+# Use larger table idstats_distributor to ensure stats are processed by all segments.
+# Assuming 1000 rows cover all segments.
+SQL="$SQL
+CREATE TEMP TABLE idstats_rollup AS
+  SELECT pid, gpsid, total, SUM(total) OVER (PARTITION BY pid ORDER BY gpsid) AS cum_total
+  FROM (
+    SELECT pid, gpsid, SUM(total) as total
+    FROM idstats
+    GROUP BY pid, gpsid
+    ORDER BY pid, gpsid
+  ) t
+  DISTRIBUTED BY (pid);
+
+CREATE TEMP TABLE idstats_bases AS
+  SELECT
+    gpsid,
+    ARRAY_AGG(pid ORDER BY pid) as pids,
+    ARRAY_AGG((cum_total - total)::BIGINT ORDER BY pid) as offsets
+  FROM idstats_rollup
+  GROUP BY gpsid
+  DISTRIBUTED RANDOMLY;
+
+CREATE TEMP TABLE idstats_distributor as
+  SELECT generate_series(1, 1000) id
+  DISTRIBUTED BY (id);
+
+ANALYZE idstats_bases;
+ANALYZE idstats_distributor;
+
+SELECT seqassign(gpsid, true, pids, offsets)
+  FROM idstats_bases a, idstats_distributor b
+  WHERE a.gpsid = b.gp_segment_id;
+
+"
+
+for table in $(echo $TABLE_CSV | sed "s/,/ /g")
+do
+    SQL="$SQL
+    UPDATE $table SET $IdColumn = seqassign($PartColumn, false, NULL::INT[], NULL::BIGINT[]);"
+done
+
+
+db-execute "$SQL"
