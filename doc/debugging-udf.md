@@ -12,8 +12,8 @@ Here are some general tips for printing information to the log and running the U
 
 ## Printing to the log
 
-Remember that the *standard output* of a UDF is already reserved for TSV formatted data that gets loaded into the database.
-Therefore when a typical print statement is used for debugging, it won't appear anywhere in the log but just mangle the TSV output stream and ultimately fail the UDF execution or corrupt its output.
+Remember that the *standard output* of a UDF is already reserved for TSJ or TSV formatted data that gets loaded into the database.
+Therefore when a typical print statement is used for debugging, it won't appear anywhere in the log but just mangle the TSJ output stream and ultimately fail the UDF execution or corrupt its output.
 The correct way to print log statements is to print to the *standard error*.
 Below is an example in Python.
 
@@ -22,7 +22,7 @@ Below is an example in Python.
 from deepdive import *
 import sys
 
-@tsv_extractor
+@tsj_extractor
 @returns( ... )
 def extract( ... ):
     ...
@@ -56,7 +56,7 @@ Instead, by prefixing the command with `deepdive env`, they can be executed as i
 deepdive env python udf/fn.py
 ```
 
-This will take TSV rows from standard input and print TSV rows to standard output as well as debug logs to standard error. It can therefore be debugged just like a normal Python program.
+This will take TSJ rows from standard input and print TSJ rows to standard output as well as debug logs to standard error. It can therefore be debugged just like a normal Python program.
 
 <!--
 <todo>write</todo>

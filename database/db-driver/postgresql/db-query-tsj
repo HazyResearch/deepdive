@@ -63,6 +63,7 @@ conn = psycopg2.connect(
         user=os.environ.get("DBUSER"),
         host=os.environ.get("DBHOST"),
         port=os.environ.get("DBPORT"),
+        options=os.environ.get("PGOPTIONS"),
         )
 # execute given SQL query, and output each row in TSJ format
 with conn:

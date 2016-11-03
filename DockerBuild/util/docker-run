@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# docker-run -- Wraps docker run fixing some tty and PGID issues
+# $ docker-run [DOCKER_RUN_OPTS...] -- DOCKER_IMAGE [COMMAND [ARG...]]
+#
+# NOTE the `--` before DOCKER_IMAGE is required!
+##
+set -euo pipefail
+. "$(dirname "$0")"/../DockerBuild.bash ''
+
+# extra docker run options
+[[ -z $DOCKER_RUN_OPTS ]] || eval set -- $DOCKER_RUN_OPTS '"$@"'
+
+# some common environment variables to pass down to the container
+# See: https://docs.travis-ci.com/user/environment-variables/#Default-Environment-Variables
+# See: https://circleci.com/docs/environment-variables/
+# See: https://wiki.jenkins-ci.org/display/JENKINS/Building+a+software+project#Buildingasoftwareproject-JenkinsSetEnvironmentVariables
+for _var_name in \
+    LANG \
+    LC_ALL \
+    CONTINUOUS_INTEGRATION \
+    CI \
+    #
+do  [[ -n "${!_var_name:-}" ]] || continue
+    set -- --env "$_var_name"="${!_var_name}" "$@"
+done
+
+# run interactively if we're in a tty
+! [[ -t 0 && -t 1 ]] || set -- --interactive --tty --env TERM="$TERM" "$@"
+
+# mount host source root inside container
+set -- --volume "$DOCKER_HOST_PATH:$DOCKER_HOST_MOUNTPOINT" "$@"
+
+# pick up options to pass to docker run until the -- separator
+[[ $# -gt 0 ]] || usage "$0" "Missing `--` separator"
+dockerRunOpts=()
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --) shift; break ;;
+        *) dockerRunOpts+=("$1"); shift
+    esac
+done
+# and the image argument
+[[ $# -gt 0 ]] || usage "$0" "Missing DOCKER_IMAGE"
+dockerRunOpts+=("$1"); shift  # this ensure [[ ${#dockerRunOpts[@]} -gt 0 ]]
+
+#set -x # XXX this is too verbose and the callers already show the options
+# run the command in a container
+docker run "${dockerRunOpts[@]}" "$@"

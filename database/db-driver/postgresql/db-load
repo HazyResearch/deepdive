@@ -21,15 +21,15 @@ do_load() {
     if [[ $nsources -gt 1 ]]; then
         local i=1
         for source; do
-            show_progress input_to "loading $table [$i/$nsources]" -- \
-            bash -euc 'sql=$1; exec db-execute "$sql" <'"$("$mkloadingexpr" /dev/stdin)" -- "$sql" <"$source" &
+            eval 'show_progress input_to "loading $table [$i/$nsources]" -- \
+                db-execute "$sql" <'"$("$mkloadingexpr" "$source")"' &'
             let ++i
         done
         wait
     else
         source=$1; shift
-        exec show_progress input_to "loading $table" -- \
-        bash -euc 'sql=$1; exec db-execute "$sql" <'"$("$mkloadingexpr" /dev/stdin)" -- "$sql" <"$source"
+        eval 'exec show_progress input_to "loading $table" -- \
+            db-execute "$sql" <'"$("$mkloadingexpr" "$source")"''
     fi
 }
 

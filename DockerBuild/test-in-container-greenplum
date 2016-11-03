@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# test-in-container-greenplum -- Tests with Greenplum container linked
+#
+# Uses: https://hub.docker.com/r/pivotaldata/gpdb-base/
+##
+set -euo pipefail
+. "$(dirname "$0")"/DockerBuild.bash
+
+: ${DOCKER_GPNAME:=test-greenplum.$$}
+: ${GREENPLUM_USER:=gpadmin}
+: ${GREENPLUM_PASSWORD:=pivotal}
+: ${GREENPLUM_START_TIME:=4} # seconds
+
+# run a greenplum container
+trap 'docker rm -f "$DOCKER_GPNAME"' EXIT
+set -x
+docker run --detach --name "$DOCKER_GPNAME" \
+    --publish 5432 \
+    pivotaldata/gpdb-base \
+    #
+
+# wait until postgres starts
+postgres-has-started() {
+    docker run --rm --name "$DOCKER_GPNAME.check" \
+        --link "$DOCKER_GPNAME" \
+        --env PGPASSWORD="$GREENPLUM_PASSWORD" \
+        pivotaldata/gpdb-base \
+        psql -h "$DOCKER_GPNAME" -U "$GREENPLUM_USER" -l
+}
+sleep $GREENPLUM_START_TIME  # give it some initial time to start
+while ! postgres-has-started; do sleep 1.$RANDOM; done
+
+# default test command to run unless specified
+[[ $# -gt 0 ]] || set -- make test
+
+# run test against it
+DOCKER_RUN_OPTS="
+    --link $DOCKER_GPNAME
+    " \
+test-in-container \
+    env \
+        TEST_GREENPLUM_DBHOST="$GREENPLUM_USER:$GREENPLUM_PASSWORD@$DOCKER_GPNAME" \
+    /bin/sh -euc '
+# FIXME greenplum client executables must be installed
+"$@"
+' -- "$@"

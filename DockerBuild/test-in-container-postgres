@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# test-in-container-postgres -- Tests with PostgreSQL container linked
+#
+# Uses: https://hub.docker.com/_/postgres/
+##
+set -euo pipefail
+. "$(dirname "$0")"/DockerBuild.bash
+
+: ${DOCKER_PGNAME:=test-postgres.$$}
+: ${POSTGRES_PASSWORD:=$RANDOM$RANDOM}
+: ${POSTGRES_START_TIME:=4} # seconds
+
+# run a postgres container
+trap 'docker rm -f "$DOCKER_PGNAME"' EXIT
+set -x
+docker run --detach --name "$DOCKER_PGNAME" \
+    --env POSTGRES_USER="$USER" \
+    --env POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+    postgres \
+    #
+
+# wait until postgres starts
+postgres-has-started() {
+    docker run --rm --name "$DOCKER_PGNAME.check" \
+        --link "$DOCKER_PGNAME" \
+        --env PGPASSWORD="$POSTGRES_PASSWORD" \
+        postgres \
+        psql -h "$DOCKER_PGNAME" -U "$USER" -l
+}
+sleep $POSTGRES_START_TIME  # give it some initial time to start
+while ! postgres-has-started; do sleep 1.$RANDOM; done
+
+# default test command to run unless specified
+[[ $# -gt 0 ]] || set -- make test
+
+# run test against it
+DOCKER_RUN_OPTS="
+    --link $DOCKER_PGNAME
+    " \
+test-in-container \
+    env \
+        TEST_POSTGRES_DBHOST="$USER:$POSTGRES_PASSWORD@$DOCKER_PGNAME" \
+    "$@"

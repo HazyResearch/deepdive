@@ -13,15 +13,16 @@ INSTALLER_HOME_URL="$GITHUB_BASEURL"/raw/"$INSTALLER_BRANCH"/util/install
 INSTALLER_HOME_DIR=$(dirname "$0")/install
 
 # see if running from the git repo
-running_from_git=true; [[ -e "$INSTALLER_HOME_DIR"/../../.git ]] || running_from_git=false
-! $running_from_git ||
+: ${INSTALLER_LOCAL_FIRST:=false}
+! [[ -e "$INSTALLER_HOME_DIR"/../../.git ]] || INSTALLER_LOCAL_FIRST=true
+! $INSTALLER_LOCAL_FIRST ||
     # set GITCLONE to the containing git working copy when running from it
     case $(declare -p GITCLONE) in "declare --"*) false ;; *) true ;; esac ||
     GITCLONE="$INSTALLER_HOME_DIR"/../.. INSTALLER_BRANCH=HEAD BRANCH=HEAD
 
-$running_from_git || # unless this is running directly from a git repo
-# run the correct installer directly from GitHub if BRANCH is specified
-[[ -z "${BRANCH:-}" || -n "${INSTALLER_REMOTE_EXEC:-}" ]] ||
+$INSTALLER_LOCAL_FIRST || # unless this is running directly from a git repo
+# run the correct installer directly from GitHub unless already doing so
+${INSTALLER_REMOTE_EXEC:-false} ||
     INSTALLER_REMOTE_EXEC=true \
     exec bash <(set -x; curl -fsSL "${INSTALLER_HOME_URL}.sh") "$@"
 
@@ -304,6 +305,7 @@ case $(uname) in
             {
                 set -o pipefail
                 hint=$(lsb_release -i | cut -f2) ||
+                hint=$(. /etc/lsb-release && echo $DISTRIB_ID) ||
                 hint=$(head -1 /etc/redhat-release) ||
                 hint=  # give up finding hint
             } 2>/dev/null
@@ -331,7 +333,7 @@ echo "### DeepDive installer${os:+ for $os}"
 # each script defines bash functions whose names start with `install_`.
 source_script() {
     local script=$1
-    if $running_from_git && [[ -e "$INSTALLER_HOME_DIR/$script" ]]; then
+    if $INSTALLER_LOCAL_FIRST && [[ -e "$INSTALLER_HOME_DIR/$script" ]]; then
         source "$INSTALLER_HOME_DIR/$script"
     else
         # may be this script is run as a one-liner, get script from GitHub

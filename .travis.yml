@@ -1,4 +1,12 @@
-sudo: false  # to use container-based infra, see: http://docs.travis-ci.com/user/migrating-from-legacy/
+# Travis CI config to run tests using Docker
+# See: https://docs.travis-ci.com/user/docker/
+# See: https://docker.io/
+sudo: required
+dist: trusty
+language: c  # C seems to have the least amount of setup
+services:
+  - docker
+
 notifications:
   email:
     - deepdive-notifications@cs.stanford.edu
@@ -12,91 +20,71 @@ notifications:
     on_success: change  # options: [always|never|change] default: always
     on_failure: always  # options: [always|never|change] default: always
     on_start: never     # options: [always|never|change] default: always
-language:
-  - scala
-  - cpp
-  - c
-  - python
-scala:
-  - "2.11.7"
-jdk:
-  - oraclejdk8
-python:
-  - "2.7"
-services:
-  - postgresql
-
-cache:
-  directories:
-    - .build
-    - .github-release-assets
-    - $HOME/.ivy2/cache
-
-env:
-  global:
-    - PGUSER: postgres
-    - PGPASSWORD:
-    - PGPORT: 5432
-    - PGHOST: localhost
-    - DBNAME: deepdive_test
-# Parallel jobs aren't effective since the `install` step currently takes most of the time.
-#  matrix: # NOTE we're on a paid plan that gives us 2 parallel jobs
-#      # 1. Unit tests with PostgreSQL and integration tests with MySQL
-#    - TEST_ONLY: "'test/postgresql/scalatests.bats test/mysql/*.bats'"
-#      TEST_EXCEPT: test/mysql/scalatests.bats
-#      # 2. More integration tests with PostgreSQL
-#    - TEST_ONLY:
-#      TEST_EXCEPT: "'test/postgresql/scalatests.bats test/mysql/*.bats'"
 
 before_install:
   # Check coding style before performing the build and tests
-  - make checkstyle
+  - make checkstyle;
 
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test  # for gcc 4.8
-    packages:
-    - python3
-    - gnuplot
-    - bc
-    - bzip2
-      # for building sampler
-    - libnuma-dev
-    - gcc-4.8
-    - g++-4.8
-      # for ddlog
-    - oracle-java8-installer
-      # for mindbender
-    - ed
+  # Have Docker build scripts use and update the correct images
+  - export DOCKER_IMAGE=netj/deepdive-build;
+    export DOCKER_IMAGE_MASTER=$DOCKER_IMAGE:master;
+    export DOCKER_IMAGE_TEST_PREFIX=$DOCKER_IMAGE:travis.$TRAVIS_JOB_NUMBER-${TRAVIS_COMMIT:0:7}-test.;
+
+  # Pull Docker images
+  - docker pull $DOCKER_IMAGE_MASTER;
+  - docker pull postgres;
 
 install:
-#  - make depends # XXX does not work on container-based infra
-  - jdk_switcher use oraclejdk8
-  - export CXX="g++-4.8" CC="gcc-4.8" # necessary for building sampler
-  - make test-build
+  # Build using Docker
+  - make build--in-container;
+  # TODO tag the $DOCKER_IMAGE with TRAVIS environment
 
 script:
-  # Run all tests
-  - dist/stage/bin/deepdive env make test ONLY=test/postgresql/chunking_example.bats
-  - dist/stage/bin/deepdive env make test
+  # Run all tests using Docker
+  - make test--in-container;
 
   # Check broken links in documentation
   # TODO check only when doc/ has changed
   #- make -C doc/ linkcheck
 
-# update GitHub releases for some select branches (master and v*.*.x)
-deploy:
-  - provider: script
-    script: util/build/decrypt-travis-then-update-github-releases
-    skip_cleanup: true
-    on:
-      repo: HazyResearch/deepdive
-      all_branches: true
-      # TODO condition: "$TRAVIS_BRANCH = master || $TRAVIS_BRANCH = v*.*.x"
-  - provider: script
-    script: util/build/decrypt-travis-then-update-github-releases
-    skip_cleanup: true
-    on:
-      repo: HazyResearch/deepdive
-      tag: true
+after_script:
+    # decide which test result image to push
+  - DOCKER_IMAGE_TO_PUSH=$DOCKER_IMAGE_TEST_PREFIX;
+    if [[ $TRAVIS_TEST_RESULT = 0 ]];
+    then DOCKER_IMAGE_TO_PUSH+=PASS;
+    else DOCKER_IMAGE_TO_PUSH+=FAIL;
+    fi;
+    # decide what tag to use
+  - if [[ $TRAVIS_PULL_REQUEST = false ]];
+    then tag=travis.$TRAVIS_BRANCH;
+    else tag=travis-pr$TRAVIS_PULL_REQUEST;
+    fi;
+    tag=$(echo -n "$tag" | tr -c 'A-Za-z0-9_.-' _);
+
+    # push the test result
+  - docker login -e "$encrypted_DOCKER_EMAIL" -u "$encrypted_DOCKER_USERNAME" -p "$encrypted_DOCKER_PASSWORD";
+  - docker tag $DOCKER_IMAGE_TO_PUSH $DOCKER_IMAGE:$tag;
+    docker push $DOCKER_IMAGE:$tag;
+
+    # update the master image with the successful build
+  - case $TRAVIS_EVENT_TYPE-$TRAVIS_BRANCH-$TRAVIS_TEST_RESULT in
+        push-master-0)
+            docker tag $DOCKER_IMAGE $DOCKER_IMAGE_MASTER;
+            docker push $DOCKER_IMAGE_MASTER ;;
+    esac;
+
+## update GitHub releases for some select branches (master and v*.*.x)
+#deploy:
+#  - provider: script
+#    script: util/build/decrypt-travis-then-update-github-releases
+#    skip_cleanup: true
+#    on:
+#      repo: HazyResearch/deepdive
+#      all_branches: true
+#      # TODO condition: "$TRAVIS_BRANCH = master || $TRAVIS_BRANCH = v*.*.x"
+#  - provider: script
+#    script: util/build/decrypt-travis-then-update-github-releases
+#    skip_cleanup: true
+#    on:
+#      repo: HazyResearch/deepdive
+#      tag: true
