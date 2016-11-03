@@ -25,12 +25,13 @@ before_install:
   # Check coding style before performing the build and tests
   - make checkstyle;
 
-  # Have Docker build scripts use and update the correct images
+  # Have Docker build scripts use and update the correct images (these can override DockerBuild.conf)
   - export DOCKER_IMAGE=hazyresearch/deepdive-build;
+  - export POSTGRES_DOCKER_IMAGE=hazyresearch/postgres;
 
   # Pull Docker images
   - docker pull $DOCKER_IMAGE;
-  - docker pull postgres:9.5;  # we need plpython for ID assignment
+  - docker pull $POSTGRES_DOCKER_IMAGE;
 
 install:
   # Build using Docker
