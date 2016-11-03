@@ -12,7 +12,7 @@ Like dark matter, dark data is the great mass of data buried in text, tables, fi
 DeepDive helps bring dark data to light by creating structured data (SQL tables) from unstructured information (text documents) and integrating such data with an existing structured database.
 DeepDive is used to extract sophisticated relationships between entities and make inferences about facts involving those entities.
 DeepDive helps one process a wide variety of dark data and put the results into a database.
-With the data in a database, one can use a variety of standard tools that consume structured data; e.g., visualization tools like Tablaeu or analytics tools like Excel.
+With the data in a database, one can use a variety of standard tools that consume structured data; e.g., visualization tools like Tableau or analytics tools like Excel.
 
 ### What is DeepDive?
 
