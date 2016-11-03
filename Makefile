@@ -33,13 +33,14 @@ endif
 endif
 
 ### build/test inside containers ##############################################
+.PHONY: %--in-container dev-docker-image
+dev-docker-image:  # needs to be run at least once by someone
+	./DockerBuild/rebuild-latest-image-from-scratch
 build--in-container:
 	./DockerBuild/build-in-container
 test--in-container:
 	./DockerBuild/test-in-container-postgres \
 	    make -j test $(if $(ONLY),ONLY="$(ONLY)") $(if $(EXCEPT),EXCEPT="$(EXCEPT)")
-dev-docker-image:
-	./DockerBuild/rebuild-latest-image-from-scratch
 
 ### dependency recipes ########################################################
 
@@ -76,6 +77,7 @@ $(PACKAGE): build
 # without building the source tree.
 
 # XXX put coffee and node from mindbender on PATH
+.PHONY: release-%
 release-%: PATH := $(realpath $(STAGE_DIR)/mindbender/node_modules/.bin):$(realpath $(STAGE_DIR)/mindbender/depends/bundled/.all/bin):$(PATH)
 release-%: GITHUB_REPO = HazyResearch/deepdive
 release-%: RELEASE_VERSION = $*
@@ -105,6 +107,7 @@ release-%:
 DOCKER_IMAGE_FOR_BUILD   = hazyresearch/deepdive-build
 DOCKER_IMAGE_FOR_RELEASE = hazyresearch/deepdive
 
+.PHONY: production-docker-image:
 production-docker-image: dist/Dockerfile dist/deepdive-build.tar.gz dist/deepdive-examples.tar.gz dist/install.sh
 	docker build -t $(DOCKER_IMAGE_FOR_RELEASE) $(<D)
 dist/deepdive-build.tar.gz:
