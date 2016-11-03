@@ -1,5 +1,4 @@
 # build byproducts
-/dist
 /.build
 /.travis
 /.travis.tar
