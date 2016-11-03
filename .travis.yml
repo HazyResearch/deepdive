@@ -26,7 +26,7 @@ before_install:
   - make checkstyle;
 
   # Have Docker build scripts use and update the correct images
-  - export DOCKER_IMAGE=netj/deepdive-build;
+  - export DOCKER_IMAGE=hazyresearch/deepdive-build;
 
   # Pull Docker images
   - docker pull $DOCKER_IMAGE;

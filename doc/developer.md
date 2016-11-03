@@ -101,7 +101,7 @@ DeepDive build and tests can be done using [Docker](https://www.docker.com), whi
     ./DockerBuild/build-in-container
     ```
 
-    This pulls the `latest` image from Docker Hub ([netj/deepdive-build](https://hub.docker.com/r/netj/deepdive-build/)), then inside a fresh container, runs the build after applying changes made to the current source tree.
+    This pulls the `latest` image from Docker Hub ([hazyresearch/deepdive-build](https://hub.docker.com/r/hazyresearch/deepdive-build/)), then inside a fresh container, runs the build after applying changes made to the current source tree.
     This is the default behavior for `make` (without any target argument) when Docker is available on your system.
 
     CAVEAT: Note that only files that are tracked by git is reflected in the build inside containers.
@@ -155,7 +155,7 @@ DeepDive build and tests can be done using [Docker](https://www.docker.com), whi
     If you have permission, you can push your master image to DockerHub and have others start build from there by running:
 
     ```bash
-    docker push netj/deepdive-build
+    docker push hazyresearch/deepdive-build
     ```
 
 ##### <a name="build-test-docker"></a> Normal builds and tests
