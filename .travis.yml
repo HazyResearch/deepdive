@@ -53,14 +53,13 @@ after_script:
     then verdict=PASS;
     else verdict=FAIL;
     fi;
-    branchTag=$(./DockerBuild/util/docker-tag-from-git)
 
     # push the test result
   - if [[ $TRAVIS_PULL_REQUEST = false ]];
-    then docker tag $DOCKER_IMAGE:latest-test  $DOCKER_IMAGE:$branchTag.latest-test;
-         docker push                           $DOCKER_IMAGE:$branchTag.latest-test;
-         docker tag $DOCKER_IMAGE:latest-test  $DOCKER_IMAGE:$branchTag.latest-test-$verdict;
-         docker push                           $DOCKER_IMAGE:$branchTag.latest-test-$verdict;
+    then docker tag $DOCKER_IMAGE:latest-test  $DOCKER_IMAGE:$TRAVIS_BRANCH.latest-test;
+         docker push                           $DOCKER_IMAGE:$TRAVIS_BRANCH.latest-test;
+         docker tag $DOCKER_IMAGE:latest-test  $DOCKER_IMAGE:$TRAVIS_BRANCH.latest-test-$verdict;
+         docker push                           $DOCKER_IMAGE:$TRAVIS_BRANCH.latest-test-$verdict;
     else docker tag $DOCKER_IMAGE:latest-test  $DOCKER_IMAGE:pr$TRAVIS_PULL_REQUEST-test;
          docker push                           $DOCKER_IMAGE:pr$TRAVIS_PULL_REQUEST-test;
     fi;
@@ -71,8 +70,8 @@ after_script:
             docker tag $DOCKER_IMAGE:latest-build $DOCKER_IMAGE:latest;
             docker push                           $DOCKER_IMAGE:latest;;
         push-*-PASS)
-            docker tag $DOCKER_IMAGE:latest-build $DOCKER_IMAGE:$branchTag.latest;
-            docker push                           $DOCKER_IMAGE:$branchTag.latest;
+            docker tag $DOCKER_IMAGE:latest-build $DOCKER_IMAGE:$TRAVIS_BRANCH.latest;
+            docker push                           $DOCKER_IMAGE:$TRAVIS_BRANCH.latest;
     esac;
 
 ## update GitHub releases for some select branches (master and v*.*.x)
