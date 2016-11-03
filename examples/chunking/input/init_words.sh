@@ -3,7 +3,7 @@
 set -eu
 cd "$(dirname "$0")"
 
-if [[ -n ${SUBSAMPLE_NUM_WORDS_TRAIN:-} && -n ${SUBSAMPLE_NUM_WORDS_TEST:-} ]]; then
+if [[ -n ${SUBSAMPLE_NUM_WORDS_TRAIN:-1000} && -n ${SUBSAMPLE_NUM_WORDS_TEST:-1000} ]]; then
     head -n ${SUBSAMPLE_NUM_WORDS_TRAIN} ./train_null_terminated.txt
     head -n ${SUBSAMPLE_NUM_WORDS_TEST}   ./test_null_terminated.txt
 else
@@ -16,14 +16,13 @@ BEGIN {
 }
 {
     if ($1 == "null" && $2 == "null" && $3 == "null" ) {
-        print "null", WORD_ID, $0
-            SENT_ID++
+        SENT_ID++
     } else {
         print SENT_ID, WORD_ID, $0
     }
     WORD_ID++
 }
 ' |
-sed 's/ /	/g; s/null/\\N/g' |
+sed 's/ /	/g' |
 DEEPDIVE_LOAD_FORMAT=tsv \
-deepdive load "words_raw(sent_id, word_id, word, pos, true_tag)" /dev/stdin
+deepdive load "words(sent_id, word_id, word, pos, true_tag)" /dev/stdin

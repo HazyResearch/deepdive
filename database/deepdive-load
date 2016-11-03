@@ -184,5 +184,8 @@ done
 # load everything queued so far
 loadQueued
 
+# always analyze relation after loading
+deepdive-db analyze "$Relation"
+
 $relationIsntInAppSchema ||
 deepdive-mark done data/"$Relation"

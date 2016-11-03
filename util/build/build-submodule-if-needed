@@ -8,8 +8,8 @@ set -euo pipefail
 Submodule=${1:?A path to a Git submodule must be given}; shift
 
 # some implied file paths
-build_info=.build/submodule/"$Submodule".built
-build_cache=.build/submodule/"$Submodule"
+build_info="$BUILD_SUBMODULE"/"$Submodule".built
+build_cache="$BUILD_SUBMODULE"/"$Submodule"
 build_sh="$Submodule".build.sh
 
 # some sanity checks
@@ -62,14 +62,13 @@ build_submodule() {
 # if the submodule is dirty with modified or untracked content, just build it
 is_clean=$(
     cd "$Submodule"
-    if ! $ALWAYS_BUILD_SUBMODULE &&
-        [[ $(git status --porcelain | wc -l) -eq 0 ]]; then
+    if [[ $(git status --porcelain | wc -l) -eq 0 ]]; then
         echo true
     else
         echo false
     fi
 )
-$is_clean || build_submodule "$@"
+! $ALWAYS_BUILD_SUBMODULE && $is_clean || build_submodule "$@"
 
 # if previous build info exists, only proceed to build if something's new
 [[ -e "$build_info" ]] || build_submodule "$@"

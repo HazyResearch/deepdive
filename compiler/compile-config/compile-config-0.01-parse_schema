@@ -27,6 +27,10 @@ include "util";
             end
             | .[].key
             ]
+        , variablesParitionColumns  : [ [ $deepdive.schema.relations[$relationName].columns | to_entries[]? ]
+            | [.[] | select([.value.annotations[]? | .name == "partition"] | any)]
+            | .[].key
+            ]
         , variableType : ($variableType | trimWhitespace | ascii_downcase
             | if in({boolean: 1, categorical: 1}) then .
             else error("deepdive.schema.variables.\($relationName).\($columnName) has an unrecognized type: \($variableType | @json)")

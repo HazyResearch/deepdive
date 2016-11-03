@@ -1,14 +1,21 @@
 #!/usr/bin/env python
 # Compares two JSON strings passed over command-line arguments
+from __future__ import unicode_literals
 import sys,json,subprocess
+
+# python 3 compatibility
+try:
+    unicode
+except NameError:
+    unicode = lambda x, y: x
 
 try:
     global expected, actual
     [expected, actual] = [json.loads(unicode(s, 'UTF-8')) for s in sys.argv[1:]]
 except:
     for s in sys.argv[1:]:
-        print s
-        print "####"
+        print(s)
+        print("####")
     raise
 
 if expected == actual:

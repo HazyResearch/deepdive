@@ -4,10 +4,10 @@
 . "$BATS_TEST_DIRNAME"/env.sh >&2
 
 : ${CHUNKING_TEST_NUM_WORDS_TRAIN:=1000} ${CHUNKING_TEST_NUM_WORDS_TEST:=200}
-: ${CHUNKING_TEST_MIN_F1SCORE:=80}
+: ${CHUNKING_TEST_MIN_F1SCORE:=70}
 
-: ${CHUNKING_TEST_REUSE_NUM_WORDS_TEST:=200}
-: ${CHUNKING_TEST_REUSE_MIN_F1SCORE:=80}
+: ${CHUNKING_TEST_REUSE_NUM_WORDS_TEST:=400}
+: ${CHUNKING_TEST_REUSE_MIN_F1SCORE:=70}
 
 get_f1score() {
     printf '%.0f' $(
@@ -34,8 +34,8 @@ run_chunking_example_reusing_weights() {
     # keep the learned weights from a small corpus
     deepdive model weights keep
 
-    # load larger test corpus
-    deepdive redo words_raw
+    # load NOT SO larger test corpus
+    deepdive redo words
 
     # reuse the weights (to skip learning)
     deepdive model weights reuse  # taking care of all extraction and grounding for larger data

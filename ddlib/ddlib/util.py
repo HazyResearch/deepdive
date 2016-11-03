@@ -99,7 +99,7 @@ def normalize_type_name(ty):
   if ty in CANONICAL_TYPE_BY_NAME:
     return CANONICAL_TYPE_BY_NAME[ty]
   else:
-    for patt,ty_canonical in CANONICAL_TYPE_BY_REGEX.iteritems():
+    for patt,ty_canonical in CANONICAL_TYPE_BY_REGEX.items():
       if patt.match(ty):
         return ty_canonical
   return ty
@@ -190,7 +190,7 @@ def parse_pgtsv_element(s, t, array_nesting_depth=0):
 
 class Row:
   def __str__(self):
-    return '<Row(' + ', '.join("%s=%s" % x for x in self.__dict__.iteritems()) + ')>'
+    return '<Row(' + ', '.join("%s=%s" % x for x in self.__dict__.items()) + ')>'
 
   def __repr__(self):
     return str(self)
@@ -330,7 +330,7 @@ def format_decorator(attrName):
         # XXX @over(collection.OrderedDict(foo="type", bar="type", ...)) doesn't work
         # as Python forgets the order when calling with keyword argument binding.
     # merge dictionaries
-    name_type_pairs = list(name_type_pairs) + name_type_dict.items()
+    name_type_pairs = list(name_type_pairs) + list(name_type_dict.items())
     def decorate(f):
       setattr(f, attrName, name_type_pairs)
       return f
