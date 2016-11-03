@@ -98,6 +98,24 @@ release-%:
 	chmod -R go= .travis
 	tar cvf $@ $^
 
+### production Docker container ##############################################
+
+DOCKER_IMAGE_FOR_BUILD   = hazyresearch/deepdive-build
+DOCKER_IMAGE_FOR_RELEASE = hazyresearch/deepdive
+
+production-docker-image: dist/Dockerfile dist/deepdive-build.tar.gz dist/deepdive-examples.tar.gz dist/install.sh dist/install
+	docker build -t $(DOCKER_IMAGE_FOR_RELEASE) $(<D)
+dist/deepdive-build.tar.gz:
+	docker run --rm -it -v "$(realpath $(@D))":/mnt \
+	    $(DOCKER_IMAGE_FOR_BUILD) \
+	    tar cfvz /mnt/$(@F) -C "$(STAGE_DIR)" .
+dist/deepdive-examples.tar.gz:
+	docker run --rm -it -v "$(realpath $(@D))":/mnt \
+	    $(DOCKER_IMAGE_FOR_BUILD) \
+	    tar cfvz /mnt/$(@F) -C examples .
+dist/install%: util/install%
+	rsync -avH $< $(@D)/
+
 ### build recipes #############################################################
 
 # common build steps

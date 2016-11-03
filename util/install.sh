@@ -20,12 +20,6 @@ INSTALLER_HOME_DIR=$(dirname "$0")/install
     case $(declare -p GITCLONE) in "declare --"*) false ;; *) true ;; esac ||
     GITCLONE="$INSTALLER_HOME_DIR"/../.. INSTALLER_BRANCH=HEAD BRANCH=HEAD
 
-$INSTALLER_LOCAL_FIRST || # unless this is running directly from a git repo
-# run the correct installer directly from GitHub unless already doing so
-${INSTALLER_REMOTE_EXEC:-false} ||
-    INSTALLER_REMOTE_EXEC=true \
-    exec bash <(set -x; curl -fsSL "${INSTALLER_HOME_URL}.sh") "$@"
-
 # use a fixed locale to ensure consistent behavior
 export LC_ALL=en_US.UTF-8
 
@@ -41,6 +35,21 @@ error() {
     fi
     false
 } >&2
+# find a way to get files over HTTP by URL
+if has curl; then
+    get-url() { curl -fsSL "$@"; }
+elif has wget; then
+    get-url() { wget -qO- "$@"; }
+else
+    error "Neither curl nor wget is available"
+fi
+
+$INSTALLER_LOCAL_FIRST || # unless this is running directly from a git repo
+# run the correct installer directly from GitHub unless already doing so
+${INSTALLER_REMOTE_EXEC:-false} ||
+    INSTALLER_REMOTE_EXEC=true \
+    exec bash <(set -x; get-url "${INSTALLER_HOME_URL}.sh") "$@"
+
 download() {
     local url=$1
     local file=${2:-$(basename "$1")}
@@ -153,7 +162,7 @@ select_release() {
 }
 list_deepdive_releases() {
     # find all links to a GitHub tree from the release page
-    curl -fsSL "$GITHUB_BASEURL"/releases/ | sed '
+    get-url "$GITHUB_BASEURL"/releases/ | sed '
         \:/.*/tree/:!d
         s/.*href="//; s/".*$//
         s:.*/tree/::
@@ -267,7 +276,7 @@ download_deepdive_github_tree() {
         local tmpdir="$dest".download
         mkdir -p "$tmpdir"
         set -x
-        curl -fsSL "$GITHUB_BASEURL"/archive/"$RELEASE".tar.gz |
+        get-url "$GITHUB_BASEURL"/archive/"$RELEASE".tar.gz |
         tar xvzf - -C "$tmpdir" "${@/#/$tarballPrefix/}"
         ! [[ -e "$dest" ]] || mv -f "$dest" "$dest"~
         if [[ $# -eq 1 && -d "$tmpdir/$tarballPrefix/$1" ]]; then
@@ -337,13 +346,13 @@ source_script() {
         source "$INSTALLER_HOME_DIR/$script"
     else
         # may be this script is run as a one-liner, get script from GitHub
-        #source <(curl -fsSL "$INSTALLER_HOME_URL/$script") "$@"
+        #source <(get-url "$INSTALLER_HOME_URL/$script") "$@"
         # XXX using a workaround since source with process substitution has problem in bash 3 (OS X default)
         # See: https://bugzilla.altlinux.org/show_bug.cgi?id=7475
         init_INSTALLER_TEMP_DIR
         local script_path="$INSTALLER_TEMP_DIR/$script"
         mkdir -p "$(dirname "$script_path")"
-        curl -fsSL "$INSTALLER_HOME_URL/$script" >"$script_path"
+        get-url "$INSTALLER_HOME_URL/$script" >"$script_path"
         source "$script_path" "$@"
     fi
 }

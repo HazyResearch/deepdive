@@ -3,23 +3,42 @@
 
 LSB=$(lsb_release -ir 2>/dev/null | cut -f2) ||
 LSB=$(. /etc/lsb-release 2>/dev/null  && echo $DISTRIB_ID $DISTRIB_RELEASE) ||
+LSB=$(. /etc/os-release  2>/dev/null  && echo $PRETTY_NAME) ||
 true
 case ${LSB} in
     Debian*8*|Debian*7*) true ;;
-    Ubuntu*12.04|Ubuntu*14.04|Ubuntu*15.04|Ubuntu*16.04) true ;;
+    Ubuntu*12.04*|Ubuntu*14.04*|Ubuntu*15.04*|Ubuntu*16.04*) true ;;
     *) error "$LSB found: This installer may not work on your OS." ||
         error "It has been tested only on Debian 7 and 8, Ubuntu 12.04, 14.04, 15.04, and 16.04." ||
         true  # don't fail here as it might work for other versions
 esac
+is_debian=false; case ${LSB} in Debian*) is_debian=true; esac
 
 install__deepdive_build_deps() {
     set -x
+    build_deps=()
     sudo apt-get update
     sudo apt-get install -qy software-properties-common python-software-properties
-    sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test  # for gcc >= 4.8 on Precise (12.04)
-    sudo add-apt-repository -y ppa:openjdk-r/ppa  # for openjdk 8
-    sudo apt-get update
-    build_deps=(
+    if $is_debian; then
+        case $(cat /etc/debian_version) in
+            8.*) # jessie-backports is needed
+                sudo add-apt-repository -y "deb http://cdn-fastly.deb.debian.org/debian jessie-backports main"
+                sudo apt-get update
+                ;;
+        esac
+        build_deps+=(
+        )
+    else
+        sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test  # for gcc >= 4.8 on Precise (12.04)
+        sudo add-apt-repository -y ppa:openjdk-r/ppa  # for openjdk 8
+        sudo apt-get update
+        build_deps+=(
+            # sampler
+            gcc-4.8
+            g++-4.8
+        )
+    fi
+    build_deps+=(
         build-essential
         bash
         coreutils
@@ -48,8 +67,6 @@ install__deepdive_build_deps() {
         # mindbender
         ed
         # sampler
-        gcc-4.8
-        g++-4.8
         cmake
         unzip
         libnuma-dev
@@ -59,14 +76,25 @@ install__deepdive_build_deps() {
 
 install__deepdive_runtime_deps() {
     set -x
+    runtime_deps=()
     # install all runtime dependencies for DeepDive
     sudo apt-get update
     sudo apt-get install -qy software-properties-common python-software-properties
-    sudo add-apt-repository -y ppa:openjdk-r/ppa  # for openjdk 8
-    sudo apt-get update
-    runtime_deps=(
+    if $is_debian; then
+        case $(cat /etc/debian_version) in
+            8.*) # jessie-backports is needed for openjdk-8
+                sudo add-apt-repository -y "deb http://cdn-fastly.deb.debian.org/debian jessie-backports main"
+                sudo apt-get update
+                ;;
+        esac
+    else
+        sudo add-apt-repository -y ppa:openjdk-r/ppa  # for openjdk-8
+        sudo apt-get update
+    fi
+    runtime_deps+=(
         bash
         coreutils
+        bsdmainutils    # for column
         make
         rsync
         bc
