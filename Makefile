@@ -103,7 +103,7 @@ release-%:
 DOCKER_IMAGE_FOR_BUILD   = hazyresearch/deepdive-build
 DOCKER_IMAGE_FOR_RELEASE = hazyresearch/deepdive
 
-production-docker-image: dist/Dockerfile dist/deepdive-build.tar.gz dist/deepdive-examples.tar.gz dist/install.sh dist/install
+production-docker-image: dist/Dockerfile dist/deepdive-build.tar.gz dist/deepdive-examples.tar.gz dist/install.sh
 	docker build -t $(DOCKER_IMAGE_FOR_RELEASE) $(<D)
 dist/deepdive-build.tar.gz:
 	docker run --rm -it -v "$(realpath $(@D))":/mnt \
@@ -113,8 +113,8 @@ dist/deepdive-examples.tar.gz:
 	docker run --rm -it -v "$(realpath $(@D))":/mnt \
 	    $(DOCKER_IMAGE_FOR_BUILD) \
 	    tar cfvz /mnt/$(@F) -C examples .
-dist/install%: util/install%
-	rsync -avH $< $(@D)/
+dist/install.sh: util/install.sh $(wildcard util/install/*)
+	rsync -avH util/install{.sh,} $(@D)/
 
 ### build recipes #############################################################
 
