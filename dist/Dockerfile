@@ -9,7 +9,16 @@ ADD install    /deepdive/install
 USER root
 RUN for cmd in /deepdive/bin/*; do ln -sfn "$cmd" /usr/local/bin/; done
 RUN INSTALLER_LOCAL_FIRST=true /deepdive/install.sh _deepdive_runtime_deps
-RUN apt-get install -qy postgresql-client
+
+# install postgres client
+RUN apt-get install -qy wget ca-certificates \
+ && apt-add-repository -y "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" \
+ && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - \
+ && apt-get update -qy \
+ && apt-get upgrade -qy \
+ && apt-get install -qy postgresql-client-9.5 \
+ ;
+
 USER jovyan
 
 # override default behavior
