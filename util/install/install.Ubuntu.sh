@@ -66,8 +66,10 @@ install__deepdive_build_deps() {
         cmake
         unzip
         libnuma-dev
+        locales
     )
     sudo apt-get install -qy "${build_deps[@]}"
+    sudo locale-gen en_US.UTF-8
 }
 
 install__deepdive_runtime_deps() {
@@ -103,6 +105,7 @@ install__deepdive_runtime_deps() {
         gnuplot
         libltdl7  # for graphviz
         libnuma1
+        locales
     )
     sudo apt-get install -qy "${runtime_deps[@]}"
     sudo locale-gen en_US.UTF-8
