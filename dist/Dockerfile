@@ -15,7 +15,7 @@ RUN for cmd in /deepdive/bin/*; do ln -sfn "$cmd" /usr/local/bin/; done
 RUN INSTALLER_LOCAL_FIRST=true /deepdive/install.sh _deepdive_runtime_deps
 
 # install postgres client
-RUN apt-get install -qy wget ca-certificates \
+RUN apt-get install -qy curl wget ca-certificates \
  && apt-add-repository -y "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" \
  && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - \
  && apt-get update -qy \
@@ -30,4 +30,5 @@ USER jovyan
 ADD deepdive-examples.tar.gz /home/jovyan/work/deepdive-examples
 
 # override default behavior
+ENV USER=jovyan
 CMD exec start-notebook.sh --ip 0.0.0.0
