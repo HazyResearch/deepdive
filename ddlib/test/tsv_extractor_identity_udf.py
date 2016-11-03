@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # an identity UDF for Nasty TSV input/output
 # for testing @tsv_extractor parser and formatter
+from __future__ import print_function
 from deepdive import *
 
 def identity_for_nasty_tsv(
@@ -49,8 +50,8 @@ def identity_for_nasty_tsv(
             v20,
             ]
     for i, x in enumerate(args):
-        print >>sys.stderr, "v%d =\t" % (i + 1),
-        print >>sys.stderr, x
+        print("v%d =\t" % (i + 1), file=sys.stderr)
+        print(x, file=sys.stderr)
     yield args
 nasty_tsv_types = identity_for_nasty_tsv
 

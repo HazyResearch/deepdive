@@ -5,11 +5,4 @@
 ##
 set -eu
 
-if [[ $# -gt 0 ]]; then
-    createdb "$DBNAME" || true >/dev/null
-else
-    {
-    dropdb "$DBNAME" || true
-    createdb "$DBNAME"
-    } >/dev/null
-fi
+createdb "$DBNAME" || true >/dev/null

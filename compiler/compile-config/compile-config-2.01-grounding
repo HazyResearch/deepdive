@@ -16,7 +16,7 @@ def factorWeightDescriptionSqlExpr:
     [ ("\(.factorName)-" | asSqlLiteral)
     , (.weight_.params[] |
         "CASE WHEN \(asSqlIdent) IS NULL THEN ''
-              ELSE \(asSqlIdent) || ''  -- XXX CAST(... AS TEXT) unsupported by MySQL
+              ELSE CAST(\(asSqlIdent) AS TEXT)
           END"
       )
     ] | join(" ||\("-" | asSqlLiteral)|| ")
@@ -36,10 +36,6 @@ def factorWeightDescriptionSqlExpr:
             "data/\(.variablesTable)"
         ],
         style: "cmd_extractor", cmd: "
-        : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
-        varPath=\"$DEEPDIVE_GROUNDING_DIR\"/variable/\(.variableName | @sh)
-        mkdir -p \"$varPath\"
-        cd \"$varPath\"
 
         deepdive db analyze \(.variablesTable | @sh)
 
@@ -57,12 +53,8 @@ def factorWeightDescriptionSqlExpr:
         , GROUP_BY: [ .variablesCategoryColumns[] |         { table: "v", column: . }   ]
         } | asSql | asPrettySqlArg)
         # assign unique id to every distinct category
-        deepdive db assign_sequential_id \(.variablesCategoriesTable | @sh) cid 0 1 \(
-            # order by category columns to keep the cids and wids in sync
-            [ .variablesCategoryColumns[]
-            | { column: "_\(.)" }
-            | asSqlExpr
-            ] | join(", ") | @sh)
+
+        deepdive db assign_sequential_id \(.variablesCategoriesTable | @sh) cid
 
         deepdive db analyze \(.variablesCategoriesTable | @sh)
 
@@ -73,7 +65,7 @@ def factorWeightDescriptionSqlExpr:
         deepdive create table \(.variablesIdsTable | @sh) as \(
         { SELECT:
             [ (.variablesKeyColumns[]
-            | { alias: ., table: "v", column: . }) # XXX we don't prefix user's columns (with _ like others) since they directly use this table and it can cause confusion
+            | { alias: ., table: "v", column: . })
             , { alias: deepdiveVariableInternalLabelColumn, expr:
                 # boolean variables just take one label, so aggregate with AND
                 ( if .variableType == "boolean" then "EVERY(\"v\".\(.variablesLabelColumn | asSqlIdent))"
@@ -81,6 +73,12 @@ def factorWeightDescriptionSqlExpr:
                 else "MIN(CASE WHEN \"v\".\(.variablesLabelColumn | asSqlIdent) THEN \"c\".\"cid\" ELSE NULL END)"
                 end) }
             , { alias: deepdiveVariableInternalFrequencyColumn, expr: "COUNT(1)" }
+            , { alias: deepdiveVariableInternalPartitionColumn, expr:
+                (if (.variablesParitionColumns | any) then
+                    "((" +
+                    ([ .variablesParitionColumns[] | "('x'||substr(coalesce(md5(\(.)::text),''),1,8))::bit(32)"]
+                     | join(" # ")) + ")::BIGINT % \($deepdive.sampler.partitions))::INT"
+                else "0::INT" end) }
             , { alias: deepdiveVariableIdColumn, expr: "CAST(NULL AS BIGINT)" }
             ]
         , FROM: [ { alias: "v", table: .variablesTable } ]
@@ -103,61 +101,22 @@ def factorWeightDescriptionSqlExpr:
     }
 })
 
-## variable_id_partition
-# Grounding begins by counting the variables to partition a range of
-# non-negative integers for assigning the variable ids.
+
+## variable_assign_id
 | .deepdive_.execution.processes += {
-    "process/grounding/variable_id_partition": {
+    "process/grounding/variable_assign_id": {
         dependencies_: [
-            # id partition depends on all distinct variables to be first identified
             $deepdive.schema.variables_[] | "process/grounding/variable/\(.variableName)/materialize"
         ],
         style: "cmd_extractor", cmd: "
-        : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
+            deepdive db assign_sequential_id \([$deepdive.schema.variables_[] | .variablesIdsTable] | join(",") | @sh) \(deepdiveVariableIdColumn | @sh) \(deepdiveVariableInternalPartitionColumn | @sh)
 
-        RANGE_BEGIN=0 \\
-        partition_id_range \($deepdive.schema.variables_ | map(.variablesIdsTable | @sh) | join(" ")) | {
-            # variable names
-            set -- \($deepdive.schema.variables_ | map(.variableName | @sh) | join(" "))
-            # record the base
-            variableCountTotal=0
-            while read table begin excludeEnd; do
-                varName=$1; shift
-                varPath=\"$DEEPDIVE_GROUNDING_DIR\"/variable/${varName}
-                mkdir -p \"$varPath\"
-                cd \"$varPath\"
-                echo $begin                      >id_begin
-                echo $excludeEnd                 >id_exclude_end
-                echo $(( $excludeEnd - $begin )) >count
-                variableCountTotal=$excludeEnd
-            done
-            # record the final count
-            echo $variableCountTotal >\"$DEEPDIVE_GROUNDING_DIR\"/variable_count
-        }
+            \([$deepdive.schema.variables_[]
+                | "deepdive db analyze \(.variablesIdsTable | @sh)"]
+            | join("\n"))
         "
     }
 }
-
-
-## variable/*/assign_id
-# Each variable table then gets the range of integers assigned to the id column
-# of every row.
-| .deepdive_.execution.processes += merge($deepdive.schema.variables_[] | {
-    "process/grounding/variable/\(.variableName)/assign_id": {
-        dependencies_: [
-            "process/grounding/variable_id_partition"
-        ],
-        style: "cmd_extractor", cmd: "
-        : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
-
-        cd \"$DEEPDIVE_GROUNDING_DIR\"/variable/\(.variableName | @sh)
-        baseId=$(cat id_begin)
-
-        # assign id to all distinct variables according to the paritition
-        deepdive db assign_sequential_id \(.variablesIdsTable | @sh) \(deepdiveVariableIdColumn | @sh) $baseId
-        "
-    }
-})
 
 ## variable_holdout
 # Variables to holdout are recorded by executing either a user-defined
@@ -167,11 +126,9 @@ def factorWeightDescriptionSqlExpr:
 | .deepdive_.execution.processes += {
     "process/grounding/variable_holdout": {
         dependencies_: [
-            $deepdive.schema.variables_[]
-            | "process/grounding/variable/\(.variableName)/assign_id"
+            "process/grounding/variable_assign_id"
         ],
         style: "cmd_extractor", cmd: "
-        : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
 
         deepdive create table \(deepdiveGlobalHoldoutTable | @sh) \\
             variable_id:BIGINT:'PRIMARY KEY' \\
@@ -199,8 +156,8 @@ def factorWeightDescriptionSqlExpr:
             "
           end
         , if $deepdive.calibration.observation_query then
-            # run user holdout query if configured
-            "\($deepdive.calibration.holdout_query)"
+            # run user observation query if configured
+            "\($deepdive.calibration.observation_query)"
           else empty
           end
         ] | map("deepdive sql \(asPrettySqlArg)") | join("\n"))
@@ -208,14 +165,16 @@ def factorWeightDescriptionSqlExpr:
     }
 }
 
+
 ## variable/*/dump
 # Then each variable table is dumped into a set of binary files for the inference engine.
-| .deepdive_.execution.processes += merge($deepdive.schema.variables_[] | {
-    "process/grounding/variable/\(.variableName)/dump": {
+| .deepdive_.execution.processes += merge($deepdive.schema.variables_[]
+    | . as $var
+    | [range($deepdive.sampler.partitions) | {pid: .} + $var][]
+    | {
+    "process/grounding/variable/\(.variableName)/\(.pid)/dump": {
         dependencies_: [
             "process/grounding/variable_holdout"
-          # XXX below can be omitted for now
-          #, "process/grounding/variable/\(.variableName)/assign_id"
         ],
         style: "cmd_extractor", cmd: "
         : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
@@ -223,7 +182,8 @@ def factorWeightDescriptionSqlExpr:
         varPath=\"$DEEPDIVE_GROUNDING_DIR\"/variable/\(.variableName | @sh)
         mkdir -p \"$varPath\"
         cd \"$varPath\"
-        find . -name 'variables.part-*.bin.bz2' -exec rm -rf {} +
+        find . -name 'variables.\(.pid).part-*.bin.bz2' -exec rm -rf {} +
+        find . -name 'nvars.\(.pid).part-*' -exec rm -rf {} +
         export DEEPDIVE_LOAD_FORMAT=tsv
         export DEEPDIVE_UNLOAD_MATERIALIZED=false
 
@@ -247,7 +207,7 @@ def factorWeightDescriptionSqlExpr:
                 ]
             , FROM: { alias: "variables", sql:
                 { SELECT:
-                    [ { alias: "vid", table: "i", column: deepdiveVariableIdColumn }
+                    [ { alias: "vid", expr: "i.\(deepdiveVariableIdColumn | asSqlIdent) & ((1::bigint << 48) - 1)" }
                     , { alias: "variable_role", expr:
                           "CASE WHEN observation.variable_id IS NOT NULL
                                  AND \"i\".\(deepdiveVariableInternalLabelColumn | asSqlIdent) IS NOT NULL THEN 2
@@ -276,10 +236,16 @@ def factorWeightDescriptionSqlExpr:
                       , ON: { eq: [ { table: "i"  , column: deepdiveVariableIdColumn }
                                   , { table: "observation", column: "variable_id" } ] } }
                     ]
+                , WHERE:
+                    [ { eq: [ { table: "i", column: deepdiveVariableInternalPartitionColumn }
+                            , { expr: .pid }
+                            ]
+                      }
+                    ]
                 } }
             } | asSql | asPrettySqlArg) \\
             command=\("
-                sampler-dw text2bin variable /dev/stdin >(pbzip2 >variables.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
+                sampler-dw text2bin variable /dev/stdin /dev/stdout nvars.\(.pid).part-${DEEPDIVE_CURRENT_PROCESS_INDEX} | pbzip2 >variables.\(.pid).part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2
             " | @sh) \\
             output_relation=
         "
@@ -291,17 +257,20 @@ def factorWeightDescriptionSqlExpr:
 ## variable/*/dump_domains
 # Each categorical variable dumps an extra input for the inference engine that holds the domains.
 | .deepdive_.execution.processes += merge($deepdive.schema.variables_[]
-    | select(.variableType == "categorical") | {
-    "process/grounding/variable/\(.variableName)/dump_domains": {
+    | select(.variableType == "categorical")
+    | . as $var
+    | [range($deepdive.sampler.partitions) | {pid: .} + $var][]
+    | {
+    "process/grounding/variable/\(.variableName)/\(.pid)/dump_domains": {
         dependencies_: [
-            "process/grounding/variable/\(.variableName)/assign_id"
+            "process/grounding/variable_assign_id"
         ],
         style: "cmd_extractor", cmd: "
         : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
         varPath=\"$DEEPDIVE_GROUNDING_DIR\"/variable/\(.variableName | @sh)
         mkdir -p \"$varPath\"
         cd \"$varPath\"
-        find . -name 'domains.part-*.bin.bz2' -exec rm -rf {} +
+        find . -name 'domains.\(.pid).part-*.bin.bz2' -exec rm -rf {} +
         export DEEPDIVE_LOAD_FORMAT=tsv
         export DEEPDIVE_UNLOAD_MATERIALIZED=false
 
@@ -310,9 +279,10 @@ def factorWeightDescriptionSqlExpr:
         input_sql=\(
         # sparse categorical variables have domains files
         { SELECT:
-            [ { alias: "vid",  table: "i", column: deepdiveVariableIdColumn }
+            [ { alias: "vid", expr: "i.\(deepdiveVariableIdColumn | asSqlIdent) & ((1::bigint << 48) - 1)" }
             , { alias: "cardinality", expr: "COUNT(c.cid)" }
             , { alias: "cids", expr: "ARRAY_AGG(c.cid ORDER BY c.cid)" }
+            , { alias: "truthiness", expr: "ARRAY_AGG(COALESCE(v.\(deepdiveVariableLabelTruthinessColumn), 0) ORDER BY c.cid)" }
             ]
         , FROM: [ { alias: "v", table: .variablesTable } ]
         , JOIN:
@@ -331,10 +301,16 @@ def factorWeightDescriptionSqlExpr:
                                     ] }
                             ] } }
             ]
+        , WHERE:
+            [ { eq: [ { table: "i", column: deepdiveVariableInternalPartitionColumn }
+                    , { expr: .pid }
+                    ]
+              }
+            ]
         , GROUP_BY: [ { table: "i", column: deepdiveVariableIdColumn } ]
         } | asSql | asPrettySqlArg) \\
         command=\("
-            sampler-dw text2bin domain /dev/stdin >(pbzip2 >domains.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
+            sampler-dw text2bin domain /dev/stdin /dev/stdout /dev/null | pbzip2 >domains.\(.pid).part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2
         " | @sh) \\
         output_relation=
         "
@@ -349,29 +325,18 @@ def factorWeightDescriptionSqlExpr:
 # Each inference rule's SQL query is run to materialize the factors and the
 # distinct weights used in them.
 | .deepdive_.execution.processes += merge($deepdive.inference.factors_[]
-    | [ .input_[]
-      | ltrimstr("data/")
-      | $deepdive.schema.variables_byName[.]
-      | select(type != "null")
-      ] as $schemaVariablesForThisFactor
     | {
     # add a process for grounding factors
     "process/grounding/factor/\(.factorName)/materialize": {
         # materializing each factor requires the dependent variables to have their id assigned
         dependencies_: [
-            $schemaVariablesForThisFactor[]
-            # the involved variables must have their ids all assigned
-            | "process/grounding/variable/\(.variableName)/assign_id"?
+            "process/grounding/variable_assign_id"
         ],
         # other non-variable tables are also necessary
         input_: [ .input_[]
             | select(ltrimstr("data/") | in($deepdive.schema.variables_byName) | not)
         ],
         style: "cmd_extractor", cmd: "
-            : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
-            facPath=\"$DEEPDIVE_GROUNDING_DIR\"/factor/\(.factorName | @sh)
-            mkdir -p \"$facPath\"
-            cd \"$facPath\"
 
             # materialize factors using user input_query that pulls in assigned ids to involved variables
             deepdive create table \(.factorsTable | @sh) as \(
@@ -384,12 +349,14 @@ def factorWeightDescriptionSqlExpr:
                       | .schema.variablesCategoryColumns[]
                       | { table: "F", column: "\($prefix)\(.)" } )
                     , ( .weight_.params[] | { table: "F", column: . } )
-                    , { table: "F", column: "factor_value", alias: "factor_value" }
+                    , { table: "F", column: "feature_value", alias: "feature_value" }
                     ]
                 , FROM: [
                     { alias: "F", sql: "\(.input_query)" }
                     ]
                 } | asSql | asPrettySqlArg)
+
+            deepdive db analyze \(.factorsTable | @sh)
 
             # find distinct weights for the factors into a separate table
             deepdive create table \(.weightsTable | @sh) as \(
@@ -401,74 +368,37 @@ def factorWeightDescriptionSqlExpr:
                     , { alias: "initvalue", expr: .weight_.init_value    }
                     , { alias: "wid"      , expr: "CAST(NULL AS BIGINT)" } # to be assigned later by the assign_weight_id process
                     ]
-                , DISTINCT: true  # XXX this is inevitable
+                , DISTINCT: true
                 , FROM:
                     [ select(.weight_.params | length > 0)
                     # when weight is parameterized, find all distinct ones
                     | { alias: "f", table: .factorsTable }
                     ]
                 } | asSql | asPrettySqlArg)
-        "
-    }
-})
-
-
-## weight_id_partition
-# The weight ids must be first partitioned by counting them.
-| .deepdive_.execution.processes += {
-    "process/grounding/weight_id_partition": {
-        dependencies_: [
-            $deepdive.inference.factors_[]
-            | "process/grounding/factor/\(.factorName)/materialize"
-        ],
-        style: "cmd_extractor", cmd: "
-        : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
-        cd \"$DEEPDIVE_GROUNDING_DIR\"/factor
-
-        \([ "set --", "\($deepdive.inference.factors_[].weightsTable | @sh)", "#" ] | join(" \\\n    "))
-
-        # partition the id range for weights
-        RANGE_BEGIN=0 RANGE_STEP=1 \\
-        partition_id_range \"$@\" | {
-            # factor names
-            set -- \($deepdive.inference.factors_ | map(.factorName | @sh) | join(" "))
-            weightsCountTotal=0
-            while read table begin excludeEnd; do
-                factor=$1; shift
-                facPath=\"$DEEPDIVE_GROUNDING_DIR\"/factor/${factor}
-                mkdir -p \"$facPath\"
-                cd \"$facPath\"
-                echo $begin                      >weights_id_begin
-                echo $excludeEnd                 >weights_id_exclude_end
-                echo $(( $excludeEnd - $begin )) >weights_count
-                weightsCountTotal=$excludeEnd
-            done
-            echo $weightsCountTotal >\"$DEEPDIVE_GROUNDING_DIR\"/factor/weights_count
-        }
-        "
-    }
-}
-
-## factor/*/assign_weight_id
-# Each inference rule gets its weight ids actually assigned.
-| .deepdive_.execution.processes += merge($deepdive.inference.factors_[] | {
-    "process/grounding/factor/\(.factorName)/assign_weight_id": {
-        dependencies_: [
-            "process/grounding/weight_id_partition"
-        ],
-        style: "cmd_extractor", cmd: "
-            : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
-
-            cd \"$DEEPDIVE_GROUNDING_DIR\"/factor/\(.factorName | @sh)
-            baseId=$(cat weights_id_begin)
-
-            # assign weight ids according to the partition
-            deepdive db assign_sequential_id \(.weightsTable | @sh) wid $baseId
 
             deepdive db analyze \(.weightsTable | @sh)
         "
     }
 })
+
+
+## assign_weight_id
+# Each inference rule gets its weight ids actually assigned.
+| .deepdive_.execution.processes += {
+    "process/grounding/assign_weight_id": {
+        dependencies_: [
+            $deepdive.inference.factors_[]
+            | "process/grounding/factor/\(.factorName)/materialize"
+        ],
+        style: "cmd_extractor", cmd: "
+            deepdive db assign_sequential_id \([$deepdive.inference.factors_[] | .weightsTable] | join(",") | @sh) wid
+
+            \([$deepdive.inference.factors_[]
+                | "deepdive db analyze \(.weightsTable | @sh)"]
+            | join("\n"))
+        "
+    }
+}
 
 ## global_weight_table
 # To view the weights learned by the inference engine later, set up an app-wide table.
@@ -479,7 +409,6 @@ def factorWeightDescriptionSqlExpr:
                 "process/grounding/factor/\(.factorName)/materialize"
         ],
         style: "cmd_extractor", cmd: "
-        : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
 
         # set up a union view for all weight tables (\(deepdiveGlobalWeightsTable | asSqlIdent))
         deepdive create view \(deepdiveGlobalWeightsTable | @sh) as \(
@@ -501,20 +430,23 @@ def factorWeightDescriptionSqlExpr:
 
 ## factor/*/dump
 # The factors are dumped into a set of binary files for the inference engine.
-| .deepdive_.execution.processes += merge($deepdive.inference.factors_[] | {
+| .deepdive_.execution.processes += merge($deepdive.inference.factors_[]
+    | . as $fac
+    | [range($deepdive.sampler.partitions) | {pid: .} + $fac][]
+    | {
     # add a process for grounding factors and weights
-    "process/grounding/factor/\(.factorName)/dump": {
+    "process/grounding/factor/\(.factorName)/\(.pid)/dump": {
         dependencies_: [
-            "process/grounding/factor/\(.factorName)/assign_weight_id"
+            "process/grounding/assign_weight_id"
         ],
         style: "cmd_extractor", cmd: "
             : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
             facPath=\"$DEEPDIVE_GROUNDING_DIR\"/factor/\(.factorName | @sh)
             mkdir -p \"$facPath\"
             cd \"$facPath\"
-            find . \\( -name  'factors.part-*.bin.bz2' \\
-                    -o -name 'nfactors.part-*'         \\
-                    -o -name   'nedges.part-*'         \\
+            find . \\( -name  'factors.\(.pid).part-*.bin.bz2' \\
+                    -o -name 'nfactors.\(.pid).part-*'         \\
+                    -o -name   'nedges.\(.pid).part-*'         \\
                    \\) -exec rm -rf {} +
             export DEEPDIVE_LOAD_FORMAT=tsv
             export DEEPDIVE_UNLOAD_MATERIALIZED=false
@@ -533,24 +465,13 @@ def factorWeightDescriptionSqlExpr:
                     # weight parameters present in the data, hence a lot of joins! but doesn't waste the weights
                     # Assuming all var tables are categorical; TODO: Support mixed head.
                     echo \(
-                        # Order for parallel ARRAY_AGG expressions
-                        ( [ .function_.variables[]
-                          | { table: "C\(.ordinal)", column: "cid" } | asSqlExpr
-                          ] | join(", ")) as $valueOrder
-                    |
-                        .non_category_weight_cols as $non_category_weight_cols
-                    |
                     { SELECT:
                         [ ( .function_.variables[]
-                        | { table: "f", column: .columnId } )
-                        , { alias: "num_weights", expr: "COUNT(w.wid)" }
-                        # arrays below are parallel (ensured by $valueOrder)
+                        | { expr: "f.\(.columnId | asSqlIdent) & ((1::bigint << 48) - 1)"} )
                         , ( .function_.variables[]
-                        | { alias: "c\(.ordinal)_ids",
-                            expr: "ARRAY_AGG(\({ table: "C\(.ordinal)", column: "cid"
-                                               } | asSqlExpr) ORDER BY \($valueOrder))" } )
-                        , { alias: "weight_ids" , expr: "ARRAY_AGG(w.wid ORDER BY \($valueOrder))" }
-                        , { alias: "factor_values" , expr: "ARRAY_AGG(f.factor_value ORDER BY \($valueOrder))" }
+                        | { table: "C\(.ordinal)", column: "cid" } )
+                        , { alias: "weight_id", table: "w", column: "wid" }
+                        , { alias: "feature_value", table: "f", column: "feature_value" }
                         ]
                     , FROM:
                         [ { alias: "w", table: .weightsTable }
@@ -570,17 +491,16 @@ def factorWeightDescriptionSqlExpr:
                         [ ( .weight_.params[]
                         | { eq: [ { table: "w", column: . }
                                 , { table: "f", column: . } ] } )
+                        , { eq: [ { expr: "f.\(.function_.variables[0].columnId | asSqlIdent) >> 48" }
+                                , { expr: .pid }]}
                         ]
-                    , GROUP_BY:
-                        [ ( .function_.variables[] | { table: "f", column: .columnId } ),
-                          ( $non_category_weight_cols[] | { table: "f", column: . } ) ]
                     } | asSql | asPrettySqlArg)
                 )\"" else # factors over boolean variables
                     { SELECT:
                         [ ( .function_.variables[]
-                        | { table: "f", column: .columnId } )
+                        | { expr: "f.\(.columnId | asSqlIdent) & ((1::bigint << 48) - 1)"} )
                         , { alias: "weight_id", table: "w", column: "wid" }
-                        , { alias: "factor_value", table: "f", column: "factor_value" }
+                        , { alias: "feature_value", table: "f", column: "feature_value" }
                         ]
                     , FROM:
                         [ { alias: "f", table: .factorsTable }
@@ -590,18 +510,19 @@ def factorWeightDescriptionSqlExpr:
                         [ ( .weight_.params[]
                         | { eq: [ { table: "w", column: . }
                                 , { table: "f", column: . } ] } )
+                        , { eq: [ { expr: "f.\(.function_.variables[0].columnId | asSqlIdent) >> 48" }
+                                , { expr: .pid }]}
                         ]
                     } | asSql | asPrettySqlArg
                 end) \\
                 command=\("
                     # also record the factor count
-                    tee >(wc -l >nfactors.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}) |
-                    sampler-dw text2bin factor /dev/stdin >(pbzip2 >factors.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2) \\
+                    tee >(wc -l >nfactors.\(.pid).part-${DEEPDIVE_CURRENT_PROCESS_INDEX}) |
+                    sampler-dw text2bin factor /dev/stdin /dev/stdout nedges.\(.pid).part-${DEEPDIVE_CURRENT_PROCESS_INDEX} \\
                         $\(.function_.name)Factor \\
                         $numVariablesForFactor \\
-                        $areVariablesPositive |
-                    # and the edge count
-                    tee nedges.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}
+                        $areVariablesPositive \\
+                        | pbzip2 >factors.\(.pid).part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2
                 " | @sh) \\
                 output_relation=
         "
@@ -614,7 +535,7 @@ def factorWeightDescriptionSqlExpr:
     # add a process for grounding factors and weights
     "process/grounding/factor/\(.factorName)/dump_weights": {
         dependencies_: [
-            "process/grounding/factor/\(.factorName)/assign_weight_id"
+            "process/grounding/assign_weight_id"
         ],
         style: "cmd_extractor", cmd: "
             : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
@@ -622,12 +543,13 @@ def factorWeightDescriptionSqlExpr:
             mkdir -p \"$facPath\"
             cd \"$facPath\"
             find . \\( -name  'weights.part-*.bin.bz2' \\
+                    -o -name  'nweights.part-*'        \\
                    \\) -exec rm -rf {} +
             export DEEPDIVE_LOAD_FORMAT=tsv
             export DEEPDIVE_UNLOAD_MATERIALIZED=false
 
             # flag that signals whether to reuse weights or not
-            reuseFlag=\"$DEEPDIVE_GROUNDING_DIR\"/factor/weights.reuse
+            reuseFlag=\"$DEEPDIVE_GROUNDING_DIR\"/weights.reuse
 
             # dump the weights (except the description column), converting into binary format for the inference engine
             deepdive compute execute \\
@@ -658,7 +580,7 @@ def factorWeightDescriptionSqlExpr:
                     } | asSql | asPrettySqlArg)
                 fi)\" \\
                 command=\("
-                    sampler-dw text2bin weight /dev/stdin >(pbzip2 >weights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
+                    sampler-dw text2bin weight /dev/stdin /dev/stdout nweights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX} | pbzip2 >weights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2
                 " | @sh) \\
                 output_relation=
         "
@@ -672,13 +594,19 @@ def factorWeightDescriptionSqlExpr:
     "process/grounding/combine_factorgraph": {
         dependencies_: [(
             $deepdive.schema.variables_[]
-            | "process/grounding/variable/\(.variableName)/dump"
+            | . as $var
+            | [range($deepdive.sampler.partitions) | {pid: .} + $var][]
+            | "process/grounding/variable/\(.variableName)/\(.pid)/dump"
             , (select(.variableType == "categorical")
-            | "process/grounding/variable/\(.variableName)/dump_domains")
+            | "process/grounding/variable/\(.variableName)/\(.pid)/dump_domains")
         ), (
             $deepdive.inference.factors_[]
-            | "process/grounding/factor/\(.factorName)/dump"
-            , "process/grounding/factor/\(.factorName)/dump_weights"
+            | . as $fac
+            | [range($deepdive.sampler.partitions) | {pid: .} + $fac][]
+            | "process/grounding/factor/\(.factorName)/\(.pid)/dump"
+        ), (
+            $deepdive.inference.factors_[]
+            | "process/grounding/factor/\(.factorName)/dump_weights"
         ), (
             "process/grounding/global_weight_table"
         )],
@@ -693,43 +621,48 @@ def factorWeightDescriptionSqlExpr:
         # create a fresh empty directory for the new combined factor graph
         rm -rf   \"$DEEPDIVE_FACTORGRAPH_DIR\"
         mkdir -p \"$DEEPDIVE_FACTORGRAPH_DIR\"
-        cd \"$DEEPDIVE_FACTORGRAPH_DIR\"
-
-        # create symlinks to the grounded binaries by enumerating variables and factors
-        for v in \($variableNames); do
-            mkdir -p {variables,domains}/\"$v\"
-            find \"$DEEPDIVE_GROUNDING_DIR\"/variable/\"$v\" \\
-                -name 'variables.part-*.bin.bz2' -exec ln -sfnv -t variables/\"$v\"/ {} + \\
-                -o \\
-                -name   'domains.part-*.bin.bz2' -exec ln -sfnv -t   domains/\"$v\"/ {} + \\
-                #
-        done
-        for f in \($factorNames); do
-            mkdir -p {factors,weights}/\"$f\"
-            find \"$DEEPDIVE_GROUNDING_DIR\"/factor/\"$f\" \\
-                -name 'factors.part-*.bin.bz2' -exec ln -sfnv -t factors/\"$f\"/ {} + \\
-                -o \\
-                -name 'weights.part-*.bin.bz2' -exec ln -sfnv -t weights/\"$f\"/ {} + \\
-                #
-        done
 
         # generate the metadata for the inference engine
-        {
-            # first line with counts of variables and edges in the grounded factor graph
-            cd \"$DEEPDIVE_GROUNDING_DIR\"
-            sumup() { { tr '\\n' +; echo 0; } | bc; }
-            counts=()
-            counts+=($(cat factor/weights_count))
-            # sum up the number of factors and edges
-            counts+=($(cat variable_count))
-            cd factor
-            counts+=($(find \($factorNames) -name 'nfactors.part-*' -exec cat {} + | sumup))
-            counts+=($(find \($factorNames) -name 'nedges.part-*'   -exec cat {} + | sumup))
-            (IFS=,; echo \"${counts[*]}\")
-            # second line with file paths
-            paths=(\"$DEEPDIVE_FACTORGRAPH_DIR\"/{weights,variables,factors,edges,domains})
-            (IFS=,; echo \"${paths[*]}\")
-        } >meta
+        for pid in $(seq 0 \($deepdive.sampler.partitions - 1)); do
+            cd \"$DEEPDIVE_FACTORGRAPH_DIR\"
+            mkdir -p $pid
+            cd $pid
+            # create symlinks to the grounded binaries by enumerating variables and factors
+            for v in \($variableNames); do
+                mkdir -p {variables,domains}/\"$v\"
+                find \"$DEEPDIVE_GROUNDING_DIR\"/variable/\"$v\" \\
+                    -name \"variables.$pid.part-*.bin.bz2\" -exec ln -sfnv -t variables/\"$v\"/ {} + \\
+                    -o \\
+                    -name \"domains.$pid.part-*.bin.bz2\" -exec ln -sfnv -t   domains/\"$v\"/ {} + \\
+                    #
+            done
+            for f in \($factorNames); do
+                mkdir -p {factors,weights}/\"$f\"
+                find \"$DEEPDIVE_GROUNDING_DIR\"/factor/\"$f\" \\
+                    -name \"factors.$pid.part-*.bin.bz2\" -exec ln -sfnv -t factors/\"$f\"/ {} + \\
+                    -o \\
+                    -name 'weights.part-*.bin.bz2' -exec ln -sfnv -t weights/\"$f\"/ {} + \\
+                    #
+            done
+
+            {
+                # first line with counts of variables and edges in the grounded factor graph
+                cd \"$DEEPDIVE_GROUNDING_DIR\"
+                sumup() { { tr '\\n' +; echo 0; } | bc; }
+                counts=()
+                cd factor
+                counts+=($(find \($factorNames) -name 'nweights.part-*' -exec cat {} + | sumup))
+                cd ../variable
+                counts+=($(find \($variableNames) -name \"nvars.$pid.part-*\" -exec cat {} + | sumup))
+                cd ../factor
+                counts+=($(find \($factorNames) -name \"nfactors.$pid.part-*\" -exec cat {} + | sumup))
+                counts+=($(find \($factorNames) -name \"nedges.$pid.part-*\"   -exec cat {} + | sumup))
+                (IFS=,; echo \"${counts[*]}\")
+                # second line with file paths
+                paths=(\"$DEEPDIVE_FACTORGRAPH_DIR\"/{weights,variables,factors,edges,domains})
+                (IFS=,; echo \"${paths[*]}\")
+            } > \"$DEEPDIVE_FACTORGRAPH_DIR/$pid/meta\"
+        done
         ")
     }
 }

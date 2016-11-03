@@ -50,7 +50,7 @@ teardown() {
     deepdive db init
     deepdive create table variable_table_declared_in_app
     # deepdive-load should recognize variable tables and load just the three columns defined in DDlog
-    DEEPDIVE_LOAD_FORMAT=tsv  deepdive load "variable_table_declared_in_app" <(paste <(yes document_1) <(seq $n) <(seq $n) <(echo 'TRUE'; echo 'FALSE'; yes '\N') | head -$n)
+    DEEPDIVE_LOAD_FORMAT=tsv  deepdive load "variable_table_declared_in_app" <(paste <(yes document_1) <(seq $n) <(seq $n) <(echo 'TRUE'; echo 'FALSE'; yes '\N') <(yes '\N') | head -$n)
     [[ $(deepdive sql eval "select count(*) from variable_table_declared_in_app") -eq $n ]]
     deepdive sql "DROP TABLE IF EXISTS variable_table_declared_in_app;"
     cd -

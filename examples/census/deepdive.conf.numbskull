@@ -1,5 +1,5 @@
 deepdive {
   calibration.holdout_fraction: 0.25
-  sampler.partitions: 3
+  sampler.sampler_cmd: "numbskull"
   sampler.sampler_args: "-l 100 -i 100 --sample_evidence"
 }

@@ -20,6 +20,7 @@ adult(
 
 
 rich? (
+    @partition
     id int
 ).
 
@@ -32,27 +33,35 @@ rich(id) = if income_bracket = ">50K" then TRUE else FALSE end
 
 ############# CATEGORICAL ###############
 
+@name("workclass")
 @weight(workclass)
 rich(id) :- adult(id, _, workclass, _, _, _, _, _, _, _, _, _, _, _, _, income_bracket).
 
+@name("education")
 @weight(education)
 rich(id) :- adult(id, _, _, _, education, _, _, _, _, _, _, _, _, _, _, income_bracket).
 
+@name("marital_status")
 @weight(marital_status)
 rich(id) :- adult(id, _, _, _, _, _, marital_status, _, _, _, _, _, _, _, _, income_bracket).
 
+@name("occupation")
 @weight(occupation)
 rich(id) :- adult(id, _, _, _, _, _, _, occupation, _, _, _, _, _, _, _, income_bracket).
 
+@name("relationship")
 @weight(relationship)
 rich(id) :- adult(id, _, _, _, _, _, _, _, relationship, _, _, _, _, _, _, income_bracket).
 
+@name("race")
 @weight(race)
 rich(id) :- adult(id, _, _, _, _, _, _, _, _, race, _, _, _, _, _, income_bracket).
 
+@name("gender")
 @weight(gender)
 rich(id) :- adult(id, _, _, _, _, _, _, _, _, _, gender, _, _, _, _, income_bracket).
 
+@name("native_country")
 @weight(native_country)
 rich(id) :- adult(id, _, _, _, _, _, _, _, _, _, _, _, _, _, native_country, income_bracket).
 
@@ -60,22 +69,27 @@ rich(id) :- adult(id, _, _, _, _, _, _, _, _, _, _, _, _, _, native_country, inc
 
 ############# CONTINUOUS ###############
 
+@name("age")
 @weight("")
 @feature_value(age)
 rich(id) :- adult(id, age, _, _, _, _, _, _, _, _, _, _, _, _, _, income_bracket).
 
+@name("education_num")
 @weight("")
 @feature_value(education_num)
 rich(id) :- adult(id, _, _, _, _, education_num, _, _, _, _, _, _, _, _, _, income_bracket).
 
+@name("capital_gain")
 @weight("")
 @feature_value(capital_gain)
 rich(id) :- adult(id, _, _, _, _, _, _, _, _, _, _, capital_gain, _, _, _, income_bracket).
 
+@name("capital_loss")
 @weight("")
 @feature_value(capital_loss)
 rich(id) :- adult(id, _, _, _, _, _, _, _, _, _, _, _, capital_loss, _, _, income_bracket).
 
+@name("hours_per_week")
 @weight("")
 @feature_value(hours_per_week)
 rich(id) :- adult(id, _, _, _, _, _, _, _, _, _, _, _, _, hours_per_week, _, income_bracket).
@@ -84,6 +98,7 @@ rich(id) :- adult(id, _, _, _, _, _, _, _, _, _, _, _, _, hours_per_week, _, inc
 
 ############# BUCKETIZED ###############
 
+@name("age_bucket")
 @weight(width_bucket(age, 18, 88, 10))
 rich(id) :- adult(id, age, _, _, _, _, _, _, _, _, _, _, _, _, _, income_bracket).
 
@@ -92,9 +107,11 @@ rich(id) :- adult(id, age, _, _, _, _, _, _, _, _, _, _, _, _, _, income_bracket
 ############# COMPOSITE ###############
 
 
+@name("education X occupation")
 @weight(education, occupation)
 rich(id) :- adult(id, _, _, _, education, _, occupation, _, _, _, _, _, _, _, _, income_bracket).
 
 
+@name("race X occupation X age_bucket")
 @weight(race, occupation, width_bucket(age, 18, 88, 10))
 rich(id) :- adult(id, age, _, _, _, _, _, occupation, _, race, _, _, _, _, _, income_bracket).
