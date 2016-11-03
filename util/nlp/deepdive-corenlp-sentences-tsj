@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+# deepdive-corenlp-sentences-tsj -- Transforms raw CoreNLP results
+#
+# Turns raw CoreNLP results encoded in TSJ (tab-separated JSONs) into a simpler
+# "sentences table" form suitable for use with DeepDive.
+#
+# $ deepdive corenlp parse-tsj <TSJ_INPUT ... -- docid nlp |
+# $ deepdive corenlp sentences-tsj docid content:s abstract:s \
+# $              -- >SENTENCES_TSJ docid s s.index s.word s.lemma s.pos ...
+##
+set -euo pipefail
+
+# shorthand for sanitizing string for use as jq variable name
+@jqVar() { sed 's/[^A-Za-z0-9_]/_/g' <<<"$1"; }
+# how to convert symbols into ordinals
+indexOf() {
+    local i=0 hay= needle=$1; shift
+    for hay; do
+        ! [[ $hay = $needle ]] || { echo $i; return 0; }
+        let ++i
+    done
+    false
+}
+
+# parse specification for input columns, NLP results to unnest in the output
+seeingInputColumns=true
+InputColumnNames=() NlpResultNames=()
+jqExprs=() # jq expressions to evaluate against each sentence to project columns
+usingDependenciesFields=()
+i=0
+for columnSpec; do
+    case $columnSpec in
+        *":"*) # an input column holding NLP results
+            $seeingInputColumns || usage "$0" "$columnSpec: Only input columns can be mark as holding NLP results"
+            columnName=${columnSpec%%:*}
+            nlpResultName=${columnSpec#$columnName:}
+            InputColumnNames+=("$columnName")
+            NlpResultColumnOrdinals+=($i)
+            NlpResultNames+=("$nlpResultName")
+            ;;
+
+        --) # an input/output separator
+            $seeingInputColumns || usage "$0" "$columnSpec: Input/output separator must appear only once"
+            seeingInputColumns=false
+            [[ ${#NlpResultNames[@]} -gt 0 ]] || usage "$0" "Missing NLP result to unnest"
+            ;;
+
+        *.*) # an output column with unnested NLP results
+            nlpResultName=${columnSpec%%.*}
+            nlpTag=${columnSpec#$nlpResultName.}
+            case $nlpTag in
+                # sentence level attributes
+                index)
+                    jqExprs+=("$(printf '(.%s | tojson)' "$nlpTag")") ;;
+                # token level attributes
+                # e.g., index|word|originalText|characterOffsetBegin|characterOffsetEnd|before|after|lemma|pos|ner)
+                tokens.*)
+                    attr=${nlpTag#tokens.}
+                    jqExprs+=("$(printf '([.tokens[].%s] | tojson)' "$attr")") ;;
+                # sentence dependency representation
+                collapsed-dependencies.*|\
+                collapsed-ccprocessed-dependencies.*|\
+                basic-dependencies.*)
+                    attr=${nlpTag#*-dependencies.}
+                    dependencyFieldName=${nlpTag%%.*}
+                    usingDependenciesFields+=("$dependencyFieldName")
+                    jqExprs+=("$(printf '([$%s[].%s] | tojson)' "$(@jqVar "$dependencyFieldName")" "$attr")") ;;
+                *)
+                    usage "$0" "$columnSpec: Unknown NLP result field to project"
+            esac
+            ;;
+
+        *) # just a column name, either input/output depending on whether it comes before/after the separator
+            if $seeingInputColumns; then
+                InputColumnNames+=("$columnSpec")
+            else
+                if nlpResultOrdinal=$(indexOf "$columnSpec" "${NlpResultNames[@]}"); then
+                    # this is a reference to a NLP result group, which means
+                    # the given column name holding the NLP result should be
+                    # included in the output column
+                    jqExprs+=('$nlpResultColumnName')
+                else
+                    # otherwise, it should be an input column to include in the output
+                    # find its ordinal to generate the jq expression
+                    inputColumnOrdinal=$(indexOf "$columnSpec" "${InputColumnNames[@]}") ||
+                        error "$columnSpec: No such input column to keep"
+                    jqExprs+=("$(printf '$row[%d]' $inputColumnOrdinal)")
+                fi
+            fi
+    esac
+    let ++i
+done
+[[ ${#jqExprs[@]} -gt 0 ]] || usage "$0" "Missing output columns"
+distinct() { printf '%s\n' "$@" | awk '!seen[$0]++ {print}'; }
+# ensure there's only one distinct NlpResultNames
+[[ $(distinct "${NlpResultNames[@]}" | wc -l) -eq 1 ]] ||
+    usage "$0" "${NlpResultNames[*]}: Exactly one NLP result group can be specified"
+# keep distinct usingDependenciesFields
+[[ ${#usingDependenciesFields[@]} -eq 0 ]] ||
+    usingDependenciesFields=($(distinct "${usingDependenciesFields[@]}"))
+
+# compile all given schema and transformation specification into a jq program
+exec jq -R -r '
+# how to convert CoreNLP dependencies edges into compact arrays
+def compactDependencies(corenlpDependencies):
+    corenlpDependencies |
+    ( map(
+        { key: ((.dependent - 1) | tostring)
+        , value: { dep_token: .governor, dep_type: .dep }
+        } ) | from_entries ) as $deps
+    | [ range(length) | $deps[tostring] ]
+    ;
+
+# parse and unnest sentences in NLP results in each TSJ line
+def withtsv(f) : split("\t") | f | join("\t");
+withtsv( . as $row | '"$(
+    j=0
+    for i in "${NlpResultColumnOrdinals[@]}"; do
+        ! let j++ || echo ',' # XXX no comma at the very beginning
+        echo '('
+        # keep a variable referring to which NLP result column this sentence
+        # comes from in case user wants to include that in output
+        printf '"%s" as $nlpResultColumnName |' "${InputColumnNames[$i]}"
+        echo
+        # parse CoreNLP result in JSON and unnest all sentences
+        printf '$row[%d] | fromjson | .sentences[]? |' $i
+        echo
+        # convert any necessary CoreNLP dependencies into compact representations
+        [[ ${#usingDependenciesFields[@]} -eq 0 ]] ||
+        for depsField in "${usingDependenciesFields[@]}"; do
+            printf 'compactDependencies(.["%s"]) as $%s |' "$depsField" "$(@jqVar "$depsField")"
+            echo
+        done
+        # project all columns (input or NLP) to include in the output
+        jqProjections=$(printf ', %s\n' "${jqExprs[@]}")
+        echo "[ ${jqProjections#, }"
+        echo '] )'
+    done
+    )"'
+)'

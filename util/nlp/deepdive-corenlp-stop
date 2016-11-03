@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# deepdive-corenlp-stop -- Stops a CoreNLP HTTP server started
+# $ deepdive corenlp stop PORT
+#
+# $ export CORENLP_PORT=PORT
+# $ deepdive corenlp stop
+##
+set -euo pipefail
+
+: ${CORENLP_RUNDIR:?} ${CORENLP_PORT:?}
+: ${CORENLP_STOP_DELAY:=10} # wait for 5 secs on average
+
+deepdive-corenlp-installed
+
+[[ $# -le 1 ]] || usage "$0" "Too many arguments"
+[[ $# -eq 0 ]] || CORENLP_PORT=$1  # command-line argument overrides CORENLP_PORT
+export CORENLP_PORT
+
+# terminate the server
+pid_file="$CORENLP_RUNDIR"/server-port"$CORENLP_PORT".pid
+if [[ -s "$pid_file" ]]; then
+    echo >&2 "CoreNLP server at CORENLP_PORT=$CORENLP_PORT stopping..."
+    pid=$(cat "$pid_file")
+    kill -TERM $pid || true
+    rm -f "$pid_file"
+else
+    warning "No .pid file found to stop CoreNLP server at CORENLP_PORT=$CORENLP_PORT: $pid_file"
+fi
+
+# wait until CoreNLP server tears down
+CORENLP_SERVER_ENDPOINT=$(deepdive-corenlp-server-url)
+export CORENLP_SERVER_ENDPOINT
+while deepdive-corenlp-is-running &>/dev/null
+do sleep 0.$((1 + $RANDOM % 9))
+    let --CORENLP_STOP_DELAY ||
+        error "CoreNLP server at CORENLP_PORT=$CORENLP_PORT still not stopped yet"
+done
+echo >&2 "CoreNLP server at CORENLP_PORT=$CORENLP_PORT stopped"

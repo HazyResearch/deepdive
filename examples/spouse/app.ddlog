@@ -41,8 +41,6 @@ sentences(
     doc_id         text,
     @key
     sentence_index int,
-    @searchable
-    sentence_text  text,
     tokens         json,
     lemmas         json,
     pos_tags       json,
@@ -56,7 +54,7 @@ function nlp_markup over (
         doc_id text,
         content text
     ) returns rows like sentences
-    implementation "udf/nlp_markup.sh" handles tsv lines.
+    implementation "udf/nlp_markup.sh" handles tsj lines.
 
 sentences += nlp_markup(doc_id, content) :-
     articles(doc_id, content).
@@ -88,7 +86,7 @@ function map_person_mention over (
 
 person_mention += map_person_mention(
     doc_id, sentence_index, tokens, ner_tags
-) :- sentences(doc_id, sentence_index, _, tokens, _, _, ner_tags, _, _, _).
+) :- sentences(doc_id, sentence_index, tokens, _, _, ner_tags, _, _, _).
 
 spouse_candidate(
     p1_id text,
@@ -149,7 +147,7 @@ spouse_feature += extract_spouse_features(
 ) :-
     person_mention(p1_id, _, doc_id, sent_index, p1_begin_index, p1_end_index),
     person_mention(p2_id, _, doc_id, sent_index, p2_begin_index, p2_end_index),
-    sentences(doc_id, sent_index, _, tokens, lemmas, pos_tags, ner_tags, _, dep_types, dep_tokens).
+    sentences(doc_id, sent_index, tokens, lemmas, pos_tags, ner_tags, _, dep_types, dep_tokens).
 
 
 ## Distant Supervision ########################################################
@@ -183,7 +181,6 @@ function supervise over (
         p2_id text, p2_begin int, p2_end int,
         doc_id         text,
         sentence_index int,
-        sentence_text  text,
         tokens         json,
         lemmas         json,
         pos_tags       json,
@@ -198,13 +195,13 @@ function supervise over (
 spouse_label += supervise(
     p1_id, p1_begin, p1_end,
     p2_id, p2_begin, p2_end,
-    doc_id, sentence_index, sentence_text,
+    doc_id, sentence_index,
     tokens, lemmas, pos_tags, ner_tags, dep_types, dep_token_indexes
 ) :- spouse_candidate(p1_id, _, p2_id, _),
     person_mention(p1_id, p1_text, doc_id, sentence_index, p1_begin, p1_end),
     person_mention(p2_id, p2_text,      _,              _, p2_begin, p2_end),
     sentences(
-        doc_id, sentence_index, sentence_text,
+        doc_id, sentence_index,
         tokens, lemmas, pos_tags, ner_tags, _, dep_types, dep_token_indexes
     ).
 

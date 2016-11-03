@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+# deepdive-corenlp -- DeepDive's interface to CoreNLP
+#
+# 1. Before anything, CoreNLP must be downloaded and installed properly:
+# $ deepdive corenlp install
+#
+# ----
+#
+# 2. Now, let's keep a CoreNLP HTTP server running in the background:
+# A port number and timeout can be explicitly specified for the CoreNLP HTTP server:
+# $ export CORENLP_PORT=$(deepdive corenlp unique-port)  # defaults to a unique port
+# $ export CORENLP_TIMEOUT=86400000                      # defaults to a day in msec
+#
+# $ deepdive corenlp start
+#
+# ----
+#
+# 3. Then stream documents for parsing into the CoreNLP server:
+# The CoreNLP annotators to use can be specified:
+# $ export CORENLP_ANNOTATORS=...
+# Otherwise, it defaults to: tokenize ssplit pos ner lemma depparse
+#
+# $ deepdive corenlp parse-tsj \
+# $     <TSJ_INPUT   COLUMN1_TO_DROP \
+# $                  COLUMN2_TO_KEEP \
+# $                  COLUMN3_TO_PARSE=NLP_OUTPUT1 \
+# $                  COLUMN4_TO_KEEP \
+# $                  COLUMN5_TO_PARSE=NLP_OUTPUT2 \
+# $                  COLUMN6_TO_DROP \
+# $     -- \
+# $     >TSJ_OUTPUT  COLUMN4_TO_KEEP \
+# $                  COLUMN2_TO_KEEP \
+# $                  NLP_OUTPUT2 \
+# $                  NLP_OUTPUT1 \
+# $     #
+# Remarks:
+# - Input/output is in TSJ (tab-separated JSONs) format.
+# - Document metadata can be easily associated with NLP results.
+# - More than one blob of text can be parsed per document, e.g., abstract and full-text.
+# - NLP result columns hold the raw JSON returned by CoreNLP intact.
+# - Output columns can be reordered in any way.
+#
+# ----
+#
+# 4. Finally, the raw CoreNLP results in a verbose JSON can be transformed into
+# a simpler schema ("sentence" table) that is easier for use with DeepDive:
+# $ deepdive corenlp sentences-tsj \
+# $     <TSJ_OUTPUT     COLUMN4_TO_KEEP \
+# $                     COLUMN2_TO_KEEP \
+# $                     NLP_OUTPUT2=SENTENCES1 \
+# $                     NLP_OUTPUT1=SENTENCES2 \
+# $     -- \
+# $     >TSJ_SENTENCES  COLUMN2_TO_KEEP \
+# $                     SENTENCES1 \
+# $     #
+# Note that similar to the `parse` operator, columns can be kept or dropped
+# and only one NLP result JSON can be unnested into a few columns for a row per
+# sentence.
+#
+# ----
+#
+# 5. After final use, the CoreNLP HTTP server can be stopped:
+# $ deepdive corenlp stop
+#
+# ----
+#
+# There are more low-level commands available that can be useful for scripting:
+# $ deepdive corenlp installed
+# $ deepdive corenlp is-running
+# $ deepdive corenlp curl
+# $ deepdive corenlp server-url
+# $ deepdive corenlp unique-port
+#
+##
+set -euo pipefail
+
+# Shared environment variables
+export PATH="$DEEPDIVE_HOME"/util/nlp:"$PATH"
+: ${CORENLP_HOME:=$DEEPDIVE_HOME/lib/stanford-corenlp/corenlp}
+: ${CORENLP_RUNDIR:=$CORENLP_HOME}
+: ${CORENLP_BASEPORT:=$(deepdive-corenlp-unique-port)}
+CORENLP_PORT_SET=false; [[ -z ${CORENLP_PORT:-} ]] || CORENLP_PORT_SET=true
+: ${CORENLP_PORT:=$(($CORENLP_BASEPORT + ${DEEPDIVE_CURRENT_PROCESS_INDEX:-1} - 1))}
+
+[[ $# -gt 0 ]] || usage "$0" "Missing command"
+
+Cmd=$1; shift
+handler=deepdive-corenlp-"$Cmd"
+if type "$handler" &>/dev/null; then
+    export CORENLP_HOME CORENLP_RUNDIR
+    export CORENLP_PORT CORENLP_PORT_SET
+    exec "$handler" "$@"
+else
+    usage "$0" "$Cmd: Unknown command"
+fi

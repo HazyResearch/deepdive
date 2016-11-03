@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+# deepdive-corenlp-parse-tsj -- Parses text columns in TSJ stream with CoreNLP
+#
+# Multiple parts of documents encoded as TSJ (tab-separated JSONs) can be
+# parsed using CoreNLP in a streaming fashion.
+#
+# $ deepdive corenlp start
+# $ deepdive corenlp parse-tsj <TSJ_INPUT   C1+ C2=NLP1 C3 C4=NLP2 ... \
+# $                         -- >TSJ_OUTPUT  C1 C3 NLP1 NLP2 ...
+# $ deepdive corenlp stop
+#
+# - C1, C2, C3, C4 that appear before the separator (--) are input column names.
+# - Input column names followed by an equal sign (=) and a second name indicates
+#   the column is to be parsed with CoreNLP whose result may be referred to as
+#   the second name later.
+# - C1, C3, NLP1, NLP2 that appear after the separator (--) decide the order of
+#   the columns in the output, each of which refer to either an input column or
+#   an NLP result.  Input columns not mentioned are simply dropped from the
+#   output.
+# - Zero or more input columns can be suffixed with a plus sign (+) to have it
+#   displayed in the progress and error messages, e.g., document identifier.
+#   Otherwise, line numbers are used instead.
+##
+set -euo pipefail
+
+deepdive-corenlp-installed
+
+# parse specification for input column, input column to NLP, output column mapping
+seeingInputColumns=true
+InputColumnNames=() NlpColumnNames=() OutputColumnNames=()
+inputColumnOrdinalsToDisplay=()
+inputColumnOrdinalsToNlp=()
+i=0
+for columnSpec; do
+    case $columnSpec in
+        *"+") # an input column to display in progress and error messages
+            $seeingInputColumns || usage "$0" "$columnSpec: Only input columns can be marked to be displayed"
+            inputColumnOrdinalsToDisplay+=($i)
+            columnSpec=${columnSpec%+}
+    esac
+    case $columnSpec in
+        *"="*) # an argument for input columns to be parsed
+            $seeingInputColumns || usage "$0" "$columnSpec: Only input columns can be mark to be parsed with CoreNLP"
+            columnName=${columnSpec%%=*}
+            nlpResultName=${columnSpec#$columnName=}
+            InputColumnNames+=("$columnName")
+            NlpColumnNames+=("$nlpResultName")
+            inputColumnOrdinalsToNlp+=($i)
+            ;;
+
+        --) # an input/output separator
+            $seeingInputColumns || usage "$0" "$columnSpec: Input/output separator must appear only once"
+            seeingInputColumns=false
+            ;;
+
+        *) # just a column name, either input/output depending on whether it comes before/after the separator
+            if $seeingInputColumns; then
+                InputColumnNames+=("$columnSpec")
+            else
+                OutputColumnNames+=("$columnSpec")
+            fi
+    esac
+    let ++i
+done
+[[ ${#OutputColumnNames[@]} -gt 0 ]] || usage "$0" "Missing output columns"
+
+# convert symbols into ordinals
+indexOf() {
+    local i=0 hay= needle=$1; shift
+    for hay; do
+        if [[ $hay = $needle ]]; then
+            echo $i
+            return 0
+        fi
+        let ++i
+    done
+    false
+}
+numInputColumns=${#InputColumnNames[@]}
+outputColumnOrdinals=()
+numNlpColumnsInOutput=0
+for outColumn in "${OutputColumnNames[@]}"; do
+    # convert output column name to an ordinal
+    # NOTE names referring to NLP results are assigned ordinals after all input columns
+    ordinal=$(indexOf "$outColumn" "${InputColumnNames[@]}" "${NlpColumnNames[@]}") ||
+        usage "$0" "$outColumn: Unknown input or NLP column name"
+    outputColumnOrdinals+=($ordinal)
+    # count how many are NLP results
+    [[ $ordinal -lt $numInputColumns ]] || let ++numNlpColumnsInOutput
+done
+[[ $numNlpColumnsInOutput -gt 0 ]] || usage "$0" "At least one NLP results must be output"
+# TODO maybe it's wiser to abort or optimize here if any of the NLP results are dropped
+[[ ${#outputColumnOrdinals[@]} -gt 0 ]] || usage "$0" "Missing output columns"
+
+
+# now, turn each input TSJ line into one or more HTTP requests against CoreNLP server
+# and output the raw NLP results in TSJ according to the command-line arguments
+exec tsj2corenlp-http-reqs \
+    "$(deepdive-corenlp-server-url)" \
+    $numInputColumns \
+    "${inputColumnOrdinalsToDisplay[*]:-}" \
+    "${inputColumnOrdinalsToNlp[*]}" \
+    "${outputColumnOrdinals[@]}" \
+    #

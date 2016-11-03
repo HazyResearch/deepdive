@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# deepdive-corenlp-install -- Downloads CoreNLP and installs it to be used with DeepDive
+# $ deepdive corenlp install
+##
+set -euo pipefail
+
+: ${CORENLP_HOME:?}
+: ${CORENLP_BASEURL:=http://nlp.stanford.edu/software/}
+: ${CORENLP_ARCHIVE:=stanford-corenlp-full-2015-12-09.zip}
+: ${CORENLP_ARCHIVE_SHA1SUM:=6038c836bbb7bba51ba88e80a38fc356f27d1514}
+
+if deepdive-corenlp-installed &>/dev/null; then
+    # CoreNLP has been already installed, nothing to do
+    echo >&2 "CoreNLP already installed at $CORENLP_HOME"
+else
+    url="$CORENLP_BASEURL$CORENLP_ARCHIVE"
+    parent_dir=$(dirname "$CORENLP_HOME")
+    echo >&2 "Downloading CoreNLP to $parent_dir/ from $url"
+    mkdir -p "$parent_dir"
+    cd "$parent_dir"
+    fetch-verify "$CORENLP_ARCHIVE" \
+        "$url" \
+        sha1sum=$CORENLP_ARCHIVE_SHA1SUM \
+        #
+    echo >&2 "Installing CoreNLP at $CORENLP_HOME"
+    corenlp_dir=${CORENLP_ARCHIVE%.zip}
+    rm -rf "$corenlp_dir"
+    unzip -o "$CORENLP_ARCHIVE"
+    ! [[ -e "$CORENLP_HOME" ]] || mv -f "$CORENLP_HOME" "$CORENLP_HOME"~
+    ln -sfnv "$corenlp_dir" "$CORENLP_HOME"
+fi

@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# deepdive-corenlp-is-running -- Checks if CoreNLP HTTP server is running
+# $ export CORENLP_PORT=PORT
+# $ deepdive corenlp running
+##
+set -euo pipefail
+
+: ${CORENLP_PORT:?}
+
+deepdive-corenlp-curl --data 'ping' &>/dev/null ||
+    error "CoreNLP server at CORENLP_PORT=$CORENLP_PORT not running"

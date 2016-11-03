@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# deepdive-corenlp-server-url -- Prints CoreNLP HTTP server URL
+# $ deepdive corenlp server-url [PORT]
+#
+# $ export CORENLP_PORT=PORT
+# $ deepdive corenlp server-url
+##
+set -euo pipefail
+
+: ${CORENLP_ANNOTATORS:="
+        tokenize
+        ssplit
+        pos
+        ner
+        lemma
+        depparse
+    "}
+
+# CoreNLP properties
+annotators=( $CORENLP_ANNOTATORS )
+corenlp_properties=$(echo '
+{ "outputFormat"        : "json"
+, "annotators"          : "'"$(IFS=,; echo "${annotators[*]}")"'"
+, "tokenize.whitespace" : "false"
+}')
+
+# print CoreNLP server's endpoint URL
+echo "http://localhost:$CORENLP_PORT/?properties= $(jq -r '@uri' <<<"$corenlp_properties")"

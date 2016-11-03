@@ -46,9 +46,7 @@ if ! [[ "${DEEPDIVE_SHELL:-}" -ef "$0" ]]; then
     unset LANGUAGE LANG LC_COLLATE LC_MESSAGES LC_MONETARY LC_NUMERIC LC_TIME
     export LC_ALL=en_US.UTF-8
 
-    #  make sure DeepDive utilities are on PATH
-    PATH="$DEEPDIVE_HOME/util:$DEEPDIVE_HOME/bin:$DEEPDIVE_HOME/lib/bundled/.all/bin:$PATH"
-    export PATH
+    DEEPDIVE_BUNDLED_PREFIX="$DEEPDIVE_HOME"/lib/bundled/.all
 
     #  make sure virtualenv in Python is available
     PATH="$DEEPDIVE_HOME/lib/bundled/python-virtualenv/prefix/bin:$PATH"
@@ -56,6 +54,13 @@ if ! [[ "${DEEPDIVE_SHELL:-}" -ef "$0" ]]; then
     #  make sure ddlib in Python is available
     PYTHONPATH="$DEEPDIVE_HOME"/lib/python:"${PYTHONPATH:+:$PYTHONPATH}"
     export PYTHONPATH
+
+    #  make sure bundled Perl modules are available via local::lib
+    eval $(perl -I"$DEEPDIVE_BUNDLED_PREFIX"/lib/perl5 -Mlocal::lib="$DEEPDIVE_BUNDLED_PREFIX" 2>/dev/null || true)
+
+    #  make sure DeepDive utilities are at the beginning of the PATH
+    PATH="$DEEPDIVE_HOME/util:$DEEPDIVE_HOME/bin:$DEEPDIVE_BUNDLED_PREFIX/bin:$PATH"
+    export PATH
 
     export DEEPDIVE_SHELL=$0
 fi

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# deepdive-corenlp-unique-port -- Prints a unique port number determined by given identifiers
+# $ deepdive corenlp unique-port [$USER]...
+##
+set -euo pipefail
+
+: ${CORENLP_MINPORT:=9000}
+: ${CORENLP_MAXPORT:=65535}
+
+[[ $# -gt 0 ]] || set -- "${USER:-${LOGNAME:-}}"
+
+hash=0x$(echo "$@" | sha1sum | cut -b1-5)
+echo $(( $hash % ($CORENLP_MAXPORT - $CORENLP_MINPORT + 1) + $CORENLP_MINPORT ))

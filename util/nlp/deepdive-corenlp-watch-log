@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# deepdive-corenlp-watch-log -- Watches log files for a running CoreNLP HTTP server
+# $ deepdive corenlp watch-log [PORT]
+##
+set -euo pipefail
+
+: ${CORENLP_RUNDIR:?} ${CORENLP_PORT:?}
+
+[[ $# -le 1 ]] || usage "$0" "Too many arguments"
+[[ $# -eq 0 ]] || CORENLP_PORT=$1  # command-line argument overrides CORENLP_PORT
+
+: ${CORENLP_LOG_OUT:=/dev/null}
+: ${CORENLP_LOG_ERR:="$CORENLP_RUNDIR"/server-port"$CORENLP_PORT".log}
+
+# find log files to watch (ignore special files like /dev/null)
+set --
+! [[ -f $CORENLP_LOG_OUT ]] || set -- "$@" "$CORENLP_LOG_OUT"
+! [[ -f $CORENLP_LOG_ERR ]] || set -- "$@" "$CORENLP_LOG_ERR"
+
+if [[ $# -gt 0 ]]; then
+    # follow the logs' tail
+    exec tail -F "$@"
+else
+    error "No logs to watch!" \
+        "Make sure to export CORENLP_LOG_OUT= or CORENLP_LOG_ERR= to a valid path" \
+        "then restart the CoreNLP server: deepdive corenlp stop; deepdive corenlp start"
+fi

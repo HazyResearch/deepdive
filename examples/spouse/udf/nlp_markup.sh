@@ -1,26 +1,36 @@
 #!/usr/bin/env bash
-# A shell script that runs Bazaar/Parser over documents passed as input TSV lines
+# Parse documents in tab-separated JSONs input stream with CoreNLP
 #
-# $ deepdive env udf/nlp_markup.sh doc_id _ _ content _
+# $ deepdive corenlp install
+# $ deepdive corenlp start
+# $ deepdive env udf/nlp_markup.sh
+# $ deepdive corenlp stop
 ##
 set -euo pipefail
 cd "$(dirname "$0")"
 
-: ${BAZAAR_HOME:=$PWD/bazaar}
-[[ -x "$BAZAAR_HOME"/parser/target/start ]] || {
-    echo "No Bazaar/Parser set up at: $BAZAAR_HOME/parser"
-    exit 2
-} >&2
+# some configuration knobs for CoreNLP
+: ${CORENLP_PORT:=$(deepdive corenlp unique-port)}  # a CoreNLP server started ahead of time is shared across parallel UDF processes
+# See: http://stanfordnlp.github.io/CoreNLP/annotators.html
+: ${CORENLP_ANNOTATORS:="
+        tokenize
+        ssplit
+        pos
+        ner
+        lemma
+        depparse
+    "}
+export CORENLP_PORT
+export CORENLP_ANNOTATORS
 
-[[ $# -gt 0 ]] ||
-    # default column order of input TSV
-    set -- doc_id content
+# make sure CoreNLP server is available
+deepdive corenlp is-running || {
+    echo >&2 "PLEASE MAKE SURE YOU HAVE RUN: deepdive corenlp start"
+    false
+}
 
-# convert input tsv lines into JSON lines for Bazaar/Parser
-tsv2json "$@" |
-# start Bazaar/Parser to emit sentences TSV
-"$BAZAAR_HOME"/parser/run.sh -i json -k doc_id -v content |
-# finally, fixup unescaped characters in the TSV emitted by Bazaar/Parser
-# (This will become unnecessary once HazyResearch/bazaar#20 is fixed)
-# See: http://www.postgresql.org/docs/9.5/static/sql-copy.html#AEN74312
-sed -e "$(for ch in b f r v; do printf 's/\'$ch'/\\\\'$ch'/g;'; done)"
+# parse input with CoreNLP and output a row for every sentence
+deepdive corenlp parse-tsj docid+ content=nlp -- docid nlp |
+deepdive corenlp sentences-tsj docid content:nlp \
+                            -- docid nlp.{index,tokens.{word,lemma,pos,ner,characterOffsetBegin}} \
+                                     nlp.collapsed-dependencies.{dep_type,dep_token}
