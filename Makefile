@@ -38,6 +38,8 @@ build--in-container:
 test--in-container:
 	./DockerBuild/test-in-container-postgres \
 	    make -j test $(if $(ONLY),ONLY="$(ONLY)") $(if $(EXCEPT),EXCEPT="$(EXCEPT)")
+dev-docker-image:
+	./DockerBuild/rebuild-latest-image-from-scratch
 
 ### dependency recipes ########################################################
 
