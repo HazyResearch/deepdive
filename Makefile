@@ -107,7 +107,8 @@ release-%:
 DOCKER_IMAGE_FOR_BUILD   = hazyresearch/deepdive-build
 DOCKER_IMAGE_FOR_RELEASE = hazyresearch/deepdive
 
-.PHONY: production-docker-image:
+.PHONY: production-docker-image
+.PHONY: dist/deepdive-build.tar.gz dist/deepdive-examples.tar.gz  # always retrieve from latest image
 production-docker-image: dist/Dockerfile dist/deepdive-build.tar.gz dist/deepdive-examples.tar.gz dist/install.sh
 	docker build -t $(DOCKER_IMAGE_FOR_RELEASE) $(<D)
 dist/deepdive-build.tar.gz:
