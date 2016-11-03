@@ -17,7 +17,10 @@ ifneq ($(shell $(NO_DOCKER_BUILD) || which docker 2>/dev/null),)
 else  # do a normal build by default without Docker
 .DEFAULT_GOAL := build
 
+endif  # Docker
+
 # On Mac OS X, require GNU coreutils instead of continuing on BSD utilities with uncertainty
+# TODO relax this requirement when build--in-container is the only goal
 ifeq ($(shell uname),Darwin)
 ifeq ($(shell brew ls coreutils &>/dev/null || echo notfound),)
     PATH := $(shell brew --prefix coreutils)/libexec/gnubin:$(PATH)
@@ -28,8 +31,6 @@ else
     )
 endif
 endif
-
-endif  # Docker
 
 ### build/test inside containers ##############################################
 build--in-container:
