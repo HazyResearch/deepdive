@@ -2,8 +2,7 @@
 FROM jupyter/minimal-notebook
 MAINTAINER deepdive-dev@googlegroups.com
 
-# add DeepDive build with installer to the image
-ADD deepdive-build.tar.gz /deepdive
+# add DeepDive installer to the image
 ADD install.sh /deepdive/
 ADD install    /deepdive/install
 
@@ -11,7 +10,6 @@ ADD install    /deepdive/install
 USER root
 
 # install DeepDive and its runtime dependencies
-RUN for cmd in /deepdive/bin/*; do ln -sfn "$cmd" /usr/local/bin/; done
 RUN INSTALLER_LOCAL_FIRST=true /deepdive/install.sh _deepdive_runtime_deps
 
 # install postgres client
@@ -27,11 +25,25 @@ RUN apt-get install -qy curl wget ca-certificates \
 USER jovyan
 ENV USER=jovyan
 
+# add DeepDive itself
+ADD deepdive-build.tar.gz /deepdive
+USER root
+RUN for cmd in /deepdive/bin/*; do ln -sfn "$cmd" /usr/local/bin/; done
+USER jovyan
+
 # preinstall CoreNLP
+ADD stanford-corenlp /deepdive/lib/stanford-corenlp
+USER root
+RUN chown -R jovyan /deepdive/lib/stanford-corenlp
+USER jovyan
 RUN deepdive corenlp install
+RUN rm -f /deepdive/lib/stanford-corenlp/stanford-corenlp-*.zip
+
+# shorten working dir
+WORKDIR /ConfinedWater
 
 # include examples
-ADD deepdive-examples.tar.gz /home/jovyan/work/deepdive-examples
+ADD deepdive-examples.tar.gz deepdive-examples
 
 # override default behavior
 CMD exec start-notebook.sh --ip 0.0.0.0

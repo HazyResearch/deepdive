@@ -109,7 +109,7 @@ DOCKER_IMAGE_FOR_RELEASE = hazyresearch/deepdive
 
 .PHONY: production-docker-image
 .PHONY: sandbox/deepdive-build.tar.gz sandbox/deepdive-examples.tar.gz  # always retrieve from latest image
-production-docker-image: sandbox/Dockerfile sandbox/deepdive-build.tar.gz sandbox/deepdive-examples.tar.gz sandbox/install.sh
+production-docker-image: sandbox/Dockerfile sandbox/deepdive-build.tar.gz sandbox/deepdive-examples.tar.gz sandbox/install.sh sandbox/stanford-corenlp
 	docker build -t $(DOCKER_IMAGE_FOR_RELEASE) $(<D)
 sandbox/deepdive-build.tar.gz:
 	docker run --rm -it -v "$(realpath $(@D))":/mnt \
@@ -121,6 +121,9 @@ sandbox/deepdive-examples.tar.gz:
 	    tar cfvz /mnt/$(@F) -C examples .
 sandbox/install.sh: util/install.sh $(wildcard util/install/*)
 	rsync -avH util/install{.sh,} $(@D)/
+sandbox/stanford-corenlp:
+	mkdir -p $@
+	# TODO download latest stable release
 
 ### build recipes #############################################################
 

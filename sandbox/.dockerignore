@@ -1,3 +1,4 @@
 *
 !deepdive-*.tar.gz
 !install*
+!stanford-corenlp
