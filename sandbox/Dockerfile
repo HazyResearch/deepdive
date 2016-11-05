@@ -25,10 +25,13 @@ RUN apt-get install -qy curl wget ca-certificates \
 
 # NOTE that we're trying to keep as much as possible under the user so they can be freely modified
 USER jovyan
+ENV USER=jovyan
+
+# preinstall CoreNLP
+RUN deepdive corenlp install
 
 # include examples
 ADD deepdive-examples.tar.gz /home/jovyan/work/deepdive-examples
 
 # override default behavior
-ENV USER=jovyan
 CMD exec start-notebook.sh --ip 0.0.0.0
