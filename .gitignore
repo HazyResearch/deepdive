@@ -1,5 +1,6 @@
 # build byproducts
 /.build
+/dist
 /.travis
 /.travis.tar
 /.github-release-assets
