@@ -9,7 +9,7 @@ services:
             - "8888:8888"
         # make host dir accessible within this container
         volumes:
-            - ./workdir:/home/jovyan/work/workdir
+            - ./workdir:/ConfinedWater/workdir
         # make the database available
         links:
             - database
