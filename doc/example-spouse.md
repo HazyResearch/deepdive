@@ -5,7 +5,7 @@ title: "Tutorial: Extracting mentions of spouses from the news"
 
 # DeepDive Tutorial <small>Extracting mentions of spouses from the news</small>
 
-***NOTE: we recommend using the [Jupyter Notebook version of this tutorial](https://github.com/HazyResearch/deepdive/blob/master/examples/spouse/DeepDive%20Tutorial%20-%20Extracting%20mentions%20of%20spouses%20from%20the%20news.ipynb) that can be [easily launched inside Docker containers](installation.md#launch-without-installing).***
+***NOTE: we recommend using the [Jupyter Notebook version of this tutorial](https://nbviewer.jupyter.org/github/HazyResearch/deepdive/blob/master/examples/spouse/DeepDive%20Tutorial%20-%20Extracting%20mentions%20of%20spouses%20from%20the%20news.ipynb) that can be [easily launched inside Docker containers](installation.md#launch-without-installing).***
 
 In this tutorial, we show an example of a prototypical task that DeepDive is often applied to:
 extraction of _structured information_ from _unstructured or 'dark' data_ such as web pages, text documents, images, etc.
