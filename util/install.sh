@@ -296,6 +296,20 @@ install_run_deepdive_tests() {
     PATH="$PREFIX/bin:$PATH" \
     deepdive env deepdive-${RELEASE#v}/test/test-installed.sh
 }
+
+# sandbox with Docker Compose
+install_deepdive_docker_sandbox() {
+    if has docker-compose; then
+        download_deepdive_github_tree "DeepDive Sandbox" \
+            deepdive-${RELEASE#v} \
+            sandbox test/postgresql/Dockerfile.postgres
+        cd deepdive-${RELEASE#v}/sandbox
+        docker-compose up
+    else
+        error "docker-compose not available" \
+            "Please install it first from: https://docs.docker.com/compose/install/"
+    fi
+}
 ################################################################################
 
 # detect operating system
