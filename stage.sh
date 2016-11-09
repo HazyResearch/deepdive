@@ -53,11 +53,13 @@ stage shell/deepdive-whereis                                      util/
 stage shell/find-deepdive-app                                     util/
 stage shell/parse-url.sh                                          util/
 stage shell/error                                                 util/
+stage shell/error-from-file                                       util/
 stage shell/warning                                               util/
 stage shell/usage                                                 util/
 stage shell/escape4sh                                             util/
 stage compiler/jq2sh                                              util/
 stage shell/jq                                                    util/
+stage shell/make                                                  util/
 stage shell/logging-with-ts                                       util/
 stage shell/deepdive_bash_completion.sh                           etc/
 
@@ -107,6 +109,7 @@ stage database/deepdive-sql                                       util/
 stage database/deepdive-create                                    util/
 stage database/deepdive-relation                                  util/
 stage database/deepdive-load                                      util/
+stage database/deepdive-reload                                    util/
 stage database/deepdive-unload                                    util/
 stage database/load-db-driver.sh                                  util/
 stage database/db-driver/postgresql                               util/db-driver/

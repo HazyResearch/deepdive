@@ -33,6 +33,9 @@ endif
 endif
 
 ### build/test inside containers ##############################################
+.PHONY: %--in-container dev-docker-image
+dev-docker-image:  # needs to be run at least once by someone
+	./DockerBuild/rebuild-latest-image-from-scratch
 build--in-container:
 	./DockerBuild/build-in-container
 test--in-container:
@@ -74,6 +77,7 @@ $(PACKAGE): build
 # without building the source tree.
 
 # XXX put coffee and node from mindbender on PATH
+.PHONY: release-%
 release-%: PATH := $(realpath $(STAGE_DIR)/mindbender/node_modules/.bin):$(realpath $(STAGE_DIR)/mindbender/depends/bundled/.all/bin):$(PATH)
 release-%: GITHUB_REPO = HazyResearch/deepdive
 release-%: RELEASE_VERSION = $*
@@ -97,6 +101,29 @@ release-%:
 .travis.tar: .travis
 	chmod -R go= .travis
 	tar cvf $@ $^
+
+### production Docker container ##############################################
+
+DOCKER_IMAGE_FOR_BUILD   = hazyresearch/deepdive-build
+DOCKER_IMAGE_FOR_RELEASE = hazyresearch/deepdive
+
+.PHONY: production-docker-image
+.PHONY: sandbox/deepdive-build.tar.gz sandbox/deepdive-examples.tar.gz  # always retrieve from latest image
+production-docker-image: sandbox/Dockerfile sandbox/deepdive-build.tar.gz sandbox/deepdive-examples.tar.gz sandbox/install.sh sandbox/stanford-corenlp
+	docker build -t $(DOCKER_IMAGE_FOR_RELEASE) $(<D)
+sandbox/deepdive-build.tar.gz:
+	docker run --rm -it -v "$(realpath $(@D))":/mnt \
+	    $(DOCKER_IMAGE_FOR_BUILD) \
+	    tar cfvz /mnt/$(@F) -C "$(STAGE_DIR)" .
+sandbox/deepdive-examples.tar.gz:
+	docker run --rm -it -v "$(realpath $(@D))":/mnt \
+	    $(DOCKER_IMAGE_FOR_BUILD) \
+	    tar cfvz /mnt/$(@F) -C examples .
+sandbox/install.sh: util/install.sh $(wildcard util/install/*)
+	rsync -avH util/install{.sh,} $(@D)/
+sandbox/stanford-corenlp:
+	mkdir -p $@
+	# TODO download latest stable release
 
 ### build recipes #############################################################
 

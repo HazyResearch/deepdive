@@ -1,0 +1,31 @@
+# Docker Compose file for DeepDive users
+version: '2'
+services:
+    # the container running Jupyter Notebook with DeepDive installed
+    deepdive-notebooks:
+        image: hazyresearch/deepdive
+        build: .
+        ports:
+            - "8888:8888"
+        # make host dir accessible within this container
+        volumes:
+            - ./workdir:/ConfinedWater/workdir
+        # make the database available
+        links:
+            - database
+        environment:
+            - PGHOST=database
+            - DEEPDIVE_DB_URL=postgresql://database/deepdive_default
+
+    # the one running a Postgres database
+    database:
+        image: hazyresearch/postgres
+        build:
+            context: ../test/postgresql
+            dockerfile: Dockerfile.postgres
+        volumes:
+            # keeping database persistent on host
+            - ./database:/var/lib/postgresql/data
+        environment:
+            - PGDATA=/var/lib/postgresql/data/pgdata
+            - POSTGRES_USER=jovyan  # jupyter/base-notebook's user name

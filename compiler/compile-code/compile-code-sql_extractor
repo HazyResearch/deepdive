@@ -79,5 +79,7 @@ else
 end)
 
 \(.after // "")
+
+deepdive mark \"done\" \(.name | @sh)
 "
 }

@@ -251,7 +251,7 @@ if [[ -n $output_relation ]]; then
     # XXX hiding default progress bar from deepdive-load
     # TODO abbreviate this env into a show_progress option, e.g., recursive=false
     show_progress input_to "$DEEPDIVE_CURRENT_PROCESS_NAME output" -- \
-    env DEEPDIVE_PROGRESS_FD=2 \
+    env DEEPDIVE_SHOW_PROGRESS=false \
     deepdive-load "$output_relation_tmp" /dev/stdin
 
     # rename the new temporary table

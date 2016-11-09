@@ -1,6 +1,6 @@
 # build byproducts
-/dist
 /.build
+/dist
 /.travis
 /.travis.tar
 /.github-release-assets
@@ -14,6 +14,7 @@
 *.sublime-project
 *.sublime-workspace
 .cache
+.ipynb_checkpoints/
 
 /doc/_*local*
 

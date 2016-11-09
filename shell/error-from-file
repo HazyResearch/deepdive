@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# error-from-file -- Show error messages kept in a file
+# $ error-from-file FILE...
+##
+
+# whether to use colored output
+: ${DEEPDIVE_COLOR:=auto}
+auto() { [[ -t 2 ]]; }
+
+before= after=
+if $DEEPDIVE_COLOR; then
+    # TODO check terminal's color support
+    before=a; a() { echo -ne '\033[31m'; }
+     after=b; b() { echo -ne '\033[0m'; }
+fi
+
+{
+    $before
+    cat "$@"  # TODO may be rewrite all terminal color code to keep things red?
+    $after
+} >&2
+false

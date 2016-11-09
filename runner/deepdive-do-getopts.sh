@@ -8,15 +8,23 @@
 # but when interactive, allow to review/edit the plan
 : ${DEEPDIVE_PLAN_EDIT:=true} ${VISUAL:=${EDITOR:=vi}}
 : ${DEEPDIVE_COMPILE_ASK:=true}
+# output important progress by default
+: ${DEEPDIVE_LOG_LEVEL:=1}
 
 # process some simple command-line flags
-while getopts "im" o; do
+while getopts "imvq" o; do
     case $o in
         i) # interactive mode
             export DEEPDIVE_INTERACTIVE=true
             ;;
         m) # manual compilation: disable automatic deepdive-compile
             export DEEPDIVE_AUTOCOMPILE=false
+            ;;
+        v) # increase output verbosity
+            let ++DEEPDIVE_LOG_LEVEL
+            ;;
+        q) # quiet output
+            DEEPDIVE_LOG_LEVEL=0
             ;;
     esac
 done
@@ -44,3 +52,7 @@ else
     # disable plan editing
     export DEEPDIVE_PLAN_EDIT=false
 fi
+
+# disable progress when we are supposed to be quiet
+[[ $DEEPDIVE_LOG_LEVEL -gt 0 ]] || export DEEPDIVE_SHOW_PROGRESS=false
+export DEEPDIVE_LOG_LEVEL

@@ -4,30 +4,47 @@
 ##
 set -euo pipefail
 
+: ${DEEPDIVE_PLAN_PADDING:=$((80 - 12))}  # 80 columns, excluding " last done: "
+
 targets="${*%.done}"
 . resolve-args-to-do.sh
 
 # use make --dry-run to list all commands to run for given targets
 list-commands() {
+    hash_padding_expr() {
+        local extra_stuff=${1:-}
+        local max_padding_len=$(($DEEPDIVE_PLAN_PADDING - ${#extra_stuff}))
+        local min_padding_len=2  # NOTE this min length is critical for deepdive-do's filter producing less verbose output
+        echo '$(shell echo "$(@:.done=)" | \
+            '"jq -R -r '\"#\"*( $max_padding_len - length | \
+                if . < $min_padding_len then $min_padding_len else . end )')"
+    }
+    timestamp_expr() {
+        echo '$(shell format_timestamp $@ $@~ 2>/dev/null)'
+    }
     make -C "$DEEPDIVE_APP"/run --dry-run --silent \
-        CMD_process='$(@:.done=/run.sh)' \
-        TOUCH='mark_done $(@:.done=)' \
+        TOUCH= \
+        CMD_process="\$(@:.done=/run.sh) $(hash_padding_expr '/run.sh') last done: $(timestamp_expr)" \
+        CMD_data="deepdive mark 'done' \$(@:.done=) $(hash_padding_expr 'deepdive mark "done" ') last done: $(timestamp_expr)" \
         "$@"
 }
+
+# fix a reference time to get stable relative durations
+export FORMAT_DURATION_SINCE=$(date +%s)
+
+# enumerate what new has to happen
 commands=$(list-commands "$@") ||
     error "Error in process dependencies found for $targets"
 
-# enumerate what's going to happen
+# display the new stuff in the context of overall what has to be executed
 {
-echo "# execution plan for $targets
-"
+echo "### execution plan for $targets"
+echo
 diff \
-    --old-line-format=': %L' \
+    --old-line-format='    # %L' \
     --new-line-format='%L' \
     --unchanged-line-format='%L' \
     <(list-commands --always-make "$@") \
     - <<<"$commands" || true
 } |
-sed '/#\{77,\}$/ a\
-\
-'
+sed '/^    # / s/######## last done: /## last done: /'

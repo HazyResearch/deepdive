@@ -25,6 +25,13 @@ PATH="$PWD/../postgresql/prefix/bin:$PATH"  # psycopg2 requires postgresql's pg_
 PATH="$PWD/prefix/bin:$PATH"  # this ensures pip installs to virtualenv not to /usr
 prefix/bin/pip2 install -r requirements.txt
 
+# make sure no entrypoints have absolute path to python in its shebang
+for cmd in prefix/bin/*; do
+    head -1 "$cmd" | grep -q '^#!/[^[:space:]]*/python2\..*$' || continue
+    sed -e '1s:^#!/[^[:space:]]*/\(python2\..\)$:#!/usr/bin/env \1:' -i~ "$cmd"
+    rm -f "$cmd"~
+done
+
 # make sure things are properly exposed
 shopt -s extglob
 symlink-under-depends-prefix lib -d prefix/lib/python*
