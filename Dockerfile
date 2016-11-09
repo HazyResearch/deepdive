@@ -2,7 +2,7 @@
 #
 # `make build-in-container test-in-container` uses master image built by this.
 # `util/build/docker/` contains utilities relevant to this.
-FROM ubuntu
+FROM debian
 MAINTAINER deepdive-dev@googlegroups.com
 
 # Install essential stuffs

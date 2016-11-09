@@ -14,7 +14,7 @@ get_f1score() {
         result/eval.sh | tee /dev/stderr | sed -n '/^accuracy:/ s/.* FB1: *//p')
 }
 
-run_chunking_example() {
+@test "$DBVARIANT chunking example" {
     cd "$BATS_TEST_DIRNAME"/chunking_example || skip
     export SUBSAMPLE_NUM_WORDS_TRAIN=$CHUNKING_TEST_NUM_WORDS_TRAIN SUBSAMPLE_NUM_WORDS_TEST=$CHUNKING_TEST_NUM_WORDS_TEST
     DEEPDIVE_CONFIG_EXTRA='deepdive.calibration.holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT dd_id FROM dd_variables_chunk WHERE word_id > '${SUBSAMPLE_NUM_WORDS_TRAIN}'"' \
@@ -27,7 +27,7 @@ run_chunking_example() {
         skip "f1score = $f1score < $CHUNKING_TEST_MIN_F1SCORE"
 }
 
-run_chunking_example_reusing_weights() {
+@test "$DBVARIANT chunking example reuse weights" {
     cd "$BATS_TEST_DIRNAME"/chunking_example || skip
     export SUBSAMPLE_NUM_WORDS_TRAIN=0 SUBSAMPLE_NUM_WORDS_TEST=$CHUNKING_TEST_REUSE_NUM_WORDS_TEST
 
@@ -48,12 +48,4 @@ run_chunking_example_reusing_weights() {
     echo "f1score = $f1score"
     [[ $f1score -ge $CHUNKING_TEST_REUSE_MIN_F1SCORE ]] ||
         skip "f1score = $f1score < $CHUNKING_TEST_REUSE_MIN_F1SCORE"
-}
-
-@test "$DBVARIANT chunking example" {
-    run_chunking_example
-}
-
-@test "$DBVARIANT chunking example reuse weights" {
-    run_chunking_example_reusing_weights
 }

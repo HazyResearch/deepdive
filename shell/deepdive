@@ -62,6 +62,18 @@ if ! [[ "${DEEPDIVE_SHELL:-}" -ef "$0" ]]; then
     PATH="$DEEPDIVE_HOME/util:$DEEPDIVE_HOME/bin:$DEEPDIVE_BUNDLED_PREFIX/bin:$PATH"
     export PATH
 
+    #  make sure bash is used as the default shell, e.g., by system(3), by make(1)
+    export SHELL=$(type -p bash)
+
+    # if we're running inside a Jupyter Notebook, tweak some configs to play nice with it
+    if [[ -n ${JPY_PARENT_PID:-} ]]; then
+        export DEEPDIVE_INTERACTIVE=false DEEPDIVE_SHOW_PROGRESS=false
+    fi
+
+    # turn on progress display only if we're running directly from a tty
+    : ${DEEPDIVE_SHOW_PROGRESS:=$(if [[ -t 2 ]]; then echo true; else echo false; fi)}
+    export DEEPDIVE_SHOW_PROGRESS
+
     export DEEPDIVE_SHELL=$0
 fi
 

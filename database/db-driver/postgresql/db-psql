@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# db-psql -- Wraps PostgreSQL's psql client supplying minimal arguments from DeepDive app's db.url
+# > eval "$(db-parse "$url")"
+# > db-psql [PSQL_OPTS...]
+##
+set -eu
+
+PGPASSWORD="$DBPASSWORD" \
+exec psql -h "$DBHOST" -p "$DBPORT" -U "$DBUSER" "$@"

@@ -3,7 +3,4 @@
 # > eval "$(db-parse "$url")"
 # > db-prompt
 ##
-set -eu
-
-PGPASSWORD="$DBPASSWORD" \
-exec psql -h "$DBHOST" -p "$DBPORT" -U "$DBUSER" -d "$DBNAME" "$@"
+exec db-psql -d "$DBNAME" "$@"

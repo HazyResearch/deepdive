@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# db-is_ready -- Exits with zero status if the database is ready
+# > eval "$(db-parse "$url")"
+# > db-is_ready
+##
+exec db-psql -l >/dev/null

@@ -4,7 +4,11 @@
 ##
 set -eu
 
+: ${DEEPDIVE_LOG_LEVEL:=1}
+
+verboseLevel2=; [[ $DEEPDIVE_LOG_LEVEL -lt 2 ]] || verboseLevel2=v
+
 for ts in "$@"; do
     [[ -e "$ts~" ]] || continue
-    mv -v -f --no-target-directory "$ts~" "$ts"
+    mv -f$verboseLevel2 --no-target-directory "$ts~" "$ts"
 done

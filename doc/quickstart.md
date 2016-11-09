@@ -9,24 +9,52 @@ DeepDive helps you extract structured knowledge from less-structured data with s
 Here we show how you can quickly install and run your first DeepDive application.
 
 
-## Installing DeepDive
+## Launching or Installing DeepDive
 
-First, you can quickly [install DeepDive](installation.md) by running the following command and selecting the `deepdive` option:
+### Quick launching
+
+First, you can quickly [launch DeepDive](installation.md) with minimal installation using [Docker](https://docker.io) by running the following command:.
 
 ```bash
 bash <(curl -fsSL git.io/getdeepdive)
 ```
 
+Then selecting the `deepdive_docker_sandbox` option:
+
 ```
 ### DeepDive installer for Mac
-1) deepdive                 5) postgres
-2) deepdive_examples_tests  6) run_deepdive_tests
-3) deepdive_from_release    7) spouse_example
-4) deepdive_from_source
-# Select what to install (enter for all options, q to quit, or a number)? 1
+1) deepdive                   5) jupyter_notebook
+2) deepdive_docker_sandbox    6) postgres
+3) deepdive_example_notebook  7) run_deepdive_tests
+4) deepdive_from_release      8) spouse_example
+# Install what (enter to repeat options, a to see all, q to quit, or a number)? 2
 ```
 
+Now, point your web browser to [a terminal](http://0.0.0.0:8888/terminals/1) with shell access to an environment where DeepDive is installed.
+You will find our examples included there as well.
 
+```bash
+cd deepdive-examples/spouse
+```
+
+You can also see a notebook version of [the spouse example tutorial](example-spouse.md) if you point your browser to the [tutorial notebook](http://0.0.0.0:8888/notebooks/deepdive-examples/spouse/DeepDive%20Tutorial%20-%20Extracting%20mentions%20of%20spouses%20from%20the%20news.ipynb).
+
+
+### Quick installation
+
+If you cannot or do not want to use Docker for any reason,
+you can quickly [install DeepDive](installation.md) by selecting the `deepdive` option:
+
+```
+### DeepDive installer for Mac
+1) deepdive                   5) jupyter_notebook
+2) deepdive_docker_sandbox    6) postgres
+3) deepdive_example_notebook  7) run_deepdive_tests
+4) deepdive_from_release      8) spouse_example
+# Install what (enter to repeat options, a to see all, q to quit, or a number)? 1
+```
+
+While the sandbox provides you with a database, you are on your own with this option.
 You need to have a database instance to run any DeepDive application.
 You can select `postgres` from DeepDive's installer to install it and spin up an instance on you machine, or just run the following command:
 
@@ -43,6 +71,8 @@ Alternatively, if you have access to a database server, you can configure how to
 Now, let's see what DeepDive can do for us.
 We grab a copy of [the spouse example app explained in the tutorial](example-spouse.md).
 This app extracts mentions of spouses from [a corpus of news articles][corpus].
+
+(If you launched DeepDive's Docker image, then you can skip this downloading step as it's already included under `deepdive-examples/spouse/`.)
 
 [corpus]: http://research.signalmedia.co/newsir16/signal-dataset.html "The Signal Media One-Million News Articles Dataset"
 

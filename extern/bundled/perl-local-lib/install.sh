@@ -14,6 +14,7 @@ eval $(perl-local-lib)
 
 # install all CPAN modules to bundle
 cpanm JSON JSON::XS
+cpanm Bundle::LWP
 
 # make sure things are properly exposed
 symlink-under-depends-prefix bin -x prefix/bin/*

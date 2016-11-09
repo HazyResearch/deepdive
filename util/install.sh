@@ -7,8 +7,9 @@ set -euo pipefail
 : ${PREFIX:=~/local}        # the path to install deepdive
 : ${GITCLONE:=deepdive}     # the path to clone deepdive's repo
 
+: ${GITHUB_BASEURL:=https://github.com/HazyResearch/deepdive}
 : ${INSTALLER_BRANCH:=master}   # the branch from which the installer scripts should be downloaded
-INSTALLER_HOME_URL=https://github.com/HazyResearch/deepdive/raw/"${INSTALLER_BRANCH}"/util/install
+INSTALLER_HOME_URL="$GITHUB_BASEURL"/raw/"$INSTALLER_BRANCH"/util/install
 INSTALLER_HOME_DIR=$(dirname "$0")/install
 
 # see if running from the git repo
@@ -19,11 +20,8 @@ INSTALLER_HOME_DIR=$(dirname "$0")/install
     case $(declare -p GITCLONE) in "declare --"*) false ;; *) true ;; esac ||
     GITCLONE="$INSTALLER_HOME_DIR"/../.. INSTALLER_BRANCH=HEAD BRANCH=HEAD
 
-$INSTALLER_LOCAL_FIRST || # unless this is running directly from a git repo
-# run the correct installer directly from GitHub unless already doing so
-${INSTALLER_REMOTE_EXEC:-false} ||
-    INSTALLER_REMOTE_EXEC=true \
-    exec bash <(set -x; curl -fsSL "${INSTALLER_HOME_URL}.sh") "$@"
+# use a fixed locale to ensure consistent behavior
+export LC_ALL=en_US.UTF-8
 
 has() { type "$@"; } &>/dev/null
 error() {
@@ -37,6 +35,38 @@ error() {
     fi
     false
 } >&2
+# find a way to get files over HTTP by URL
+if has curl; then
+    get-url() { curl -fsSL "$@"; }
+elif has wget; then
+    get-url() { wget -qO- "$@"; }
+else
+    error "Neither curl nor wget is available"
+fi
+
+$INSTALLER_LOCAL_FIRST || # unless this is running directly from a git repo
+# run the correct installer directly from GitHub unless already doing so
+${INSTALLER_REMOTE_EXEC:-false} ||
+    INSTALLER_REMOTE_EXEC=true \
+    exec bash <(set -x; get-url "${INSTALLER_HOME_URL}.sh") "$@"
+
+download() {
+    local url=$1
+    local file=${2:-$(basename "$1")}
+    file=$(python -c 'import urllib,sys;print urllib.unquote(sys.argv[1])' "$file")
+    if [[ -e "$file" ]]; then
+        echo "# File exists, skipping download from $url"
+    else
+        echo "# Downloading ${2:+$file from }$url"
+        if type curl &>/dev/null; then
+            curl -fLRo "$file" "$url"
+        elif type wget &>/dev/null; then
+            wget -N -O "$file" "$url"
+        else
+            error "No known method to download (curl or wget)"
+        fi
+    fi
+}
 timeout_or_do() {
     local timeout=${1:?Missing timeout in seconds}; shift
     local msg=${1:?Missing prompt message}; shift
@@ -92,10 +122,10 @@ install__deepdive_git_repo() {
     # $GITCLONE already points to a git clone and the branch can be checked out
     { [[ -e "$GITCLONE"/.git ]] && (cd "$GITCLONE" && git checkout "$BRANCH"); } ||
     # or grab a clone with git
-    git clone --recursive --branch "$BRANCH" https://github.com/HazyResearch/deepdive.git "$GITCLONE"
+    git clone --recursive --branch "$BRANCH" "$GITHUB_BASEURL".git "$GITCLONE"
 }
 # installs DeepDive from source by going through the full build
-install_deepdive_from_source_no_dependencies() {
+install__deepdive_from_source_no_dependencies() {
     # clone git repo if necessary
     run_installer_for _deepdive_git_repo
     cd "$GITCLONE"
@@ -103,10 +133,10 @@ install_deepdive_from_source_no_dependencies() {
     # install DeepDive from source
     make install PREFIX="$PREFIX"
 }
-install_deepdive_from_source() {
+install__deepdive_from_source() {
     # prepare fetching and building source
     run_installer_for _deepdive_build_deps
-    run_installer_for deepdive_from_source_no_dependencies
+    run_installer_for _deepdive_from_source_no_dependencies
     # install runtime dependencies
     run_installer_for _deepdive_runtime_deps
 }
@@ -132,7 +162,7 @@ select_release() {
 }
 list_deepdive_releases() {
     # find all links to a GitHub tree from the release page
-    curl -fsSL https://github.com/HazyResearch/deepdive/releases/ | sed '
+    get-url "$GITHUB_BASEURL"/releases/ | sed '
         \:/.*/tree/:!d
         s/.*href="//; s/".*$//
         s:.*/tree/::
@@ -151,13 +181,13 @@ install_deepdive_from_release() {
         *) error "$os-$arch: No binary release available for your OS" "DeepDive must be installed from source"
     esac
     local tarball="deepdive-${RELEASE}-${os}.tar.gz"
-    local url="https://github.com/HazyResearch/deepdive/releases/download/${RELEASE}/$tarball"
+    local url="$GITHUB_BASEURL/releases/download/${RELEASE}/$tarball"
     (
     # showing what is going on
     set -x
     rm -f "$tarball"
     # download tarball
-    curl -fLRO "$url" || wget -N "$url"
+    download "$url"
     # unpack tarball
     mkdir -p "$PREFIX"
     tar xzvf "$tarball" -C "$PREFIX"
@@ -173,7 +203,7 @@ install_deepdive() {
     run_installer_for _deepdive_runtime_deps
 }
 # installs DeepDive examples and tests
-install_deepdive_examples_tests() {
+install__deepdive_examples_tests() {
     timeout_or_select_release "to download examples and tests from" \
         eval 'echo "# Downloading examples and tests (from $RELEASE)..."'
     download_deepdive_github_tree "DeepDive examples and tests" \
@@ -187,6 +217,53 @@ install_spouse_example() {
         spouse_example-${RELEASE#v} \
         examples/spouse
 }
+# launches tutorial notebook
+install_deepdive_example_notebook() {
+    : ${NOTEBOOK_BRANCH:=tutorial-in-a-notebook}
+    : ${NOTEBOOK_PATH:=examples/spouse/DeepDive%20Tutorial%20-%20Extracting%20mentions%20of%20spouses%20from%20the%20news.ipynb}
+    : ${NOTEBOOK_URL:=$GITHUB_BASEURL/raw/$NOTEBOOK_BRANCH/$NOTEBOOK_PATH}
+    mkdir -p deepdive_notebooks
+    cd deepdive_notebooks
+    download "$NOTEBOOK_URL"
+    PATH="$PREFIX/jupyter/bin:$PATH"
+    type jupyter || run_installer_for _jupyter
+    jupyter notebook *.ipynb
+}
+# launches a Jupyter notebook after installing it locally
+install_jupyter_notebook() {
+    PATH="$PREFIX/jupyter/bin:$PATH"
+    type jupyter || run_installer_for _jupyter
+    jupyter notebook
+}
+# installs a local Jupyter within a virtualenv with easy_install or pip from scratch
+install__jupyter() {
+    PATH="$PREFIX/jupyter/bin:$PATH"
+    if ! [[ -x "$PREFIX"/jupyter/bin/jupyter ]]; then
+        if ! [[ -x "$PREFIX"/jupyter/bin/pip ]]; then
+            : ${PYTHONVERSION:=2.7}
+            # easy_install should be available on Mac by default and many other Python installations
+            if type easy_install-$PYTHONVERSION; then
+                # use easy_install to bootstrap a virutalenv that has pip
+                export PYTHONPATH="$PREFIX"/jupyter/lib/python$PYTHONVERSION/site-packages
+                mkdir -p "$PYTHONPATH"
+                easy_install-$PYTHONVERSION --prefix "$PREFIX"/jupyter virtualenv
+            else # download get-pip.py to bootstrap a virtualenv
+                mkdir -p "$PREFIX"/jupyter/bootstrap
+                ( cd "$PREFIX"/jupyter/bootstrap
+                    download https://bootstrap.pypa.io/get-pip.py
+                    [[ -e virtualenv.py ]] ||
+                    "$(type -p python)" get-pip.py virtualenv --ignore-installed --target .
+                )
+                virtualenv() { PYTHONPATH="$PREFIX"/jupyter/bootstrap \
+                    "$(type -p python)" -c 'import virtualenv; virtualenv.main()' "$@"; }
+            fi
+            virtualenv "$PREFIX"/jupyter
+        fi
+        # use pip to install Jupyter
+        pip install jupyter
+    fi
+    type jupyter
+}
 # how to download a subtree of DeepDive's GitHub repo
 download_deepdive_github_tree() {
     local what=$1; shift
@@ -199,7 +276,7 @@ download_deepdive_github_tree() {
         local tmpdir="$dest".download
         mkdir -p "$tmpdir"
         set -x
-        curl -fsSL https://github.com/HazyResearch/deepdive/archive/"$RELEASE".tar.gz |
+        get-url "$GITHUB_BASEURL"/archive/"$RELEASE".tar.gz |
         tar xvzf - -C "$tmpdir" "${@/#/$tarballPrefix/}"
         ! [[ -e "$dest" ]] || mv -f "$dest" "$dest"~
         if [[ $# -eq 1 && -d "$tmpdir/$tarballPrefix/$1" ]]; then
@@ -214,10 +291,24 @@ download_deepdive_github_tree() {
 }
 # runs tests against installed DeepDive
 install_run_deepdive_tests() {
-    run_installer_for deepdive_examples_tests
+    run_installer_for _deepdive_examples_tests
     set -x
     PATH="$PREFIX/bin:$PATH" \
     deepdive env deepdive-${RELEASE#v}/test/test-installed.sh
+}
+
+# sandbox with Docker Compose
+install_deepdive_docker_sandbox() {
+    if has docker-compose; then
+        download_deepdive_github_tree "DeepDive Sandbox" \
+            deepdive-${RELEASE#v} \
+            sandbox test/postgresql/Dockerfile.postgres
+        cd deepdive-${RELEASE#v}/sandbox
+        docker-compose up
+    else
+        error "docker-compose not available" \
+            "Please install it first from: https://docs.docker.com/compose/install/"
+    fi
 }
 ################################################################################
 
@@ -269,13 +360,13 @@ source_script() {
         source "$INSTALLER_HOME_DIR/$script"
     else
         # may be this script is run as a one-liner, get script from GitHub
-        #source <(curl -fsSL "$INSTALLER_HOME_URL/$script") "$@"
+        #source <(get-url "$INSTALLER_HOME_URL/$script") "$@"
         # XXX using a workaround since source with process substitution has problem in bash 3 (OS X default)
         # See: https://bugzilla.altlinux.org/show_bug.cgi?id=7475
         init_INSTALLER_TEMP_DIR
         local script_path="$INSTALLER_TEMP_DIR/$script"
         mkdir -p "$(dirname "$script_path")"
-        curl -fsSL "$INSTALLER_HOME_URL/$script" >"$script_path"
+        get-url "$INSTALLER_HOME_URL/$script" >"$script_path"
         source "$script_path" "$@"
     fi
 }

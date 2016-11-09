@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 # format_timestamp -- Formats timestamp and duration since the last modified time of given file
 # > format_timestamp TIMESTAMP_FILE
+#
+# > FORMAT_DURATION_SINCE=$(date +%s)
+# > format_timestamp TIMESTAMP_FILE
 ##
 set -eu
+
+: ${FORMAT_DURATION_SINCE:=$(date +%s)}
 
 # Based on: http://unix.stackexchange.com/a/27014/21080
 format_duration() {
@@ -26,8 +31,8 @@ format_duration() {
 
 for file; do
     [[ -e "$file" ]] || continue
-    ts=$(date -r "$file" -Iseconds 2>/dev/null || date -r "$file" +%FT%T%z)
-    nsecs=$(( $(date +%s) - $(date -r "$file" +%s) ))
+    ts=$(date -r "$file" -Iseconds 2>/dev/null || date -r "$file" +%FT%T%:z)
+    nsecs=$(( $FORMAT_DURATION_SINCE - $(date -r "$file" +%s) ))
     dur=$(format_duration $nsecs)
     echo "$ts (${dur## } ago)"
     exit

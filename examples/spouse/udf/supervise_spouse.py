@@ -16,7 +16,7 @@ SpouseLabel = namedtuple('SpouseLabel', 'p1_id, p2_id, label, type')
 def supervise(
         p1_id="text", p1_begin="int", p1_end="int",
         p2_id="text", p2_begin="int", p2_end="int",
-        doc_id="text", sentence_index="int", sentence_text="text",
+        doc_id="text", sentence_index="int",
         tokens="text[]", lemmas="text[]", pos_tags="text[]", ner_tags="text[]",
         dep_types="text[]", dep_token_indexes="int[]",
     ):

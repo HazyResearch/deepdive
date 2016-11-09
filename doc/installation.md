@@ -6,17 +6,58 @@ no_toc: true
 
 # DeepDive installation guide
 
-DeepDive runs on Linux or Mac OS X.
-This document explains how to install DeepDive on your system.
+DeepDive runs on macOS, Linux, and in Docker containers.
+This document explains how to install or launch DeepDive on your system.
+
+## Launch without installing
+
+We provide Docker images and Docker Compose configuration to just launch and use DeepDive.
+
+1. Make sure you have [Docker Compose](https://docs.docker.com/compose/install/) installed.
+    (If Docker does not work for you, then try quick installation below.
+    If you lack system administration rights, then try the `deepdive_from_release` option.)
+
+2. Open your terminal and run this:
+   <pre style="width:80%; margin:0 auto; padding:20px;"><code><big style="font-size:175%;">bash <(curl -fsSL git.io/getdeepdive)</big></code></pre>
+
+3. Select `deepdive_docker_sandbox` when asked.
+
+    ```
+    ### DeepDive installer for Mac
+    1) deepdive                   5) jupyter_notebook
+    2) deepdive_docker_sandbox    6) postgres
+    3) deepdive_example_notebook  7) run_deepdive_tests
+    4) deepdive_from_release      8) spouse_example
+    # Install what (enter to repeat options, a to see all, q to quit, or a number)? 2
+    [...]
+    ```
+
+4. It launches a [DeepDive container](https://hub.docker.com/r/hazyresearch/deepdive/) along with a Postgres database container we tweaked for DeepDive.
+
+5. Point your web browser to the [tutorial notebook](http://0.0.0.0:8888/notebooks/deepdive-examples/spouse/DeepDive%20Tutorial%20-%20Extracting%20mentions%20of%20spouses%20from%20the%20news.ipynb) or a [terminal](http://0.0.0.0:8888/terminals/1).
+
+
+### Data Persistency
+
+Here are a few IMPORTANT things to keep in mind about data:
+
+* All data in the database is kept under `deepdive-*/sandbox/database/` on the host, so you can find it on subsequent launches.
+
+* To exchange files between host and container, use the `deepdive-*/sandbox/workdir/` on host, which is mounted on `/ConfinedWater/workdir/` in the container.
+
+* WARNING!!! Changes to everything else in the container, including files under `deepdive-examples/`, disappear when you shut down the Docker Compose, e.g., with `docker-compose down`.
+
+
 
 ## Quick installation
 
 We provide a simple installation method for the following supported systems:
 
-* GNU/Linux: Debian (7, 8, or later) and Ubuntu (12.04LTS, 14.04LTS, or later)
+* GNU/Linux: Debian (7, 8, or later) and Ubuntu (12.04LTS, 14.04LTS, 16.04LTS, or later)
+    * [Docker](https://docker.io)
     * [VirtualBox](https://help.ubuntu.com/community/VirtualBox)
     * [AWS EC2](using-ec2.md)
-* Mac OS X with [Homebrew](http://brew.sh)
+* macOS with [Homebrew](http://brew.sh)
 
 You can install DeepDive and all its dependencies with a single command.
 
@@ -26,16 +67,13 @@ You can install DeepDive and all its dependencies with a single command.
 2. Select `deepdive` or `deepdive_from_release` when asked.
     Choose the latter option if you simply want to install DeepDive without any of its runtime dependencies.
 
-    ```bash
-    bash <(curl -fsSL git.io/getdeepdive)
-    ```
     ```
     ### DeepDive installer for Mac
-    1) deepdive                 5) postgres
-    2) deepdive_examples_tests  6) run_deepdive_tests
-    3) deepdive_from_release    7) spouse_example
-    4) deepdive_from_source
-    # Select what to install (enter for all options, q to quit, or a number)? 1
+    1) deepdive                   5) jupyter_notebook
+    2) deepdive_docker_sandbox    6) postgres
+    3) deepdive_example_notebook  7) run_deepdive_tests
+    4) deepdive_from_release      8) spouse_example
+    # Install what (enter to repeat options, a to see all, q to quit, or a number)? 1
     [...]
     ```
 
@@ -47,6 +85,7 @@ You can install DeepDive and all its dependencies with a single command.
         ```bash
         bash <(curl -fsSL git.io/getdeepdive) _deepdive_runtime_deps
         ```
+
     * For installation with `deepdive_from_source` option, extra build dependencies are installed, and DeepDive source tree is cloned at `./deepdive`, then executables are installed under `~/local/bin/`.
     You can run tests in DeepDive's source tree to make sure everything will run fine.
     See the [developer's guide](developer.md#build-test) for more details.
