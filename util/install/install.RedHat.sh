@@ -48,6 +48,7 @@ install__deepdive_build_deps() {
         numactl-devel
     )
     sudo yum install -y "${build_deps[@]}"
+    sudo localedef -f UTF-8 -i en_US en_US.UTF-8
 }
 
 install__deepdive_runtime_deps() {

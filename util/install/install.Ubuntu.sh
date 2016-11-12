@@ -73,7 +73,7 @@ install__deepdive_build_deps() {
         locales
     )
     sudo apt-get install -qy "${build_deps[@]}"
-    sudo locale-gen en_US.UTF-8
+    sudo localedef -i en_US -f UTF-8 en_US.UTF-8
 }
 
 install__deepdive_runtime_deps() {
@@ -112,7 +112,7 @@ install__deepdive_runtime_deps() {
         locales
     )
     sudo apt-get install -qy "${runtime_deps[@]}"
-    sudo locale-gen en_US.UTF-8
+    sudo localedef -i en_US -f UTF-8 en_US.UTF-8
 }
 
 install_postgres_xl() {
