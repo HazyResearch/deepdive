@@ -10,6 +10,7 @@ set -euo pipefail
 
 TABLE_CSV=$1 IdColumn=$2 PartColumn=${3:-0}
 
+db-supports_pg_lang "plpythonu"
 
 SQL="
     CREATE OR REPLACE FUNCTION seqassign(partid INT, reset BOOL)
