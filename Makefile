@@ -34,13 +34,15 @@ endif
 
 ### build/test inside containers ##############################################
 .PHONY: %--in-container dev-docker-image
-dev-docker-image:  # needs to be run at least once by someone
-	./DockerBuild/rebuild-latest-image-from-scratch
-build--in-container:
-	./DockerBuild/build-in-container
-test--in-container:
-	./DockerBuild/test-in-container-postgres \
+dev-docker-image: ./DockerBuild/rebuild-latest-image-from-scratch # needs to be run at least once by someone
+	$<
+build--in-container: ./DockerBuild/build-in-container
+	$<
+test--in-container: ./DockerBuild/test-in-container-postgres
+	$< \
 	    make -j test $(if $(ONLY),ONLY="$(ONLY)") $(if $(EXCEPT),EXCEPT="$(EXCEPT)")
+./DockerBuild/%:
+	git submodule update --init DockerBuild
 
 ### dependency recipes ########################################################
 
