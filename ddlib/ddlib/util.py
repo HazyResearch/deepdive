@@ -389,11 +389,10 @@ def tsj_extractor(generator):
   array to generate output rows, and each output row expected to be an array
   is formatted as TSJ.
   """
-  # For Python 2, set default encoding to UTF-8
-  # to avoid UnicodeEncodeError of JSON values during conversion by str()
-  reload(sys)
-  if hasattr(sys, "setdefaultencoding"):
-      sys.setdefaultencoding("utf8")
+  try: # For Python 2, set default encoding to UTF-8
+      reload(sys).setdefaultencoding("utf8") # to avoid UnicodeEncodeError of JSON values during conversion by str()
+  except:
+      pass # Python 3 raises an exception as reload() is not available
 
   input_format, output_format = get_generator_format(generator)
   input_names  = [name for name,t in input_format]
