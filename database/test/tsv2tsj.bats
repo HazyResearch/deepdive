@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 # Tests for tsv2tsj
-. "$BATS_TEST_DIRNAME"/env.sh >&2
+load test_environ
 
 load corner_cases
 

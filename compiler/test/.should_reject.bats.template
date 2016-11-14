@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 # A .bats template for test cases that DeepDive compiler should reject
-. "$BATS_TEST_DIRNAME"/env.sh >&2
+load test_environ
 
 # check if the template is being run directly
 case $BATS_TEST_FILENAME in *.template)

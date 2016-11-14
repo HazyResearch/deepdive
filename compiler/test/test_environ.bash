@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
 # Unit tests for DeepDive compiler
-# Usage: . "$BATS_TEST_DIRNAME"/env.sh >&2  # from .bats files typically on the same directory
+# Usage: load test_environ # from .bats files typically on the same directory
 
-. "${BASH_SOURCE%/*}"/../../test/env.sh
-PATH_backup=$PATH
+load ../../test/test_environ
 
 setup() {
-    PATH=$PATH_backup
     # speed up deepdive-compile by disabling some unnecessary compilation steps
     export \
         DEEPDIVE_COMPILE_SKIP_DATAFLOW=true \

@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 # Tests for load-db-driver.sh
-. "$BATS_TEST_DIRNAME"/env.sh >&2
+load test_environ
 
 @test "db.url allows use of environment variables" {
     dbname=$(

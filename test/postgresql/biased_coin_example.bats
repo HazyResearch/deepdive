@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 # Tests for biased coin example
 
-. "$BATS_TEST_DIRNAME"/env.sh >&2
+load test_environ
 
 @test "$DBVARIANT biased coin example" {
     cd "$BATS_TEST_DIRNAME"/biased_coin_example || skip

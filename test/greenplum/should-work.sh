@@ -3,7 +3,8 @@
 set -eu
 
 cd "$(dirname "$0")"
-. ./env.sh
+load() { source "$1".bash; }
+load test_environ
 {
     # gpfdist should be on PATH to say Greenplum is there
     type gpfdist

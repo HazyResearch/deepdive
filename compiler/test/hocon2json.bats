@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 # Tests for hocon2json
-. "$BATS_TEST_DIRNAME"/env.sh >&2
+load test_environ
 
 @test "hocon2json works" {
     # check if it outputs proper JSON

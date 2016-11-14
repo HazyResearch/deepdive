@@ -11,7 +11,7 @@ export INCREMENTAL_SPOUSE_EXAMPLE_LIMIT_SENTENCES
 : ${DBNAME:=deepdive_test_${USER}}
 DBPREFIX=$DBNAME  # TODO use DEEPDIVE_DB_URL
 
-. "$BATS_TEST_DIRNAME"/env.sh >&2
+load test_environ
 
 setup() {
     "$DEEPDIVE_SOURCE_ROOT"/examples/spouse_example/data/prepare_data.sh

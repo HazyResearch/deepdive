@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 # Tests for @tsv_extractor Python function/generator decorator
-. "$BATS_TEST_DIRNAME"/env.sh >&2
+load test_environ
 
 load ../../database/test/corner_cases
 

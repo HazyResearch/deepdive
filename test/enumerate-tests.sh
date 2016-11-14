@@ -9,8 +9,8 @@ list_executable_bats() {
 
 {
 list_executable_bats test {shell,util,database,compiler,runner,inference,ddlib}/test
-for testDir in test/*/env.sh; do
-    testDir=${testDir%/env.sh}
+for testDir in test/*/test_environ.bash; do
+    testDir=${testDir%/test_environ.bash}
     testShouldWork="$testDir"/should-work.sh
     ! [[ -x "$testShouldWork" ]] || "$testShouldWork" || continue
     list_executable_bats "$testDir"

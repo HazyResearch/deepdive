@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 # Tests for `deepdive sql` command
 
-. "$BATS_TEST_DIRNAME"/env.sh >&2
+load test_environ
 PATH="$DEEPDIVE_SOURCE_ROOT/util/test:$PATH"
 
 setup() {

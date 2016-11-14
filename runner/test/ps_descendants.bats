@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-. "$BATS_TEST_DIRNAME"/env.sh
+load test_environ
 
 setup() {
     pidsfile=$(mktemp "$BATS_TMPDIR"/ps_descendants-pids.XXXXXXX)

@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-. "$BATS_TEST_DIRNAME"/env.sh
+load test_environ
 
 @test "deepdive corenlp sentences-tsj usage" {
     ## first, correct usages

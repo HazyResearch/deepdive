@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 # Tests for `deepdive create` command
 
-. "$BATS_TEST_DIRNAME"/env.sh >&2
+load test_environ
 
 setup() {
     db-execute "SELECT 1" &>/dev/null || db-init

@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 # Tests for `deepdive unload` command
 
-. "$BATS_TEST_DIRNAME"/env.sh >&2
+load test_environ
 
 N=10000
 

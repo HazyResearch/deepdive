@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 # Tests for chunking example
 
-. "$BATS_TEST_DIRNAME"/env.sh >&2
+load test_environ
 
 : ${CHUNKING_TEST_NUM_WORDS_TRAIN:=1000} ${CHUNKING_TEST_NUM_WORDS_TEST:=200}
 : ${CHUNKING_TEST_MIN_F1SCORE:=70}

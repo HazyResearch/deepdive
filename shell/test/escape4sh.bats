@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-. "$BATS_TEST_DIRNAME"/env.sh >&2
+load test_environ
 
 @test "escape4sh quotes spaces properly" {
     [ "$(sh -xc "$(escape4sh echo a "b c" "d  e" f)")" = "a b c d  e f" ]

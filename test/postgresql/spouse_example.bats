@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 # Tests for spouse example
 
-. "$BATS_TEST_DIRNAME"/env.sh >&2
+load test_environ
 : ${SUBSAMPLE_NUM_SENTENCES:=10000}
 export DEEPDIVE_CONFIG_EXTRA='
     deepdive.sampler.sampler_args: "-l 500 -i 500 --alpha 0.05 --diminish 0.99"

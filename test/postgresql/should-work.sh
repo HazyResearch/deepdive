@@ -3,7 +3,8 @@
 set -eu
 
 cd "$(dirname "$0")"
-. ./env.sh
+load() { source "$1".bash; }
+load test_environ
 {
     # try executing a SQL query against the configured database for tests
     [[ "$(DBNAME=postgres timeout 1s db-execute "COPY (SELECT VERSION() LIKE '%PostgreSQL%'

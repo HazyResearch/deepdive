@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-. "$BATS_TEST_DIRNAME"/env.sh
+load test_environ
 
 cd "$BATS_TMPDIR"
 

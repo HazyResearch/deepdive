@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-. "$BATS_TEST_DIRNAME"/env.sh >&2
+load test_environ
 
 setup() {
     dd-python2() { deepdive env python2 "$@"; }

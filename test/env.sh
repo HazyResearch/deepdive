@@ -22,7 +22,16 @@ DEEPDIVE_SOURCE_ROOT=$(cd "$DEEPDIVE_TEST_ROOT/.." && pwd)
 }
 
 # configure the same environment for tests used by facade command, deepdive
-source <("$DEEPDIVE_HOME"/bin/deepdive env bash -c export)
+source <("$DEEPDIVE_HOME"/bin/deepdive env bash -c export |
+    sed -e '/^declare -/{
+        # gets rid of weird declarations without value part
+        /=/!d
+        # always affect the global scope
+        s/^declare -x //
+        # XXX if declare is kept without the -g, the effect cannot escape
+        #     the function that is calling source and can cause various
+        #     confusions.
+    }')
 
 # turn off progress reporting during tests
 DEEPDIVE_SHOW_PROGRESS=false

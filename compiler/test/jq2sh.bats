@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-. "$BATS_TEST_DIRNAME"/env.sh
+load test_environ
 
 @test "jq2sh works as expected" {
     unset DEEPDIVE_COMPUTER DEEPDIVE_COMPUTER_CONFIG
