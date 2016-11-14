@@ -21,10 +21,8 @@ DEEPDIVE_SOURCE_ROOT=$(cd "$DEEPDIVE_TEST_ROOT/.." && pwd)
     false
 }
 
-# configure PATH and CLASSPATH for tests
-# TODO reuse shell/deepdive
-PATH="$DEEPDIVE_HOME/util:$DEEPDIVE_HOME/bin:$DEEPDIVE_HOME/lib/bundled/.all/bin:$PATH"
-! [[ -r "$DEEPDIVE_HOME"/env.sh ]] || source "$DEEPDIVE_HOME"/env.sh
+# configure the same environment for tests used by facade command, deepdive
+source <("$DEEPDIVE_HOME"/bin/deepdive env bash -c export)
 
 # turn off progress reporting during tests
 DEEPDIVE_SHOW_PROGRESS=false
@@ -32,13 +30,9 @@ DEEPDIVE_SHOW_PROGRESS=false
 export \
     DEEPDIVE_TEST_ROOT \
     DEEPDIVE_SOURCE_ROOT \
-    DEEPDIVE_HOME \
     DEEPDIVE_SHOW_PROGRESS \
-    PATH \
-    CLASSPATH \
     TEST_DEBUG \
     #
-
 
 # some BATS utilities for testing
 
