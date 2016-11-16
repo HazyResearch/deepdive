@@ -304,7 +304,7 @@ def format_from_args_defaults_of(aFunctionOrFormat):
   if hasattr(aFunctionOrFormat, '__call__'):
     # TODO in Python3, support types in function annotations (PEP 3107: https://www.python.org/dev/peps/pep-3107/)
     spec = getargspec(aFunctionOrFormat)
-    return zip(spec.args, spec.defaults)
+    return list(zip(spec.args, spec.defaults))
   else:
     return aFunctionOrFormat
 
