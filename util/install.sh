@@ -300,6 +300,7 @@ install_run_deepdive_tests() {
 # sandbox with Docker Compose
 install_deepdive_docker_sandbox() {
     if has docker-compose; then
+        RELEASE=master  # always use the sandbox on master branch
         download_deepdive_github_tree "DeepDive Sandbox" \
             deepdive-${RELEASE#v} \
             sandbox test/postgresql/Dockerfile.postgres
