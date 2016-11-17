@@ -305,7 +305,8 @@ install_deepdive_docker_sandbox() {
             deepdive-${RELEASE#v} \
             sandbox test/postgresql/Dockerfile.postgres
         cd deepdive-${RELEASE#v}/sandbox
-        docker-compose up
+        docker-compose pull
+        docker-compose up --no-build deepdive-notebooks
     else
         error "docker-compose not available" \
             "Please install it first from: https://docs.docker.com/compose/install/"
