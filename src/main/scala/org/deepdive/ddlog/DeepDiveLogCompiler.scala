@@ -116,8 +116,9 @@ class DeepDiveLogCompiler( program : DeepDiveLog.Program, config : DeepDiveLog.C
   // odd has happened.
   def resolveName( v : Variable ) : String = {
     v match { case Variable(v,relName,i) =>
-      if(attrNameForRelationAndPosition contains (relName,i)) {
-        attrNameForRelationAndPosition(relName,i)
+      val realRel = relName.stripPrefix(deepdivePrefixForVariablesWithIdsTable)
+      if(attrNameForRelationAndPosition contains (realRel,i)) {
+        attrNameForRelationAndPosition(realRel,i)
       } else {
         // for views, columns names are in the form of "column_index"
         return s"column_${i}"
@@ -511,7 +512,7 @@ class QueryCompiler(cq : ConjunctiveQuery, hackFrom: List[String] = Nil, hackWhe
       case (x: Atom, i) if schemaDeclarationByRelationName get x.name exists (_.isQuery) =>
         // TODO maybe TableAlias can be useful here or we can completely get rid of it?
         // variable id column
-        s"""${deepdiveVariableIdColumn}_${headAsBody indexOf x}.${
+        s"""R${headAsBody indexOf x}.${
           deepdiveVariableIdColumn
         } AS "${x.name}.R${headAsBody indexOf x}.${deepdiveVariableIdColumn}\"""" :: (
           // project variable key columns as well (to reduce unnecssary joins)
@@ -530,22 +531,9 @@ class QueryCompiler(cq : ConjunctiveQuery, hackFrom: List[String] = Nil, hackWhe
       case _ => List.empty
     }
 
-    val internalVarTables = headAsBody.zipWithIndex flatMap {
-      case (x: Atom, i) if schemaDeclarationByRelationName get x.name exists (_.isQuery) =>
-        List(s"""${deepdivePrefixForVariablesIdsTable}${x.name} AS ${deepdiveVariableIdColumn}_${headAsBody indexOf x}""")
-      case _ => List.empty
+    val headAsBodyWithIds = headAsBody map {
+      case(x: Atom) => Atom(s"""${deepdivePrefixForVariablesWithIdsTable}${x.name}""", x.terms)
     }
-
-    val internalVarJoinConds = headAsBody.zipWithIndex flatMap {
-      case (x: Atom, i) if schemaDeclarationByRelationName get x.name exists (_.isQuery) =>
-        List(
-          // project variable key columns as well (to reduce unnecssary joins)
-          schemaDeclarationByRelationName get x.name map (_.keyColumns map {
-            case term => s"""R${headAsBody indexOf x}.${term} = ${deepdiveVariableIdColumn}_${headAsBody indexOf x}.${term}"""
-          }) get
-        )
-      case _ => List.empty
-    } flatten
 
     var nonCategoryWeightCols = new HashSet[String]()
 
@@ -554,11 +542,10 @@ class QueryCompiler(cq : ConjunctiveQuery, hackFrom: List[String] = Nil, hackWhe
         // Here we need to select from the bodies atoms as well as the head atoms,
         // which are the variable relations.
         // This is achieved by puting head atoms into the body.
-        val fakeBody        = headAsBody ++ cqBody
+        val fakeBody        = headAsBodyWithIds ++ cqBody
         val fakeCQ          = stmt.q.copy(bodies = List(fakeBody))
 
-        // TODO XXX: Fix the `internal` hack below
-        val qc = new QueryCompiler(fakeCQ, internalVarTables, internalVarJoinConds)
+        val qc = new QueryCompiler(fakeCQ)
 
         // weight columns
         val weightColumns = stmt.weights.variables.zipWithIndex collect {
@@ -685,7 +672,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   val deepdiveVariableIdColumn = "dd_id"
   val deepdiveVariableLabelColumn = "dd_label"
   val deepdiveVariableLabelTruthinessColumn = "dd_truthiness"
-  val deepdivePrefixForVariablesIdsTable = "dd_variables_"
+  val deepdivePrefixForVariablesWithIdsTable = "dd_variables_with_id_"
 
   // entry point for compilation
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {

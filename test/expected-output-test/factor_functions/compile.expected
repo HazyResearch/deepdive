@@ -12,21 +12,17 @@ non_category_weight_cols: [
   dd_weight_column_0
 ]
 input_query: """
-SELECT dd_id_0.dd_id AS "Q.R0.dd_id"
+SELECT R0.dd_id AS "Q.R0.dd_id"
      , R0.x AS "Q.R0.x"
-     , dd_id_1.dd_id AS "Q.R1.dd_id"
+     , R1.dd_id AS "Q.R1.dd_id"
      , R1.x AS "Q.R1.x"
      , R1.x AS "dd_weight_column_0"
      , (1)::float AS feature_value
-FROM Q R0
-   , Q R1
+FROM dd_variables_with_id_Q R0
+   , dd_variables_with_id_Q R1
    , R R2
-   , dd_variables_Q AS dd_id_0
-   , dd_variables_Q AS dd_id_1
 WHERE R2.a = R0.x
   AND R2.b = R1.x
-  AND R0.x = dd_id_0.x
-  AND R1.x = dd_id_1.x
 """
 input_relations: [
   Q
@@ -42,21 +38,17 @@ non_category_weight_cols: [
   dd_weight_column_0
 ]
 input_query: """
-SELECT dd_id_0.dd_id AS "Q.R0.dd_id"
+SELECT R0.dd_id AS "Q.R0.dd_id"
      , R0.x AS "Q.R0.x"
-     , dd_id_1.dd_id AS "Q.R1.dd_id"
+     , R1.dd_id AS "Q.R1.dd_id"
      , R1.x AS "Q.R1.x"
      , R1.x AS "dd_weight_column_0"
      , (1)::float AS feature_value
-FROM Q R0
-   , Q R1
+FROM dd_variables_with_id_Q R0
+   , dd_variables_with_id_Q R1
    , R R2
-   , dd_variables_Q AS dd_id_0
-   , dd_variables_Q AS dd_id_1
 WHERE R2.a = R0.x
   AND R2.b = R1.x
-  AND R0.x = dd_id_0.x
-  AND R1.x = dd_id_1.x
 """
 input_relations: [
   Q
