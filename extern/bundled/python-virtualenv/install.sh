@@ -15,7 +15,9 @@ virtualenv() {
     # since the script oddly doesn't pick up the locally installed pip on
     # Travis CI, we basically need to explicitly force it here..
     # See: https://github.com/pypa/pip/pull/3723
-    "$(type -p python2)" -c 'import virtualenv; virtualenv.main()' "$@"
+    # XXX "$(type -p python2)" or just python2 here may not work if python2 is
+    # from miniconda, etc. which may lack builtin libraries for HTTPS necessary for pip install
+    /usr/bin/python2 -c 'import virtualenv; virtualenv.main()' "$@"
 }
 virtualenv --always-copy prefix || virtualenv prefix
 virtualenv --relocatable prefix
