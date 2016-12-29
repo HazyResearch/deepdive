@@ -19,6 +19,7 @@ include "util";
         { variableName         : $relationName
         , variablesTable       : $relationName
         , variablesIdsTable    : "\(deepdivePrefixForVariablesIdsTable)\($relationName)"
+        , variablesWithIdsTable: "\(deepdivePrefixForVariablesWithIdsTable)\($relationName)"
         , variablesKeyColumns  : [ [ $deepdive.schema.relations[$relationName].columns | to_entries[]? ]
             | [.[] | select([.value.annotations[]? | .name == "key"] | any)] as $keyColumns
             | if $keyColumns | length == 0

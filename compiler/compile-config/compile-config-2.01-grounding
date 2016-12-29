@@ -118,6 +118,45 @@ def factorWeightDescriptionSqlExpr:
     }
 }
 
+
+## variable/*/join_ids
+# Each internal variable table holding distinct variables should be
+# materialized first for correct id assignment, etc.
+| .deepdive_.execution.processes += merge($deepdive.schema.variables_[] | {
+    "process/grounding/variable/\(.variableName)/join_ids": {
+        dependencies_: [
+            "process/grounding/variable_assign_id",
+            "data/\(.variablesTable)"
+        ],
+        style: "cmd_extractor", cmd: "
+
+        deepdive create table \(.variablesWithIdsTable | @sh) as \(
+        { SELECT:
+            [ (
+              .variablesKeyColumns[] |
+              { table: "v", column: . })
+            , .variablesCategoryColumns[] |
+              { table: "v", column: . })
+            , { table: "v", column: .variablesLabelColumn }
+            , { table: "v", column: deepdiveVariableLabelTruthinessColumn }
+            , { table: "ids", column: deepdiveVariableIdColumn }
+            , { table: "ids", column: deepdiveVariableInternalPartitionColumn }
+            ]
+        , FROM: [ { alias: "v", table: .variablesTable } ]
+        , JOIN: [ { INNER: { alias: "ids", table: .variablesIdsTable }
+                  , ON: { and: [ .variablesKeyColumns[]
+                               | { eq: [ { table: "ids", column: . }
+                                       , { table: "v", column: . } ]
+                                 } ] }
+                } ]
+        } | asSql | asPrettySqlArg)
+
+        deepdive db analyze \(.variablesWithIdsTable | @sh)
+        "
+    }
+})
+
+
 ## variable_holdout
 # Variables to holdout are recorded by executing either a user-defined
 # (app-wide) holdout query, or by taking a random sample of a user-defined
@@ -126,7 +165,7 @@ def factorWeightDescriptionSqlExpr:
 | .deepdive_.execution.processes += {
     "process/grounding/variable_holdout": {
         dependencies_: [
-            "process/grounding/variable_assign_id"
+            $deepdive.schema.variables_[] | "process/grounding/variable/\(.variableName)/join_ids"
         ],
         style: "cmd_extractor", cmd: "
 
@@ -263,7 +302,7 @@ def factorWeightDescriptionSqlExpr:
     | {
     "process/grounding/variable/\(.variableName)/\(.pid)/dump_domains": {
         dependencies_: [
-            "process/grounding/variable_assign_id"
+            $deepdive.schema.variables_[] | "process/grounding/variable/\(.variableName)/join_ids"
         ],
         style: "cmd_extractor", cmd: "
         : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
@@ -279,22 +318,15 @@ def factorWeightDescriptionSqlExpr:
         input_sql=\(
         # sparse categorical variables have domains files
         { SELECT:
-            [ { alias: "vid", expr: "i.\(deepdiveVariableIdColumn | asSqlIdent) & ((1::bigint << 48) - 1)" }
+            [ { alias: "vid", expr: "v.\(deepdiveVariableIdColumn | asSqlIdent) & ((1::bigint << 48) - 1)" }
             , { alias: "cardinality", expr: "COUNT(c.cid)" }
             , { alias: "cids", expr: "ARRAY_AGG(c.cid ORDER BY c.cid)" }
             , { alias: "truthiness", expr: "ARRAY_AGG(COALESCE(v.\(deepdiveVariableLabelTruthinessColumn), 0) ORDER BY c.cid)" }
             ]
-        , FROM: [ { alias: "v", table: .variablesTable } ]
+        , FROM: [ { alias: "v", table: .variablesWithIdsTable } ]
         , JOIN:
-            # variable ids
-            [ { INNER: { alias: "i", table: .variablesIdsTable }
-              , ON: { and:  [ .variablesKeyColumns[]
-                            | { eq: [ { table: "i", column: . }
-                                    , { table: "v", column: . }
-                                    ] }
-                            ] } }
             # category ids are necessary to find the inference result corresponding to the variable
-            , { INNER: { alias: "c", table: .variablesCategoriesTable }
+            [ { INNER: { alias: "c", table: .variablesCategoriesTable }
               , ON: { and:  [ .variablesCategoryColumns[]
                             | { eq: [ { table: "c", column: "_\(.)" }
                                     , { table: "v", column: . }
@@ -302,12 +334,12 @@ def factorWeightDescriptionSqlExpr:
                             ] } }
             ]
         , WHERE:
-            [ { eq: [ { table: "i", column: deepdiveVariableInternalPartitionColumn }
+            [ { eq: [ { table: "v", column: deepdiveVariableInternalPartitionColumn }
                     , { expr: .pid }
                     ]
               }
             ]
-        , GROUP_BY: [ { table: "i", column: deepdiveVariableIdColumn } ]
+        , GROUP_BY: [ { table: "v", column: deepdiveVariableIdColumn } ]
         } | asSql | asPrettySqlArg) \\
         command=\("
             sampler-dw text2bin domain /dev/stdin /dev/stdout /dev/null | pbzip2 >domains.\(.pid).part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2
@@ -330,7 +362,7 @@ def factorWeightDescriptionSqlExpr:
     "process/grounding/factor/\(.factorName)/materialize": {
         # materializing each factor requires the dependent variables to have their id assigned
         dependencies_: [
-            "process/grounding/variable_assign_id"
+            $deepdive.schema.variables_[] | "process/grounding/variable/\(.variableName)/join_ids"
         ],
         # other non-variable tables are also necessary
         input_: [ .input_[]
