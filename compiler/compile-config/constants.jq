@@ -21,5 +21,6 @@ def deepdivePrefixForWeightsTable           :  "dd_weights_"                    
 def deepdivePrefixForWeightGroupsTable      :  "dd_weightgroups_"               ;
 def deepdivePrefixForVariablesCategoriesTable: "dd_categories_"                 ;
 def deepdivePrefixForVariablesIdsTable       : "dd_variables_"                  ;
+def deepdivePrefixForVariablesWithIdsTable   : "dd_variables_with_id_"          ;
 def deepdivePrefixForTemporaryTables         : "dd_tmp_"                        ;
 def deepdivePrefixForTemporaryOldTables      : "dd_old_"                        ;
