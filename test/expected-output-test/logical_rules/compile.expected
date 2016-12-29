@@ -39,22 +39,18 @@ materialize: false
 deepdive.inference.factors.inf_imply_P_Q {
 weight: """1"""
 non_category_weight_cols: [
-
+  
 ]
 input_query: """
-SELECT dd_id_0.dd_id AS "P.R0.dd_id"
+SELECT R0.dd_id AS "P.R0.dd_id"
      , R0.x AS "P.R0.x"
-     , dd_id_1.dd_id AS "Q.R1.dd_id"
+     , R1.dd_id AS "Q.R1.dd_id"
      , R1.x AS "Q.R1.x"
      , (1)::float AS feature_value
-FROM P R0
-   , Q R1
-   , dd_variables_P AS dd_id_0
-   , dd_variables_Q AS dd_id_1
+FROM dd_predicate_P R0
+   , dd_predicate_Q R1
 WHERE R1.x = R0.x
   AND true
-  AND R0.x = dd_id_0.x
-  AND R1.x = dd_id_1.x
 """
 input_relations: [
   P

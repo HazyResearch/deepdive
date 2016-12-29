@@ -85,27 +85,25 @@ deepdive.inference.factors.inf_istrue_chunk {
 weight: """?(dd_weight_column_0, dd_weight_column_1)"""
 non_category_weight_cols: [
   dd_weight_column_0
+  dd_weight_column_1
 ]
 input_query: """
-SELECT dd_id_0.dd_id AS "chunk.R0.dd_id"
+SELECT R0.dd_id AS "chunk.R0.dd_id"
      , R0.sent_id AS "chunk.R0.sent_id"
      , R0.word_id AS "chunk.R0.word_id"
      , R0.tag AS "chunk.R0.tag"
      , R3.feature AS "dd_weight_column_0"
      , R0.tag AS "dd_weight_column_1"
      , (R3.feature)::float AS feature_value
-FROM chunk R0
+FROM dd_predicate_chunk R0
    , words R1
    , tags R2
    , word_features R3
-   , dd_variables_chunk AS dd_id_0
 WHERE R1.sent_id = R0.sent_id
   AND R1.word_id = R0.word_id
   AND R2.tag = R0.tag
   AND R3.sent_id = R0.sent_id
   AND R3.word_id = R0.word_id
-  AND R0.sent_id = dd_id_0.sent_id
-  AND R0.word_id = dd_id_0.word_id
 """
 input_relations: [
   chunk
@@ -120,28 +118,27 @@ function: """AndCategorical(chunk.R0.dd_label)"""
 deepdive.inference.factors.linear_chain {
 weight: """?(dd_weight_column_0, dd_weight_column_1)"""
 non_category_weight_cols: [
-  
+  dd_weight_column_0
+  dd_weight_column_1
 ]
 input_query: """
-SELECT dd_id_0.dd_id AS "chunk.R0.dd_id"
+SELECT R0.dd_id AS "chunk.R0.dd_id"
      , R0.sent_id AS "chunk.R0.sent_id"
      , R0.word_id AS "chunk.R0.word_id"
      , R0.tag AS "chunk.R0.tag"
-     , dd_id_1.dd_id AS "chunk.R1.dd_id"
+     , R1.dd_id AS "chunk.R1.dd_id"
      , R1.sent_id AS "chunk.R1.sent_id"
      , R1.word_id AS "chunk.R1.word_id"
      , R1.tag AS "chunk.R1.tag"
      , R0.tag AS "dd_weight_column_0"
      , R1.tag AS "dd_weight_column_1"
      , (1)::float AS feature_value
-FROM chunk R0
-   , chunk R1
+FROM dd_predicate_chunk R0
+   , dd_predicate_chunk R1
    , words R2
    , words R3
    , tags R4
    , tags R5
-   , dd_variables_chunk AS dd_id_0
-   , dd_variables_chunk AS dd_id_1
 WHERE R1.sent_id = R0.sent_id
   AND R2.sent_id = R0.sent_id
   AND R2.word_id = R0.word_id
@@ -150,10 +147,6 @@ WHERE R1.sent_id = R0.sent_id
   AND R4.tag = R0.tag
   AND R5.tag = R1.tag
   AND R1.word_id = (R0.word_id + 1)
-  AND R0.sent_id = dd_id_0.sent_id
-  AND R0.word_id = dd_id_0.word_id
-  AND R1.sent_id = dd_id_1.sent_id
-  AND R1.word_id = dd_id_1.word_id
 """
 input_relations: [
   chunk
@@ -167,28 +160,27 @@ function: """AndCategorical(chunk.R0.dd_label, chunk.R1.dd_label)"""
 deepdive.inference.factors.phony_rule {
 weight: """?(dd_weight_column_0, dd_weight_column_1)"""
 non_category_weight_cols: [
-  
+  dd_weight_column_0
+  dd_weight_column_1
 ]
 input_query: """
-SELECT dd_id_0.dd_id AS "chunk.R0.dd_id"
+SELECT R0.dd_id AS "chunk.R0.dd_id"
      , R0.sent_id AS "chunk.R0.sent_id"
      , R0.word_id AS "chunk.R0.word_id"
      , R0.tag AS "chunk.R0.tag"
-     , dd_id_1.dd_id AS "chunk.R1.dd_id"
+     , R1.dd_id AS "chunk.R1.dd_id"
      , R1.sent_id AS "chunk.R1.sent_id"
      , R1.word_id AS "chunk.R1.word_id"
      , R1.tag AS "chunk.R1.tag"
      , R0.tag AS "dd_weight_column_0"
      , R1.tag AS "dd_weight_column_1"
      , (1)::float AS feature_value
-FROM chunk R0
-   , chunk R1
+FROM dd_predicate_chunk R0
+   , dd_predicate_chunk R1
    , words R2
    , words R3
    , tags R4
    , tags R5
-   , dd_variables_chunk AS dd_id_0
-   , dd_variables_chunk AS dd_id_1
 WHERE R1.sent_id = R0.sent_id
   AND R2.sent_id = R0.sent_id
   AND R2.word_id = R0.word_id
@@ -198,10 +190,6 @@ WHERE R1.sent_id = R0.sent_id
   AND R5.tag = R1.tag
   AND R2.tag IS NOT NULL
   AND R0.word_id < R1.word_id
-  AND R0.sent_id = dd_id_0.sent_id
-  AND R0.word_id = dd_id_0.word_id
-  AND R1.sent_id = dd_id_1.sent_id
-  AND R1.word_id = dd_id_1.word_id
 """
 input_relations: [
   chunk
