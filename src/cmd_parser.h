@@ -31,11 +31,11 @@ class CmdParser {
   std::string app_name;
 
   std::string fg_file;
-  std::string variable_file;
-  std::string factor_file;
-  std::string weight_file;
+  std::vector<std::string> variable_file;
+  std::vector<std::string> domain_file;
+  std::vector<std::string> factor_file;
+  std::vector<std::string> weight_file;
   std::string output_folder;
-  std::string domain_file;
 
   size_t n_learning_epoch;
   size_t n_inference_epoch;
@@ -74,6 +74,9 @@ class CmdParser {
       int argc, const char *const argv[],
       const std::map<std::string, int (*)(const CmdParser &)> &modes = {});
 };
+
+template <typename T>
+std::ostream &operator<<(std::ostream &out, const std::vector<T> &v);
 
 std::ostream &operator<<(std::ostream &stream, const CmdParser &cmd_parser);
 

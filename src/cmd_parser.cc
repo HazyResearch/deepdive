@@ -1,3 +1,6 @@
+#include <iostream>
+#include <iterator>
+
 #include "cmd_parser.h"
 #include "numa_nodes.h"
 
@@ -56,16 +59,18 @@ CmdParser::CmdParser(
     TCLAP::ValueArg<std::string> fg_file_("m", "fg_meta",
                                           "factor graph metadata file", false,
                                           "", "string", cmd_);
-    TCLAP::ValueArg<std::string> variable_file_(
-        "v", "variables", "variables file", false, "", "string", cmd_);
-    TCLAP::ValueArg<std::string> factor_file_("f", "factors", "factors file",
-                                              false, "", "string", cmd_);
-    TCLAP::ValueArg<std::string> weight_file_("w", "weights", "weights file",
-                                              false, "", "string", cmd_);
+
+    TCLAP::MultiArg<std::string> variable_file_(
+        "v", "variables", "variables file", false, "string", cmd_);
+    TCLAP::MultiArg<std::string> domain_file_(
+        "", "domains", "categorical domains", false, "string", cmd_);
+    TCLAP::MultiArg<std::string> factor_file_("f", "factors", "factors file",
+                                              false, "string", cmd_);
+    TCLAP::MultiArg<std::string> weight_file_("w", "weights", "weights file",
+                                              false, "string", cmd_);
+
     TCLAP::ValueArg<std::string> output_folder_(
         "o", "outputFile", "Output Folder", false, "", "string", cmd_);
-    TCLAP::ValueArg<std::string> domain_file_(
-        "", "domains", "Categorical domains", false, "", "string", cmd_);
 
     TCLAP::MultiArg<size_t> n_learning_epoch_("l", "n_learning_epoch",
                                               "Number of Learning Epochs", true,
@@ -219,25 +224,27 @@ CmdParser::CmdParser(
     TCLAP::ValueArg<std::string> fg_file_("m", "fg_meta",
                                           "factor graph metadata file", false,
                                           "", "string", cmd_);
-    TCLAP::ValueArg<std::string> variable_file_(
-        "v", "variables", "variables file", false, "", "string", cmd_);
-    TCLAP::ValueArg<std::string> factor_file_("f", "factors", "factors file",
-                                              false, "", "string", cmd_);
-    TCLAP::ValueArg<std::string> weight_file_("w", "weights", "weights file",
-                                              false, "", "string", cmd_);
+
+    TCLAP::MultiArg<std::string> variable_file_(
+        "v", "variables", "variables file", false, "string", cmd_);
+    TCLAP::MultiArg<std::string> domain_file_(
+        "", "domains", "categorical domains", false, "string", cmd_);
+    TCLAP::MultiArg<std::string> factor_file_("f", "factors", "factors file",
+                                              false, "string", cmd_);
+    TCLAP::MultiArg<std::string> weight_file_("w", "weights", "weights file",
+                                              false, "string", cmd_);
+
     TCLAP::ValueArg<std::string> output_folder_(
         "o", "outputFile", "Output Folder", false, "", "string", cmd_);
-    TCLAP::ValueArg<std::string> domain_file_(
-        "", "domains", "Categorical domains", false, "", "string", cmd_);
 
     cmd_.parse(argc, argv);
 
     fg_file = fg_file_.getValue();
     variable_file = variable_file_.getValue();
+    domain_file = domain_file_.getValue();
     factor_file = factor_file_.getValue();
     weight_file = weight_file_.getValue();
     output_folder = output_folder_.getValue();
-    domain_file = domain_file_.getValue();
 
   } else if (argc == 0 || modes.find(app_name) == modes.cend()) {
     ++num_errors_;
@@ -251,11 +258,22 @@ CmdParser::CmdParser(
   }
 }
 
+template <typename T>
+std::ostream& operator<<(std::ostream& out, const std::vector<T>& v) {
+  if (!v.empty()) {
+    out << '[';
+    std::copy(v.begin(), v.end(), std::ostream_iterator<T>(out, ", "));
+    out << "\b\b]";
+  }
+  return out;
+}
+
 std::ostream& operator<<(std::ostream& stream, const CmdParser& args) {
   stream << "#################GIBBS SAMPLING#################" << std::endl;
   stream << "# fg_file            : " << args.fg_file << std::endl;
-  stream << "# weight_file        : " << args.weight_file << std::endl;
   stream << "# variable_file      : " << args.variable_file << std::endl;
+  stream << "# domain_file        : " << args.domain_file << std::endl;
+  stream << "# weight_file        : " << args.weight_file << std::endl;
   stream << "# factor_file        : " << args.factor_file << std::endl;
   stream << "# output_folder      : " << args.output_folder << std::endl;
   stream << "# n_learning_epoch   : " << args.n_learning_epoch << std::endl;
