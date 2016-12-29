@@ -19,7 +19,7 @@ SELECT R0.dd_id AS "a.R0.dd_id"
      , R0.k AS "a.R0.k"
      , R0.k + R1.p AS "dd_weight_column_0"
      , (1)::float AS feature_value
-FROM dd_predicate_a R0
+FROM dd_variables_with_id_a R0
    , b R1
 WHERE R1.k = R0.k
 """
@@ -34,13 +34,13 @@ function: """Imply(a.R0.dd_label)"""
 deepdive.inference.factors.inf_istrue_c {
 weight: """?"""
 non_category_weight_cols: [
-  
+
 ]
 input_query: """
 SELECT R0.dd_id AS "c.R0.dd_id"
      , R0.k AS "c.R0.k"
      , (1)::float AS feature_value
-FROM dd_predicate_c R0
+FROM dd_variables_with_id_c R0
    , b R1
 WHERE R1.k = R0.k
 """
@@ -64,7 +64,7 @@ SELECT R0.dd_id AS "d.R0.dd_id"
      , R0.k AS "dd_weight_column_0"
      , R1.p AS "dd_weight_column_1"
      , (1)::float AS feature_value
-FROM dd_predicate_d R0
+FROM dd_variables_with_id_d R0
    , b R1
 WHERE R1.k = R0.k
 """
@@ -79,13 +79,13 @@ function: """Imply(d.R0.dd_label)"""
 deepdive.inference.factors.inf_istrue_e {
 weight: """-10"""
 non_category_weight_cols: [
-  
+
 ]
 input_query: """
 SELECT R0.dd_id AS "e.R0.dd_id"
      , R0.k AS "e.R0.k"
      , (1)::float AS feature_value
-FROM dd_predicate_e R0
+FROM dd_variables_with_id_e R0
    , b R1
 WHERE R1.k = R0.k
 """
@@ -100,13 +100,13 @@ function: """Imply(e.R0.dd_label)"""
 deepdive.inference.factors.inf_istrue_f {
 weight: """-0.3"""
 non_category_weight_cols: [
-  
+
 ]
 input_query: """
 SELECT R0.dd_id AS "f.R0.dd_id"
      , R0.k AS "f.R0.k"
      , (1)::float AS feature_value
-FROM dd_predicate_f R0
+FROM dd_variables_with_id_f R0
    , b R1
 WHERE R1.k = R0.k
 """

@@ -48,7 +48,7 @@ SELECT R0.dd_id AS "q1.R0.dd_id"
      , R0.wid AS "q1.R0.wid"
      , R1.feature_id AS "dd_weight_column_0"
      , (1)::float AS feature_value
-FROM dd_predicate_q1 R0
+FROM dd_variables_with_id_q1 R0
    , features R1
 WHERE R1.word_id = R0.wid
 """
@@ -70,7 +70,7 @@ SELECT R0.dd_id AS "q2.R0.dd_id"
      , R0.wid AS "q2.R0.wid"
      , R1.feature_id AS "dd_weight_column_0"
      , (1)::float AS feature_value
-FROM dd_predicate_q2 R0
+FROM dd_variables_with_id_q2 R0
    , features R1
 WHERE R1.word_id = R0.wid
 """

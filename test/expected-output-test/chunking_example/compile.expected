@@ -13,7 +13,7 @@ sql: """
 SELECT R0.sent_id AS column_0
      , R0.word_id AS column_1
      , R1.tag AS column_2
-     , 
+     ,
 CASE WHEN R1.tag = R0.tag THEN true
      ELSE NULL
 END AS column_3
@@ -38,7 +38,7 @@ SELECT R0.sent_id AS column_0
      , R0.word AS column_2
      , R0.pos AS column_3
      , R0.true_tag AS column_4
-     , 
+     ,
 CASE WHEN R0.true_tag = 'B-UCP' THEN NULL
      WHEN R0.true_tag = 'I-UCP' THEN NULL
      WHEN strpos(R0.true_tag, '-') > 0 THEN split_part(R0.true_tag, '-', 2)
@@ -95,7 +95,7 @@ SELECT R0.dd_id AS "chunk.R0.dd_id"
      , R3.feature AS "dd_weight_column_0"
      , R0.tag AS "dd_weight_column_1"
      , (R3.feature)::float AS feature_value
-FROM dd_predicate_chunk R0
+FROM dd_variables_with_id_chunk R0
    , words R1
    , tags R2
    , word_features R3
@@ -133,8 +133,8 @@ SELECT R0.dd_id AS "chunk.R0.dd_id"
      , R0.tag AS "dd_weight_column_0"
      , R1.tag AS "dd_weight_column_1"
      , (1)::float AS feature_value
-FROM dd_predicate_chunk R0
-   , dd_predicate_chunk R1
+FROM dd_variables_with_id_chunk R0
+   , dd_variables_with_id_chunk R1
    , words R2
    , words R3
    , tags R4
@@ -175,8 +175,8 @@ SELECT R0.dd_id AS "chunk.R0.dd_id"
      , R0.tag AS "dd_weight_column_0"
      , R1.tag AS "dd_weight_column_1"
      , (1)::float AS feature_value
-FROM dd_predicate_chunk R0
-   , dd_predicate_chunk R1
+FROM dd_variables_with_id_chunk R0
+   , dd_variables_with_id_chunk R1
    , words R2
    , words R3
    , tags R4

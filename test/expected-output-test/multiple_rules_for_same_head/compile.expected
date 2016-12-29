@@ -211,7 +211,7 @@ SELECT R0.dd_id AS "Q.R0.dd_id"
      , R0.x AS "Q.R0.x"
      , R0.x AS "dd_weight_column_0"
      , (1)::float AS feature_value
-FROM dd_predicate_Q R0
+FROM dd_variables_with_id_Q R0
    , S R1
 WHERE R1.a = R0.x
   AND R0.x > 1000
@@ -227,13 +227,13 @@ function: """Imply(Q.R0.dd_label)"""
 deepdive.inference.factors.inf_istrue_Q_1 {
 weight: """1.0"""
 non_category_weight_cols: [
-  
+
 ]
 input_query: """
 SELECT R0.dd_id AS "Q.R0.dd_id"
      , R0.x AS "Q.R0.x"
      , (1)::float AS feature_value
-FROM dd_predicate_Q R0
+FROM dd_variables_with_id_Q R0
    , S R1
 WHERE R1.a = R0.x
   AND R0.x = 0
@@ -249,13 +249,13 @@ function: """Imply(Q.R0.dd_label)"""
 deepdive.inference.factors.inf_istrue_not_Q {
 weight: """?"""
 non_category_weight_cols: [
-  
+
 ]
 input_query: """
 SELECT R0.dd_id AS "Q.R0.dd_id"
      , R0.x AS "Q.R0.x"
      , (1)::float AS feature_value
-FROM dd_predicate_Q R0
+FROM dd_variables_with_id_Q R0
    , S R1
 WHERE R1.a = R0.x
   AND R0.x < 1000
@@ -280,8 +280,8 @@ SELECT R0.dd_id AS "Q.R0.dd_id"
      , R1.x AS "Q.R1.x"
      , R0.x AS "dd_weight_column_0"
      , (1)::float AS feature_value
-FROM dd_predicate_Q R0
-   , dd_predicate_Q R1
+FROM dd_variables_with_id_Q R0
+   , dd_variables_with_id_Q R1
    , S R2
    , R R3
    , S R4
@@ -302,7 +302,7 @@ function: """Imply(Q.R0.dd_label, Q.R1.dd_label)"""
 deepdive.inference.factors.inf_imply_Q_Q__1 {
 weight: """-10.0"""
 non_category_weight_cols: [
-  
+
 ]
 input_query: """
 SELECT R0.dd_id AS "Q.R0.dd_id"
@@ -310,8 +310,8 @@ SELECT R0.dd_id AS "Q.R0.dd_id"
      , R1.dd_id AS "Q.R1.dd_id"
      , R1.x AS "Q.R1.x"
      , (1)::float AS feature_value
-FROM dd_predicate_Q R0
-   , dd_predicate_Q R1
+FROM dd_variables_with_id_Q R0
+   , dd_variables_with_id_Q R1
    , S R2
    , R R3
    , S R4
@@ -333,7 +333,7 @@ function: """Imply(Q.R0.dd_label, Q.R1.dd_label)"""
 deepdive.inference.factors.inf_imply_Q_Q__2 {
 weight: """10.0"""
 non_category_weight_cols: [
-  
+
 ]
 input_query: """
 SELECT R0.dd_id AS "Q.R0.dd_id"
@@ -341,8 +341,8 @@ SELECT R0.dd_id AS "Q.R0.dd_id"
      , R1.dd_id AS "Q.R1.dd_id"
      , R1.x AS "Q.R1.x"
      , (1)::float AS feature_value
-FROM dd_predicate_Q R0
-   , dd_predicate_Q R1
+FROM dd_variables_with_id_Q R0
+   , dd_variables_with_id_Q R1
    , S R2
    , R R3
    , S R4
@@ -387,8 +387,8 @@ SELECT R0.dd_id AS "Q.R0.dd_id"
      , R1.x AS "Q1.R1.x"
      , R0.x AS "dd_weight_column_0"
      , (1)::float AS feature_value
-FROM dd_predicate_Q R0
-   , dd_predicate_Q1 R1
+FROM dd_variables_with_id_Q R0
+   , dd_variables_with_id_Q1 R1
    , S R2
    , R R3
    , S R4
@@ -419,8 +419,8 @@ SELECT R0.dd_id AS "Q.R0.dd_id"
      , R1.x AS "Q_1.R1.x"
      , R0.x AS "dd_weight_column_0"
      , (1)::float AS feature_value
-FROM dd_predicate_Q R0
-   , dd_predicate_Q_1 R1
+FROM dd_variables_with_id_Q R0
+   , dd_variables_with_id_Q_1 R1
    , S R2
    , R R3
    , S R4

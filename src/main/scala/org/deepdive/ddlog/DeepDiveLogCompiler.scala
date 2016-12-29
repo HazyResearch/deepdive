@@ -116,7 +116,7 @@ class DeepDiveLogCompiler( program : DeepDiveLog.Program, config : DeepDiveLog.C
   // odd has happened.
   def resolveName( v : Variable ) : String = {
     v match { case Variable(v,relName,i) =>
-      val realRel = relName.replaceAll("^" + deepdivePrefixForVariablesWithIdsTable, "")
+      val realRel = relName.stripPrefix(deepdivePrefixForVariablesWithIdsTable)
       if(attrNameForRelationAndPosition contains (realRel,i)) {
         attrNameForRelationAndPosition(realRel,i)
       } else {
@@ -545,7 +545,6 @@ class QueryCompiler(cq : ConjunctiveQuery, hackFrom: List[String] = Nil, hackWhe
         val fakeBody        = headAsBodyWithIds ++ cqBody
         val fakeCQ          = stmt.q.copy(bodies = List(fakeBody))
 
-        // TODO XXX: Fix the `internal` hack below
         val qc = new QueryCompiler(fakeCQ)
 
         // weight columns
@@ -673,7 +672,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   val deepdiveVariableIdColumn = "dd_id"
   val deepdiveVariableLabelColumn = "dd_label"
   val deepdiveVariableLabelTruthinessColumn = "dd_truthiness"
-  val deepdivePrefixForVariablesWithIdsTable = "dd_predicate_"
+  val deepdivePrefixForVariablesWithIdsTable = "dd_variables_with_id_"
 
   // entry point for compilation
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {
