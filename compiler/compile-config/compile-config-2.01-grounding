@@ -132,10 +132,9 @@ def factorWeightDescriptionSqlExpr:
 
         deepdive create table \(.variablesWithIdsTable | @sh) as \(
         { SELECT:
-            [ (
-              .variablesKeyColumns[] |
+            [ (.variablesKeyColumns[] |
               { table: "v", column: . })
-            , .variablesCategoryColumns[] |
+            , (.variablesCategoryColumns[] |
               { table: "v", column: . })
             , { table: "v", column: .variablesLabelColumn }
             , { table: "v", column: deepdiveVariableLabelTruthinessColumn }
