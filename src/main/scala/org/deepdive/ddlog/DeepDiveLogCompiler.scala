@@ -315,7 +315,8 @@ class QueryCompiler(cq : ConjunctiveQuery, hackFrom: List[String] = Nil, hackWhe
               // expression patterns indicate a filter condition on the column
               case ExprPattern(expr) => {
                 val resolved = compileExpr(expr)
-                val attr = attrNameForRelationAndPosition(relName, termIndex)
+                val realRel = relName.stripPrefix(deepdivePrefixForVariablesWithIdsTable)
+                val attr = attrNameForRelationAndPosition(realRel, termIndex)
                 Some(s"R${bodyIndex}.${attr} = ${resolved}")
               }
             }
