@@ -21,7 +21,7 @@ namespace dd {
 // test read_variables
 TEST(BinaryFormatTest, read_variables) {
   FactorGraph fg({18, 1, 1, 1});
-  fg.load_variables("./test/biased_coin/graph.variables");
+  fg.load_variables({"./test/biased_coin/graph.variables"});
   EXPECT_EQ(fg.size.num_variables, 18U);
   EXPECT_EQ(fg.size.num_variables_evidence, 9U);
   EXPECT_EQ(fg.size.num_variables_query, 9U);
@@ -35,8 +35,8 @@ TEST(BinaryFormatTest, read_variables) {
 // test read_factors
 TEST(BinaryFormatTest, read_factors) {
   FactorGraph fg({18, 18, 1, 18});
-  fg.load_variables("./test/biased_coin/graph.variables");
-  fg.load_factors("./test/biased_coin/graph.factors");
+  fg.load_variables({"./test/biased_coin/graph.variables"});
+  fg.load_factors({"./test/biased_coin/graph.factors"});
   EXPECT_EQ(fg.size.num_factors, 18U);
   EXPECT_EQ(fg.factors[0].id, 0U);
   EXPECT_EQ(fg.factors[0].weight_id, 0U);
@@ -48,7 +48,7 @@ TEST(BinaryFormatTest, read_factors) {
 // test read_weights
 TEST(BinaryFormatTest, read_weights) {
   FactorGraph fg({1, 1, 1, 1});
-  fg.load_weights("./test/biased_coin/graph.weights");
+  fg.load_weights({"./test/biased_coin/graph.weights"});
   EXPECT_EQ(fg.size.num_weights, 1U);
   EXPECT_EQ(fg.weights[0].id, 0U);
   EXPECT_EQ(fg.weights[0].isfixed, false);
@@ -65,7 +65,7 @@ TEST(BinaryFormatTest, read_domains) {
   for (size_t i = 0; i < num_variables; ++i) {
     fg.variables[i] = Variable(i, DTYPE_CATEGORICAL, false, domain_sizes[i], 0);
   }
-  fg.load_domains("./test/domains/graph.domains");
+  fg.load_domains({"./test/domains/graph.domains"});
 
   for (size_t i = 0; i < num_variables; ++i) {
     EXPECT_EQ(fg.variables[i].domain_map->size(), domain_sizes[i]);

@@ -59,9 +59,10 @@ int gibbs(const CmdParser &args) {
   NumaNodes::partition(0, args.n_datacopy).bind();
 
   // Load factor graph
-  dprintf("Initializing factor graph...\n");
+  std::cout << "\tinitializing factor graph..." << std::endl;
   FactorGraph *fg = new FactorGraph(meta);
 
+  std::cout << "\tloading factor graph..." << std::endl;
   fg->load_variables(args.variable_file);
   fg->load_weights(args.weight_file);
   fg->load_domains(args.domain_file);

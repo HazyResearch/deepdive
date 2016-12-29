@@ -69,10 +69,10 @@ class FactorGraph {
   std::unique_ptr<size_t[]> factor_index;
   std::unique_ptr<VariableToFactor[]> values;
 
-  void load_weights(const std::string& filename);
-  void load_variables(const std::string& filename);
-  void load_factors(const std::string& filename);
-  void load_domains(const std::string& filename);
+  void load_weights(const std::vector<std::string>& filenames);
+  void load_variables(const std::vector<std::string>& filenames);
+  void load_factors(const std::vector<std::string>& filenames);
+  void load_domains(const std::vector<std::string>& filenames);
 
   // count data structures to ensure consistency with declared size
   void safety_check();
