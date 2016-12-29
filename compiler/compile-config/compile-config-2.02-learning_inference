@@ -83,11 +83,11 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                 wid:BIGINT:'PRIMARY KEY' \\
                 weight:'DOUBLE PRECISION' \\
                 #
-            cat inference_result.out.weights.text |
+            cat \"$results_dir\"/inference_result.out.weights.text |
             tr \(" "|@sh) \("\\t"|@sh) |
             deepdive load \(deepdiveInferenceResultWeightsTable | @sh) /dev/stdin
             deepdive db analyze \(deepdiveInferenceResultWeightsTable | @sh)
-            mv -f inference_result.out.weights.text inference_result.out.weights.text.learned
+            mv -f \"$results_dir\"/inference_result.out.weights.text \"$results_dir\"/inference_result.out.weights.text.learned
 
             \(if $deepdive.sampler.partitions > 1 then "
                 # dump weights back out for next-shard learning or inference step
