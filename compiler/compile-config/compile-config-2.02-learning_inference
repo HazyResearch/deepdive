@@ -25,12 +25,11 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         flatten() { find -L \"$@\" -type f -size +0 -exec pbzip2 -c -d -k {} +; }
 
         for pid in $(seq 0 \($deepdive.sampler.partitions - 1)); do
-            mkdir -p $DEEPDIVE_RESULTS_DIR/$pid
-            cd $DEEPDIVE_RESULTS_DIR/$pid
-
-            FGDIR=$DEEPDIVE_FACTORGRAPH_DIR/$pid
-
-            [ -d $FGDIR ] || error \"No factorgraph found\"
+            results_dir=\"$DEEPDIVE_RESULTS_DIR\"/$pid
+            mkdir -p \"$results_dir\"
+            fg_dir=\"$DEEPDIVE_FACTORGRAPH_DIR\"/$pid
+            [[ -d \"$fg_dir\" ]] || error \"$fg_dir: No factorgraph found\"
+            cd \"$fg_dir\"
 
             # run inference engine for learning and inference
 
@@ -44,29 +43,28 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
             # if there are multiple shards, we suppress inference (-i 0)
 
             \(if $deepdive.sampler.sampler_cmd == "numbskull" then "
-                mkdir -p $FGDIR/flat
-                head -n 1 $FGDIR/meta > $FGDIR/flat/graph.meta
+                mkdir -p ./flat
+                head -n 1 ./meta        >./flat/graph.meta
                 # TODO: save disk space
-                flatten $FGDIR/variables > $FGDIR/flat/graph.variables
-                flatten $FGDIR/factors > $FGDIR/flat/graph.factors
-                flatten $FGDIR/$WEIGHT_DIR > $FGDIR/flat/graph.weights
-                flatten $FGDIR/domains > $FGDIR/flat/graph.domains
-                numbskull $FGDIR/flat \\
-                    --output_dir . \\
+                flatten ./variables     >./flat/graph.variables
+                flatten ./factors       >./flat/graph.factors
+                flatten ./$WEIGHT_DIR   >./flat/graph.weights
+                flatten ./domains       >./flat/graph.domains
+                numbskull ./flat \\
+                    --output_dir \"$results_dir\" \\
                     --threads $DEEPDIVE_NUM_PROCESSES \\
                     \($deepdive.sampler.sampler_args // "") \\
                     \(if $deepdive.sampler.partitions > 1 then "-i 0" else "" end) \\
                     #
             " else "
-                \($deepdive.sampler.sampler_cmd) \\
-                    gibbs \\
-                    --variables <(flatten $FGDIR/variables) \\
-                    --domains <(flatten $FGDIR/domains) \\
-                    --factors <(flatten $FGDIR/factors) \\
-                    --weights <(flatten $FGDIR/$WEIGHT_DIR) \\
-                    --fg_meta $FGDIR/meta \\
-                    --outputFile . \\
-                    --n_threads $DEEPDIVE_NUM_PROCESSES \\
+                \($deepdive.sampler.sampler_cmd) gibbs      \\
+                    --variables <(flatten ./variables  )    \\
+                    --domains   <(flatten ./domains    )    \\
+                    --factors   <(flatten ./factors    )    \\
+                    --weights   <(flatten ./$WEIGHT_DIR)    \\
+                    --fg_meta   ./meta                      \\
+                    --outputFile \"$results_dir\"           \\
+                    --n_threads $DEEPDIVE_NUM_PROCESSES     \\
                     \($deepdive.sampler.sampler_args // "") \\
                     \(if $deepdive.sampler.partitions > 1 then "-i 0" else "" end) \\
                     #
@@ -81,18 +79,18 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
             tr \(" "|@sh) \("\\t"|@sh) |
             deepdive load \(deepdiveInferenceResultWeightsTable | @sh) /dev/stdin
             deepdive db analyze \(deepdiveInferenceResultWeightsTable | @sh)
-            mv inference_result.out.weights.text inference_result.out.weights.text.learned
+            mv -f inference_result.out.weights.text inference_result.out.weights.text.learned
 
             \(if $deepdive.sampler.partitions > 1 then "
                 # dump weights back out for next-shard learning or inference step
-                if [ $pid -lt \($deepdive.sampler.partitions - 1) ]; then
+                if [[ $pid -lt \($deepdive.sampler.partitions - 1) ]]; then
                     # not last shard: dump for next-shard learning
-                    export TARGET_WEIGHT_DIR=$DEEPDIVE_FACTORGRAPH_DIR/$(($pid+1))/weights_hot
+                    export TARGET_WEIGHT_DIR=\"$DEEPDIVE_FACTORGRAPH_DIR\"/$(($pid+1))/weights_hot
                 else
-                    export TARGET_WEIGHT_DIR=$DEEPDIVE_FACTORGRAPH_DIR/learned_weights
+                    export TARGET_WEIGHT_DIR=\"$DEEPDIVE_FACTORGRAPH_DIR\"/learned_weights
                 fi
 
-                mkdir -p $TARGET_WEIGHT_DIR
+                mkdir -p \"$TARGET_WEIGHT_DIR\"
                 deepdive compute execute \\
                     input_sql=\(
                         { SELECT:
@@ -108,7 +106,8 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                                 }
                         } | asSql | asPrettySqlArg) \\
                     command=\("
-                        sampler-dw text2bin weight /dev/stdin /dev/stdout /dev/null | pbzip2 >$TARGET_WEIGHT_DIR/weights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2
+                        sampler-dw text2bin weight /dev/stdin /dev/stdout /dev/null |
+                        pbzip2 >\"$TARGET_WEIGHT_DIR\"/weights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2
                     " | @sh) \\
                     output_relation=
 
@@ -146,43 +145,39 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         # need to run inference only if learning step was deferred because there are multiple shards
         \(if $deepdive.sampler.partitions > 1 then "
             for pid in $(seq 0 \($deepdive.sampler.partitions - 1)); do
+                results_dir=\"$DEEPDIVE_RESULTS_DIR\"/$pid
+                mkdir -p \"$results_dir\"
+                fg_dir=\"$DEEPDIVE_FACTORGRAPH_DIR\"/$pid
+                [[ -d \"$fg_dir\" ]] || error \"$fg_dir: No factorgraph found\"
+                cd \"$fg_dir\"
 
-                mkdir -p $DEEPDIVE_RESULTS_DIR/$pid
-                cd $DEEPDIVE_RESULTS_DIR/$pid
-
-                FGDIR=$DEEPDIVE_FACTORGRAPH_DIR/$pid
-
-                [ -d $FGDIR ] || error \"No factorgraph found\"
-
-                # XXX this skipping may cause confusion
                 # run sampler for inference with given weights without learning
-                LEARNED_WEIGHTS=$DEEPDIVE_FACTORGRAPH_DIR/learned_weights
+                LEARNED_WEIGHTS=\"$DEEPDIVE_FACTORGRAPH_DIR\"/learned_weights
 
                 \(if $deepdive.sampler.sampler_cmd == "numbskull" then "
-                    mkdir -p $FGDIR/flat
-                    if [ $FGDIR/meta -nt $FGDIR/flat/graph.meta ]; then
-                        head -n 1 $FGDIR/meta > $FGDIR/flat/graph.meta
-                        flatten $FGDIR/variables > $FGDIR/flat/graph.variables
-                        flatten $FGDIR/factors > $FGDIR/flat/graph.factors
-                        flatten $FGDIR/domains > $FGDIR/flat/graph.domains
+                    mkdir -p ./flat
+                    if [ ./meta -nt ./flat/graph.meta ]; then
+                        head -n 1 ./meta    >./flat/graph.meta
+                        flatten ./variables >./flat/graph.variables
+                        flatten ./factors   >./flat/graph.factors
+                        flatten ./domains   >./flat/graph.domains
                     fi
-                    flatten $LEARNED_WEIGHTS > $FGDIR/flat/graph.weights
-                    numbskull $FGDIR/flat \\
-                        --output_dir . \\
+                    flatten \"$LEARNED_WEIGHTS\" >./flat/graph.weights
+                    numbskull ./flat \\
+                        --output_dir \"$results_dir\" \\
                         --threads $DEEPDIVE_NUM_PROCESSES \\
                         \($deepdive.sampler.sampler_args // "") \\
                         -l 0 \\
                         #
                 " else "
-                    \($deepdive.sampler.sampler_cmd) \\
-                        gibbs \\
-                        --variables <(flatten $FGDIR/variables) \\
-                        --domains <(flatten $FGDIR/domains) \\
-                        --factors <(flatten $FGDIR/factors) \\
-                        --weights <(flatten $LEARNED_WEIGHTS) \\
-                        --fg_meta $FGDIR/meta \\
-                        --outputFile . \\
-                        --n_threads $DEEPDIVE_NUM_PROCESSES \\
+                    \($deepdive.sampler.sampler_cmd) gibbs      \\
+                        --variables <(flatten ./variables)      \\
+                        --domains   <(flatten ./domains)        \\
+                        --factors   <(flatten ./factors)        \\
+                        --weights   <(flatten \"$LEARNED_WEIGHTS\") \\
+                        --fg_meta   ./meta                      \\
+                        --outputFile \"$results_dir\"           \\
+                        --n_threads $DEEPDIVE_NUM_PROCESSES     \\
                         \($deepdive.sampler.sampler_args // "") \\
                         -l 0 \\
                         #
