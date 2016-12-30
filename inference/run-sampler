@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# run-sampler -- Invokes DimmWitted or equivalent Gibbs sampler for learning and inference in a uniform way
+# $ cd run/model/factorgraph/0
+# $ run-sampler results_dir=... weights=... [NAME=VALUE...] -- SAMPLER_CMD [SAMPLER_ARG...]
+##
+set -euo pipefail
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --) shift; break ;;
+        *) declare -- "$1"; shift ;;
+    esac
+done
+
+# required parameters
+: ${DEEPDIVE_NUM_PROCESSES:?}
+: ${results_dir:?}
+: ${weights:?}
+
+[[ $# -gt 0 ]] || usage "$0" "Missing SAMPLER_CMD"
+SamplerCmd=$1; shift
+
+flatten() { find -L "$@" -type f -size +0 -exec pbzip2 -c -d -k {} +; }
+
+case $SamplerCmd in
+    numbskull)
+        mkdir -p ./flat
+        if [[ ./meta -nt ./flat/graph.meta ]]; then
+            head -n 1 ./meta     >./flat/graph.meta
+            # TODO: save disk space
+            flatten ./variables/ >./flat/graph.variables
+            flatten ./factors/   >./flat/graph.factors
+            flatten ./domains/   >./flat/graph.domains
+        fi
+        flatten ./"$weights"/    >./flat/graph.weights
+        numbskull ./flat                        \
+            --output_dir "$results_dir"         \
+            --threads $DEEPDIVE_NUM_PROCESSES   \
+            "$@"
+        ;;
+
+    *) # assume DimmWitted-compatible command-line interface
+        $SamplerCmd gibbs \
+            --variables <(flatten ./variables/  )   \
+            --domains   <(flatten ./domains/    )   \
+            --factors   <(flatten ./factors/    )   \
+            --weights   <(flatten ./"$weights"/ )   \
+            --fg_meta   ./meta                      \
+            --outputFile "$results_dir"             \
+            --n_threads $DEEPDIVE_NUM_PROCESSES     \
+            "$@"
+esac

@@ -21,17 +21,15 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         : ${DEEPDIVE_NUM_PROCESSES:=$(nproc --ignore=1)}
         : ${DEEPDIVE_RESULTS_DIR:=\"$DEEPDIVE_APP\"/run/model/results}
         : ${DEEPDIVE_FACTORGRAPH_DIR:=\"$DEEPDIVE_APP\"/run/model/factorgraph}
+        export DEEPDIVE_NUM_PROCESSES
 
-        flatten() { find -L \"$@\" -type f -size +0 -exec pbzip2 -c -d -k {} +; }
-
+        # run inference engine for learning and inference on each shard
         for pid in $(seq 0 \($deepdive.sampler.partitions - 1)); do
             results_dir=\"$DEEPDIVE_RESULTS_DIR\"/$pid
             mkdir -p \"$results_dir\"
             fg_dir=\"$DEEPDIVE_FACTORGRAPH_DIR\"/$pid
             [[ -d \"$fg_dir\" ]] || error \"$fg_dir: No factorgraph found\"
             cd \"$fg_dir\"
-
-            # run inference engine for learning and inference
 
             # decide which set of weights to start learning from
             if [[ $pid -eq 0 ]]; then
@@ -42,37 +40,16 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                 weights_hot=../$(($pid - 1))/weights.learned
             fi
             [[ $weights_hot -ef weights.to_learn ]] || ln -sfn $weights_hot weights.to_learn
-            weights=weights.to_learn
 
-            # if there are multiple shards, we suppress inference (-i 0)
-
-            \(if $deepdive.sampler.sampler_cmd == "numbskull" then "
-                mkdir -p ./flat
-                head -n 1 ./meta        >./flat/graph.meta
-                # TODO: save disk space
-                flatten ./variables/    >./flat/graph.variables
-                flatten ./factors/      >./flat/graph.factors
-                flatten ./$weights/     >./flat/graph.weights
-                flatten ./domains/      >./flat/graph.domains
-                numbskull ./flat \\
-                    --output_dir \"$results_dir\" \\
-                    --threads $DEEPDIVE_NUM_PROCESSES \\
+            # if there are multiple shards, we defer inference (-i 0)
+            run-sampler \\
+                    weights=weights.to_learn \\
+                    results_dir=\"$results_dir\" \\
+                -- \\
+                    \($deepdive.sampler.sampler_cmd | @sh) \\
                     \($deepdive.sampler.sampler_args // "") \\
                     \(if $deepdive.sampler.partitions > 1 then "-i 0" else "" end) \\
                     #
-            " else "
-                \($deepdive.sampler.sampler_cmd) gibbs      \\
-                    --variables <(flatten ./variables/)     \\
-                    --domains   <(flatten ./domains/  )     \\
-                    --factors   <(flatten ./factors/  )     \\
-                    --weights   <(flatten ./$weights/ )     \\
-                    --fg_meta   ./meta                      \\
-                    --outputFile \"$results_dir\"           \\
-                    --n_threads $DEEPDIVE_NUM_PROCESSES     \\
-                    \($deepdive.sampler.sampler_args // "") \\
-                    \(if $deepdive.sampler.partitions > 1 then "-i 0" else "" end) \\
-                    #
-            " end)
 
             # TODO maybe this database interaction for the weights after
             # learning each shard is unnecessary if we have the sampler checkpoint
@@ -144,8 +121,7 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         : ${DEEPDIVE_NUM_PROCESSES:=$(nproc --ignore=1)}
         : ${DEEPDIVE_RESULTS_DIR:=\"$DEEPDIVE_APP\"/run/model/results}
         : ${DEEPDIVE_FACTORGRAPH_DIR:=\"$DEEPDIVE_APP\"/run/model/factorgraph}
-
-        flatten() { find -L \"$@\" -type f -size +0 -exec pbzip2 -c -d -k {} +; }
+        export DEEPDIVE_NUM_PROCESSES
 
         # need to run inference only if learning step was deferred because there are multiple shards
         \(if $deepdive.sampler.partitions > 1 then "
@@ -158,40 +134,18 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
 
                 # run sampler for inference with given weights without learning
                 ln -sfn ../learned_weights weights.to_infer
-                weights=weights.to_infer
-
-                \(if $deepdive.sampler.sampler_cmd == "numbskull" then "
-                    mkdir -p ./flat
-                    if [ ./meta -nt ./flat/graph.meta ]; then
-                        head -n 1 ./meta     >./flat/graph.meta
-                        flatten ./variables/ >./flat/graph.variables
-                        flatten ./factors/   >./flat/graph.factors
-                        flatten ./domains/   >./flat/graph.domains
-                    fi
-                    flatten ./$weights/ >./flat/graph.weights
-                    numbskull ./flat \\
-                        --output_dir \"$results_dir\" \\
-                        --threads $DEEPDIVE_NUM_PROCESSES \\
+                run-sampler \\
+                        weights=weights.to_infer \\
+                        results_dir=\"$results_dir\" \\
+                    -- \\
+                        \($deepdive.sampler.sampler_cmd | @sh) \\
                         \($deepdive.sampler.sampler_args // "") \\
                         -l 0 \\
                         #
-                " else "
-                    \($deepdive.sampler.sampler_cmd) gibbs      \\
-                        --variables <(flatten ./variables/)     \\
-                        --domains   <(flatten ./domains/  )     \\
-                        --factors   <(flatten ./factors/  )     \\
-                        --weights   <(flatten ./$weights/ )     \\
-                        --fg_meta   ./meta                      \\
-                        --outputFile \"$results_dir\"           \\
-                        --n_threads $DEEPDIVE_NUM_PROCESSES     \\
-                        \($deepdive.sampler.sampler_args // "") \\
-                        -l 0 \\
-                        #
-                " end)
-
             done
 
         " else "
+            # TODO skip only if there's already a fresh inference_result.out.text
             echo Skipping process/model/inference because it was inlined in process/model/learning
         " end)
         "
