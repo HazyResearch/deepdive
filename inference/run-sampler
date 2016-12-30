@@ -24,6 +24,7 @@ flatten() { find -L "$@" -type f -size +0 -exec pbzip2 -c -d -k {} +; }
 
 case $SamplerCmd in
     numbskull)
+        set -x
         mkdir -p ./flat
         if [[ ./meta -nt ./flat/graph.meta ]]; then
             head -n 1 ./meta     >./flat/graph.meta
@@ -40,13 +41,16 @@ case $SamplerCmd in
         ;;
 
     *) # assume DimmWitted-compatible command-line interface
-        $SamplerCmd gibbs \
-            --variables <(flatten ./variables/  )   \
-            --domains   <(flatten ./domains/    )   \
-            --factors   <(flatten ./factors/    )   \
-            --weights   <(flatten ./"$weights"/ )   \
+        # assemble multiple flags for multipart inputs
+        opts+=$(find -L ./variables/  -type f -size +0 | sed 's/.*/--variables <(pbzip2 -c -d -k &) \\/')
+        opts+=$(find -L ./domains/    -type f -size +0 | sed 's/.*/--domains   <(pbzip2 -c -d -k &) \\/')
+        opts+=$(find -L ./factors/    -type f -size +0 | sed 's/.*/--factors   <(pbzip2 -c -d -k &) \\/')
+        opts+=$(find -L ./"$weights"/ -type f -size +0 | sed 's/.*/--weights   <(pbzip2 -c -d -k &) \\/')
+        set -x
+        eval '$SamplerCmd gibbs \
+            '"$opts"'
             --fg_meta   ./meta                      \
             --outputFile "$results_dir"             \
             --n_threads $DEEPDIVE_NUM_PROCESSES     \
-            "$@"
+            "$@"'
 esac
