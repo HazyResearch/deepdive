@@ -663,16 +663,14 @@ def factorWeightDescriptionSqlExpr:
                 mkdir -p {variables,domains}/\"$v\"
                 find \"$DEEPDIVE_GROUNDING_DIR\"/variable/\"$v\" \\
                     -name \"variables.$pid.part-*.bin.bz2\" -exec ln -sfnv -t variables/\"$v\"/ {} + \\
-                    -o \\
-                    -name \"domains.$pid.part-*.bin.bz2\" -exec ln -sfnv -t   domains/\"$v\"/ {} + \\
+                 -o -name   \"domains.$pid.part-*.bin.bz2\" -exec ln -sfnv -t   domains/\"$v\"/ {} + \\
                     #
             done
             for f in \($factorNames); do
                 mkdir -p {factors,weights}/\"$f\"
                 find \"$DEEPDIVE_GROUNDING_DIR\"/factor/\"$f\" \\
                     -name \"factors.$pid.part-*.bin.bz2\" -exec ln -sfnv -t factors/\"$f\"/ {} + \\
-                    -o \\
-                    -name 'weights.part-*.bin.bz2' -exec ln -sfnv -t weights/\"$f\"/ {} + \\
+                 -o -name      \"weights.part-*.bin.bz2\" -exec ln -sfnv -t weights/\"$f\"/ {} + \\
                     #
             done
 
@@ -690,6 +688,7 @@ def factorWeightDescriptionSqlExpr:
                 counts+=($(find \($factorNames) -name \"nedges.$pid.part-*\"   -exec cat {} + | sumup))
                 (IFS=,; echo \"${counts[*]}\")
                 # second line with file paths
+                # FIXME second line and beyond are no longer used, remove
                 paths=(\"$DEEPDIVE_FACTORGRAPH_DIR\"/{weights,variables,factors,edges,domains})
                 (IFS=,; echo \"${paths[*]}\")
             } > \"$DEEPDIVE_FACTORGRAPH_DIR/$pid/meta\"
