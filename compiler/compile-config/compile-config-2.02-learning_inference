@@ -171,7 +171,7 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
 
                 AWK_CMD='{printf \"%s\\t%s\\t%s\\n\", SHARD_BASE + $1, $2, $3}'
 
-                cat inference_result.out.text |
+                cat \"$results_dir\"/inference_result.out.text |
                 awk -v SHARD_BASE=$(($pid << 48)) \"$AWK_CMD\" |
                 DEEPDIVE_LOAD_FORMAT=tsv \\
                 deepdive load \(deepdiveInferenceResultVariablesTable | @sh) /dev/stdin
