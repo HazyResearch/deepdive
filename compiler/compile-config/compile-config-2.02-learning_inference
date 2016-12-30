@@ -123,31 +123,30 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         : ${DEEPDIVE_FACTORGRAPH_DIR:=\"$DEEPDIVE_APP\"/run/model/factorgraph}
         export DEEPDIVE_NUM_PROCESSES
 
-        # need to run inference only if learning step was deferred because there are multiple shards
-        \(if $deepdive.sampler.partitions > 1 then "
-            for pid in $(seq 0 \($deepdive.sampler.partitions - 1)); do
-                results_dir=\"$DEEPDIVE_RESULTS_DIR\"/$pid
-                mkdir -p \"$results_dir\"
-                fg_dir=\"$DEEPDIVE_FACTORGRAPH_DIR\"/$pid
-                [[ -d \"$fg_dir\" ]] || error \"$fg_dir: No factorgraph found\"
-                cd \"$fg_dir\"
+        # need to run inference if learning step was deferred because there are multiple shards
+        # or because different weights are used
+        for pid in $(seq 0 \($deepdive.sampler.partitions - 1)); do
+            results_dir=\"$DEEPDIVE_RESULTS_DIR\"/$pid
+            mkdir -p \"$results_dir\"
+            fg_dir=\"$DEEPDIVE_FACTORGRAPH_DIR\"/$pid
+            [[ -d \"$fg_dir\" ]] || error \"$fg_dir: No factorgraph found\"
+            cd \"$fg_dir\"
 
-                # run sampler for inference with given weights without learning
-                ln -sfn ../learned_weights weights.to_infer
-                run-sampler \\
-                        weights=weights.to_infer \\
-                        results_dir=\"$results_dir\" \\
-                    -- \\
-                        \($deepdive.sampler.sampler_cmd | @sh) \\
-                        \($deepdive.sampler.sampler_args // "") \\
-                        -l 0 \\
-                        #
-            done
+            # skip if inference was already done
+            ! [[ -e \"$results_dir\"/inference_result.out.text ]] || continue
 
-        " else "
-            # TODO skip only if there's already a fresh inference_result.out.text
-            echo Skipping process/model/inference because it was inlined in process/model/learning
-        " end)
+            # run sampler for inference with given weights without learning
+            ln -sfn ../learned_weights weights.to_infer
+
+            run-sampler \\
+                    weights=weights.to_infer \\
+                    results_dir=\"$results_dir\" \\
+                -- \\
+                    \($deepdive.sampler.sampler_cmd | @sh) \\
+                    \($deepdive.sampler.sampler_args // "") \\
+                    -l 0 \\
+                    #
+        done
         "
     },
 
@@ -167,11 +166,11 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
 
             # restore shard ID to the vids
             for pid in $(seq 0 \($deepdive.sampler.partitions - 1)); do
-                cd $DEEPDIVE_RESULTS_DIR/$pid
+                cd \"$DEEPDIVE_RESULTS_DIR\"/$pid
 
                 AWK_CMD='{printf \"%s\\t%s\\t%s\\n\", SHARD_BASE + $1, $2, $3}'
 
-                cat \"$results_dir\"/inference_result.out.text |
+                cat inference_result.out.text |
                 awk -v SHARD_BASE=$(($pid << 48)) \"$AWK_CMD\" |
                 DEEPDIVE_LOAD_FORMAT=tsv \\
                 deepdive load \(deepdiveInferenceResultVariablesTable | @sh) /dev/stdin
