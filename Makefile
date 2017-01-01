@@ -25,7 +25,7 @@ endif
 # using NUMA for Linux
 CXXFLAGS += -I./lib/numactl/include
 LDFLAGS += -L./lib/numactl/lib
-LDFLAGS += -Wl,-Bstatic
+LDFLAGS += -Wl,-Bstatic -Wl,-Bdynamic
 LDLIBS += -lnuma -lrt -lpthread
 endif
 
@@ -42,9 +42,7 @@ CXXFLAGS += -flto
 endif
 
 # ZeroMQ
-CXXFLAGS += -I./lib/zeromq/include -I./lib/zmq/
-LDFLAGS += -L./lib/zeromq/lib
-LDLIBS += -lzmq
+CXXFLAGS += -I./lib/zeromq/include -I./lib/zmq
 
 # source files
 SOURCES += src/dimmwitted.cc
@@ -87,11 +85,11 @@ all: $(PROGRAM)
 
 # how to link our sampler
 $(PROGRAM): $(OBJECTS)
-	$(CXX) -o $@ $(LDFLAGS) $^ $(LDLIBS)
+	$(CXX) -o $@ $(LDFLAGS) $^ lib/zeromq/lib/libzmq.a $(LDLIBS)
 
 # how to link our sampler unit tests
 $(TEST_PROGRAM): $(TEST_OBJECTS) $(filter-out src/main.o,$(OBJECTS))
-	$(CXX) -o $@ $(LDFLAGS) $^ $(LDLIBS)
+	$(CXX) -o $@ $(LDFLAGS) $^ lib/zeromq/lib/libzmq.a $(LDLIBS)
 
 # compiler generated dependency
 # See: http://stackoverflow.com/a/16969086
@@ -123,8 +121,8 @@ dep:
 	cd lib;\
 	tar xf zeromq-4.2.0.tar.gz;\
 	cd zeromq-4.2.0;\
-	./configure --prefix=`pwd`/../zeromq;\
-	make -j;\
+	./configure --prefix=`pwd`/../zeromq LDFLAGS="-static";\
+	make -j LDFLAGS="-all-static";\
 	make install
 	# msgpack
 	cd lib;\
