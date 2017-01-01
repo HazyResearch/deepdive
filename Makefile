@@ -105,7 +105,7 @@ CXXFLAGS += -MMD
 
 # how to get dependencies prepared
 dep:
-	gtest for tests
+	# gtest for tests
 	cd lib;\
 	unzip -o gtest-1.7.0.zip;\
 	mkdir gtest;\
