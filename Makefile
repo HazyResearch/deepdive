@@ -25,7 +25,7 @@ endif
 # using NUMA for Linux
 CXXFLAGS += -I./lib/numactl/include
 LDFLAGS += -L./lib/numactl/lib
-LDFLAGS += -Wl,-Bstatic -Wl,-Bdynamic
+LDFLAGS += -Wl,-Bstatic
 LDLIBS += -lnuma -lrt -lpthread
 endif
 
