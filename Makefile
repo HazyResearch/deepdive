@@ -119,12 +119,14 @@ dep:
 	./configure --prefix=`pwd`/../tclap;\
 	make -j;\
 	make install
+	# zeromq
 	cd lib;\
 	tar xf zeromq-4.2.0.tar.gz;\
 	cd zeromq-4.2.0;\
 	./configure --prefix=`pwd`/../zeromq;\
 	make -j;\
 	make install
+	# msgpack
 	cd lib;\
 	tar xf msgpack-2.0.0.tar.gz;
 ifeq ($(UNAME), Linux)
