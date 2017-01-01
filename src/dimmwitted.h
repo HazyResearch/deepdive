@@ -5,6 +5,7 @@
 #include "factor_graph.h"
 #include "gibbs_sampler.h"
 #include <memory>
+#include <zmq.hpp>
 
 namespace dd {
 
@@ -78,7 +79,27 @@ class DimmWitted {
    */
   void dump_weights();
 
+  /**
+   * Whether we are running as a distributed worker
+   */
+  bool is_distributed() const { return !opts.parameter_server.empty(); }
+
  private:
+  /**
+   * Connection to paramemter server
+   */
+  std::unique_ptr<zmq::context_t> ps_context;
+  std::unique_ptr<zmq::socket_t> ps_socket;
+
+  /**
+   * Connect to the parameter server.
+   */
+  void connect_param_server();
+
+  // Send gradients to PS and refresh local weights
+  // Returns true if we can stop learning
+  bool ps_update_weights(int epochs, std::vector<double>& delta);
+
   size_t compute_n_epochs(size_t n_epoch);
 };
 

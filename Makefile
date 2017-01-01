@@ -6,7 +6,7 @@
 CXXFLAGS += -std=c++0x -Wall -Werror -fno-strict-aliasing
 LDFLAGS =
 LDLIBS =
-CXXFLAGS += -I./lib/tclap/include/ -I./src
+CXXFLAGS += -I./lib/tclap/include/ -I./lib/msgpack-2.0.0/include/ -I./src
 
 ifdef DEBUG
 CXXFLAGS += -g -DDEBUG
@@ -40,6 +40,11 @@ endif
 CXXFLAGS += -stdlib=libc++
 CXXFLAGS += -flto
 endif
+
+# ZeroMQ
+CXXFLAGS += -I./lib/zeromq/include -I./lib/zmq/
+LDFLAGS += -L./lib/zeromq/lib
+LDLIBS += -lzmq
 
 # source files
 SOURCES += src/dimmwitted.cc
@@ -100,21 +105,28 @@ CXXFLAGS += -MMD
 
 # how to get dependencies prepared
 dep:
-	# gtest for tests
+	gtest for tests
 	cd lib;\
 	unzip -o gtest-1.7.0.zip;\
 	mkdir gtest;\
 	cd gtest;\
 	cmake ../gtest-1.7.0;\
-	make
+	make -j
 	# tclap for command-line args parsing
 	cd lib;\
 	tar xf tclap-1.2.1.tar.gz;\
 	cd tclap-1.2.1;\
 	./configure --prefix=`pwd`/../tclap;\
-	make;\
-	make install;\
-	cd ..
+	make -j;\
+	make install
+	cd lib;\
+	tar xf zeromq-4.2.0.tar.gz;\
+	cd zeromq-4.2.0;\
+	./configure --prefix=`pwd`/../zeromq;\
+	make -j;\
+	make install
+	cd lib;\
+	tar xf msgpack-2.0.0.tar.gz;
 ifeq ($(UNAME), Linux)
 	# libnuma
 	echo "installing libnuma";\

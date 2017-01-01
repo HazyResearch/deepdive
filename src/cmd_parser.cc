@@ -56,6 +56,14 @@ CmdParser::CmdParser(
   if (app_name == "gibbs") {
     TCLAP::CmdLine cmd_("DimmWitted gibbs", ' ', DimmWittedVersion);
 
+    TCLAP::ValueArg<std::string> parameter_server_(
+        "", "parameter_server", "ZMQ parameter server endpoint", false, "",
+        "string", cmd_);
+
+    TCLAP::ValueArg<std::string> worker_id_("", "worker_id",
+                                            "ID of this distributed worker",
+                                            false, "", "string", cmd_);
+
     TCLAP::ValueArg<std::string> fg_file_("m", "fg_meta",
                                           "factor graph metadata file", false,
                                           "", "string", cmd_);
@@ -113,6 +121,9 @@ CmdParser::CmdParser(
         "learn using noisy/soft evidence instead of hard evidence", cmd_);
 
     cmd_.parse(argc, argv);
+
+    parameter_server = parameter_server_.getValue();
+    worker_id = worker_id_.getValue();
 
     fg_file = fg_file_.getValue();
     variable_file = variable_file_.getValue();

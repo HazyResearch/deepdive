@@ -35,8 +35,13 @@ class InferenceResult {
   // separate Gibbs chain CONDITIONED ON EVIDENCE
   std::unique_ptr<size_t[]> assignments_evid;
 
-  std::unique_ptr<double[]> weight_values;  // array of weight values
-  std::unique_ptr<bool[]> weights_isfixed;  // array of whether weight is fixed
+  // array of weight values
+  std::unique_ptr<double[]> weight_values;
+  // array of weight gradients, not currently in use
+  // NOTE: to be used in finer-grained distributed learning
+  std::unique_ptr<double[]> weight_grads;
+  // array of whether weight is fixed
+  std::unique_ptr<bool[]> weights_isfixed;
 
   InferenceResult(const FactorGraph &fg, const Weight weights[],
                   const CmdParser &opts);
@@ -71,8 +76,10 @@ class InferenceResult {
       default:
         std::abort();
     }
-    weight -= stepsize * gradient;
+    double diff = stepsize * gradient;
+    weight -= diff;
     weight_values[wid] = weight;
+    weight_grads[wid] += diff;
   }
 
  private:
