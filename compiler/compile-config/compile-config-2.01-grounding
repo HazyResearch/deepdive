@@ -498,9 +498,9 @@ def factorWeightDescriptionSqlExpr:
                     echo \(
                     { SELECT:
                         [ ( .function_.variables[]
-                        | { expr: "f.\(.columnId | asSqlIdent) & ((1::bigint << 48) - 1)"} )
+                        | { alias: .columnId, expr: "f.\(.columnId | asSqlIdent) & ((1::bigint << 48) - 1)"} )
                         , ( .function_.variables[]
-                        | { table: "C\(.ordinal)", column: "cid" } )
+                        | { alias: "cid_\(.ordinal)", table: "C\(.ordinal)", column: "cid" } )
                         , { alias: "weight_id", table: "w", column: "wid" }
                         , { alias: "feature_value", table: "f", column: "feature_value" }
                         ]
@@ -589,8 +589,8 @@ def factorWeightDescriptionSqlExpr:
                     # dump weights with initvalue from previously learned ones
                     { SELECT:
                         [ { table: "w", column: "wid" }
-                        , { expr: "CASE WHEN w.isfixed THEN 1 ELSE 0 END" }
-                        , { expr: "COALESCE(reuse.weight, w.initvalue, 0)" }
+                        , { alias: "isfixed", expr: "CASE WHEN w.isfixed THEN 1 ELSE 0 END" }
+                        , { alias: "value", expr: "COALESCE(reuse.weight, w.initvalue, 0)" }
                         ]
                     , FROM: [ { alias: "w", table: .weightsTable } ]
                     , JOIN: { LEFT_OUTER: { alias: "reuse", table: deepdiveReuseWeightsTable }
@@ -604,8 +604,8 @@ def factorWeightDescriptionSqlExpr:
                     # dump weights from scratch
                     { SELECT:
                         [ { column: "wid" }
-                        , { expr: "CASE WHEN isfixed THEN 1 ELSE 0 END" }
-                        , { expr: "COALESCE(initvalue, 0)" }
+                        , { alias: "isfixed", expr: "CASE WHEN isfixed THEN 1 ELSE 0 END" }
+                        , { alias: "value", expr: "COALESCE(initvalue, 0)" }
                         ]
                     , FROM: [ { table: .weightsTable } ]
                     } | asSql | asPrettySqlArg)

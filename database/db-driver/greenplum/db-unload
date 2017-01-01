@@ -56,6 +56,7 @@ case $format in
             }
             trap cleanup EXIT
 
+            gpfdist --help &>/dev/null ||  { echo 'gpfdist not working! make it work!'; }
             STEP "starting $nsinks gpfdist processes"
             # spawn gpfdist processes
             locations=()
