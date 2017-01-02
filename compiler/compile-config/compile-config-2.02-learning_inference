@@ -164,9 +164,22 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         "
     },
 
-    "process/model/load_probabilities": {
-        dependencies_: ["model/probabilities"],
-        output_: ["data/model/probabilities"],
+    "process/model/load_probabilities_prepare": {
+        style: "cmd_extractor",
+        cmd: "
+            # prepare loading probabilities from inference results to the database
+            deepdive create table \(deepdiveInferenceResultVariablesTable | @sh) \\
+                vid:BIGINT \\
+                cid:BIGINT \\
+                prb:'DOUBLE PRECISION' \\
+                #
+        "
+    },
+
+
+    "process/model/load_inference_results": {
+        dependencies_: ["process/model/load_probabilities_prepare"],
+        input_: ["model/probabilities"],
         style: "cmd_extractor",
         cmd: "
             : ${DEEPDIVE_RESULTS_DIR:=\"$DEEPDIVE_APP\"/run/model/results}
@@ -174,25 +187,26 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
             # defaults to handling all shards, which can be overridden to be a subset
             : ${DEEPDIVE_FACTORGRAPH_SHARDS:=$(seq 0 \($deepdive.sampler.partitions - 1))}
 
-            # load weights to database
-            deepdive create table \(deepdiveInferenceResultVariablesTable | @sh) \\
-                vid:BIGINT \\
-                cid:BIGINT \\
-                prb:'DOUBLE PRECISION' \\
-                #
-
-            # restore shard ID to the vids
+            # load probabilities to database
             for pid in $DEEPDIVE_FACTORGRAPH_SHARDS; do
                 cd \"$DEEPDIVE_RESULTS_DIR\"/$pid
-
-                AWK_CMD='{printf \"%s\\t%s\\t%s\\n\", SHARD_BASE + $1, $2, $3}'
-
                 cat inference_result.out.text |
-                awk -v SHARD_BASE=$(($pid << 48)) \"$AWK_CMD\" |
+                # restoring shard ID to the vids
+                awk -v SHARD_BASE=$(($pid << 48)) '
+                    {printf \"%s\\t%s\\t%s\\n\", SHARD_BASE + $1, $2, $3}
+                ' |
                 DEEPDIVE_LOAD_FORMAT=tsv \\
                 deepdive load \(deepdiveInferenceResultVariablesTable | @sh) /dev/stdin
             done
+        "
+    },
 
+
+    "process/model/load_probabilities": {
+        dependencies_: ["process/model/load_inference_results"],
+        output_: ["data/model/probabilities"],
+        style: "cmd_extractor",
+        cmd: "
             deepdive db analyze \(deepdiveInferenceResultVariablesTable | @sh)
 
             # create a view for each app schema variable
