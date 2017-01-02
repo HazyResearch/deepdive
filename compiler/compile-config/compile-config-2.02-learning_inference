@@ -23,7 +23,7 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         : ${DEEPDIVE_FACTORGRAPH_DIR:=\"$DEEPDIVE_APP\"/run/model/factorgraph}
         export DEEPDIVE_NUM_PROCESSES
 
-        # defaults to handling all shards, which can be overridden
+        # defaults to handling all shards, which can be overridden to be a subset
         : ${DEEPDIVE_FACTORGRAPH_SHARDS:=$(seq 0 \($deepdive.sampler.partitions - 1))}
 
         # run inference engine for learning and inference on each shard
@@ -126,7 +126,7 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         : ${DEEPDIVE_FACTORGRAPH_DIR:=\"$DEEPDIVE_APP\"/run/model/factorgraph}
         export DEEPDIVE_NUM_PROCESSES
 
-        # defaults to handling all shards, which can be overridden
+        # defaults to handling all shards, which can be overridden to be a subset
         : ${DEEPDIVE_FACTORGRAPH_SHARDS:=$(seq 0 \($deepdive.sampler.partitions - 1))}
 
         # need to run inference if learning step was deferred because there are multiple shards
@@ -162,6 +162,9 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         style: "cmd_extractor",
         cmd: "
             : ${DEEPDIVE_RESULTS_DIR:=\"$DEEPDIVE_APP\"/run/model/results}
+
+            # defaults to handling all shards, which can be overridden to be a subset
+            : ${DEEPDIVE_FACTORGRAPH_SHARDS:=$(seq 0 \($deepdive.sampler.partitions - 1))}
 
             # load weights to database
             deepdive create table \(deepdiveInferenceResultVariablesTable | @sh) \\
