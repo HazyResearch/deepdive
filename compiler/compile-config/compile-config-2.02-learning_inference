@@ -26,6 +26,9 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         # defaults to handling all shards, which can be overridden to be a subset
         : ${DEEPDIVE_FACTORGRAPH_SHARDS:=$(seq 0 \($deepdive.sampler.partitions - 1))}
 
+        # allow extra runtime args for sampler
+        : ${DEEPDIVE_SAMPLER_ARGS:=}
+
         # run inference engine for learning and inference on each shard
         for pid in $DEEPDIVE_FACTORGRAPH_SHARDS; do
             results_dir=\"$DEEPDIVE_RESULTS_DIR\"/$pid
@@ -52,6 +55,7 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                     \($deepdive.sampler.sampler_cmd | @sh) \\
                     \($deepdive.sampler.sampler_args // "") \\
                     \(if $deepdive.sampler.partitions > 1 then "-i 0" else "" end) \\
+                    $DEEPDIVE_SAMPLER_ARGS \\
                     #
 
             # TODO maybe this database interaction for the weights after
@@ -129,6 +133,9 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         # defaults to handling all shards, which can be overridden to be a subset
         : ${DEEPDIVE_FACTORGRAPH_SHARDS:=$(seq 0 \($deepdive.sampler.partitions - 1))}
 
+        # allow extra runtime args for sampler
+        : ${DEEPDIVE_SAMPLER_ARGS:=}
+
         # need to run inference if learning step was deferred because there are multiple shards
         # or because different weights are used
         for pid in $DEEPDIVE_FACTORGRAPH_SHARDS; do
@@ -151,6 +158,7 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                     \($deepdive.sampler.sampler_cmd | @sh) \\
                     \($deepdive.sampler.sampler_args // "") \\
                     -l 0 \\
+                    $DEEPDIVE_SAMPLER_ARGS \\
                     #
         done
         "
