@@ -43,32 +43,85 @@ std::ostream &operator<<(std::ostream &stream,
   return stream;
 }
 
+template <class T>
+T *fast_alloc(size_t num) {
+  void *raw_memory = operator new[](num * sizeof(T));
+  return static_cast<T *>(raw_memory);
+}
+
 FactorGraph::FactorGraph(const FactorGraphDescriptor &capacity)
     : capacity(capacity),
       size(),
-      weights(new Weight[capacity.num_weights]),
-      factors(new Factor[capacity.num_factors]),
-      vifs(new FactorToVariable[capacity.num_edges]),
-      variables(new Variable[capacity.num_variables]),
-      factor_index(new size_t[capacity.num_edges]),
-      values(new VariableToFactor[capacity.num_values]) {}
+      // fast alloc: 0 sec for a 270M-factor graph
+      weights(fast_alloc<Weight>(capacity.num_weights)),
+      factors(fast_alloc<Factor>(capacity.num_factors)),
+      vifs(fast_alloc<FactorToVariable>(capacity.num_edges)),
+      variables(fast_alloc<Variable>(capacity.num_variables)),
+      factor_index(fast_alloc<size_t>(capacity.num_edges)),
+      values(fast_alloc<VariableToFactor>(capacity.num_values))
+// slow alloc: 55 sec for a 270M-factor graph
+// weights(new Weight[capacity.num_weights]),
+// factors(new Factor[capacity.num_factors]),
+// vifs(new FactorToVariable[capacity.num_edges]),
+// variables(new Variable[capacity.num_variables]),
+// factor_index(new size_t[capacity.num_edges]),
+// values(new VariableToFactor[capacity.num_values])
+{}
 
 void FactorGraph::construct_index() {
-  size_t num_values = 0;
-  for (size_t i = 0; i < size.num_variables; ++i) {
-    num_values += variables[i].internal_cardinality();
+  size_t total = size.num_variables;
+  // small graph, single thread
+  if (total < 10000) {
+    construct_index_part(0, total, 0, 0);
+    return;
   }
+
+  // large graph, multi thread
+  // 6 sec instead of 30 sec for a 270M-factor graph
+  std::vector<std::tuple<size_t, size_t, size_t, size_t>> params;
+  size_t cores = sysconf(_SC_NPROCESSORS_CONF);
+  size_t increment = total / cores;
+
+  size_t milestone = 0;
+  size_t num_values = 0, num_factors = 0;
+
+  for (size_t i = 0; i < size.num_variables; ++i) {
+    if (i == milestone) {
+      milestone += increment;
+      if (milestone > total) {
+        milestone = total;
+      }
+      params.push_back(std::make_tuple(i, milestone, num_values, num_factors));
+    }
+    num_values += variables[i].internal_cardinality();
+    if (variables[i].adjacent_factors) {
+      num_factors += variables[i].adjacent_factors->size();
+    }
+  }
+
   size.num_values = capacity.num_values = num_values;
+  values.reset(fast_alloc<VariableToFactor>(num_values));
 
-  values.reset(new VariableToFactor[num_values]);
+  std::vector<std::thread> threads;
+  for (const auto &tup : params) {
+    threads.push_back(std::thread(&FactorGraph::construct_index_part, this,
+                                  std::get<0>(tup), std::get<1>(tup),
+                                  std::get<2>(tup), std::get<3>(tup)));
+  }
+  for (auto &t : threads) t.join();
+  threads.clear();
+}
 
-  size_t factor_index_base = 0, value_index_base = 0;
+void FactorGraph::construct_index_part(size_t v_start, size_t v_end,
+                                       size_t val_base, size_t fac_base) {
+  size_t value_index_base = val_base, factor_index_base = fac_base;
+
   std::vector<size_t> value_list;
   std::vector<double> truthiness_list;
 
   // For each variable, sort and uniq adjacent factors by value.
   // We deallocate "domain_map" and "adjacent_factors".
-  for (size_t i = 0; i < size.num_variables; ++i) {
+  for (size_t i = v_start; i < v_end; ++i) {
     Variable &v = variables[i];
     v.var_val_base = value_index_base;
     v.total_truthiness = 0;
@@ -181,8 +234,7 @@ FactorGraph::FactorGraph(const FactorGraph &other)
     : FactorGraph(other.capacity) {
   size = other.size;
 
-  // std::cout << " copy begins " << std::endl;
-
+  // fast copy: 3 sec for a 270M-factor graph
   parallel_copy<Weight>(other.weights, weights, size.num_weights);
   parallel_copy<Factor>(other.factors, factors, size.num_factors);
   parallel_copy<FactorToVariable>(other.vifs, vifs, size.num_edges);
@@ -190,15 +242,13 @@ FactorGraph::FactorGraph(const FactorGraph &other)
   parallel_copy<size_t>(other.factor_index, factor_index, size.num_edges);
   parallel_copy<VariableToFactor>(other.values, values, size.num_values);
 
-  // Code below is the old single-threaded method.
+  // slow copy: 18 sec for a 270M-factor graph
   // COPY_ARRAY_UNIQUE_PTR_MEMBER(variables, size.num_variables);
   // COPY_ARRAY_UNIQUE_PTR_MEMBER(factors, size.num_factors);
   // COPY_ARRAY_UNIQUE_PTR_MEMBER(factor_index, size.num_edges);
   // COPY_ARRAY_UNIQUE_PTR_MEMBER(vifs, size.num_edges);
   // COPY_ARRAY_UNIQUE_PTR_MEMBER(weights, size.num_weights);
   // COPY_ARRAY_UNIQUE_PTR_MEMBER(values, size.num_values);
-
-  // std::cout << " copy ends " << std::endl;
 }
 
 // Inline by defined here; accessible only from current file.
