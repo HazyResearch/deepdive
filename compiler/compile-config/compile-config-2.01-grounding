@@ -649,12 +649,15 @@ def factorWeightDescriptionSqlExpr:
         : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
         : ${DEEPDIVE_FACTORGRAPH_DIR:=\"$DEEPDIVE_APP\"/run/model/factorgraph}
 
+        # defaults to handling all shards, which can be overridden to be a subset
+        : ${DEEPDIVE_FACTORGRAPH_SHARDS:=$(seq 0 \($deepdive.sampler.partitions - 1))}
+
         # create a fresh empty directory for the new combined factor graph
         rm -rf   \"$DEEPDIVE_FACTORGRAPH_DIR\"
         mkdir -p \"$DEEPDIVE_FACTORGRAPH_DIR\"
 
         # generate the metadata for the inference engine
-        for pid in $(seq 0 \($deepdive.sampler.partitions - 1)); do
+        for pid in $DEEPDIVE_FACTORGRAPH_SHARDS; do
             cd \"$DEEPDIVE_FACTORGRAPH_DIR\"
             mkdir -p $pid
             cd $pid

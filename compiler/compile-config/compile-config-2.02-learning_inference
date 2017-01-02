@@ -23,8 +23,11 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         : ${DEEPDIVE_FACTORGRAPH_DIR:=\"$DEEPDIVE_APP\"/run/model/factorgraph}
         export DEEPDIVE_NUM_PROCESSES
 
+        # defaults to handling all shards, which can be overridden
+        : ${DEEPDIVE_FACTORGRAPH_SHARDS:=$(seq 0 \($deepdive.sampler.partitions - 1))}
+
         # run inference engine for learning and inference on each shard
-        for pid in $(seq 0 \($deepdive.sampler.partitions - 1)); do
+        for pid in $DEEPDIVE_FACTORGRAPH_SHARDS; do
             results_dir=\"$DEEPDIVE_RESULTS_DIR\"/$pid
             mkdir -p \"$results_dir\"
             fg_dir=\"$DEEPDIVE_FACTORGRAPH_DIR\"/$pid
@@ -123,9 +126,12 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
         : ${DEEPDIVE_FACTORGRAPH_DIR:=\"$DEEPDIVE_APP\"/run/model/factorgraph}
         export DEEPDIVE_NUM_PROCESSES
 
+        # defaults to handling all shards, which can be overridden
+        : ${DEEPDIVE_FACTORGRAPH_SHARDS:=$(seq 0 \($deepdive.sampler.partitions - 1))}
+
         # need to run inference if learning step was deferred because there are multiple shards
         # or because different weights are used
-        for pid in $(seq 0 \($deepdive.sampler.partitions - 1)); do
+        for pid in $DEEPDIVE_FACTORGRAPH_SHARDS; do
             results_dir=\"$DEEPDIVE_RESULTS_DIR\"/$pid
             mkdir -p \"$results_dir\"
             fg_dir=\"$DEEPDIVE_FACTORGRAPH_DIR\"/$pid
@@ -165,7 +171,7 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                 #
 
             # restore shard ID to the vids
-            for pid in $(seq 0 \($deepdive.sampler.partitions - 1)); do
+            for pid in $DEEPDIVE_FACTORGRAPH_SHARDS; do
                 cd \"$DEEPDIVE_RESULTS_DIR\"/$pid
 
                 AWK_CMD='{printf \"%s\\t%s\\t%s\\n\", SHARD_BASE + $1, $2, $3}'
