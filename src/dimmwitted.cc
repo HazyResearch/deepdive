@@ -80,15 +80,19 @@ int gibbs(const CmdParser &args) {
 
   // Initialize Gibbs sampling application.
   DimmWitted dw(fg, fg->weights.get(), args);
+  if (dw.is_distributed()) {
+    dw.connect_param_server();
+    dw.ps_send_msg("FG_LOADED");
+  }
 
   dw.learn();
-
-  // dump weights
   dw.dump_weights();
+  dw.ps_send_msg("LEARNING_FINISHED");
 
   // inference
   dw.inference();
   dw.aggregate_results_and_dump();
+  dw.ps_send_msg("INFERENCE_FINISHED");
 
   return 0;
 }
@@ -164,11 +168,12 @@ bool DimmWitted::ps_update_weights(int epochs, std::vector<double> &delta) {
   InferenceResult &infrs = samplers[0].infrs;
   const size_t nweight = infrs.nweights;
 
-  // REQUEST FORMAT: <STRING worker_id, INT epochs, DOUBLE[] grads>
+  // REQUEST FORMAT: <STRING worker_id, STRING msgtype, INT epochs, DOUBLE[] grads>
   std::cout << "\tpacking message" << std::endl;
   msgpack::sbuffer sbuf;
   msgpack::packer<msgpack::sbuffer> pk(&sbuf);
   pk.pack(opts.worker_id);
+  pk.pack("GRADIENTS");
   pk.pack(epochs);
   pk.pack(delta);
   zmq::message_t msg(sbuf.data(), sbuf.size());
@@ -200,6 +205,22 @@ bool DimmWitted::ps_update_weights(int epochs, std::vector<double> &delta) {
   return command == "STOP";
 }
 
+void DimmWitted::ps_send_msg(std::string message) {
+  if (!is_distributed()) {
+    return;
+  }
+  // REQUEST FORMAT: <STRING worker_id, STRING msgtype>
+  msgpack::sbuffer sbuf;
+  msgpack::packer<msgpack::sbuffer> pk(&sbuf);
+  pk.pack(opts.worker_id);
+  pk.pack(message);
+  zmq::message_t msg(sbuf.data(), sbuf.size());
+  ps_socket->send(msg);
+
+  zmq::message_t reply;
+  ps_socket->recv(&reply);
+}
+
 void DimmWitted::learn() {
   InferenceResult &infrs = samplers[0].infrs;
 
@@ -214,10 +235,6 @@ void DimmWitted::learn() {
   const std::unique_ptr<double[]> prev_weights(new double[nweight]);
   std::vector<double> delta(nweight);
   COPY_ARRAY(infrs.weight_values.get(), nweight, prev_weights.get());
-
-  if (is_distributed()) {
-    connect_param_server();
-  }
 
   // learning epochs
   for (size_t i_epoch = 0; i_epoch < n_epoch || is_distributed(); ++i_epoch) {

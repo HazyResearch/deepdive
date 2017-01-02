@@ -84,17 +84,20 @@ class DimmWitted {
    */
   bool is_distributed() const { return !opts.parameter_server.empty(); }
 
+  /**
+   * Connect to the parameter server.
+   */
+  void connect_param_server();
+
+  // Send a simple message (a string) to PS
+  void ps_send_msg(std::string message);
+
  private:
   /**
    * Connection to paramemter server
    */
   std::unique_ptr<zmq::context_t> ps_context;
   std::unique_ptr<zmq::socket_t> ps_socket;
-
-  /**
-   * Connect to the parameter server.
-   */
-  void connect_param_server();
 
   // Send gradients to PS and refresh local weights
   // Returns true if we can stop learning
