@@ -10,7 +10,9 @@ perl-local-lib() { perl -Iprefix/lib/perl5 -Mlocal::lib="$PWD"/prefix; }
 perl-local-lib &>/dev/null ||
     # See: http://stackoverflow.com/a/2980715/390044
     curl -fsSL http://cpanmin.us | perl - -l prefix App::cpanminus local::lib
+set +u  # perl can dereference PERL_LOCAL_LIB_ROOT and other unset variables
 eval $(perl-local-lib)
+set -u
 
 # install all CPAN modules to bundle
 cpanm JSON JSON::XS
