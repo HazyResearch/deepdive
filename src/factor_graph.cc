@@ -4,6 +4,8 @@
 
 #include <iostream>
 #include <algorithm>
+#include <thread>
+#include <unistd.h>
 
 namespace dd {
 
@@ -147,16 +149,56 @@ void FactorGraph::safety_check() {
   }
 }
 
+template <class T>
+void parallel_copy(const std::unique_ptr<T[]> &src, std::unique_ptr<T[]> &dst,
+                   size_t num) {
+  if (num <= 1000000) {
+    // small array, single thread
+    std::copy(src.get(), src.get() + num, dst.get());
+  } else {
+    // big array, multithread
+    size_t cores = sysconf(_SC_NPROCESSORS_CONF);
+    std::vector<std::thread> threads;
+    size_t start = 0, increment = num / cores;
+    for (size_t i = 0; i < cores; ++i) {
+      start = i * increment;
+      size_t count = increment;
+      if (i == cores - 1) {
+        count = num - start;
+      }
+      T *part_src = src.get() + start;
+      T *part_dst = dst.get() + start;
+      threads.push_back(std::thread([part_src, part_dst, count]() {
+        std::copy(part_src, part_src + count, part_dst);
+      }));
+    }
+    for (auto &t : threads) t.join();
+    threads.clear();
+  }
+}
+
 FactorGraph::FactorGraph(const FactorGraph &other)
     : FactorGraph(other.capacity) {
   size = other.size;
-  // copy each member from the given graph
-  COPY_ARRAY_UNIQUE_PTR_MEMBER(variables, size.num_variables);
-  COPY_ARRAY_UNIQUE_PTR_MEMBER(factors, size.num_factors);
-  COPY_ARRAY_UNIQUE_PTR_MEMBER(factor_index, size.num_edges);
-  COPY_ARRAY_UNIQUE_PTR_MEMBER(vifs, size.num_edges);
-  COPY_ARRAY_UNIQUE_PTR_MEMBER(weights, size.num_weights);
-  COPY_ARRAY_UNIQUE_PTR_MEMBER(values, size.num_values);
+
+  // std::cout << " copy begins " << std::endl;
+
+  parallel_copy<Weight>(other.weights, weights, size.num_weights);
+  parallel_copy<Factor>(other.factors, factors, size.num_factors);
+  parallel_copy<FactorToVariable>(other.vifs, vifs, size.num_edges);
+  parallel_copy<Variable>(other.variables, variables, size.num_variables);
+  parallel_copy<size_t>(other.factor_index, factor_index, size.num_edges);
+  parallel_copy<VariableToFactor>(other.values, values, size.num_values);
+
+  // Code below is the old single-threaded method.
+  // COPY_ARRAY_UNIQUE_PTR_MEMBER(variables, size.num_variables);
+  // COPY_ARRAY_UNIQUE_PTR_MEMBER(factors, size.num_factors);
+  // COPY_ARRAY_UNIQUE_PTR_MEMBER(factor_index, size.num_edges);
+  // COPY_ARRAY_UNIQUE_PTR_MEMBER(vifs, size.num_edges);
+  // COPY_ARRAY_UNIQUE_PTR_MEMBER(weights, size.num_weights);
+  // COPY_ARRAY_UNIQUE_PTR_MEMBER(values, size.num_values);
+
+  // std::cout << " copy ends " << std::endl;
 }
 
 // Inline by defined here; accessible only from current file.
