@@ -56,7 +56,9 @@ if ! [[ "${DEEPDIVE_SHELL:-}" -ef "$0" ]]; then
     export PYTHONPATH
 
     #  make sure bundled Perl modules are available via local::lib
+    set +u  # as perl local::lib can dereference unset variables such as PERL_LOCAL_LIB_ROOT
     eval $(perl -I"$DEEPDIVE_BUNDLED_PREFIX"/lib/perl5 -Mlocal::lib="$DEEPDIVE_BUNDLED_PREFIX" 2>/dev/null || true)
+    set -u
 
     #  make sure DeepDive utilities are at the beginning of the PATH
     PATH="$DEEPDIVE_HOME/util:$DEEPDIVE_HOME/bin:$DEEPDIVE_BUNDLED_PREFIX/bin:$PATH"
