@@ -284,7 +284,7 @@ void DimmWitted::learn() {
     // in distributed mode: exchange local gradients for latest weights
     bool stop = false;
     if (is_distributed()) {
-      stop = ps_update_weights(i_epoch + 1, delta);
+      stop = ps_update_weights(n_samplers_ * (i_epoch + 1), delta);
     }
 
     // assigned weights to all factor graphs
