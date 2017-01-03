@@ -43,11 +43,8 @@ case $SamplerCmd in
     *) # assume DimmWitted-compatible command-line interface
         mk_process_substitution_opts() {
             # list of file paths should evenly spread into the degree of parallelism
-            split --number=r/$DEEPDIVE_NUM_PROCESSES --elide-empty-files --filter='
-                    sed "s/\$/ \\\\/" |
-                    printf "%s\n" "'"$1"' <(pbzip2 -c -d -k \\" "$(cat)" ") \\"
-                    echo
-                '
+            split --number=r/$DEEPDIVE_NUM_PROCESSES --elide-empty-files \
+                --filter='echo -n " '"$1"' <(pbzip2 -c -d -k \\'$'\n''$(sed "s/\$/ \\\\/; s/^/    /;")'$'\n'')"'
         }
         # assemble many flags for multipart inputs to load them in parallel
         opts=
@@ -56,7 +53,8 @@ case $SamplerCmd in
         opts+=$(find -L ./factors/    -type f -size +15 | mk_process_substitution_opts --factors  )
         opts+=$(find -L ./"$weights"/ -type f -size +15 | mk_process_substitution_opts --weights  )
         set -x
-        eval '$SamplerCmd gibbs '"$opts"'           \
+        eval '$SamplerCmd gibbs                     \
+            '"$opts"' \
             --fg_meta   ./meta                      \
             --outputFile "$results_dir"             \
             --n_threads $DEEPDIVE_NUM_PROCESSES     \
