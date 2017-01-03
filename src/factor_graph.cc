@@ -84,25 +84,32 @@ FactorGraph::~FactorGraph() {
   fast_alloc_free(values.release());
 }
 
+// Construct index using multiple threads
+// 6 sec instead of 30 sec for a 270M-factor graph
+// std::vector<std::tuple<size_t, size_t, size_t, size_t>> params;
 void FactorGraph::construct_index() {
   size_t total = size.num_variables;
-
-  // large graph, multi thread
-  // 6 sec instead of 30 sec for a 270M-factor graph
-  std::vector<std::tuple<size_t, size_t, size_t, size_t>> params;
   size_t cores = sysconf(_SC_NPROCESSORS_CONF);
   size_t increment = total / cores;
+
+  // small graph, single thread
+  if (total < 1000) {
+    increment = total;
+  }
 
   size_t milestone = 0;
   size_t num_values = 0, num_factors = 0;
 
+  std::vector<std::function<void()>> tasks;
   for (size_t i = 0; i < size.num_variables; ++i) {
     if (i == milestone) {
       milestone += increment;
       if (milestone > total) {
         milestone = total;
       }
-      params.push_back(std::make_tuple(i, milestone, num_values, num_factors));
+      tasks.push_back([this, i, milestone, num_values, num_factors]() {
+        construct_index_part(i, milestone, num_values, num_factors);
+      });
     }
     num_values += variables[i].internal_cardinality();
     if (variables[i].adjacent_factors) {
@@ -113,17 +120,9 @@ void FactorGraph::construct_index() {
   size.num_values = capacity.num_values = num_values;
   values.reset(fast_alloc_no_init<VariableToFactor>(num_values));
 
-  // small graph, single thread
-  if (total < 10000) {
-    construct_index_part(0, total, 0, 0);
-    return;
-  }
-
   std::vector<std::thread> threads;
-  for (const auto &tup : params) {
-    threads.push_back(std::thread(&FactorGraph::construct_index_part, this,
-                                  std::get<0>(tup), std::get<1>(tup),
-                                  std::get<2>(tup), std::get<3>(tup)));
+  for (const auto &task : tasks) {
+    threads.push_back(std::thread(task));
   }
   for (auto &t : threads) t.join();
   threads.clear();
