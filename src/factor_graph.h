@@ -100,6 +100,8 @@ class FactorGraph {
   // copy constructor
   FactorGraph(const FactorGraph& other);
 
+  ~FactorGraph();
+
   /**
    * Given a variable, updates the weights associated with the factors that
    * connect to the variable.
