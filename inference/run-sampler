@@ -49,10 +49,10 @@ case $SamplerCmd in
         }
         # assemble many flags for multipart inputs to load them in parallel
         opts=
-        opts+=$(find -L ./variables/  -type f -size +15 | mk_process_substitution_opts --variables)
-        opts+=$(find -L ./domains/    -type f -size +15 | mk_process_substitution_opts --domains  )
-        opts+=$(find -L ./factors/    -type f -size +15 | mk_process_substitution_opts --factors  )
-        opts+=$(find -L ./"$weights"/ -type f -size +15 | mk_process_substitution_opts --weights  )
+        opts+=$(find -L ./variables/  -type f -size +0 | mk_process_substitution_opts --variables)
+        opts+=$(find -L ./domains/    -type f -size +0 | mk_process_substitution_opts --domains  )
+        opts+=$(find -L ./factors/    -type f -size +0 | mk_process_substitution_opts --factors  )
+        opts+=$(find -L ./"$weights"/ -type f -size +0 | mk_process_substitution_opts --weights  )
         set -x
         eval '$SamplerCmd gibbs                     \
             '"$opts"' \
