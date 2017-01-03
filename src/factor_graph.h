@@ -79,6 +79,9 @@ class FactorGraph {
   // construct "values" and "factor_index" for var-to-factor lookups
   void construct_index();
 
+  void construct_index_part(size_t v_start, size_t v_end, size_t val_base,
+                            size_t fac_base);
+
   inline size_t get_var_value_at(const Variable& var, size_t idx) const {
     return values[var.var_val_base + idx].value;
   }
@@ -96,6 +99,8 @@ class FactorGraph {
 
   // copy constructor
   FactorGraph(const FactorGraph& other);
+
+  ~FactorGraph();
 
   /**
    * Given a variable, updates the weights associated with the factors that
