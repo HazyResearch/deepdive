@@ -6,6 +6,9 @@
 #include <stdio.h>
 
 #include <math.h>
+#include <thread>
+#include <vector>
+#include <unistd.h>
 
 #define LOG_2 0.693147180559945
 #define MINUS_LOG_THRESHOLD -18.42
@@ -48,6 +51,49 @@ typedef enum {
 #define COPY_ARRAY_UNIQUE_PTR_MEMBER(array_up, size) \
   COPY_ARRAY(other.array_up.get(), size, array_up.get())
 #define COPY_ARRAY(src, size, dst) std::copy(src, src + size, dst)
+
+// Allocate an array T[num] without calling constructors.
+// Use fast_alloc_free to deallocate such arrays.
+template <class T>
+T *fast_alloc_no_init(size_t num) {
+  void *raw_memory = operator new[](num * sizeof(T));
+  return static_cast<T *>(raw_memory);
+}
+
+// Free an array created by fast_alloc_no_init
+template <class T>
+void fast_alloc_free(T *ptr) {
+  operator delete[](static_cast<void *>(ptr));
+}
+
+// Copy an array using multiple threads
+template <class T>
+void parallel_copy(const std::unique_ptr<T[]> &src, std::unique_ptr<T[]> &dst,
+                   size_t num) {
+  if (num <= 1000000) {
+    // small array, single thread
+    std::copy(src.get(), src.get() + num, dst.get());
+  } else {
+    // big array, multithread
+    size_t cores = sysconf(_SC_NPROCESSORS_CONF);
+    std::vector<std::thread> threads;
+    size_t start = 0, increment = num / cores;
+    for (size_t i = 0; i < cores; ++i) {
+      start = i * increment;
+      size_t count = increment;
+      if (i == cores - 1) {
+        count = num - start;
+      }
+      T *part_src = src.get() + start;
+      T *part_dst = dst.get() + start;
+      threads.push_back(std::thread([part_src, part_dst, count]() {
+        std::copy(part_src, part_src + count, part_dst);
+      }));
+    }
+    for (auto &t : threads) t.join();
+    threads.clear();
+  }
+}
 
 /**
  * Explicitly say things are unused if they are actually unused.
