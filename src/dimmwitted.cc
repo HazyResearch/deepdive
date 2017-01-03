@@ -168,7 +168,8 @@ bool DimmWitted::ps_update_weights(int epochs, std::vector<double> &delta) {
   InferenceResult &infrs = samplers[0].infrs;
   const size_t nweight = infrs.nweights;
 
-  // REQUEST FORMAT: <STRING worker_id, STRING msgtype, INT epochs, DOUBLE[] grads>
+  // REQUEST FORMAT: <STRING worker_id, STRING msgtype, INT epochs, DOUBLE[]
+  // grads>
   std::cout << "\tpacking message" << std::endl;
   msgpack::sbuffer sbuf;
   msgpack::packer<msgpack::sbuffer> pk(&sbuf);
