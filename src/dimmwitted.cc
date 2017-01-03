@@ -205,7 +205,7 @@ bool DimmWitted::ps_update_weights(int epochs, std::vector<float> &delta) {
                    4 * delta.size());
 
   // TODO: compression
-  zmq::message_t msg(sbuf.data(), sbuf.size());
+  zmq::message_t msg(sbuf.data(), sbuf.size(), NULL /* no de-allocate */);
   ps_socket->send(msg);
 
   // RESPONSE FORMAT:
@@ -228,7 +228,7 @@ bool DimmWitted::ps_update_weights(int epochs, std::vector<float> &delta) {
   oh.get().convert(bytes);
 
   // HACK: abusing delta to store weights
-  memcpy(delta.data(), reinterpret_cast<float *>(bytes.data()), bytes.size());
+  memcpy(delta.data(), bytes.data(), bytes.size());
   std::cout << "\treceived wgts[" << delta.size() << "] ";
   inspect_vector(delta);
 
