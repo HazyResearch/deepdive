@@ -127,8 +127,11 @@ void FactorGraph::load_variables(const std::vector<std::string> &filenames) {
 
 void FactorGraph::load_factors(const std::vector<std::string> &filenames) {
   std::mutex mtx;
+  // an array of mutexes for serializing accesses to the variables
+  std::unique_ptr<std::mutex[]> mtx_variables(
+      new std::mutex[size.num_variables]);
   std::atomic<size_t> factor_cntr(0), edge_cntr(0);
-  parallel_load(filenames, [this, &mtx, &factor_cntr,
+  parallel_load(filenames, [this, &mtx, &mtx_variables, &factor_cntr,
                             &edge_cntr](const std::string &filename) {
     std::ifstream file(filename, std::ios::binary);
     size_t num_factors = 0;
@@ -164,7 +167,10 @@ void FactorGraph::load_factors(const std::vector<std::string> &filenames) {
           // normalize boolean var vals to 0 for indexing purpusoes
           dense_val = Variable::BOOLEAN_DENSE_VALUE;
         }
-        variables[variable_id].add_value_factor(dense_val, idx);
+        {
+          std::lock_guard<std::mutex> lck(mtx_variables[variable_id]);
+          variables[variable_id].add_value_factor(dense_val, idx);
+        }
         ++edge_idx;
       }
 
