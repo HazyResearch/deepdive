@@ -269,16 +269,6 @@ CmdParser::CmdParser(
   }
 }
 
-template <typename T>
-std::ostream& operator<<(std::ostream& out, const std::vector<T>& v) {
-  if (!v.empty()) {
-    out << '[';
-    std::copy(v.begin(), v.end(), std::ostream_iterator<T>(out, ", "));
-    out << "\b\b]";
-  }
-  return out;
-}
-
 std::ostream& operator<<(std::ostream& stream, const CmdParser& args) {
   stream << "#################GIBBS SAMPLING#################" << std::endl;
   stream << "# fg_file            : " << args.fg_file << std::endl;

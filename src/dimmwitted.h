@@ -101,7 +101,7 @@ class DimmWitted {
 
   // Send gradients to PS and refresh local weights
   // Returns true if we can stop learning
-  bool ps_update_weights(int epochs, std::vector<double>& delta);
+  bool ps_update_weights(int epochs, std::vector<float>& delta);
 
   size_t compute_n_epochs(size_t n_epoch);
 };
