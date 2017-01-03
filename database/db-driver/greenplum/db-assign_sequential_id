@@ -43,6 +43,8 @@ done
 # http://stackoverflow.com/questions/22841206/calculating-cumulative-sum-in-postgresql
 # Use larger table idstats_distributor to ensure stats are processed by all segments.
 # Assuming 1000 rows cover all segments.
+# Update (Jan3): 1000 rows sometimes fail to cover all segments after join, increased to 10000
+# (see explain analyze)
 SQL="$SQL
 CREATE TEMP TABLE idstats_rollup AS
   SELECT pid, gpsid, total, SUM(total) OVER (PARTITION BY pid ORDER BY gpsid) AS cum_total
@@ -64,7 +66,7 @@ CREATE TEMP TABLE idstats_bases AS
   DISTRIBUTED RANDOMLY;
 
 CREATE TEMP TABLE idstats_distributor as
-  SELECT generate_series(1, 1000) id
+  SELECT generate_series(1, 10000) id
   DISTRIBUTED BY (id);
 
 ANALYZE idstats_bases;
