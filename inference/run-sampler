@@ -14,6 +14,7 @@ done
 
 # required parameters
 : ${DEEPDIVE_NUM_PROCESSES:?}
+: ${DEEPDIVE_SAMPLER_NUM_PARALLEL_LOADS:=$DEEPDIVE_NUM_PROCESSES}
 : ${results_dir:?}
 : ${weights:?}
 
@@ -43,7 +44,7 @@ case $SamplerCmd in
     *) # assume DimmWitted-compatible command-line interface
         mk_process_substitution_opts() {
             # list of file paths should evenly spread into the degree of parallelism
-            split --number=r/$DEEPDIVE_NUM_PROCESSES --elide-empty-files \
+            split --number=r/$DEEPDIVE_SAMPLER_NUM_PARALLEL_LOADS --elide-empty-files \
                 --filter='echo -n " '"$1"' <(pbzip2 -c -d -k \\'$'\n''$(sed "s/\$/ \\\\/; s/^/    /;")'$'\n'')"'
         }
         # assemble many flags for multipart inputs to load them in parallel
