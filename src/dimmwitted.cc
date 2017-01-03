@@ -184,6 +184,7 @@ void inspect_vector(std::vector<T> &vec) {
 }
 
 bool DimmWitted::ps_update_weights(int epochs, std::vector<float> &delta) {
+  if (!is_distributed()) return false;
   InferenceResult &infrs = samplers[0].infrs;
   const size_t nweight = infrs.nweights;
 
@@ -242,9 +243,7 @@ bool DimmWitted::ps_update_weights(int epochs, std::vector<float> &delta) {
 }
 
 void DimmWitted::ps_send_msg(std::string message) {
-  if (!is_distributed()) {
-    return;
-  }
+  if (!is_distributed()) return;
   // REQUEST FORMAT: <STRING worker_id, STRING msgtype>
   msgpack::sbuffer sbuf;
   msgpack::packer<msgpack::sbuffer> pk(&sbuf);
@@ -276,8 +275,11 @@ void DimmWitted::learn() {
   std::vector<float> delta(nweight);  // 32-bit float
   COPY_ARRAY(infrs.weight_values.get(), nweight, prev_weights.get());
 
+  bool stop = false;
+
   // learning epochs
-  for (size_t i_epoch = 0; i_epoch < n_epoch || is_distributed(); ++i_epoch) {
+  for (size_t i_epoch = 0; i_epoch < n_epoch || (is_distributed() && !stop);
+       ++i_epoch) {
     if (should_show_progress) {
       std::streamsize ss = std::cout.precision();
       std::cout << std::setprecision(3) << "LEARNING EPOCH "
@@ -325,11 +327,8 @@ void DimmWitted::learn() {
                 << std::setprecision(ss);
     }
 
-    // in distributed mode: exchange local gradients for latest weights
-    bool stop = false;
-    if (is_distributed()) {
-      stop = ps_update_weights(n_samplers_ * (i_epoch + 1), delta);
-    }
+    // if in distributed mode: exchange local gradients for latest weights
+    stop = ps_update_weights(n_samplers_ * (i_epoch + 1), delta);
 
     // assigned weights to all factor graphs
     for (size_t i = 1; i < n_samplers_; ++i)
@@ -339,8 +338,6 @@ void DimmWitted::learn() {
     COPY_ARRAY(infrs.weight_values.get(), nweight, prev_weights.get());
 
     current_stepsize *= decay;
-
-    if (stop) break;
   }
 
   double elapsed = t_total.elapsed();
