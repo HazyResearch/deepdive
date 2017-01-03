@@ -1,5 +1,4 @@
 #include <iostream>
-#include <iterator>
 
 #include "cmd_parser.h"
 #include "numa_nodes.h"

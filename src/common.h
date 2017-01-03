@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <iostream>
+#include <iterator>
 #include <math.h>
 #include <thread>
 #include <vector>
