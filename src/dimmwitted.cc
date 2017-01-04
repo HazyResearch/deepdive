@@ -175,15 +175,20 @@ void DimmWitted::inference() {
 }
 
 template <typename T>
-void inspect_vector(std::vector<T> &vec) {
+void inspect_vector(T *arr, size_t num) {
+  const size_t window_size = 3;
+  std::vector<T> vec(2 * window_size);
+  for (size_t i = 0; i < window_size && i < num; ++i) vec.push_back(arr[i]);
+  for (size_t i = std::max(num - window_size, window_size); i < num; ++i)
+    vec.push_back(arr[i]);
   std::streamsize ss = std::cout.precision();
   std::cout << std::setprecision(3)
-            << std::vector<float>(vec.begin(), vec.begin() + 3) << " ... "
-            << std::vector<float>(vec.end() - 3, vec.end())
+            << std::vector<float>(vec.begin(), vec.begin() + window_size)
+            << " ... " << std::vector<float>(vec.end() - window_size, vec.end())
             << std::setprecision(ss) << std::endl;
 }
 
-bool DimmWitted::ps_update_weights(int epochs, std::vector<float> &delta) {
+bool DimmWitted::ps_update_weights(int epochs, size_t n_delta, float *delta) {
   if (!is_distributed()) return false;
   InferenceResult &infrs = samplers[0].infrs;
   const size_t nweight = infrs.nweights;
@@ -194,16 +199,16 @@ bool DimmWitted::ps_update_weights(int epochs, std::vector<float> &delta) {
   //   INT epochs
   //   FLOAT32[]::BYTES grads
 
-  std::cout << "\tsending grads[" << delta.size() << "] ";
-  inspect_vector(delta);
+  std::cout << "\tsending grads[" << n_delta << "] ";
+  inspect_vector(delta, n_delta);
   msgpack::sbuffer sbuf;
   msgpack::packer<msgpack::sbuffer> pk(&sbuf);
   pk.pack(opts.worker_id);
   pk.pack("GRADIENTS");
   pk.pack(epochs);
-  pk.pack_bin(4 * delta.size());
-  pk.pack_bin_body(reinterpret_cast<char const *>(delta.data()),
-                   4 * delta.size());
+  pk.pack_bin(sizeof(*delta) * n_delta);
+  pk.pack_bin_body(reinterpret_cast<char const *>(delta),
+                   sizeof(*delta) * n_delta);
 
   // TODO: compression
   zmq::message_t msg(sbuf.data(), sbuf.size(), NULL /* no de-allocate */);
@@ -229,11 +234,11 @@ bool DimmWitted::ps_update_weights(int epochs, std::vector<float> &delta) {
   oh.get().convert(bytes);
 
   // HACK: abusing delta to store weights
-  memcpy(delta.data(), bytes.data(), bytes.size());
-  std::cout << "\treceived wgts[" << delta.size() << "] ";
-  inspect_vector(delta);
+  memcpy(delta, bytes.data(), bytes.size());
+  std::cout << "\treceived wgts[" << n_delta << "] ";
+  inspect_vector(delta, n_delta);
 
-  COPY_ARRAY(&delta[0], nweight, infrs.weight_values.get());
+  COPY_ARRAY(delta, nweight, infrs.weight_values.get());
 
   if (command == "STOP") {
     std::cout << "\tSTOP.";
@@ -272,7 +277,7 @@ void DimmWitted::learn() {
 
   double current_stepsize = opts.stepsize;
   const std::unique_ptr<double[]> prev_weights(new double[nweight]);
-  std::vector<float> delta(nweight);  // 32-bit float
+  const std::unique_ptr<float[]> delta(new float[nweight]);  // 32-bit float
   COPY_ARRAY(infrs.weight_values.get(), nweight, prev_weights.get());
 
   bool stop = false;
@@ -328,7 +333,7 @@ void DimmWitted::learn() {
     }
 
     // if in distributed mode: exchange local gradients for latest weights
-    stop = ps_update_weights(n_samplers_ * (i_epoch + 1), delta);
+    stop = ps_update_weights(n_samplers_ * (i_epoch + 1), nweight, delta.get());
 
     // assigned weights to all factor graphs
     for (size_t i = 1; i < n_samplers_; ++i)
