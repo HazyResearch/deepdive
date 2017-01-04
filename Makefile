@@ -1,12 +1,12 @@
-# Makefile for sampler
+# Makefile for DimmWitted Gibbs Sampler
 
 .DEFAULT_GOAL := all
 
+################################################################################
 # common compiler flags
 CXXFLAGS += -std=c++0x -Wall -Werror -fno-strict-aliasing
-LDFLAGS =
-LDLIBS =
-CXXFLAGS += -I./lib/tclap/include/ -I./src
+LDFLAGS +=
+LDLIBS +=
 
 ifdef DEBUG
 CXXFLAGS += -g -DDEBUG
@@ -22,11 +22,6 @@ endif
 ifndef DEBUG
 CXXFLAGS += -Ofast
 endif
-# using NUMA for Linux
-CXXFLAGS += -I./lib/numactl/include
-LDFLAGS += -L./lib/numactl/lib
-LDFLAGS += -Wl,-Bstatic -Wl,-Bdynamic
-LDLIBS += -lnuma -lrt -lpthread
 endif
 
 ifeq ($(UNAME), Darwin)
@@ -41,6 +36,7 @@ CXXFLAGS += -stdlib=libc++
 CXXFLAGS += -flto
 endif
 
+################################################################################
 # source files
 SOURCES += src/dimmwitted.cc
 SOURCES += src/cmd_parser.cc
@@ -71,15 +67,12 @@ TEST_SOURCES += test/factor_graph_test.cc
 TEST_SOURCES += test/sampler_test.cc
 TEST_OBJECTS = $(TEST_SOURCES:.cc=.o)
 TEST_PROGRAM = $(PROGRAM)_test
-# test files need gtest
-$(OBJECTS): CXXFLAGS += -I./lib/gtest-1.7.0/include/
-$(TEST_OBJECTS): CXXFLAGS += -I./lib/gtest-1.7.0/include/
-$(TEST_PROGRAM): LDFLAGS += -L./lib/gtest/
-$(TEST_PROGRAM): LDLIBS += -lgtest -lpthread
+$(TEST_OBJECTS): CXXFLAGS += -I./src/
 
 all: $(PROGRAM)
 .PHONY: all
 
+################################################################################
 # how to link our sampler
 $(PROGRAM): $(OBJECTS)
 	$(CXX) -o $@ $(LDFLAGS) $^ $(LDLIBS)
@@ -88,6 +81,7 @@ $(PROGRAM): $(OBJECTS)
 $(TEST_PROGRAM): $(TEST_OBJECTS) $(filter-out src/main.o,$(OBJECTS))
 	$(CXX) -o $@ $(LDFLAGS) $^ $(LDLIBS)
 
+################################################################################
 # compiler generated dependency
 # See: http://stackoverflow.com/a/16969086
 DEPENDENCIES = $(SOURCES:.cc=.d) $(TEST_SOURCES:.cc=.d) $(TEXT2BIN_SOURCES:.cc=.d)
@@ -98,44 +92,99 @@ CXXFLAGS += -MMD
 %.o: %.cc
 	$(CXX) -o $@ $(CPPFLAGS) $(CXXFLAGS) -c $<
 
+################################################################################
 # how to get dependencies prepared
 dep:
+.PHONY: dep
+
+### Google Test for unit tests
+# https://github.com/google/googletest
+# test files need gtest
+$(OBJECTS): CXXFLAGS += -I./lib/gtest-1.7.0/include/
+$(TEST_OBJECTS): CXXFLAGS += -I./lib/gtest-1.7.0/include/
+$(TEST_PROGRAM): LDFLAGS += -L./lib/gtest/
+$(TEST_PROGRAM): LDLIBS += -lgtest
+dep: lib/gtest
+lib/gtest: lib/gtest-1.7.0.zip
 	# gtest for tests
-	cd lib;\
-	unzip -o gtest-1.7.0.zip;\
-	mkdir gtest;\
-	cd gtest;\
-	cmake ../gtest-1.7.0;\
-	make
-	# tclap for command-line args parsing
-	cd lib;\
-	tar xf tclap-1.2.1.tar.gz;\
-	cd tclap-1.2.1;\
-	./configure --prefix=`pwd`/../tclap;\
-	make;\
+	set -eu;\
+	cd $(@D);\
+	unzip -o $(<F);\
+	mkdir -p $(@F);\
+	cd $(@F);\
+	cmake ../$(<F:%.zip=%);\
+	make -j;\
+	#
+clean-dep: clean-dep-gtest
+clean-dep-gtest:
+	rm -rf lib/gtest
+.PHONY: clean-dep-gtest
+
+### TCLAP for command-line args parsing
+# http://tclap.sourceforge.net
+CXXFLAGS += -I./lib/tclap/include/
+dep: lib/tclap
+lib/tclap: lib/tclap-1.2.1.tar.gz
+	set -eu;\
+	cd $(@D);\
+	tar xf $(<F);\
+	cd $(<F:%.tar.gz=%);\
+	./configure --prefix=$(abspath $@);\
+	make -j;\
 	make install;\
-	cd ..
+	#
+clean-dep: clean-dep-tclap
+clean-dep-tclap:
+	rm -rf lib/tclap
+.PHONY: clean-dep-tclap
+
+### NUMA for Linux
+# http://oss.sgi.com/projects/libnuma/
 ifeq ($(UNAME), Linux)
+CXXFLAGS += -I./lib/numactl/include
+LDFLAGS += -L./lib/numactl/lib
+LDFLAGS += -Wl,-Bstatic -Wl,-Bdynamic
+LDLIBS += -lnuma -lrt -lpthread
+dep: lib/numactl # only for Linux
+endif
+lib/numactl: lib/numactl-2.0.11.tar.gz
 	# libnuma
 	echo "installing libnuma";\
 	cd lib;\
-	tar xf numactl-2.0.11.tar.gz;\
-	cd numactl-2.0.11;\
-	./configure --prefix=`pwd`/../numactl;\
+	tar xf $(<F);\
+	cd $(<F:%.tar.gz=%);\
+	./configure --prefix=$(abspath $@);\
 	make;\
-	make install
-endif
-.PHONY: dep
+	make install;\
+	#
+clean-dep: clean-dep-numactl
+clean-dep-numactl:
+	rm -rf lib/numactl
+.PHONY: clean-dep-numactl
 
+################################################################################
 # how to clean
 clean:
 	rm -f $(PROGRAM) $(OBJECTS) $(TEST_PROGRAM) $(TEST_OBJECTS) $(DEPENDENCIES)
 .PHONY: clean
+clean-dep:
+.PHONY: clean-dep
 
+################################################################################
 # how to test
 include test/bats.mk
 test-build: $(PROGRAM) $(TEST_PROGRAM)
 
+# how to quickly turn actual test output into expected ones
+actual-expected:
+	for actual in test/*/*.bin; do \
+	    expected="$$actual".txt; \
+	    [[ -e "$$expected" ]] || continue; \
+	    xxd "$$actual" >"$$expected"; \
+	done
+.PHONY: actual-expected
+
+################################################################################
 # how to format code
 # XXX requiring a particular version since clang-format is not backward-compatible
 CLANG_FORMAT_REQUIRED_VERSION := 3.7
@@ -158,12 +207,3 @@ format:
 	$(CLANG_FORMAT) -i $(SOURCES) $(TEST_SOURCES) $(TEXT2BIN_SOURCES) $(HEADERS)
 endif
 .PHONY: format
-
-# how to quickly turn actual test output into expected ones
-actual-expected:
-	for actual in test/*/*.bin; do \
-	    expected="$$actual".txt; \
-	    [[ -e "$$expected" ]] || continue; \
-	    xxd "$$actual" >"$$expected"; \
-	done
-.PHONY: actual-expected
