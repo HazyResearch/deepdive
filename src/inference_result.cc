@@ -1,5 +1,6 @@
 #include "inference_result.h"
 #include "factor_graph.h"
+#include <cstring>
 #include <iostream>
 #include <memory>
 
@@ -62,7 +63,7 @@ void InferenceResult::merge_gradients_from(const InferenceResult &other) {
 }
 
 void InferenceResult::reset_gradients() {
-  memset(weight_grads.get(), 0, nweights * sizeof(float));
+  std::memset(weight_grads.get(), 0, nweights * sizeof(float));
 }
 
 void InferenceResult::merge_weights_from(const InferenceResult &other) {
