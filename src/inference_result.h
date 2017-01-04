@@ -19,6 +19,7 @@ class InferenceResult {
   const CmdParser &opts;
 
  public:
+  bool is_distributed;
   size_t nvars;     // number of variables
   size_t nweights;  // number of weights
   size_t ntallies;  // number of tallies
@@ -37,9 +38,8 @@ class InferenceResult {
 
   // array of weight values
   std::unique_ptr<double[]> weight_values;
-  // array of weight gradients, not currently in use
-  // NOTE: to be used in finer-grained distributed learning
-  std::unique_ptr<double[]> weight_grads;
+  // array of weight gradients, used in distributed learning
+  std::unique_ptr<float[]> weight_grads;
   // array of whether weight is fixed
   std::unique_ptr<bool[]> weights_isfixed;
 
@@ -49,6 +49,8 @@ class InferenceResult {
   // copy constructor
   InferenceResult(const InferenceResult &other);
 
+  void merge_gradients_from(const InferenceResult &other);
+  void reset_gradients();
   void merge_weights_from(const InferenceResult &other);
   void average_weights(size_t count);
   void copy_weights_to(InferenceResult &other) const;
@@ -77,9 +79,14 @@ class InferenceResult {
         std::abort();
     }
     double diff = stepsize * gradient;
-    weight -= diff;
-    weight_values[wid] = weight;
-    weight_grads[wid] += diff;
+    if (is_distributed) {
+      // Distributed worker does batch GD and accumulates gradients
+      weight_grads[wid] += diff;
+    } else {
+      // Standalone worker does SGD
+      weight -= diff;
+      weight_values[wid] = weight;
+    }
   }
 
  private:

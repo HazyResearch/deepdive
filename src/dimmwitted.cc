@@ -80,13 +80,13 @@ int gibbs(const CmdParser &args) {
 
   // Initialize Gibbs sampling application.
   DimmWitted dw(fg, fg->weights.get(), args);
-  if (dw.is_distributed()) {
+  if (dw.is_distributed) {
     dw.connect_param_server();
     dw.ps_send_msg("FG_LOADED");
   }
 
   dw.learn();
-  if (!dw.is_distributed()) {
+  if (!dw.is_distributed) {
     // in distributed mode, PS manages weights
     dw.dump_weights();
   }
@@ -106,6 +106,7 @@ int gibbs(const CmdParser &args) {
 DimmWitted::DimmWitted(FactorGraph *p_cfg, const Weight weights[],
                        const CmdParser &opts)
     : n_samplers_(opts.n_datacopy), weights(weights), opts(opts) {
+  is_distributed = !opts.parameter_server.empty();
   size_t n_thread_per_numa =
       std::max(size_t(1), opts.n_threads / opts.n_datacopy);
 
@@ -188,10 +189,12 @@ void inspect_vector(T *arr, size_t num) {
             << std::setprecision(ss) << std::endl;
 }
 
-bool DimmWitted::ps_update_weights(int epochs, size_t n_delta, float *delta) {
-  if (!is_distributed()) return false;
+bool DimmWitted::ps_update_weights(int epochs) {
+  if (!is_distributed) return false;
   InferenceResult &infrs = samplers[0].infrs;
   const size_t nweight = infrs.nweights;
+
+  float* grads = infrs.weight_grads.get();
 
   // REQUEST FORMAT:
   //   STRING worker_id
@@ -199,16 +202,16 @@ bool DimmWitted::ps_update_weights(int epochs, size_t n_delta, float *delta) {
   //   INT epochs
   //   FLOAT32[]::BYTES grads
 
-  std::cout << "\tsending grads[" << n_delta << "] ";
-  inspect_vector(delta, n_delta);
+  std::cout << "\tsending grads[" << nweight << "] ";
+  inspect_vector(grads, nweight);
   msgpack::sbuffer sbuf;
   msgpack::packer<msgpack::sbuffer> pk(&sbuf);
   pk.pack(opts.worker_id);
   pk.pack("GRADIENTS");
   pk.pack(epochs);
-  pk.pack_bin(sizeof(*delta) * n_delta);
-  pk.pack_bin_body(reinterpret_cast<char const *>(delta),
-                   sizeof(*delta) * n_delta);
+  pk.pack_bin(sizeof(*grads) * nweight);
+  pk.pack_bin_body(reinterpret_cast<char const *>(grads),
+                   sizeof(*grads) * nweight);
 
   // TODO: compression
   zmq::message_t msg(sbuf.data(), sbuf.size(), NULL /* no de-allocate */);
@@ -233,12 +236,12 @@ bool DimmWitted::ps_update_weights(int epochs, size_t n_delta, float *delta) {
   std::vector<char> bytes;
   oh.get().convert(bytes);
 
-  // HACK: abusing delta to store weights
-  memcpy(delta, bytes.data(), bytes.size());
-  std::cout << "\treceived wgts[" << n_delta << "] ";
-  inspect_vector(delta, n_delta);
+  // HACK: abusing grads to store weights
+  memcpy(grads, bytes.data(), bytes.size());
+  std::cout << "\treceived wgts[" << nweight << "] ";
+  inspect_vector(grads, nweight);
 
-  COPY_ARRAY(delta, nweight, infrs.weight_values.get());
+  COPY_ARRAY(grads, nweight, infrs.weight_values.get());
 
   if (command == "STOP") {
     std::cout << "\tSTOP.";
@@ -248,7 +251,7 @@ bool DimmWitted::ps_update_weights(int epochs, size_t n_delta, float *delta) {
 }
 
 void DimmWitted::ps_send_msg(std::string message) {
-  if (!is_distributed()) return;
+  if (!is_distributed) return;
   // REQUEST FORMAT: <STRING worker_id, STRING msgtype>
   msgpack::sbuffer sbuf;
   msgpack::packer<msgpack::sbuffer> pk(&sbuf);
@@ -276,15 +279,17 @@ void DimmWitted::learn() {
   Timer t_total, t;
 
   double current_stepsize = opts.stepsize;
-  const std::unique_ptr<double[]> prev_weights(new double[nweight]);
-  const std::unique_ptr<float[]> delta(
-      is_distributed() ? new float[nweight] : nullptr);  // 32-bit float
-  COPY_ARRAY(infrs.weight_values.get(), nweight, prev_weights.get());
+  const std::unique_ptr<double[]> prev_weights(
+      !is_distributed ? new double[nweight] : nullptr);
+
+  if (!is_distributed) {
+    COPY_ARRAY(infrs.weight_values.get(), nweight, prev_weights.get());
+  }
 
   bool stop = false;
 
   // learning epochs
-  for (size_t i_epoch = 0; i_epoch < n_epoch || (is_distributed() && !stop);
+  for (size_t i_epoch = 0; i_epoch < n_epoch || (is_distributed && !stop);
        ++i_epoch) {
     if (should_show_progress) {
       std::streamsize ss = std::cout.precision();
@@ -302,44 +307,54 @@ void DimmWitted::learn() {
     // wait the samplers to finish
     for (auto &sampler : samplers) sampler.wait();
 
-    // sum the weights and store in the first factor graph
-    // the average weights will be calculated
-    for (size_t i = 1; i < n_samplers_; ++i)
-      infrs.merge_weights_from(samplers[i].infrs);
-    if (n_samplers_ > 1) infrs.average_weights(n_samplers_);
+    if (is_distributed) {
+      // distributed worker:
+      // sum the gradients
+      for (size_t i = 1; i < n_samplers_; ++i)
+        infrs.merge_gradients_from(samplers[i].infrs);
 
-    // calculate the norms of the difference of weights from the current epoch
-    // and last epoch
-    double lmax = -INFINITY;
-    double l2 = 0.0;
-    for (size_t j = 0; j < nweight; ++j) {
-      double delta_j = infrs.weight_values[j] - prev_weights[j];
-      if (delta.get()) delta[j] = delta_j;
-      double diff = fabs(delta_j);
-      l2 += diff * diff;
-      if (lmax < diff) lmax = diff;
+      // exchange local gradients for latest weights
+      stop = ps_update_weights(n_samplers_ * (i_epoch + 1));
+
+      // reset all gradients
+      for (size_t i = 0; i < n_samplers_; ++i)
+        infrs.reset_gradients();
+    } else {
+      // standalone mode:
+      // sum the weights and store in the first factor graph
+      // the average weights will be calculated
+      for (size_t i = 1; i < n_samplers_; ++i)
+        infrs.merge_weights_from(samplers[i].infrs);
+      if (n_samplers_ > 1) infrs.average_weights(n_samplers_);
+
+      // calculate the norms of the difference of weights from the current epoch
+      // and last epoch
+      double lmax = -INFINITY;
+      double l2 = 0.0;
+      for (size_t j = 0; j < nweight; ++j) {
+        double diff = fabs(infrs.weight_values[j] - prev_weights[j]);
+        l2 += diff * diff;
+        if (lmax < diff) lmax = diff;
+      }
+      lmax /= current_stepsize;
+
+      double elapsed = t.elapsed();
+      if (should_show_progress) {
+        std::streamsize ss = std::cout.precision();
+        std::cout << std::setprecision(3) << "" << elapsed << " sec."
+                  << "," << (nvar * n_samplers_) / elapsed << " vars/sec."
+                  << ",stepsize=" << current_stepsize << ",lmax=" << lmax
+                  << ",l2=" << sqrt(l2) / current_stepsize << std::endl
+                  << std::setprecision(ss);
+      }
+
+      // update prev_weights
+      COPY_ARRAY(infrs.weight_values.get(), nweight, prev_weights.get());
     }
-    lmax /= current_stepsize;
-
-    double elapsed = t.elapsed();
-    if (should_show_progress) {
-      std::streamsize ss = std::cout.precision();
-      std::cout << std::setprecision(3) << "" << elapsed << " sec."
-                << "," << (nvar * n_samplers_) / elapsed << " vars/sec."
-                << ",stepsize=" << current_stepsize << ",lmax=" << lmax
-                << ",l2=" << sqrt(l2) / current_stepsize << std::endl
-                << std::setprecision(ss);
-    }
-
-    // if in distributed mode: exchange local gradients for latest weights
-    stop = ps_update_weights(n_samplers_ * (i_epoch + 1), nweight, delta.get());
 
     // assigned weights to all factor graphs
     for (size_t i = 1; i < n_samplers_; ++i)
       infrs.copy_weights_to(samplers[i].infrs);
-
-    // update prev_weights
-    COPY_ARRAY(infrs.weight_values.get(), nweight, prev_weights.get());
 
     current_stepsize *= decay;
   }

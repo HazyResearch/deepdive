@@ -30,6 +30,9 @@ class DimmWitted {
   const size_t n_samplers_;
 
  public:
+  // Whether we are running as a distributed worker
+  bool is_distributed;
+
   const Weight* const weights;  // TODO clarify ownership
 
   // command line parser
@@ -80,11 +83,6 @@ class DimmWitted {
   void dump_weights();
 
   /**
-   * Whether we are running as a distributed worker
-   */
-  bool is_distributed() const { return !opts.parameter_server.empty(); }
-
-  /**
    * Connect to the parameter server.
    */
   void connect_param_server();
@@ -101,7 +99,7 @@ class DimmWitted {
 
   // Send gradients to PS and refresh local weights
   // Returns true if we can stop learning
-  bool ps_update_weights(int epochs, size_t n_delta, float* delta);
+  bool ps_update_weights(int epochs);
 
   size_t compute_n_epochs(size_t n_epoch);
 };

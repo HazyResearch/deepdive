@@ -34,15 +34,15 @@ def main():
         logging.info('got msg: <%s, %s>, len = %d' % (worker_id, msgtype, len(buf)))
 
         if msgtype == 'GRADIENTS':
-            epochs, delta = next(unpacker), next(unpacker)
+            epochs, grads = next(unpacker), next(unpacker)
             logging.info('\tepochs = %d' % epochs)
 
-            delta = np.frombuffer(delta, dtype=np.float32)
-            logging.info('\tgot grads[%d] %s ... %s' % (len(delta), delta[:3], delta[-3:]))
+            grads = np.frombuffer(grads, dtype=np.float32)
+            logging.info('\tgot grads[%d] %s ... %s' % (len(grads), grads[:3], grads[-3:]))
 
             if weights is None:
-                weights = np.zeros(len(delta), dtype=np.float32)
-            weights += delta + np.ones(len(delta), dtype=np.float32) / 100
+                weights = np.zeros(len(grads), dtype=np.float32)
+            weights -= grads
 
             packer = msgpack.Packer(use_single_float=True, use_bin_type=True)
             command = 'STOP' if epochs >= MAX_EPOCHS else 'CONTINUE'
