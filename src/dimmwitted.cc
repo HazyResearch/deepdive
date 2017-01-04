@@ -277,7 +277,8 @@ void DimmWitted::learn() {
 
   double current_stepsize = opts.stepsize;
   const std::unique_ptr<double[]> prev_weights(new double[nweight]);
-  const std::unique_ptr<float[]> delta(new float[nweight]);  // 32-bit float
+  const std::unique_ptr<float[]> delta(
+      is_distributed() ? new float[nweight] : nullptr);  // 32-bit float
   COPY_ARRAY(infrs.weight_values.get(), nweight, prev_weights.get());
 
   bool stop = false;
@@ -305,9 +306,7 @@ void DimmWitted::learn() {
     // the average weights will be calculated
     for (size_t i = 1; i < n_samplers_; ++i)
       infrs.merge_weights_from(samplers[i].infrs);
-    if (n_samplers_ > 1) {
-      infrs.average_weights(n_samplers_);
-    }
+    if (n_samplers_ > 1) infrs.average_weights(n_samplers_);
 
     // calculate the norms of the difference of weights from the current epoch
     // and last epoch
@@ -315,7 +314,7 @@ void DimmWitted::learn() {
     double l2 = 0.0;
     for (size_t j = 0; j < nweight; ++j) {
       double delta_j = infrs.weight_values[j] - prev_weights[j];
-      delta[j] = delta_j;
+      if (delta.get()) delta[j] = delta_j;
       double diff = fabs(delta_j);
       l2 += diff * diff;
       if (lmax < diff) lmax = diff;
