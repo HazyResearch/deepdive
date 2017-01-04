@@ -194,7 +194,7 @@ bool DimmWitted::ps_update_weights(int epochs) {
   InferenceResult &infrs = samplers[0].infrs;
   const size_t nweight = infrs.nweights;
 
-  float* grads = infrs.weight_grads.get();
+  float *grads = infrs.weight_grads.get();
 
   // REQUEST FORMAT:
   //   STRING worker_id
@@ -244,7 +244,7 @@ bool DimmWitted::ps_update_weights(int epochs) {
   COPY_ARRAY(grads, nweight, infrs.weight_values.get());
 
   if (command == "STOP") {
-    std::cout << "\tSTOP.";
+    std::cout << "\tSTOP." << std::endl;
     return true;
   }
   return false;
@@ -289,7 +289,8 @@ void DimmWitted::learn() {
   bool stop = false;
 
   // learning epochs
-  for (size_t i_epoch = 0; i_epoch < n_epoch || (is_distributed && !stop);
+  for (size_t i_epoch = 0;
+       (!is_distributed && i_epoch < n_epoch) || (is_distributed && !stop);
        ++i_epoch) {
     if (should_show_progress) {
       std::streamsize ss = std::cout.precision();
@@ -317,8 +318,7 @@ void DimmWitted::learn() {
       stop = ps_update_weights(n_samplers_ * (i_epoch + 1));
 
       // reset all gradients
-      for (size_t i = 0; i < n_samplers_; ++i)
-        infrs.reset_gradients();
+      for (size_t i = 0; i < n_samplers_; ++i) infrs.reset_gradients();
     } else {
       // standalone mode:
       // sum the weights and store in the first factor graph
