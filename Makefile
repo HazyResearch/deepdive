@@ -104,39 +104,39 @@ $(OBJECTS): CXXFLAGS += -I./lib/gtest-1.7.0/include/
 $(TEST_OBJECTS): CXXFLAGS += -I./lib/gtest-1.7.0/include/
 $(TEST_PROGRAM): LDFLAGS += -L./lib/gtest/
 $(TEST_PROGRAM): LDLIBS += -lgtest
-dep: lib/gtest
-lib/gtest: lib/gtest-1.7.0.zip
+dep: dep-gtest
+dep-gtest: lib/gtest-1.7.0.zip
 	# gtest for tests
 	set -eu;\
-	cd $(@D);\
+	cd lib;\
 	unzip -o $(<F);\
-	mkdir -p $(@F);\
-	cd $(@F);\
+	mkdir -p $(@:dep-%=%);\
+	cd $(@:dep-%=%);\
 	cmake ../$(<F:%.zip=%);\
 	make -j;\
 	#
 clean-dep: clean-dep-gtest
 clean-dep-gtest:
 	rm -rf lib/gtest
-.PHONY: clean-dep-gtest
+.PHONY: dep-gtest clean-dep-gtest
 
 ### TCLAP for command-line args parsing
 # http://tclap.sourceforge.net
 CXXFLAGS += -I./lib/tclap/include/
-dep: lib/tclap
-lib/tclap: lib/tclap-1.2.1.tar.gz
+dep: dep-tclap
+dep-tclap: lib/tclap-1.2.1.tar.gz
 	set -eu;\
-	cd $(@D);\
+	cd lib;\
 	tar xf $(<F);\
 	cd $(<F:%.tar.gz=%);\
-	./configure --prefix=$(abspath $@);\
+	./configure --prefix=$(abspath $(<D)/$(@:dep-%=%));\
 	make -j;\
 	make install;\
 	#
 clean-dep: clean-dep-tclap
 clean-dep-tclap:
 	rm -rf lib/tclap
-.PHONY: clean-dep-tclap
+.PHONY: dep-tclap clean-dep-tclap
 
 ### NUMA for Linux
 # http://oss.sgi.com/projects/libnuma/
@@ -145,22 +145,22 @@ CXXFLAGS += -I./lib/numactl/include
 LDFLAGS += -L./lib/numactl/lib
 LDFLAGS += -Wl,-Bstatic -Wl,-Bdynamic
 LDLIBS += -lnuma -lrt -lpthread
-dep: lib/numactl # only for Linux
+dep: dep-numactl # only for Linux
 endif
-lib/numactl: lib/numactl-2.0.11.tar.gz
+dep-numactl: lib/numactl-2.0.11.tar.gz
 	# libnuma
 	echo "installing libnuma";\
 	cd lib;\
 	tar xf $(<F);\
 	cd $(<F:%.tar.gz=%);\
-	./configure --prefix=$(abspath $@);\
+	./configure --prefix=$(abspath lib/$(@:dep-%=%));\
 	make;\
 	make install;\
 	#
 clean-dep: clean-dep-numactl
 clean-dep-numactl:
 	rm -rf lib/numactl
-.PHONY: clean-dep-numactl
+.PHONY: dep-numactl clean-dep-numactl
 
 ################################################################################
 # how to clean
