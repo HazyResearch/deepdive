@@ -116,6 +116,10 @@ lib/gtest: lib/gtest-1.7.0.zip
 	cmake ../$(<F:%.zip=%);\
 	make -j;\
 	#
+clean-dep: clean-dep-gtest
+clean-dep-gtest:
+	rm -rf lib/gtest
+.PHONY: clean-dep-gtest
 
 dep: lib/tclap
 lib/tclap: lib/tclap-1.2.1.tar.gz
@@ -128,6 +132,10 @@ lib/tclap: lib/tclap-1.2.1.tar.gz
 	make -j;\
 	make install;\
 	#
+clean-dep: clean-dep-tclap
+clean-dep-tclap:
+	rm -rf lib/tclap
+.PHONY: clean-dep-tclap
 
 dep: lib/zeromq
 lib/zeromq: lib/zeromq-4.2.0.tar.gz
@@ -140,6 +148,10 @@ lib/zeromq: lib/zeromq-4.2.0.tar.gz
 	make -j;\
 	make install-data install-exec;\
 	#
+clean-dep: clean-dep-zeromq
+clean-dep-zeromq:
+	rm -rf lib/zeromq
+.PHONY: clean-dep-zeromq
 
 dep: lib/msgpack
 lib/msgpack: lib/msgpack-2.0.0.tar.gz
@@ -149,6 +161,10 @@ lib/msgpack: lib/msgpack-2.0.0.tar.gz
 	tar xf $(<F);\
 	ln -sfnv $(<F:%.tar.gz=%) $(@F)
 	#
+clean-dep: clean-dep-msgpack
+clean-dep-msgpack:
+	rm -rf lib/msgpack
+.PHONY: clean-dep-msgpack
 
 ifeq ($(UNAME), Linux)
 dep: lib/numactl # only for Linux
@@ -163,11 +179,17 @@ lib/numactl: lib/numactl-2.0.11.tar.gz
 	make;\
 	make install;\
 	#
+clean-dep: clean-dep-numactl
+clean-dep-numactl:
+	rm -rf lib/numactl
+.PHONY: clean-dep-numactl
 
 # how to clean
 clean:
 	rm -f $(PROGRAM) $(OBJECTS) $(TEST_PROGRAM) $(TEST_OBJECTS) $(DEPENDENCIES)
 .PHONY: clean
+clean-dep:
+.PHONY: clean-dep
 
 # how to test
 include test/bats.mk
