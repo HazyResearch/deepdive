@@ -148,7 +148,7 @@ dep-zeromq: lib/zeromq-4.2.0.tar.gz
 	cd lib;\
 	tar xf $(<F);\
 	cd $(<F:%.tar.gz=%);\
-	./configure --prefix=$(abspath $(<D)/$(@:dep-%=%));\
+	./configure --prefix=$(abspath $(<D)/$(@:dep-%=%)) --disable-perf;\
 	make -j;\
 	make install-data install-exec;\
 	#
