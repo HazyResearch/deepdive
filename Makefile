@@ -103,41 +103,66 @@ CXXFLAGS += -MMD
 
 # how to get dependencies prepared
 dep:
+.PHONY: dep
+
+dep: lib/gtest
+lib/gtest: lib/gtest-1.7.0.zip
 	# gtest for tests
-	cd lib;\
-	unzip -o gtest-1.7.0.zip;\
-	mkdir gtest;\
-	cd gtest;\
-	cmake ../gtest-1.7.0;\
-	make -j
-	# tclap for command-line args parsing
-	cd lib;\
-	tar xf tclap-1.2.1.tar.gz;\
-	cd tclap-1.2.1;\
-	./configure --prefix=`pwd`/../tclap;\
+	set -eu;\
+	cd $(@D);\
+	unzip -o $(<F);\
+	mkdir -p $(@F);\
+	cd $(@F);\
+	cmake ../$(<F:%.zip=%);\
 	make -j;\
-	make install
+	#
+
+dep: lib/tclap
+lib/tclap: lib/tclap-1.2.1.tar.gz
+	# tclap for command-line args parsing
+	set -eu;\
+	cd $(@D);\
+	tar xf $(<F);\
+	cd $(<F:%.tar.gz=%);\
+	./configure --prefix=$(abspath $@);\
+	make -j;\
+	make install;\
+	#
+
+dep: lib/zeromq
+lib/zeromq: lib/zeromq-4.2.0.tar.gz
 	# zeromq
-	cd lib;\
-	tar xf zeromq-4.2.0.tar.gz;\
-	cd zeromq-4.2.0;\
-	./configure --prefix=`pwd`/../zeromq LDFLAGS="-static";\
-	make -j LDFLAGS="-all-static";\
-	make install
+	set -eu;\
+	cd $(@D);\
+	tar xf $(<F);\
+	cd $(<F:%.tar.gz=%);\
+	./configure --prefix=$(abspath $@);\
+	make -j;\
+	make install-data install-exec;\
+	#
+
+dep: lib/msgpack
+lib/msgpack: lib/msgpack-2.0.0.tar.gz
 	# msgpack
-	cd lib;\
-	tar xf msgpack-2.0.0.tar.gz;
+	set -eu;\
+	cd $(@D);\
+	tar xf $(<F);\
+	ln -sfnv $(<F:%.tar.gz=%) $(@F)
+	#
+
 ifeq ($(UNAME), Linux)
+dep: lib/numactl # only for Linux
+endif
+lib/numactl: lib/numactl-2.0.11.tar.gz
 	# libnuma
 	echo "installing libnuma";\
 	cd lib;\
-	tar xf numactl-2.0.11.tar.gz;\
-	cd numactl-2.0.11;\
-	./configure --prefix=`pwd`/../numactl;\
+	tar xf $(<F);\
+	cd $(<F:%.tar.gz=%);\
+	./configure --prefix=$(abspath $@);\
 	make;\
-	make install
-endif
-.PHONY: dep
+	make install;\
+	#
 
 # how to clean
 clean:
