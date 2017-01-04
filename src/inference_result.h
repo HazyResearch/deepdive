@@ -64,26 +64,26 @@ class InferenceResult {
   void dump_marginals_in_text(std::ostream &text_output) const;
 
   inline void update_weight(size_t wid, double stepsize, double gradient) {
-    double weight = weight_values[wid];
-    switch (opts.regularization) {
-      case REG_L2: {
-        // bounded approx of 1 - opts.reg_param * stepsize
-        weight *= (1.0 / (1.0 + opts.reg_param * stepsize));
-        break;
-      }
-      case REG_L1: {
-        weight += opts.reg_param * (weight < 0);
-        break;
-      }
-      default:
-        std::abort();
-    }
     double diff = stepsize * gradient;
     if (is_distributed) {
       // Distributed worker does batch GD and accumulates gradients
       weight_grads[wid] += diff;
     } else {
       // Standalone worker does SGD
+      double weight = weight_values[wid];
+      switch (opts.regularization) {
+        case REG_L2: {
+          // bounded approx of 1 - opts.reg_param * stepsize
+          weight *= (1.0 / (1.0 + opts.reg_param * stepsize));
+          break;
+        }
+        case REG_L1: {
+          weight += opts.reg_param * (weight < 0);
+          break;
+        }
+        default:
+          std::abort();
+      }
       weight -= diff;
       weight_values[wid] = weight;
     }

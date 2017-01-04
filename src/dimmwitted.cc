@@ -178,14 +178,14 @@ void DimmWitted::inference() {
 template <typename T>
 void inspect_vector(T *arr, size_t num) {
   const size_t window_size = 3;
-  std::vector<T> vec(2 * window_size);
+  std::vector<T> vec;
   for (size_t i = 0; i < window_size && i < num; ++i) vec.push_back(arr[i]);
   for (size_t i = std::max(num - window_size, window_size); i < num; ++i)
     vec.push_back(arr[i]);
   std::streamsize ss = std::cout.precision();
   std::cout << std::setprecision(3)
-            << std::vector<float>(vec.begin(), vec.begin() + window_size)
-            << " ... " << std::vector<float>(vec.end() - window_size, vec.end())
+            << std::vector<T>(vec.begin(), vec.begin() + window_size)
+            << " ... " << std::vector<T>(vec.end() - window_size, vec.end())
             << std::setprecision(ss) << std::endl;
 }
 
