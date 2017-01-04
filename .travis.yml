@@ -42,13 +42,8 @@ before_install:
 install:
   - export CXX="g++-4.8" CC="gcc-4.8"
   # skip preparing dependencies if they're cached
-  - \[[ -e lib/gtest/libgtest.a && \
-        -e lib/gtest-1.7.0/include/gtest/gtest.h && \
-        -d lib/tclap/include/tclap && \
-        -d lib/numactl/include && \
-        -d lib/zeromq/include && \
-        -e lib/zmq/zmq.hpp && \
-        -d lib/msgpack/include && \
-        true ]] || make dep
+  - lib/has-all-dep.sh || make dep
   - make
-script: LD_LIBRARY_PATH=`pwd`/lib/numactl/lib make test
+script:
+  - export LD_LIBRARY_PATH="$PWD"/lib/numactl/lib
+  - make test
