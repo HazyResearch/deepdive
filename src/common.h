@@ -4,7 +4,8 @@
 #include <gtest/gtest_prod.h>
 #include <stdint.h>
 #include <stdio.h>
-
+#include <iostream>
+#include <iterator>
 #include <math.h>
 #include <thread>
 #include <vector>
@@ -127,6 +128,21 @@ inline double logadd(double log_a, double log_b) {
   double negative_absolute_difference = log_b - log_a;
   if (negative_absolute_difference < MINUS_LOG_THRESHOLD) return (log_a);
   return (log_a + log1p(exp(negative_absolute_difference)));
+}
+
+template <typename T>
+std::ostream &operator<<(std::ostream &out, const std::vector<T> &v) {
+  if (!v.empty()) {
+    out << '[';
+    for (size_t i = 0; i < v.size(); ++i) {
+      out << v[i];
+      if (i < v.size() - 1) {
+        out << ", ";
+      }
+    }
+    out << "]";
+  }
+  return out;
 }
 
 }  // namespace dd

@@ -1,5 +1,4 @@
 #include <iostream>
-#include <iterator>
 
 #include "cmd_parser.h"
 #include "numa_nodes.h"
@@ -55,6 +54,14 @@ CmdParser::CmdParser(
 
   if (app_name == "gibbs") {
     TCLAP::CmdLine cmd_("DimmWitted gibbs", ' ', DimmWittedVersion);
+
+    TCLAP::ValueArg<std::string> parameter_server_(
+        "", "parameter_server", "ZMQ parameter server endpoint", false, "",
+        "string", cmd_);
+
+    TCLAP::ValueArg<std::string> worker_id_("", "worker_id",
+                                            "ID of this distributed worker",
+                                            false, "", "string", cmd_);
 
     TCLAP::ValueArg<std::string> fg_file_("m", "fg_meta",
                                           "factor graph metadata file", false,
@@ -113,6 +120,9 @@ CmdParser::CmdParser(
         "learn using noisy/soft evidence instead of hard evidence", cmd_);
 
     cmd_.parse(argc, argv);
+
+    parameter_server = parameter_server_.getValue();
+    worker_id = worker_id_.getValue();
 
     fg_file = fg_file_.getValue();
     variable_file = variable_file_.getValue();
@@ -256,16 +266,6 @@ CmdParser::CmdParser(
     }
     if (argc > 0) std::cerr << app_name << ": Unrecognized MODE" << std::endl;
   }
-}
-
-template <typename T>
-std::ostream& operator<<(std::ostream& out, const std::vector<T>& v) {
-  if (!v.empty()) {
-    out << '[';
-    std::copy(v.begin(), v.end(), std::ostream_iterator<T>(out, ", "));
-    out << "\b\b]";
-  }
-  return out;
 }
 
 std::ostream& operator<<(std::ostream& stream, const CmdParser& args) {

@@ -30,6 +30,11 @@ class CmdParser {
   // all the arguments are defined in cmd_parser.cpp
   std::string app_name;
 
+  // ZMQ endpoint for parameter server
+  std::string parameter_server;
+  // ID of this distributed worker
+  std::string worker_id;
+
   std::string fg_file;
   std::vector<std::string> variable_file;
   std::vector<std::string> domain_file;

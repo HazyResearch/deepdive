@@ -16,6 +16,7 @@ InferenceResult::InferenceResult(const FactorGraph &fg, const CmdParser &opts)
       assignments_free(new size_t[nvars]),
       assignments_evid(new size_t[nvars]),
       weight_values(new double[nweights]),
+      weight_grads(new double[nweights]),
       weights_isfixed(new bool[nweights]) {}
 
 InferenceResult::InferenceResult(const FactorGraph &fg, const Weight weights[],
@@ -24,6 +25,7 @@ InferenceResult::InferenceResult(const FactorGraph &fg, const Weight weights[],
   for (size_t t = 0; t < nweights; ++t) {
     const Weight &weight = weights[t];
     weight_values[weight.id] = weight.weight;
+    weight_grads[weight.id] = 0;
     weights_isfixed[weight.id] = weight.isfixed;
   }
 
@@ -43,6 +45,7 @@ InferenceResult::InferenceResult(const InferenceResult &other)
   COPY_ARRAY_UNIQUE_PTR_MEMBER(agg_nsamples, nvars);
 
   COPY_ARRAY_UNIQUE_PTR_MEMBER(weight_values, nweights);
+  COPY_ARRAY_UNIQUE_PTR_MEMBER(weight_grads, nweights);
   COPY_ARRAY_UNIQUE_PTR_MEMBER(weights_isfixed, nweights);
 
   ntallies = other.ntallies;
