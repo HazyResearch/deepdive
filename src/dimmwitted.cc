@@ -105,8 +105,10 @@ int gibbs(const CmdParser &args) {
 
 DimmWitted::DimmWitted(FactorGraph *p_cfg, const Weight weights[],
                        const CmdParser &opts)
-    : n_samplers_(opts.n_datacopy), weights(weights), opts(opts) {
-  is_distributed = !opts.parameter_server.empty();
+    : n_samplers_(opts.n_datacopy),
+      weights(weights),
+      opts(opts),
+      is_distributed(!opts.parameter_server.empty()) {
   size_t n_thread_per_numa =
       std::max(size_t(1), opts.n_threads / opts.n_datacopy);
 
@@ -189,9 +191,9 @@ void inspect_vector(T *arr, size_t num) {
             << std::setprecision(ss) << std::endl;
 }
 
-bool DimmWitted::ps_update_weights(int epochs) {
+bool DimmWitted::ps_update_weights(InferenceResult &infrs, int epochs) {
   if (!is_distributed) return false;
-  InferenceResult &infrs = samplers[0].infrs;
+
   const size_t nweight = infrs.nweights;
 
   float *grads = infrs.weight_grads.get();
@@ -272,7 +274,6 @@ void DimmWitted::learn() {
   // infrs.weight_values.reset(new double[nweight]);
 
   const size_t n_epoch = compute_n_epochs(opts.n_learning_epoch);
-  const size_t nvar = infrs.nvars;
   const size_t nweight = infrs.nweights;
   const double decay = opts.decay;
   const bool should_show_progress = !opts.should_be_quiet;
@@ -282,9 +283,8 @@ void DimmWitted::learn() {
   const std::unique_ptr<double[]> prev_weights(
       !is_distributed ? new double[nweight] : nullptr);
 
-  if (!is_distributed) {
-    COPY_ARRAY(infrs.weight_values.get(), nweight, prev_weights.get());
-  }
+  COPY_ARRAY_IF_POSSIBLE(infrs.weight_values.get(), nweight,
+                         prev_weights.get());
 
   bool stop = false;
 
@@ -309,47 +309,18 @@ void DimmWitted::learn() {
     for (auto &sampler : samplers) sampler.wait();
 
     if (is_distributed) {
-      // distributed worker:
-      // sum the gradients
+      // distributed worker: sum the gradients
       for (size_t i = 1; i < n_samplers_; ++i)
         infrs.merge_gradients_from(samplers[i].infrs);
 
       // exchange local gradients for latest weights
-      stop = ps_update_weights(n_samplers_ * (i_epoch + 1));
+      stop = ps_update_weights(infrs, n_samplers_ * (i_epoch + 1));
 
       // reset all gradients
       for (size_t i = 0; i < n_samplers_; ++i) infrs.reset_gradients();
     } else {
-      // standalone mode:
-      // sum the weights and store in the first factor graph
-      // the average weights will be calculated
-      for (size_t i = 1; i < n_samplers_; ++i)
-        infrs.merge_weights_from(samplers[i].infrs);
-      if (n_samplers_ > 1) infrs.average_weights(n_samplers_);
-
-      // calculate the norms of the difference of weights from the current epoch
-      // and last epoch
-      double lmax = -INFINITY;
-      double l2 = 0.0;
-      for (size_t j = 0; j < nweight; ++j) {
-        double diff = fabs(infrs.weight_values[j] - prev_weights[j]);
-        l2 += diff * diff;
-        if (lmax < diff) lmax = diff;
-      }
-      lmax /= current_stepsize;
-
-      double elapsed = t.elapsed();
-      if (should_show_progress) {
-        std::streamsize ss = std::cout.precision();
-        std::cout << std::setprecision(3) << "" << elapsed << " sec."
-                  << "," << (nvar * n_samplers_) / elapsed << " vars/sec."
-                  << ",stepsize=" << current_stepsize << ",lmax=" << lmax
-                  << ",l2=" << sqrt(l2) / current_stepsize << std::endl
-                  << std::setprecision(ss);
-      }
-
-      // update prev_weights
-      COPY_ARRAY(infrs.weight_values.get(), nweight, prev_weights.get());
+      // standalone mode: summ the weights
+      stop = update_weights(infrs, t.elapsed(), current_stepsize, prev_weights);
     }
 
     // assigned weights to all factor graphs
@@ -361,6 +332,42 @@ void DimmWitted::learn() {
 
   double elapsed = t_total.elapsed();
   std::cout << "TOTAL LEARNING TIME: " << elapsed << " sec." << std::endl;
+}
+
+bool DimmWitted::update_weights(InferenceResult &infrs, double elapsed,
+                                double stepsize,
+                                const std::unique_ptr<double[]> &prev_weights) {
+  // sum the weights and store in the first factor graph
+  // the average weights will be calculated
+  for (size_t i = 1; i < n_samplers_; ++i)
+    infrs.merge_weights_from(samplers[i].infrs);
+  if (n_samplers_ > 1) infrs.average_weights(n_samplers_);
+
+  // calculate the norms of the difference of weights from the current epoch
+  // and last epoch
+  double lmax = -INFINITY;
+  double l2 = 0.0;
+  for (size_t j = 0; j < infrs.nweights; ++j) {
+    double diff = fabs(infrs.weight_values[j] - prev_weights[j]);
+    l2 += diff * diff;
+    if (lmax < diff) lmax = diff;
+  }
+  lmax /= stepsize;
+
+  if (!opts.should_be_quiet) {
+    std::streamsize ss = std::cout.precision();
+    std::cout << std::setprecision(3) << "" << elapsed << " sec."
+              << "," << (infrs.nvars * n_samplers_) / elapsed << " vars/sec."
+              << ",stepsize=" << stepsize << ",lmax=" << lmax
+              << ",l2=" << sqrt(l2) / stepsize << std::endl
+              << std::setprecision(ss);
+  }
+
+  // update prev_weights
+  COPY_ARRAY(infrs.weight_values.get(), infrs.nweights, prev_weights.get());
+
+  // TODO: early stopping based on convergence
+  return false;
 }
 
 void DimmWitted::dump_weights() {

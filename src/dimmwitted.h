@@ -30,13 +30,13 @@ class DimmWitted {
   const size_t n_samplers_;
 
  public:
-  // Whether we are running as a distributed worker
-  bool is_distributed;
-
   const Weight* const weights;  // TODO clarify ownership
 
   // command line parser
   const CmdParser& opts;  // TODO clarify ownership
+
+  // Whether we are running as a distributed worker
+  const bool is_distributed;
 
   // factor graph copies per NUMA node
   std::vector<GibbsSampler> samplers;
@@ -97,9 +97,14 @@ class DimmWitted {
   std::unique_ptr<zmq::context_t> ps_context;
   std::unique_ptr<zmq::socket_t> ps_socket;
 
+  // Standalone update
+  bool update_weights(InferenceResult& infrs, double elapsed, double stepsize,
+                      const std::unique_ptr<double[]>& prev_weights);
+
+  // Distributed update:
   // Send gradients to PS and refresh local weights
   // Returns true if we can stop learning
-  bool ps_update_weights(int epochs);
+  bool ps_update_weights(InferenceResult& infrs, int epochs);
 
   size_t compute_n_epochs(size_t n_epoch);
 };
