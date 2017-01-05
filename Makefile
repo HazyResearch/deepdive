@@ -185,9 +185,11 @@ checkstyle:
 # submodules to build and the files to copy out from each of them
 include util/build/build-submodules.mk
 $(BUILD_SUBMODULE)/inference/dimmwitted.mk : COPY = dw
-$(BUILD_SUBMODULE)/util/mindbender.mk      : COPY = @prefix@/
 $(BUILD_SUBMODULE)/compiler/ddlog.mk       : COPY = target/scala-2.11/ddlog-assembly-0.1-SNAPSHOT.jar
 $(BUILD_SUBMODULE)/runner/mkmimo.mk        : COPY = mkmimo
+ifndef NO_MINDBENDER
+$(BUILD_SUBMODULE)/util/mindbender.mk      : COPY = @prefix@/
+endif
 
 # XXX legacy targets kept to reduce surprise
 .PHONY: build-sampler
