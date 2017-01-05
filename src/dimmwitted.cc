@@ -184,8 +184,8 @@ void inspect_vector(T *arr, size_t num) {
     vec.push_back(arr[i]);
   std::streamsize ss = std::cout.precision();
   std::cout << std::setprecision(3)
-            << std::vector<T>(vec.begin(), vec.begin() + window_size)
-            << " ... " << std::vector<T>(vec.end() - window_size, vec.end())
+            << std::vector<T>(vec.begin(), vec.begin() + window_size) << " ... "
+            << std::vector<T>(vec.end() - window_size, vec.end())
             << std::setprecision(ss) << std::endl;
 }
 
