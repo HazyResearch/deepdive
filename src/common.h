@@ -52,6 +52,8 @@ typedef enum {
 #define COPY_ARRAY_UNIQUE_PTR_MEMBER(array_up, size) \
   COPY_ARRAY(other.array_up.get(), size, array_up.get())
 #define COPY_ARRAY(src, size, dst) std::copy(src, src + size, dst)
+#define COPY_ARRAY_IF_POSSIBLE(src, size, dst) \
+  if (src && dst) std::copy(src, src + size, dst)
 
 // Allocate an array T[num] without calling constructors.
 // Use fast_alloc_free to deallocate such arrays.

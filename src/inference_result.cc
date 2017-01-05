@@ -1,5 +1,6 @@
 #include "inference_result.h"
 #include "factor_graph.h"
+#include <cstring>
 #include <iostream>
 #include <memory>
 
@@ -8,6 +9,7 @@ namespace dd {
 InferenceResult::InferenceResult(const FactorGraph &fg, const CmdParser &opts)
     : fg(fg),
       opts(opts),
+      is_distributed(!opts.parameter_server.empty()),
       nvars(fg.size.num_variables),
       nweights(fg.size.num_weights),
       ntallies(fg.size.num_values),
@@ -16,7 +18,7 @@ InferenceResult::InferenceResult(const FactorGraph &fg, const CmdParser &opts)
       assignments_free(new size_t[nvars]),
       assignments_evid(new size_t[nvars]),
       weight_values(new double[nweights]),
-      weight_grads(new double[nweights]),
+      weight_grads(new float[nweights]),
       weights_isfixed(new bool[nweights]) {}
 
 InferenceResult::InferenceResult(const FactorGraph &fg, const Weight weights[],
@@ -49,13 +51,26 @@ InferenceResult::InferenceResult(const InferenceResult &other)
   COPY_ARRAY_UNIQUE_PTR_MEMBER(weights_isfixed, nweights);
 
   ntallies = other.ntallies;
+  is_distributed = other.is_distributed;
   COPY_ARRAY_UNIQUE_PTR_MEMBER(sample_tallies, ntallies);
+}
+
+void InferenceResult::merge_gradients_from(const InferenceResult &other) {
+  assert(nweights == other.nweights);
+  for (size_t j = 0; j < nweights; ++j) {
+    weight_grads[j] += other.weight_grads[j];
+  }
+}
+
+void InferenceResult::reset_gradients() {
+  std::memset(weight_grads.get(), 0, nweights * sizeof(float));
 }
 
 void InferenceResult::merge_weights_from(const InferenceResult &other) {
   assert(nweights == other.nweights);
-  for (size_t j = 0; j < nweights; ++j)
+  for (size_t j = 0; j < nweights; ++j) {
     weight_values[j] += other.weight_values[j];
+  }
 }
 
 void InferenceResult::average_weights(size_t count) {
