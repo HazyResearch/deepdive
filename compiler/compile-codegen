@@ -4,12 +4,27 @@
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2015-12-05
 set -euo pipefail
-pids=(--)
+
+: ${DEEPDIVE_NUM_PROCESSES:=$(nproc --ignore=1)}
+
+# a handy barrier to not spawn too many codegen processes
+num_active=0
+wait_if_needed() {
+    local pid=$!
+    if [[ $num_active -ge $DEEPDIVE_NUM_PROCESSES ]]; then
+        wait -n
+        let num_active--
+    else
+        let ++num_active
+    fi
+}
+
+# translate codegen instructions in JSON into commands and run them in parallel
 eval "$(jq -r '
-@sh "
-(
+( @sh "
+{
     x=\(.path)
-    echo >&2 \" run/$x\"
+    echo >&2 \" run/$x (PID $BASHPID)\"
     # ensure parent dir exists
     xd=\"$(dirname \"$x\")\"
     mkdir -p \"$xd\"
@@ -18,9 +33,19 @@ eval "$(jq -r '
         chmod +w \"$x\" \"$xd\" || true
         mv -f --no-target-directory \"$x\" \"$x\"~
     fi
-    # write contents
-    echo \(.content) >\"$x\"
 "
+
++ (.content |
+    def find_no_occurs(eof; repeat):
+        if contains(eof * repeat) | not then eof * repeat
+        else find_no_occurs(eof; repeat+1)
+        end;
+    "\(find_no_occurs("__EOF"; 1))__" as $EOF | "
+    # write contents
+    cat >\"$x\" <<'\''\($EOF)'\''
+\(.)
+\($EOF)
+")
 
 + (.mode | if . then @sh "
     # adjust mode
@@ -28,9 +53,9 @@ eval "$(jq -r '
 else ""
 end)
 
+# finally, make sure each codegen runs asynchronously
 + @sh "
-) & pids+=($!)  # run each codegen asynchronously
+} & wait_if_needed
 "
+)
 ')"
-waitall() { shift; local pid=; for pid; do wait $pid; done; }
-waitall "${pids[@]}"  # ensure every process exits with zero status
