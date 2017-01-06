@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # db-query-tsj -- Runs SQL against PostgreSQL and formats output rows in TSJ
 #
 # $ db-query-tsj SQL COLUMN_TYPE...
@@ -47,8 +47,8 @@ for i,ty in enumerate(column_types):
     else:  # dump in JSON except a few
         stmts.append('ujson.dump(columns[%d], tsj_output)' % i)
 stmts.append('tsj_output.write("\\n")')
-exec compile("def write_tsj_output(columns):\n" + "\n".join("  " + s for s in stmts),
-        "%s codegen" % sys.argv[0], "exec")
+exec(compile("def write_tsj_output(columns):\n" + "\n".join("  " + s for s in stmts),
+        "%s codegen" % sys.argv[0], "exec"))
 
 # tell psycopg2 to actually skip parsing any JSON
 psycopg2.extras.register_default_json(loads=lambda x: x)
