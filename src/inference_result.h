@@ -64,10 +64,9 @@ class InferenceResult {
   void dump_marginals_in_text(std::ostream &text_output) const;
 
   inline void update_weight(size_t wid, double stepsize, double gradient) {
-    double diff = stepsize * gradient;
     if (is_distributed) {
       // Distributed worker does batch GD and accumulates gradients
-      weight_grads[wid] += diff;
+      weight_grads[wid] += gradient;
     } else {
       // Standalone worker does SGD
       double weight = weight_values[wid];
@@ -84,7 +83,7 @@ class InferenceResult {
         default:
           std::abort();
       }
-      weight -= diff;
+      weight -= stepsize * gradient;
       weight_values[wid] = weight;
     }
   }

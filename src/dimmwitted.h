@@ -90,6 +90,9 @@ class DimmWitted {
   // Send a simple message (a string) to PS
   void ps_send_msg(std::string message);
 
+  // Initialize weights from PS
+  void ps_reset_weights();
+
  private:
   /**
    * Connection to paramemter server
@@ -105,6 +108,9 @@ class DimmWitted {
   // Send gradients to PS and refresh local weights
   // Returns true if we can stop learning
   bool ps_update_weights(InferenceResult& infrs, int epochs);
+
+  // Fetch latest weights from PS
+  void ps_fetch_weights();
 
   size_t compute_n_epochs(size_t n_epoch);
 };

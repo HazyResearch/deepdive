@@ -33,7 +33,15 @@ def main():
         msgtype = msgtype.decode('utf-8')
         logging.info('got msg: <%s, %s>, len = %d' % (worker_id, msgtype, len(buf)))
 
-        if msgtype == 'GRADIENTS':
+        if msgtype == 'WEIGHTS':
+            nweights = next(unpacker)
+            if weights is None:
+                weights = np.zeros(nweights, dtype=np.float32)
+            packer = msgpack.Packer(use_single_float=True, use_bin_type=True)
+            bw = np.asarray(weights).tobytes()
+            socket.send(packer.pack(bw))
+            logging.info('\tsent wgts[%d] %s ... %s' % (len(weights), weights[:3], weights[-3:]))
+        elif msgtype == 'GRADIENTS':
             epochs, grads = next(unpacker), next(unpacker)
             logging.info('\tepochs = %d' % epochs)
 
