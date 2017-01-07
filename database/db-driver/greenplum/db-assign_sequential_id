@@ -44,6 +44,7 @@ done
 # Use larger table idstats_distributor to ensure stats are processed by all segments.
 # Assuming 1000 rows cover all segments.
 # Update (Jan3): 1000 rows sometimes fail to cover all segments after join, increased to 10000
+# Update (Jan6): increased to 1M as ~100shards still cause failure
 # (see explain analyze)
 SQL="$SQL
 CREATE TEMP TABLE idstats_rollup AS
@@ -66,7 +67,7 @@ CREATE TEMP TABLE idstats_bases AS
   DISTRIBUTED RANDOMLY;
 
 CREATE TEMP TABLE idstats_distributor as
-  SELECT generate_series(1, 10000) id
+  SELECT generate_series(1, 1000000) id
   DISTRIBUTED BY (id);
 
 ANALYZE idstats_bases;
