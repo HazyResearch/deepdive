@@ -369,9 +369,7 @@ def factorWeightDescriptionSqlExpr:
         ],
         style: "cmd_extractor", cmd: "
 
-            # materialize factors using user input_query that pulls in assigned ids to involved variables
-            deepdive create table \(.factorsTable | @sh) as \(
-                # Not using DISTINCT: User decides if they want to have duplicate factors
+            deepdive create view \(.factorsTable + "_view" | @sh) as \(
                 { SELECT:
                     [ ( .function_.variables[] | { table: "F", column: .columnId } )
                     # TODO: assuming categorical factors' heads have categorical vars only
@@ -380,12 +378,31 @@ def factorWeightDescriptionSqlExpr:
                       | .schema.variablesCategoryColumns[]
                       | { table: "F", column: "\($prefix)\(.)" } )
                     , ( .weight_.params[] | { table: "F", column: . } )
-                    , { table: "F", column: "feature_value", alias: "feature_value" }
+                    , { alias: "feature_value", table: "F", column: "feature_value" }
+                    , { alias: "pid", expr: "(\"F\".\(.function_.variables[0].columnId | asSqlIdent) >> 48)::INT" }
                     ]
                 , FROM: [
                     { alias: "F", sql: "\(.input_query)" }
                     ]
                 } | asSql | asPrettySqlArg)
+
+            deepdive create table \(.factorsTable + "_dummy" | @sh) as \(
+                "SELECT * FROM \(.factorsTable + "_view") LIMIT 0" | asPrettySqlArg )
+
+            # TODO(netj): turn this off for PG
+            CREATE_TABLE_EXTRA_CLAUSES=\"
+                PARTITION BY RANGE(pid)
+                ( START (0) INCLUSIVE
+                  END ( \($deepdive.sampler.partitions) ) EXCLUSIVE
+                  EVERY (1) )\" \\
+            deepdive create table \(.factorsTable | @sh) like \(.factorsTable + "_dummy" | @sh)
+
+            deepdive sql \("
+                INSERT INTO \(.factorsTable | asSqlIdent)
+                SELECT * FROM \(.factorsTable + "_view")
+            " | asPrettySqlArg)
+
+            deepdive sql \("DROP TABLE \(.factorsTable)_dummy" | asPrettySqlArg)
 
             deepdive db analyze \(.factorsTable | @sh)
 
@@ -522,7 +539,7 @@ def factorWeightDescriptionSqlExpr:
                         [ ( .weight_.params[]
                         | { eq: [ { table: "w", column: . }
                                 , { table: "f", column: . } ] } )
-                        , { eq: [ { expr: "f.\(.function_.variables[0].columnId | asSqlIdent) >> 48" }
+                        , { eq: [ { table: "f", column: "pid" }
                                 , { expr: .pid }]}
                         ]
                     } | asSql | asPrettySqlArg)
