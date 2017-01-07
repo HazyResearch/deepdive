@@ -48,11 +48,12 @@ if ! [[ "${DEEPDIVE_SHELL:-}" -ef "$0" ]]; then
 
     DEEPDIVE_BUNDLED_PREFIX="$DEEPDIVE_HOME"/lib/bundled/.all
 
-    #  make sure virtualenv in Python is available
-    PATH="$DEEPDIVE_HOME/lib/bundled/python-virtualenv/prefix/bin:$PATH"
+    #  make sure bundled Python libraries and their entrypoint scripts are available
+    PATH="$DEEPDIVE_HOME/lib/bundled/python-lib/prefix/bin:$PATH"
+    PYTHONPATH="$DEEPDIVE_HOME"/lib/bundled/python-lib/prefix/bin"${PYTHONPATH:+:$PYTHONPATH}"
 
     #  make sure ddlib in Python is available
-    PYTHONPATH="$DEEPDIVE_HOME"/lib/python:"${PYTHONPATH:+:$PYTHONPATH}"
+    PYTHONPATH="$DEEPDIVE_HOME"/lib/python"${PYTHONPATH:+:$PYTHONPATH}"
     export PYTHONPATH
 
     #  make sure bundled Perl modules are available via local::lib
