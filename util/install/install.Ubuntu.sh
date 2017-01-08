@@ -65,6 +65,7 @@ install__deepdive_build_deps() {
         libpq-dev
         # graphviz-devel
         autoconf pkg-config libtool
+        libpango1.0-dev libcairo2-dev libpangocairo-1.0-0
         # mindbender
         ed
         # sampler
