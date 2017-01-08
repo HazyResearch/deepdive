@@ -13,7 +13,7 @@
     ) as $process_defining_the_relation |
     [ $deepdive.schema.relations // {} | to_entries[]
     | select($process_defining_the_relation[.key] | not)
-    | { key: "process/init/relation/\(.key)"
+    | { key: "\($deepdive.execution.process_init_relation_prefix)\(.key)"
       , value: { style: "cmd_extractor"
                , cmd: "deepdive create table \(.key | @sh) && deepdive load \(.key | @sh)"
                , dependencies_: [ $deepdive.execution.process_init_app ]

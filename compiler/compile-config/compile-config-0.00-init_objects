@@ -23,3 +23,4 @@
 # some default values
 # allowing the initial process to be named something else
 | .deepdive_.execution.process_init_app             |= (. // "process/init/app")
+| .deepdive_.execution.process_init_relation_prefix |= (. // "process/init/relation/")
