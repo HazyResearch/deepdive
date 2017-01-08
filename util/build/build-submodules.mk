@@ -50,7 +50,8 @@ $(BUILD_SUBMODULE)/%.mk: $(MAKEFILE_LIST)
 	@echo >>$@ 'rebuild-submodules: rebuild-submodule-$(*F)'
 	@chmod a-w $@
 
-# generate and include all recipes for submodules that are defined somewhere
-# FIXME maybe switch to $(eval ...) to expand all variables not just BUILD_SUBMODULE
-include $(subst $$(BUILD_SUBMODULE),$(BUILD_SUBMODULE), \
-    $(shell sed '/^$$(BUILD_SUBMODULE)\/.*\.mk *: *COPY/ !d; s/:.*//' $(MAKEFILE_LIST)))
+# define a shorthand for both generating and including the submodule Makefile and specifying the files to copy
+define BUILD_SUBMODULE_AND_COPY
+include $(BUILD_SUBMODULE)/$(strip $(1)).mk
+$(BUILD_SUBMODULE)/$(strip $(1)).mk: COPY=$(2)
+endef
