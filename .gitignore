@@ -26,3 +26,6 @@
 # python-related
 *.pyc
 __pycache__/
+
+# conda related
+/conda_build.sh
