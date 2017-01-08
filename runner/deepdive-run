@@ -16,4 +16,5 @@ set -euo pipefail
 # default target
 [[ $# -gt 0 ]] || set -- model/calibration-plots
 
+# TODO process_init_app from run/compiled/config.json
 exec deepdive-redo process/init/app "$@"
