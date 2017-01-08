@@ -50,7 +50,9 @@ if ! [[ "${DEEPDIVE_SHELL:-}" -ef "$0" ]]; then
 
     #  make sure bundled Python libraries and their entrypoint scripts are available
     PATH="$DEEPDIVE_HOME/lib/bundled/python-lib/prefix/bin:$PATH"
-    PYTHONPATH="$DEEPDIVE_HOME"/lib/bundled/python-lib/prefix/bin"${PYTHONPATH:+:$PYTHONPATH}"
+    for python_lib_dir in "$DEEPDIVE_HOME"/lib/bundled/python-lib/prefix/lib/python*/site-packages
+    do PYTHONPATH="$python_lib_dir${PYTHONPATH:+:$PYTHONPATH}"
+    done
 
     #  make sure ddlib in Python is available
     PYTHONPATH="$DEEPDIVE_HOME"/lib/python"${PYTHONPATH:+:$PYTHONPATH}"
