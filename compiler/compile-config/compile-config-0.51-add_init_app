@@ -5,7 +5,9 @@
 
 # add a database initialization process
 | .deepdive_.execution.processes +=
-    { "process/init/app":
+    # NOTE when process_init_app is overridden, compiler does not define the process and assume it points to an already defined process
+    if $deepdive.execution.process_init_app == "process/init/app" then
+    ([{ key: $deepdive.execution.process_init_app, value:
         { style: "cmd_extractor"
         , cmd: (
         # allow overriding app initialization steps
@@ -26,4 +28,5 @@
             input/init.sh
         fi
         ") }
-    }
+    }] | from_entries)
+    else empty end

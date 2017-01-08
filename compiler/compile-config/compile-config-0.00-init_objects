@@ -19,3 +19,7 @@
 # make sure our intermediate representation for execution plan set up
 | .deepdive_.execution             |= . + {}
 | .deepdive_.execution.processes   |= . + {}
+
+# some default values
+# allowing the initial process to be named something else
+| .deepdive_.execution.process_init_app             |= (. // "process/init/app")

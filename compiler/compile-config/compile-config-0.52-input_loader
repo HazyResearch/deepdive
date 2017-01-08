@@ -16,7 +16,7 @@
     | { key: "process/init/relation/\(.key)"
       , value: { style: "cmd_extractor"
                , cmd: "deepdive create table \(.key | @sh) && deepdive load \(.key | @sh)"
-               , dependencies_: [ "process/init/app" ]
+               , dependencies_: [ $deepdive.execution.process_init_app ]
                , output_relation: .key
                , output_: ["data/\(.key)"]
                } }
