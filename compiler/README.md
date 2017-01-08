@@ -8,7 +8,7 @@ Here's a brief summary of how the compilation is done.
     The HOCON syntax used by `deepdive.conf` is interpreted by `hocon2json` and everything is converted into a single JSON config object that holds everything under the key "deepdive".
 
 2. The config object is first extended with some implied extractors, such as initializing the database and loading input tables.
-    Then, the dependencies of extractors, factors, pipelines are normalized, and their names are qualified with corresponding prefixes (by `compile-config_normalized`) to make it easier and clearer to produce the final code for execution.
+    Then, the dependencies of extractors are normalized, and their names are qualified with corresponding prefixes (by `compile-config_normalized`) to make it easier and clearer to produce the final code for execution.
     DeepDive's built-in processes for variables and factors, such as grounding, learning, inference, and calibration, are added to the config object after the normalization.
     User's original config is kept intact under "deepdive" while the normalized one is created under a different key, "deepdive_".
 

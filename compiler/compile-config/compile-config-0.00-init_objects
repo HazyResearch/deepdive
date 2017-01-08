@@ -13,8 +13,6 @@
 | .deepdive_.extraction.extractors |= . + {}
 | .deepdive_.inference             |= . + {}
 | .deepdive_.inference.factors     |= . + {}
-| .deepdive_.pipeline              |= . + {}
-| .deepdive_.pipeline.pipelines    |= . + {}
 
 # make sure our intermediate representation for execution plan set up
 | .deepdive_.execution             |= . + {}

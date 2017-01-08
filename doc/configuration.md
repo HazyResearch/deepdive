@@ -45,7 +45,7 @@ deepdive {
 }
 ```
 
-In this template, the global section `deepdive` contains following major sections: `db`, `schema`, `extraction`, `inference`, `calibration`. Other optional sections are `sampler` and `pipeline`.
+In this template, the global section `deepdive` contains following major sections: `db`, `schema`, `extraction`, `inference`, `calibration`. Other optional sections are `sampler` and `execution`.
 
 Links to these sections:
 

@@ -15,8 +15,6 @@ def mktargets: mktargets("done");
 # default commands
 define CMD_data
 endef
-define CMD_pipeline
-endef
 define CMD_process
 endef
 define CMD_factor
@@ -56,11 +54,6 @@ reset: \(keys | mktargets("reset"))
 \(.key | mktarget("reset")):
 	$(RESET) \(.key | mktarget("done"))
 "
-
-# pipelines are special
-, if .key | startswith("pipeline/") then "
-.PHONY: \(.key | mktarget)
-" else empty end
 
 )
 

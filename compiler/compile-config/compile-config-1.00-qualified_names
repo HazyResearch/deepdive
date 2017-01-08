@@ -3,7 +3,6 @@
 #
 # - extractor names are prefixed with process/*
 # - factor names are prefixed with factor/*
-# - pipeline names are prefixed with pipeline/*
 # - output_relation names are prefixed with data/* and kept under a new key output_
 # - dependencies are rewritten with qualified names under a new key dependencies_
 ##
@@ -29,17 +28,6 @@
                 | .input_ = (.input_relations // [] | map("data/\(.)"))
                 | .output_ = (.output_relation | if . then ["data/\(.)"] else null end)
                 )
-    )
-
-# qualify names in pipelines
-| .deepdive_.pipeline.pipelines |= with_entries
-    ( .key as $p
-    | .key |= "pipeline/\(.)"
-    | .value |= map(  if $deepdive.extraction.extractors[.] then "process/\(.)"
-                    elif $deepdive.inference.factors[.]     then "factor/\(.)"
-                    else error("\(.): Neither an extractor or inference rule in pipeline \($p)")
-                    end
-                   )
     )
 
 # turn all extractors into processes in the execution plan under compilation

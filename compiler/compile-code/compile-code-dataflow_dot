@@ -28,7 +28,6 @@ def nodeType: sub("/.*$"; "");
 # edge attributes by [srcType][dstType]
 (
     { ""       : { "": "color=\"#999999\"" }
-    , pipeline : { "": "style=dotted arrowhead=odiamond" }
     } * ($deepdiveDotConfig.edge_attrs // {})
 ) as $edge_attrs |
 
