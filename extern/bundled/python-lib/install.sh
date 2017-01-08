@@ -7,8 +7,10 @@ unset PYTHONPATH  # existing PYTHONPATH can interfere
 fetch-verify get-pip.py https://bootstrap.pypa.io/get-pip.py
 for python in python2.7 python3.{6,5,4}; do
     type $python || continue
-    PYTHONPATH="$PWD"/prefix/lib/$python/site-packages \
-    $python get-pip.py setuptools -r requirements.txt --upgrade --ignore-installed --prefix prefix
+    ( export PYTHONPATH="$PWD"/prefix/lib/$python/site-packages
+    $python get-pip.py --upgrade --force-reinstall --ignore-installed --prefix prefix  setuptools
+    $python get-pip.py --upgrade --force-reinstall --ignore-installed --prefix prefix  -r requirements.txt
+    )
 done
 
 # remove pip and setuptools

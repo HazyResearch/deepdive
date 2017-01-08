@@ -61,6 +61,7 @@ install__deepdive_build_deps() {
         # psycopg2
         libreadline-dev
         python-dev
+        python3-dev
         libpq-dev
         # graphviz-devel
         autoconf pkg-config libtool
