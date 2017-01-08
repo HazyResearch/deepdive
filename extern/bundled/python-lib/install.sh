@@ -15,12 +15,12 @@ done
 
 # remove pip and setuptools
 shopt -s extglob
-rm -rf prefix/bin/@(pip@(|[23]*)|wheel) prefix/lib/python*/site-packages/@(pip|setuptools)@(|-*)
+rm -rf prefix/bin/@(pip@(|[23]*)|wheel) prefix/lib/python*/site-packages/@(pip|setuptools|easy_install)@(|-*)
 
 # make sure no entrypoints have absolute path to python in its shebang
 for cmd in prefix/bin/*; do
     head -1 "$cmd" | grep -q '^#!/[^[:space:]]*/python.*$' || continue
-    sed -e '1s:^#!/[^[:space:]]*/\(python.*\)$:#!/usr/bin/env \1:' -i~ "$cmd"
+    sed -e '1s:^#!/[^[:space:]]*/python.*$:#!/usr/bin/env python:' -i~ "$cmd"
     rm -f "$cmd"~
 done
 
