@@ -18,6 +18,9 @@ wait_if_needed() {
         let ++num_active
     fi
 }
+wait_all() {
+    while [[ $num_active -gt 0 ]]; do wait_if_needed; done
+}
 
 # translate codegen instructions in JSON into commands and run them in parallel
 eval "$(jq -r '
@@ -59,3 +62,6 @@ end)
 "
 )
 ')"
+
+# wait for all asynchronous processes to finish
+wait_all
