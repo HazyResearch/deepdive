@@ -5,6 +5,9 @@
 def nodeId: sub("/"; "/\n");
 def nodeType: sub("/.*$"; "");
 
+# produce all prefixes (longest to shortest, being empty)
+def nodeTypes: split("/") | range(length;0;-1) as $i | .[:$i] | join("/");
+
 (.deepdive_.execution.dot // {}) as $deepdiveDotConfig |
 
 # Graphviz attrs (See: http://www.graphviz.org/doc/info/attrs.html#k:style)
@@ -34,7 +37,7 @@ def nodeType: sub("/.*$"; "");
 .deepdive_.execution.dependencies |
 { path: "dataflow.dot", content: [
 "
-digraph \"\(env.DEEPDIVE_APP | sub(".*/"; "")) data flow\" {
+digraph \"\(env.DEEPDIVE_APP // "" | sub(".*/"; "")) data flow\" {
     graph[\($graph_attrs)
     ];
     node [\(try ($node_attrs[""]     // "") catch "")
@@ -45,16 +48,17 @@ digraph \"\(env.DEEPDIVE_APP | sub(".*/"; "")) data flow\" {
 ", ( to_entries[]
 # process and data nodes
 | "
-\"\(.key | nodeId)\" [\($node_attrs[.key | nodeType] // "")];
+\"\(.key | nodeId)\" [\([$node_attrs[.key | nodeTypes] | select(.)] | first // "")];
 "
 
 # dependency edges
 , ( { from: .value[], to: .key } | "
 \"\(.from | nodeId)\" -> \"\(.to | nodeId)\" [
     label=\"\"
-    \(try ($edge_attrs[.from | nodeType] // $edge_attrs[""]) as $edge_attrs_from
-        | $edge_attrs_from[.to | nodeType] // $edge_attrs_from[""] // "" # TODO don't repeat $edge_attrs[""][""]
-      catch "")
+    \([ ($edge_attrs   [.from | nodeTypes] | select(.)) as $edge_attrs_from
+      |  $edge_attrs_from[.to | nodeTypes] | select(.)
+      ] | first // "" # TODO don't repeat $edge_attrs[""][""]
+      )
 ];
 " )
 
