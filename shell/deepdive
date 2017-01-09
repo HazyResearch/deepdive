@@ -48,9 +48,8 @@ if ! [[ "${DEEPDIVE_SHELL:-}" -ef "$0" ]]; then
 
     DEEPDIVE_BUNDLED_PREFIX="$DEEPDIVE_HOME"/lib/bundled/.all
 
-    #  make sure DeepDive utilities are at the beginning of the PATH
-    PATH="$DEEPDIVE_HOME/util:$DEEPDIVE_HOME/bin:$DEEPDIVE_BUNDLED_PREFIX/bin:$PATH"
-    export PATH
+    #  make sure DeepDive bundled executables are on the PATH
+    PATH="$DEEPDIVE_BUNDLED_PREFIX/bin:$PATH"
 
     #  make sure bundled Python libraries and their entrypoint scripts are available
     PATH="$DEEPDIVE_HOME/lib/bundled/python-lib/prefix/bin:$PATH"
@@ -68,6 +67,10 @@ if ! [[ "${DEEPDIVE_SHELL:-}" -ef "$0" ]]; then
     set +u  # as perl local::lib can dereference unset variables such as PERL_LOCAL_LIB_ROOT
     eval $(perl -I"$DEEPDIVE_BUNDLED_PREFIX"/lib/perl5 -Mlocal::lib="$DEEPDIVE_BUNDLED_PREFIX" 2>/dev/null || true)
     set -u
+
+    #  make sure DeepDive utilities are at the beginning of the PATH
+    PATH="$DEEPDIVE_HOME/util:$DEEPDIVE_HOME/bin:$PATH"
+    export PATH
 
     #  make sure bash is used as the default shell, e.g., by system(3), by make(1)
     export SHELL=$(type -p bash)
