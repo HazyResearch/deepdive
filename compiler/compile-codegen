@@ -14,9 +14,8 @@ wait_if_needed() {
     if [[ $num_active -ge $DEEPDIVE_NUM_PROCESSES ]]; then
         wait -n
         let num_active--
-    else
-        let ++num_active
     fi
+    let ++num_active
 }
 wait_all() {
     while [[ $num_active -gt 0 ]]; do
