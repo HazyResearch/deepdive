@@ -19,7 +19,10 @@ wait_if_needed() {
     fi
 }
 wait_all() {
-    while [[ $num_active -gt 0 ]]; do wait_if_needed; done
+    while [[ $num_active -gt 0 ]]; do
+        wait -n
+        let num_active--
+    done
 }
 
 # translate codegen instructions in JSON into commands and run them in parallel
