@@ -386,24 +386,37 @@ def factorWeightDescriptionSqlExpr:
                     ]
                 } | asSql | asPrettySqlArg)
 
-            deepdive create table \(.factorsTable + "_dummy" | @sh) as \(
-                "SELECT * FROM \(.factorsTable + "_view") LIMIT 0" | asPrettySqlArg )
+            case $(eval \"$(deepdive db parse)\"; echo $DBVARIANT) in
+                greenplum) # specialization for Greenplum with PARTITION BY
+                    deepdive create table \(.factorsTable + "_dummy" | @sh) as \("
+                        SELECT * FROM \(.factorsTable + "_view" | asSqlIdent)
+                        LIMIT 0
+                    " | asPrettySqlArg)
 
-            # TODO(netj): turn this off for PG
-            CREATE_TABLE_EXTRA_CLAUSES=\"
-                PARTITION BY RANGE(pid)
-                ( START (0) INCLUSIVE
-                  END ( \($deepdive.sampler.partitions) ) EXCLUSIVE
-                  EVERY (1) )\" \\
-            deepdive create table \(.factorsTable | @sh) like \(.factorsTable + "_dummy" | @sh)
+                    CREATE_TABLE_EXTRA_CLAUSES='
+                        PARTITION BY RANGE(pid)
+                        ( START (0) INCLUSIVE
+                          END (\($deepdive.sampler.partitions)) EXCLUSIVE
+                          EVERY (1)
+                        )' \\
+                    deepdive create table \(.factorsTable | @sh) like \(
+                        .factorsTable + "_dummy" | @sh)
 
-            deepdive sql \("
-                INSERT INTO \(.factorsTable | asSqlIdent)
-                SELECT * FROM \(.factorsTable + "_view")
-            " | asPrettySqlArg)
+                    deepdive sql \("
+                        INSERT INTO \(.factorsTable | asSqlIdent)
+                        SELECT * FROM \(.factorsTable + "_view" | asSqlIdent)
+                    " | asPrettySqlArg)
 
-            deepdive sql \("DROP TABLE \(.factorsTable)_dummy" | asPrettySqlArg)
+                    deepdive sql \("
+                        DROP TABLE \(.factorsTable + "_dummy" | asSqlIdent)
+                    " | asPrettySqlArg)
+                    ;;
 
+                *) # otherwise, simply materialize the view
+                    deepdive create table \(.factorsTable | @sh) as \("
+                        SELECT * FROM \(.factorsTable + "_view" | asSqlIdent)
+                    " | asPrettySqlArg)
+            esac
             deepdive db analyze \(.factorsTable | @sh)
 
             # find distinct weights for the factors into a separate table

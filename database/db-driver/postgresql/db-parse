@@ -3,6 +3,8 @@
 # > db-parse "$url"
 set -eu
 
+[[ $# -gt 0 ]] || set -- "$DEEPDIVE_DB_URL"
+
 . parse-url.sh "$@"
 
 # use bundled postgresql if no psql is available
