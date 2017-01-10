@@ -39,6 +39,7 @@ install__deepdive_build_deps() {
         postgresql-devel
         # graphviz-devel
         autoconf pkgconfig libtool
+        pango-devel cairo-devel
         # mindbender
         ed
         # sampler
