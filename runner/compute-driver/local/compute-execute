@@ -15,6 +15,7 @@ eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \
     num_processes='.num_processes' \
     num_parallel_unloads='.num_parallel_unloads' \
     num_parallel_loads='.num_parallel_loads' \
+    named_pipes_dir='.named_pipes_dir' \
     #
 )"
 # respect the DEEPDIVE_NUM_PROCESSES environment
@@ -22,14 +23,35 @@ num_processes=${DEEPDIVE_NUM_PROCESSES:-${num_processes:-$(nproc --ignore=1)}}
 num_parallel_unloads=${DEEPDIVE_NUM_PARALLEL_UNLOADS:-${num_parallel_unloads:-1}}
 num_parallel_loads=${DEEPDIVE_NUM_PARALLEL_LOADS:-${num_parallel_loads:-1}}
 
+# ensure mkfifo works on named_pipes_dir, respecting DEEPDIVE_NAMED_PIPES_DIR
+named_pipes_dir=${DEEPDIVE_NAMED_PIPES_DIR:-${named_pipes_dir:-$PWD}}
+can_create_named_pipes() {
+    mkfifo "$pipes_dir"/.deepdive_named_pipe_probe.$$
+    rm -f  "$pipes_dir"/.deepdive_named_pipe_probe.$$
+}
+{ pipes_dir=$named_pipes_dir    && can_create_named_pipes; } ||
+{ pipes_dir=$HOME               && can_create_named_pipes; } ||
+{ pipes_dir=${TMPDIR:=/tmp}     && can_create_named_pipes; } ||
+    error "None of the following paths allow creation of named pipes:" \
+        "  $named_pipes_dir" \
+        "  $HOME" \
+        "  $TMPDIR" \
+        "Please set DEEPDIVE_NAMED_PIPES_DIR to a writable path in a filesystem that allows mkfifo" \
+        #
+
 # declare all input arguments
 declare -- "$@"
+
+# create a subdirectory for collocating named pipes
+pipes=$(mktemp -d "$pipes_dir/deepdive-compute-execute.XXXXXXX")
+trap 'rm -rf "$pipes"' EXIT
 
 # show configuration
 echo "Executing with the following configuration:"
 echo " DEEPDIVE_NUM_PROCESSES=$num_processes"
 echo " DEEPDIVE_NUM_PARALLEL_UNLOADS=$num_parallel_unloads"
 echo " DEEPDIVE_NUM_PARALLEL_LOADS=$num_parallel_loads"
+echo " DEEPDIVE_NAMED_PIPES_DIR=$pipes_dir"
 
 # XXX there are conditional branches below depending on whether input_sql
 # and/or output_relation is given, to support four use cases:
@@ -39,9 +61,8 @@ echo " DEEPDIVE_NUM_PARALLEL_LOADS=$num_parallel_loads"
 # 4) database-independent command which simply runs in parallel
 
 # set up named pipes for parallel processes and make sure they are cleaned up upon exit
-[[ -z $input_sql       ]] || for i in $(seq $num_processes); do rm -f process-$i.input ; mkfifo process-$i.input ; done
-[[ -z $output_relation ]] || for i in $(seq $num_processes); do rm -f process-$i.output; mkfifo process-$i.output; done
-trap 'rm -f process-*.{input,output} feed_processes-* output_computed-*' EXIT
+[[ -z $input_sql       ]] || for i in $(seq $num_processes); do mkfifo "$pipes"/process-$i.input ; done
+[[ -z $output_relation ]] || for i in $(seq $num_processes); do mkfifo "$pipes"/process-$i.output; done
 # now spawn processes attached to the named pipes in reverse order (from sink to source)
 pids_command=() pids_load=() pids_unload=()
 
@@ -49,19 +70,19 @@ pids_command=() pids_load=() pids_unload=()
 if [[ -n $output_relation && -n $input_sql ]]; then # process with input from/output to database
     for i in $(seq $num_processes); do
         DEEPDIVE_CURRENT_PROCESS_INDEX=$i \
-        bash -c "$command" <process-$i.input >process-$i.output &
+        bash -c "$command" <"$pipes"/process-$i.input >"$pipes"/process-$i.output &
         pids_command+=($!)
     done
 elif [[ -n $input_sql ]]; then # input-only process
     for i in $(seq $num_processes); do
         DEEPDIVE_CURRENT_PROCESS_INDEX=$i \
-        bash -c "$command" <process-$i.input &
+        bash -c "$command" <"$pipes"/process-$i.input &
         pids_command+=($!)
     done
 elif [[ -n $output_relation ]]; then # output-only process
     for i in $(seq $num_processes); do
         DEEPDIVE_CURRENT_PROCESS_INDEX=$i \
-        bash -c "$command" >process-$i.output &
+        bash -c "$command" >"$pipes"/process-$i.output &
         pids_command+=($!)
     done
 else # neither output_relation nor input_sql specified
@@ -74,23 +95,23 @@ fi
 
 if [[ -n $output_relation ]]; then
     # set up pipes for parallel loads
-    rm -f output_computed-*; for i in $(seq $num_parallel_loads); do mkfifo output_computed-$i; done
+    for i in $(seq $num_parallel_loads); do mkfifo "$pipes"/output_computed-$i; done
     # use mkmimo again to merge outputs of multiple processes into a single stream
-    mkmimo process-*.output \> output_computed-* &
+    mkmimo "$pipes"/process-*.output \> "$pipes"/output_computed-* &
     pids_load+=($!)
     # load the output data to the temporary table in the database
-    deepdive-load "$output_relation" output_computed-* &
+    deepdive-load "$output_relation" "$pipes"/output_computed-* &
     pids_load+=($!)
 fi
 
 if [[ -n $input_sql ]]; then
     # set up pipes for parallel unloads
-    rm -f feed_processes-*; for i in $(seq $num_parallel_unloads); do mkfifo feed_processes-$i; done
+    for i in $(seq $num_parallel_unloads); do mkfifo "$pipes"/feed_processes-$i; done
     # unload data from the database and pour into the pipes
-    deepdive-db unload "$input_sql" "$DEEPDIVE_LOAD_FORMAT" feed_processes-* &
+    deepdive-db unload "$input_sql" "$DEEPDIVE_LOAD_FORMAT" "$pipes"/feed_processes-* &
     pids_unload+=($!)
     # use mkmimo to distribute input data to multiple processes
-    mkmimo feed_processes-* \> process-*.input &
+    mkmimo "$pipes"/feed_processes-* \> "$pipes"/process-*.input &
     pids_unload+=($!)
 fi
 

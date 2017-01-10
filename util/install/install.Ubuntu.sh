@@ -61,9 +61,11 @@ install__deepdive_build_deps() {
         # psycopg2
         libreadline-dev
         python-dev
+        python3-dev
         libpq-dev
         # graphviz-devel
         autoconf pkg-config libtool
+        libpango1.0-dev libcairo2-dev libpangocairo-1.0-0
         # mindbender
         ed
         # sampler

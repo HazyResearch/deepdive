@@ -26,11 +26,15 @@ source <("$DEEPDIVE_HOME"/bin/deepdive env bash -c export |
     sed -e '/^declare -/{
         # gets rid of weird declarations without value part
         /=/!d
+
         # always affect the global scope
         s/^declare -x //
         # XXX if declare is kept without the -g, the effect cannot escape
         #     the function that is calling source and can cause various
         #     confusions.
+
+        # make sure the variable is exported
+        p; s/=.*//; s/^/export /
     }')
 
 # turn off progress reporting during tests

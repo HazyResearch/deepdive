@@ -21,6 +21,7 @@
 set -euo pipefail
 
 : ${DEEPDIVE_CHECK_HOME:="$DEEPDIVE_HOME/util/compile-check"}
+: ${DEEPDIVE_CHECK_SKIP:=}
 
 ## parse options
 Mode=run_one_checker
@@ -105,6 +106,10 @@ run_all_checkers() {
         [[ -x "$chkr" ]] || continue
         local name=${chkr##"$DEEPDIVE_CHECK_HOME"/}
         name=${name#compile-check-*-}
+        if [[ -n $DEEPDIVE_CHECK_SKIP ]] && grep -qFf <(printf '%s\n' $DEEPDIVE_CHECK_SKIP) <<<"$name"; then
+            echo "skipping    $name (as per \$DEEPDIVE_CHECK_SKIP)"
+            continue
+        fi
         echo "checking if $name"
         run_one_checker_by_path "$chkr" >/dev/null & pids+=($!)  # run checkers asynchronously
     done

@@ -48,11 +48,19 @@ if ! [[ "${DEEPDIVE_SHELL:-}" -ef "$0" ]]; then
 
     DEEPDIVE_BUNDLED_PREFIX="$DEEPDIVE_HOME"/lib/bundled/.all
 
-    #  make sure virtualenv in Python is available
-    PATH="$DEEPDIVE_HOME/lib/bundled/python-virtualenv/prefix/bin:$PATH"
+    #  make sure DeepDive bundled executables are on the PATH
+    PATH="$DEEPDIVE_BUNDLED_PREFIX/bin:$PATH"
+
+    #  make sure bundled Python libraries and their entrypoint scripts are available
+    PATH="$DEEPDIVE_HOME/lib/bundled/python-lib/prefix/bin:$PATH"
+    python_version=$(python -V 2>&1 | sed 's/^Python \([0-9]*\.[0-9]*\)\..*/\1/')
+    for python_lib_dir in "$DEEPDIVE_HOME"/lib/bundled/python-lib/prefix/lib/python"$python_version"/site-packages
+    do  [[ -d "$python_lib_dir" ]] || continue
+        PYTHONPATH="$python_lib_dir${PYTHONPATH:+:$PYTHONPATH}"
+    done
 
     #  make sure ddlib in Python is available
-    PYTHONPATH="$DEEPDIVE_HOME"/lib/python:"${PYTHONPATH:+:$PYTHONPATH}"
+    PYTHONPATH="$DEEPDIVE_HOME"/lib/python"${PYTHONPATH:+:$PYTHONPATH}"
     export PYTHONPATH
 
     #  make sure bundled Perl modules are available via local::lib
@@ -61,7 +69,7 @@ if ! [[ "${DEEPDIVE_SHELL:-}" -ef "$0" ]]; then
     set -u
 
     #  make sure DeepDive utilities are at the beginning of the PATH
-    PATH="$DEEPDIVE_HOME/util:$DEEPDIVE_HOME/bin:$DEEPDIVE_BUNDLED_PREFIX/bin:$PATH"
+    PATH="$DEEPDIVE_HOME/util:$DEEPDIVE_HOME/bin:$PATH"
     export PATH
 
     #  make sure bash is used as the default shell, e.g., by system(3), by make(1)
