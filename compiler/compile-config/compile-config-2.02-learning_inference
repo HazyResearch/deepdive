@@ -192,9 +192,10 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                 cd \"$DEEPDIVE_RESULTS_DIR\"/$pid
                 cat inference_result.out.text |
                 # restoring shard ID to the vids
-                awk -v SHARD_BASE=$(($pid << 48)) '
-                    {printf \"%s\\t%s\\t%s\\n\", SHARD_BASE + $1, $2, $3}
-                ' |
+                jq -R -r --argjson SHARD_BASE $(($pid << 48)) '
+                    split(\" \") |
+                    [ (.[0] | tonumber + $SHARD_BASE | tostring)
+                    , .[1:][] ] | join(\"\\t\")' |
                 DEEPDIVE_LOAD_FORMAT=tsv \\
                 deepdive load \(deepdiveInferenceResultVariablesTable | @sh) /dev/stdin
             done
