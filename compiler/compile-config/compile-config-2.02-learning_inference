@@ -58,6 +58,11 @@ if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph")
                     $DEEPDIVE_SAMPLER_ARGS \\
                     #
 
+            \(if $deepdive.sampler.partitions > 1 then "
+            # make sure no stale inference result is laying around unless inference is done right after learning above
+            rm -f \"$results_dir\"/inference_result.out.text
+            " else "" end)
+
             # TODO maybe this database interaction for the weights after
             # learning each shard is unnecessary if we have the sampler checkpoint
             # them directly, and we could also keep max two copies
