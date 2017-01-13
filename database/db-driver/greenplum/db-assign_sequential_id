@@ -67,11 +67,16 @@ CREATE TEMP TABLE idstats_bases AS
   DISTRIBUTED RANDOMLY;
 
 CREATE TEMP TABLE idstats_distributor as
-  SELECT generate_series(1, 1000000) id
+  SELECT generate_series(1, 100000) id
   DISTRIBUTED BY (id);
 
 ANALYZE idstats_bases;
 ANALYZE idstats_distributor;
+
+-- Have GP lay down data in a safe way for seqassign()
+SET enable_hashjoin=off;
+SET enable_mergejoin=off;
+SET enable_nestloop=off;
 
 SELECT seqassign(gpsid, true, pids, offsets)
   FROM idstats_bases a, idstats_distributor b
