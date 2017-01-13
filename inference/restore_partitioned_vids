@@ -1,0 +1,7 @@
+#!/usr/bin/perl -w
+use strict;
+my $SHARD_BASE = $ENV{pid} << 48;
+while (<>) {
+    my ($vid, @rest) = split(" ");
+    print join("\t", ($SHARD_BASE | $vid), @rest), "\n";
+}
