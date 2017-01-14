@@ -80,13 +80,15 @@ int gibbs(const CmdParser &args) {
 
   // Initialize Gibbs sampling application.
   DimmWitted dw(fg, fg->weights.get(), args);
+
   if (dw.is_distributed) {
     dw.connect_param_server();
     dw.ps_send_msg("FG_LOADED");
+    dw.ps_reset_weights();
   }
 
   dw.learn();
-  if (!dw.is_distributed) {
+  if (!dw.is_distributed && dw.opts.n_learning_epoch > 0) {
     // in distributed mode, PS manages weights
     dw.dump_weights();
   }
@@ -191,6 +193,61 @@ void inspect_vector(T *arr, size_t num) {
             << std::setprecision(ss) << std::endl;
 }
 
+void DimmWitted::ps_reset_weights() {
+  if (!is_distributed) return;
+  ps_fetch_weights();
+  // assigned weights to all factor graphs and clear gradients
+  InferenceResult &infrs = samplers[0].infrs;
+  for (size_t i = 1; i < n_samplers_; ++i) {
+    infrs.copy_weights_to(samplers[i].infrs);
+    samplers[i].infrs.reset_gradients();
+  }
+}
+
+void DimmWitted::ps_fetch_weights() {
+  if (!is_distributed) return;
+  InferenceResult &infrs = samplers[0].infrs;
+  const size_t nweight = infrs.nweights;
+
+  // REQUEST FORMAT:
+  //   STRING worker_id
+  //   STRING msgtype ("WEIGHTS")
+  //   INT nweights
+
+  std::cout << "\tfetching weights[" << nweight << "]" << std::endl;
+  msgpack::sbuffer sbuf;
+  msgpack::packer<msgpack::sbuffer> pk(&sbuf);
+  pk.pack(opts.worker_id);
+  pk.pack("WEIGHTS");
+  pk.pack(nweight);
+  zmq::message_t msg(sbuf.data(), sbuf.size(), NULL /* no de-allocate */);
+  ps_socket->send(msg);
+
+  // RESPONSE FORMAT:
+  //   FLOAT32[]::BYTES weights
+
+  zmq::message_t reply;
+  ps_socket->recv(&reply);
+  msgpack::unpacker pac;
+  pac.reserve_buffer(reply.size());
+  memcpy(pac.buffer(), reply.data(), reply.size());
+  pac.buffer_consumed(reply.size());
+
+  msgpack::object_handle oh;
+  pac.next(oh);
+  std::vector<char> bytes;
+  oh.get().convert(bytes);
+
+  // HACK: abusing grads to store weights
+  float *grads = infrs.weight_grads.get();
+  memcpy(grads, bytes.data(), bytes.size());
+  std::cout << "\treceived weights[" << nweight << "] ";
+  inspect_vector(grads, nweight);
+
+  COPY_ARRAY(grads, nweight, infrs.weight_values.get());
+  infrs.reset_gradients();
+}
+
 bool DimmWitted::ps_update_weights(InferenceResult &infrs, int epochs) {
   if (!is_distributed) return false;
 
@@ -200,7 +257,7 @@ bool DimmWitted::ps_update_weights(InferenceResult &infrs, int epochs) {
 
   // REQUEST FORMAT:
   //   STRING worker_id
-  //   STRING msgtype
+  //   STRING msgtype ("GRADIENTS")
   //   INT epochs
   //   FLOAT32[]::BYTES grads
 
@@ -244,6 +301,7 @@ bool DimmWitted::ps_update_weights(InferenceResult &infrs, int epochs) {
   inspect_vector(grads, nweight);
 
   COPY_ARRAY(grads, nweight, infrs.weight_values.get());
+  infrs.reset_gradients();
 
   if (command == "STOP") {
     std::cout << "\tSTOP." << std::endl;
@@ -310,14 +368,13 @@ void DimmWitted::learn() {
 
     if (is_distributed) {
       // distributed worker: sum the gradients
-      for (size_t i = 1; i < n_samplers_; ++i)
+      for (size_t i = 1; i < n_samplers_; ++i) {
         infrs.merge_gradients_from(samplers[i].infrs);
+        samplers[i].infrs.reset_gradients();
+      }
 
       // exchange local gradients for latest weights
       stop = ps_update_weights(infrs, n_samplers_ * (i_epoch + 1));
-
-      // reset all gradients
-      for (size_t i = 0; i < n_samplers_; ++i) infrs.reset_gradients();
     } else {
       // standalone mode: summ the weights
       stop = update_weights(infrs, t.elapsed(), current_stepsize, prev_weights);
