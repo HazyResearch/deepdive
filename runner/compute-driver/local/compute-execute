@@ -131,7 +131,8 @@ all_finishes_ok() {
         }
     done
 }
+# the order of below is important. if we don't check unload first and unload fails, we are stuck
+[[ ${#pids_unload[@]}  -eq 0 ]] || all_finishes_ok "deepdive-unload"                 "${pids_unload[@]}"
 [[ ${#pids_command[@]} -eq 0 ]] || all_finishes_ok "command=$(escape4sh "$command")" "${pids_command[@]}"
 [[ ${#pids_load[@]}    -eq 0 ]] || all_finishes_ok "deepdive-load"                   "${pids_load[@]}"
-[[ ${#pids_unload[@]}  -eq 0 ]] || all_finishes_ok "deepdive-unload"                 "${pids_unload[@]}"
 wait  # until everything is done ##############################################

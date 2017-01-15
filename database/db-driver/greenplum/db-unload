@@ -6,7 +6,7 @@
 # parallel connections, which MAY RESULT IN INCORRECT RESULT UNLESS QUERY IS
 # TOTALLY ORDERED BY COLUMNS WITH NO DUPLICATE VALUES!
 #
-# GPFDIST_PORT_BASE (defaults to 10000) is the base port number for the gpfdist
+# GPFDIST_PORT_BASE (defaults to 12000) is the base port number for the gpfdist
 # processes.
 # GPFDIST_MAX_LENGTH (defaults to 1MiB) may need to be increased for larger
 # records to be unloaded through gpfdist.
@@ -14,7 +14,7 @@
 ##
 set -eu
 
-: ${GPFDIST_DISABLE:=} ${GPFDIST_PORT_BASE:=10000} ${GPFDIST_MAX_LENGTH:=$((2**20))} ${GPFDIST_LOG_PATH:=}
+: ${GPFDIST_DISABLE:=} ${GPFDIST_PORT_BASE:=12000} ${GPFDIST_MAX_LENGTH:=$((2**20))} ${GPFDIST_LOG_PATH:=}
 
 [[ $# -gt 0 ]] || usage "$0" "Missing QUERY"
 query=$1; shift
