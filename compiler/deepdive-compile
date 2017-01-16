@@ -72,6 +72,12 @@ PATH="$DEEPDIVE_HOME"/util/compile-code:"$PATH"
 export DEEPDIVE_ERROR_PREFIX="[ERROR] "
 
 ###############################################################################
+## record which version of DeepDive compiled this
+deepdive version >run/"$compileDir"/deepdive.version
+## record the environment used for compilation
+env >run/"$compileDir"/environ
+
+###############################################################################
 ## compile a full deepdive.conf from source code
 if ! [[ -e $DEEPDIVE_COMPILE_INPUT_JSON ]]; then
 STEP "Parsing DeepDive application ($DEEPDIVE_APP) to generate:"

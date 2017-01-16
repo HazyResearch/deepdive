@@ -11,6 +11,13 @@ DEEPDIVE_APP=$(find-deepdive-app)
 export DEEPDIVE_APP
 cd "$DEEPDIVE_APP"
 
+# check if deepdive version has changed
+deepdive-version |
+diff -q "$DEEPDIVE_APP"/run/compiled/deepdive.version - || {
+    warning 'deepdive version updated since last `deepdive compile`'
+    exit 127
+}
+
 # source files to check
 set -- app.ddlog deepdive.conf schema.json
 
