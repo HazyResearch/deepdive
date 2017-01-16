@@ -3,5 +3,6 @@ use strict;
 my $SHARD_BASE = $ENV{pid} << 48;
 while (<>) {
     my ($vid, @rest) = split(" ");
+    $vid >= 0 or die "$vid is negative";
     print join("\t", ($SHARD_BASE | $vid), @rest), "\n";
 }
