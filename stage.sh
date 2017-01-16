@@ -142,6 +142,7 @@ generate-wrapper-for-libdirs          "$STAGE_DIR"/util/sampler-$cmd \
 done
 stage inference/deepdive-model                                    util/
 stage inference/run-sampler                                       util/
+stage inference/restore_partitioned_vids                          util/
 
 # Stanford CoreNLP utilities
 stage util/nlp/deepdive-corenlp                                   util/
