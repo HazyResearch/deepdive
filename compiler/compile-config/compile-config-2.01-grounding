@@ -370,7 +370,7 @@ def factorWeightDescriptionSqlExpr:
         style: "cmd_extractor", cmd: "
 
             # materialize factors using user input_query that pulls in assigned ids to involved variables
-            deepdive create table \(.factorsTable | @sh) as \(
+            deepdive create view \(.factorsTable | @sh) as \(
                 # Not using DISTINCT: User decides if they want to have duplicate factors
                 { SELECT:
                     [ ( .function_.variables[] | { table: "F", column: .columnId } )
