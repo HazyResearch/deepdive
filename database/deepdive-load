@@ -87,6 +87,7 @@ relationIsntInAppSchema=true
 # internal dd_label column but nothing else)
 if [[ -z "$Columns" && -e "$DEEPDIVE_APP" ]] && app-has-been-compiled; then
     # make sure app has been initialized
+    # TODO process_init_app from run/compiled/config.json
     deepdive-done process/init/app ||
     DEEPDIVE_PLAN_EDIT=false deepdive-do process/init/app
     # find the list of columns

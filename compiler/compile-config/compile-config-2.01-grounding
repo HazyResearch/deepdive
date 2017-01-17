@@ -702,7 +702,7 @@ def factorWeightDescriptionSqlExpr:
 
 ## from_grounding
 # A nominal process to make it easy to redo the grounding
-# TODO remove this once deepdive-do supports process groups or pipelines
+# TODO remove this once deepdive-do supports process groups
 | .deepdive_.execution.processes += {
     "process/grounding/from_grounding": {
         style: "cmd_extractor", cmd: ": no-op"
