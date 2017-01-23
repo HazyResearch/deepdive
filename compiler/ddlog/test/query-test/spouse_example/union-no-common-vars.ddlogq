@@ -1,0 +1,1 @@
+?- articles(id, _); articles(_, content).

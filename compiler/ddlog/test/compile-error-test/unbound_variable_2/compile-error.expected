@@ -1,0 +1,5 @@
+[error] Variable x must have bindings
+Q(y) :-
+    a(y),
+    x > 100.
+

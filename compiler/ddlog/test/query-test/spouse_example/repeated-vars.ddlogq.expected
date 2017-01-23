@@ -1,0 +1,6 @@
+SELECT R0.article_id AS "id1"
+     , R0.text AS "content"
+     , R1.article_id AS "id2"
+FROM articles R0
+   , articles R1
+WHERE R1.text = R0.text

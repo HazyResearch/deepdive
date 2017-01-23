@@ -1,0 +1,5 @@
+[error] relation "d" is not defined
+Q(y, z) :-
+    a(x),
+    d(x, y, z, w).
+

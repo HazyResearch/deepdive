@@ -1,0 +1,4 @@
+[error] [1.7] failure: `.' expected but end of source found
+
+?- foo
+      ^

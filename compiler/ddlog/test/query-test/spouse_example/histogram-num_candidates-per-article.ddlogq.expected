@@ -1,0 +1,12 @@
+CREATE TEMPORARY TABLE num_candidates_by_doc AS
+SELECT R1.document_id AS column_0
+     , COUNT(R0.relation_id) AS column_1
+FROM has_spouse_candidates R0
+   , sentences R1
+WHERE R1.sentence_id = R0.sentence_id
+GROUP BY R1.document_id;
+
+SELECT R0.column_1 AS "num_candidates"
+     , COUNT(R0.column_0) AS "COUNT(doc)"
+FROM num_candidates_by_doc R0
+GROUP BY R0.column_1

@@ -1,0 +1,120 @@
+deepdive.schema {"relations" : {"e" : {"columns" : {"k" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}, "f" : {"columns" : {"k" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}, "a" : {"columns" : {"k" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}, "b" : {"columns" : {"k" : {"type" : "int", "index" : 0}, "p" : {"type" : "int", "index" : 1}, "q" : {"type" : "text", "index" : 2}}}, "c" : {"columns" : {"k" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}, "d" : {"columns" : {"k" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}}}
+
+deepdive.schema.variables {
+f.dd_label: Boolean
+c.dd_label: Boolean
+d.dd_label: Boolean
+a.dd_label: Boolean
+e.dd_label: Boolean
+
+}
+
+deepdive.inference.factors.inf_istrue_a {
+weight: """?(dd_weight_column_0)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+]
+input_query: """
+SELECT R0.dd_id AS "a.R0.dd_id"
+     , R0.k AS "a.R0.k"
+     , R0.k + R1.p AS "dd_weight_column_0"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_a R0
+   , b R1
+WHERE R1.k = R0.k
+"""
+input_relations: [
+  a
+  b
+]
+function: """Imply(a.R0.dd_label)"""
+
+}
+
+deepdive.inference.factors.inf_istrue_c {
+weight: """?"""
+non_category_weight_cols: [
+
+]
+input_query: """
+SELECT R0.dd_id AS "c.R0.dd_id"
+     , R0.k AS "c.R0.k"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_c R0
+   , b R1
+WHERE R1.k = R0.k
+"""
+input_relations: [
+  c
+  b
+]
+function: """Imply(c.R0.dd_label)"""
+
+}
+
+deepdive.inference.factors.inf_istrue_d {
+weight: """?(dd_weight_column_0, dd_weight_column_1)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+  dd_weight_column_1
+]
+input_query: """
+SELECT R0.dd_id AS "d.R0.dd_id"
+     , R0.k AS "d.R0.k"
+     , R0.k AS "dd_weight_column_0"
+     , R1.p AS "dd_weight_column_1"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_d R0
+   , b R1
+WHERE R1.k = R0.k
+"""
+input_relations: [
+  d
+  b
+]
+function: """Imply(d.R0.dd_label)"""
+
+}
+
+deepdive.inference.factors.inf_istrue_e {
+weight: """-10"""
+non_category_weight_cols: [
+
+]
+input_query: """
+SELECT R0.dd_id AS "e.R0.dd_id"
+     , R0.k AS "e.R0.k"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_e R0
+   , b R1
+WHERE R1.k = R0.k
+"""
+input_relations: [
+  e
+  b
+]
+function: """Imply(e.R0.dd_label)"""
+
+}
+
+deepdive.inference.factors.inf_istrue_f {
+weight: """-0.3"""
+non_category_weight_cols: [
+
+]
+input_query: """
+SELECT R0.dd_id AS "f.R0.dd_id"
+     , R0.k AS "f.R0.k"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_f R0
+   , b R1
+WHERE R1.k = R0.k
+"""
+input_relations: [
+  f
+  b
+]
+function: """Imply(f.R0.dd_label)"""
+
+}
+

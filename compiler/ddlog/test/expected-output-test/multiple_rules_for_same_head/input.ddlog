@@ -1,0 +1,58 @@
+R(a int, b int).
+S(a int).
+T(a int).
+Q?(x int).
+Q1?(x int).
+Q_1?(x int).
+
+# multiple rules for normal extraction rules
+S(a) :- R(a, b), R(b, _), a > 100.
+S(a) :- R(a, b), R(b, _), a < -100.
+S(a) :- R(a, b), R(b, _), a = 0.
+
+# multiple calls to the same function for the same head
+function f over (a int, b int) returns (a int)
+    implementation "/bin/false" handles tsv lines.
+T += f(a, b) :- R(a, b), a > 1000.
+T += f(a, b) :- R(a, b), 10 < a, a < 20.
+T += f(a, b) :- R(a, b), 100 < a, a < 200.
+# different head
+S += f(a, b) :- R(a, b), a < 0.
+S += f(a, b) :- R(a, b), a > 0.
+
+# test to check name clash with functions
+function f_1 over (a int, b int) returns (a int)
+    implementation "/bin/false" handles tsv lines.
+T += f_1(a, b) :- R(a, b).
+S += f_1(a, b) :- R(a, b), a > 0.
+
+# multiple inference rules for the same head
+@weight(a)
+Q(a) :- S(a), a > 1000.
+@weight(1.0)
+Q(a) :- S(a), a = 0.
+
+# compiled rule names should take negation into account
+# See: https://github.com/HazyResearch/ddlog/issues/86
+@weight("?")
+! Q(a) :- S(a), a < 1000.
+
+@weight(a)
+Q(a) => Q(b) :- S(a), R(a, b), S(b).
+@weight(-10.0)
+Q(a) => Q(b) :- S(a), R(a, b), S(b), a + b < 1000.
+
+# compiled rules shouldn't be sensitive to alpha-conversion, i.e., variable name changes
+# See: https://github.com/HazyResearch/deepdive/issues/518
+@weight(10.0)
+Q(a) => Q(c) :- S(a), R(a, c), S(c), a + c > 1000.
+
+# make sure desugars without name clashes
+T_2(a int).
+T__3(x) :- T(x).
+
+# corner cases for unique name generation
+@weight(a)
+Q(a) => Q1(b) :- S(a), R(a, b), S(b).
+@weight(a)
+Q(a) => Q_1(b) :- S(a), R(a, b), S(b).

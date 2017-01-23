@@ -1,0 +1,4 @@
+SELECT R0.is_true AS "label"
+     , COUNT(R0.person1_id) AS "COUNT(candidate)"
+FROM has_spouse_candidates R0
+GROUP BY R0.is_true

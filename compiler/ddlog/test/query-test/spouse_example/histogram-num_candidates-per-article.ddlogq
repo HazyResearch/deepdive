@@ -1,0 +1,5 @@
+num_candidates_by_doc(doc, COUNT(candidate)) :-
+    has_spouse_candidates(_,_,sentence,_,candidate,_),
+    sentences(doc, _,_,_,_,_,_,_, sentence).
+
+num_candidates, COUNT(doc) ?- num_candidates_by_doc(doc, num_candidates).

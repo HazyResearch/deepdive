@@ -1,0 +1,91 @@
+deepdive.schema {"relations" : {"person_smokes" : {"columns" : {"person_id" : {"type" : "bigint", "index" : 0}, "smokes" : {"type" : "boolean", "index" : 1}}}, "smoke" : {"columns" : {"person_id" : {"type" : "bigint", "index" : 0}}, "variable_type" : "boolean"}, "cancer" : {"columns" : {"person_id" : {"type" : "bigint", "index" : 0}}, "variable_type" : "boolean"}, "friends" : {"columns" : {"person_id" : {"type" : "bigint", "index" : 0}, "friend_id" : {"type" : "bigint", "index" : 1}}}, "person_has_cancer" : {"columns" : {"person_id" : {"type" : "bigint", "index" : 0}, "has_cancer" : {"type" : "boolean", "index" : 1}}}, "person" : {"columns" : {"person_id" : {"type" : "bigint", "index" : 0}, "name" : {"type" : "text", "index" : 1}}}}}
+
+deepdive.schema.variables {
+smoke.dd_label: Boolean
+cancer.dd_label: Boolean
+
+}
+
+deepdive.extraction.extractors.ext_smoke {
+sql: """
+SELECT R0.person_id AS column_0
+     , R0.smokes AS column_1
+     , 1.0 AS column_2
+FROM person_smokes R0
+"""
+input_relations: [
+  person_smokes
+]
+style: sql_extractor
+output_relation: smoke
+materialize: false
+
+}
+
+deepdive.extraction.extractors.ext_cancer {
+sql: """
+SELECT R0.person_id AS column_0
+     , R0.has_cancer AS column_1
+     , 1.0 AS column_2
+FROM person_has_cancer R0
+"""
+input_relations: [
+  person_has_cancer
+]
+style: sql_extractor
+output_relation: cancer
+materialize: false
+
+}
+
+deepdive.inference.factors.inf_imply_smoke_cancer {
+weight: """0.5"""
+non_category_weight_cols: [
+
+]
+input_query: """
+SELECT R0.dd_id AS "smoke.R0.dd_id"
+     , R0.person_id AS "smoke.R0.person_id"
+     , R1.dd_id AS "cancer.R1.dd_id"
+     , R1.person_id AS "cancer.R1.person_id"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_smoke R0
+   , dd_variables_with_id_cancer R1
+   , person_smokes R2
+WHERE R1.person_id = R0.person_id
+  AND R2.person_id = R0.person_id
+"""
+input_relations: [
+  smoke
+  cancer
+  person_smokes
+]
+function: """Imply(smoke.R0.dd_label, cancer.R1.dd_label)"""
+
+}
+
+deepdive.inference.factors.inf_imply_smoke_smoke {
+weight: """0.4"""
+non_category_weight_cols: [
+
+]
+input_query: """
+SELECT R0.dd_id AS "smoke.R0.dd_id"
+     , R0.person_id AS "smoke.R0.person_id"
+     , R1.dd_id AS "smoke.R1.dd_id"
+     , R1.person_id AS "smoke.R1.person_id"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_smoke R0
+   , dd_variables_with_id_smoke R1
+   , friends R2
+WHERE R2.person_id = R0.person_id
+  AND R2.friend_id = R1.person_id
+"""
+input_relations: [
+  smoke
+  friends
+]
+function: """Imply(smoke.R0.dd_label, smoke.R1.dd_label)"""
+
+}
+

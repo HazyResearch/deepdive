@@ -1,0 +1,7 @@
+/ddlog.jar
+target
+
+/test/*-test/**/*.bats
+/test/*-test/**/*.actual
+
+/.idea

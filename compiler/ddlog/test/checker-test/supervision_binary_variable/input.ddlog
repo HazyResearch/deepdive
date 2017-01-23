@@ -1,0 +1,4 @@
+Q?(x int).
+R(x int, label boolean).
+
+Q(x) = label :- R(x, label).

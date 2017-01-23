@@ -1,0 +1,202 @@
+deepdive.schema {"relations" : {"chunk" : {"columns" : {"sent_id" : {"type" : "bigint", "index" : 0, "annotations" : [{"name" : "key"}]}, "word_id" : {"type" : "bigint", "index" : 1, "annotations" : [{"name" : "key"}]}, "tag" : {"type" : "text", "index" : 2}}, "variable_type" : "categorical"}, "word_features" : {"columns" : {"sent_id" : {"type" : "bigint", "index" : 0}, "word_id" : {"type" : "bigint", "index" : 1}, "feature" : {"type" : "text", "index" : 2}}}, "words_raw" : {"columns" : {"word_id" : {"type" : "bigint", "index" : 1}, "pos" : {"type" : "text", "index" : 3}, "true_tag" : {"type" : "text", "index" : 4}, "sent_id" : {"type" : "bigint", "index" : 0}, "word" : {"type" : "text", "index" : 2}}}, "tags" : {"columns" : {"tag" : {"type" : "text", "index" : 0}}}, "words" : {"columns" : {"tag" : {"type" : "text", "index" : 5}, "word_id" : {"type" : "bigint", "index" : 1}, "pos" : {"type" : "text", "index" : 3}, "true_tag" : {"type" : "text", "index" : 4}, "sent_id" : {"type" : "bigint", "index" : 0}, "word" : {"type" : "text", "index" : 2}}}}}
+
+deepdive.schema.variables {
+chunk {
+tag: Categorical
+
+}
+
+}
+
+deepdive.extraction.extractors.ext_chunk {
+sql: """
+SELECT R0.sent_id AS column_0
+     , R0.word_id AS column_1
+     , R1.tag AS column_2
+     ,
+CASE WHEN R1.tag = R0.tag THEN true
+     ELSE NULL
+END AS column_3
+     , 1.0 AS column_4
+FROM words R0
+   , tags R1
+"""
+input_relations: [
+  words
+  tags
+]
+style: sql_extractor
+output_relation: chunk
+materialize: false
+
+}
+
+deepdive.extraction.extractors.ext_words {
+sql: """
+SELECT R0.sent_id AS column_0
+     , R0.word_id AS column_1
+     , R0.word AS column_2
+     , R0.pos AS column_3
+     , R0.true_tag AS column_4
+     ,
+CASE WHEN R0.true_tag = 'B-UCP' THEN NULL
+     WHEN R0.true_tag = 'I-UCP' THEN NULL
+     WHEN strpos(R0.true_tag, '-') > 0 THEN split_part(R0.true_tag, '-', 2)
+     WHEN R0.true_tag = 'O' THEN 'O'
+     ELSE NULL
+END AS column_5
+FROM words_raw R0
+"""
+input_relations: [
+  words_raw
+]
+style: sql_extractor
+output_relation: words
+materialize: false
+
+}
+
+deepdive.extraction.extractors.ext_word_features_by_ext_features {
+parallelism: ${PARALLELISM}
+input_relations: [
+  words
+]
+style: tsv_extractor
+output_relation: word_features
+udf: """udf/ext_features.py"""
+input_batch_size: ${INPUT_BATCH_SIZE}
+input: """
+SELECT R0.sent_id AS column_0
+     , R0.word_id AS column_1
+     , R0.word AS column_2
+     , R0.pos AS column_3
+     , R1.word AS column_4
+     , R1.pos AS column_5
+FROM words R0
+   , words R1
+WHERE R1.sent_id = R0.sent_id
+  AND R0.word_id = (R1.word_id + 1)
+  AND R0.word IS NOT NULL
+"""
+
+}
+
+deepdive.inference.factors.inf_istrue_chunk {
+weight: """?(dd_weight_column_0, dd_weight_column_1)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+  dd_weight_column_1
+]
+input_query: """
+SELECT R0.dd_id AS "chunk.R0.dd_id"
+     , R0.sent_id AS "chunk.R0.sent_id"
+     , R0.word_id AS "chunk.R0.word_id"
+     , R0.tag AS "chunk.R0.tag"
+     , R3.feature AS "dd_weight_column_0"
+     , R0.tag AS "dd_weight_column_1"
+     , (R3.feature)::float AS feature_value
+FROM dd_variables_with_id_chunk R0
+   , words R1
+   , tags R2
+   , word_features R3
+WHERE R1.sent_id = R0.sent_id
+  AND R1.word_id = R0.word_id
+  AND R2.tag = R0.tag
+  AND R3.sent_id = R0.sent_id
+  AND R3.word_id = R0.word_id
+"""
+input_relations: [
+  chunk
+  words
+  tags
+  word_features
+]
+function: """AndCategorical(chunk.R0.dd_label)"""
+
+}
+
+deepdive.inference.factors.linear_chain {
+weight: """?(dd_weight_column_0, dd_weight_column_1)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+  dd_weight_column_1
+]
+input_query: """
+SELECT R0.dd_id AS "chunk.R0.dd_id"
+     , R0.sent_id AS "chunk.R0.sent_id"
+     , R0.word_id AS "chunk.R0.word_id"
+     , R0.tag AS "chunk.R0.tag"
+     , R1.dd_id AS "chunk.R1.dd_id"
+     , R1.sent_id AS "chunk.R1.sent_id"
+     , R1.word_id AS "chunk.R1.word_id"
+     , R1.tag AS "chunk.R1.tag"
+     , R0.tag AS "dd_weight_column_0"
+     , R1.tag AS "dd_weight_column_1"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_chunk R0
+   , dd_variables_with_id_chunk R1
+   , words R2
+   , words R3
+   , tags R4
+   , tags R5
+WHERE R1.sent_id = R0.sent_id
+  AND R2.sent_id = R0.sent_id
+  AND R2.word_id = R0.word_id
+  AND R3.sent_id = R0.sent_id
+  AND R3.word_id = R1.word_id
+  AND R4.tag = R0.tag
+  AND R5.tag = R1.tag
+  AND R1.word_id = (R0.word_id + 1)
+"""
+input_relations: [
+  chunk
+  words
+  tags
+]
+function: """AndCategorical(chunk.R0.dd_label, chunk.R1.dd_label)"""
+
+}
+
+deepdive.inference.factors.phony_rule {
+weight: """?(dd_weight_column_0, dd_weight_column_1)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+  dd_weight_column_1
+]
+input_query: """
+SELECT R0.dd_id AS "chunk.R0.dd_id"
+     , R0.sent_id AS "chunk.R0.sent_id"
+     , R0.word_id AS "chunk.R0.word_id"
+     , R0.tag AS "chunk.R0.tag"
+     , R1.dd_id AS "chunk.R1.dd_id"
+     , R1.sent_id AS "chunk.R1.sent_id"
+     , R1.word_id AS "chunk.R1.word_id"
+     , R1.tag AS "chunk.R1.tag"
+     , R0.tag AS "dd_weight_column_0"
+     , R1.tag AS "dd_weight_column_1"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_chunk R0
+   , dd_variables_with_id_chunk R1
+   , words R2
+   , words R3
+   , tags R4
+   , tags R5
+WHERE R1.sent_id = R0.sent_id
+  AND R2.sent_id = R0.sent_id
+  AND R2.word_id = R0.word_id
+  AND R3.sent_id = R0.sent_id
+  AND R3.word_id = R1.word_id
+  AND R4.tag = R0.tag
+  AND R5.tag = R1.tag
+  AND R2.tag IS NOT NULL
+  AND R0.word_id < R1.word_id
+"""
+input_relations: [
+  chunk
+  words
+  tags
+]
+function: """AndCategorical(chunk.R0.dd_label, chunk.R1.dd_label)"""
+
+}
+

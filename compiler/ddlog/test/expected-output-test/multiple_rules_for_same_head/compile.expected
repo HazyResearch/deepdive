@@ -1,0 +1,441 @@
+deepdive.schema {"relations" : {"Q_1" : {"columns" : {"x" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}, "S_2" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "T___1" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "T" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "Q1" : {"columns" : {"x" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}, "S_1" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "T_2" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "T___2" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "Q" : {"columns" : {"x" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}, "T___3" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "S_0" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "T__3" : {"type" : "view", "columns" : {"column_0" : {"type" : "UNKNOWN", "index" : 0}}}, "T___0" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}, "R" : {"columns" : {"a" : {"type" : "int", "index" : 0}, "b" : {"type" : "int", "index" : 1}}}, "S" : {"columns" : {"a" : {"type" : "int", "index" : 0}}}}}
+
+deepdive.schema.variables {
+Q.dd_label: Boolean
+Q1.dd_label: Boolean
+Q_1.dd_label: Boolean
+
+}
+
+deepdive.extraction.extractors.ext_S {
+sql: """
+SELECT R0.a AS column_0
+FROM R R0
+   , R R1
+WHERE R1.a = R0.b
+  AND R0.a > 100
+UNION ALL
+SELECT R0.a AS column_0
+FROM R R0
+   , R R1
+WHERE R1.a = R0.b
+  AND R0.a < -100
+UNION ALL
+SELECT R0.a AS column_0
+FROM R R0
+   , R R1
+WHERE R1.a = R0.b
+  AND R0.a = 0
+UNION ALL
+SELECT R0.a AS column_0
+FROM S_0 R0
+UNION ALL
+SELECT R0.a AS column_0
+FROM S_1 R0
+UNION ALL
+SELECT R0.a AS column_0
+FROM S_2 R0
+"""
+input_relations: [
+  R
+  S_0
+  S_1
+  S_2
+]
+style: sql_extractor
+output_relation: S
+materialize: false
+
+}
+
+deepdive.extraction.extractors.ext_T___0_by_f {
+parallelism: ${PARALLELISM}
+input_relations: [
+  R
+]
+style: tsv_extractor
+output_relation: T___0
+udf: """/bin/false"""
+input_batch_size: ${INPUT_BATCH_SIZE}
+input: """
+SELECT R0.a AS column_0
+     , R0.b AS column_1
+FROM R R0
+WHERE R0.a > 1000
+"""
+
+}
+
+deepdive.extraction.extractors.ext_T {
+sql: """
+SELECT R0.a AS column_0
+FROM T___0 R0
+UNION ALL
+SELECT R0.a AS column_0
+FROM T___1 R0
+UNION ALL
+SELECT R0.a AS column_0
+FROM T___2 R0
+UNION ALL
+SELECT R0.a AS column_0
+FROM T___3 R0
+"""
+input_relations: [
+  T___0
+  T___1
+  T___2
+  T___3
+]
+style: sql_extractor
+output_relation: T
+materialize: false
+
+}
+
+deepdive.extraction.extractors.ext_T___1_by_f {
+parallelism: ${PARALLELISM}
+input_relations: [
+  R
+]
+style: tsv_extractor
+output_relation: T___1
+udf: """/bin/false"""
+input_batch_size: ${INPUT_BATCH_SIZE}
+input: """
+SELECT R0.a AS column_0
+     , R0.b AS column_1
+FROM R R0
+WHERE 10 < R0.a
+  AND R0.a < 20
+"""
+
+}
+
+deepdive.extraction.extractors.ext_T___2_by_f {
+parallelism: ${PARALLELISM}
+input_relations: [
+  R
+]
+style: tsv_extractor
+output_relation: T___2
+udf: """/bin/false"""
+input_batch_size: ${INPUT_BATCH_SIZE}
+input: """
+SELECT R0.a AS column_0
+     , R0.b AS column_1
+FROM R R0
+WHERE 100 < R0.a
+  AND R0.a < 200
+"""
+
+}
+
+deepdive.extraction.extractors.ext_S_0_by_f {
+parallelism: ${PARALLELISM}
+input_relations: [
+  R
+]
+style: tsv_extractor
+output_relation: S_0
+udf: """/bin/false"""
+input_batch_size: ${INPUT_BATCH_SIZE}
+input: """
+SELECT R0.a AS column_0
+     , R0.b AS column_1
+FROM R R0
+WHERE R0.a < 0
+"""
+
+}
+
+deepdive.extraction.extractors.ext_S_1_by_f {
+parallelism: ${PARALLELISM}
+input_relations: [
+  R
+]
+style: tsv_extractor
+output_relation: S_1
+udf: """/bin/false"""
+input_batch_size: ${INPUT_BATCH_SIZE}
+input: """
+SELECT R0.a AS column_0
+     , R0.b AS column_1
+FROM R R0
+WHERE R0.a > 0
+"""
+
+}
+
+deepdive.extraction.extractors.ext_T___3_by_f_1 {
+parallelism: ${PARALLELISM}
+input_relations: [
+  R
+]
+style: tsv_extractor
+output_relation: T___3
+udf: """/bin/false"""
+input_batch_size: ${INPUT_BATCH_SIZE}
+input: """
+SELECT R0.a AS column_0
+     , R0.b AS column_1
+FROM R R0
+"""
+
+}
+
+deepdive.extraction.extractors.ext_S_2_by_f_1 {
+parallelism: ${PARALLELISM}
+input_relations: [
+  R
+]
+style: tsv_extractor
+output_relation: S_2
+udf: """/bin/false"""
+input_batch_size: ${INPUT_BATCH_SIZE}
+input: """
+SELECT R0.a AS column_0
+     , R0.b AS column_1
+FROM R R0
+WHERE R0.a > 0
+"""
+
+}
+
+deepdive.inference.factors.inf_istrue_Q_0 {
+weight: """?(dd_weight_column_0)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+]
+input_query: """
+SELECT R0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+     , R0.x AS "dd_weight_column_0"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_Q R0
+   , S R1
+WHERE R1.a = R0.x
+  AND R0.x > 1000
+"""
+input_relations: [
+  Q
+  S
+]
+function: """Imply(Q.R0.dd_label)"""
+
+}
+
+deepdive.inference.factors.inf_istrue_Q_1 {
+weight: """1.0"""
+non_category_weight_cols: [
+
+]
+input_query: """
+SELECT R0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_Q R0
+   , S R1
+WHERE R1.a = R0.x
+  AND R0.x = 0
+"""
+input_relations: [
+  Q
+  S
+]
+function: """Imply(Q.R0.dd_label)"""
+
+}
+
+deepdive.inference.factors.inf_istrue_not_Q {
+weight: """?"""
+non_category_weight_cols: [
+
+]
+input_query: """
+SELECT R0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_Q R0
+   , S R1
+WHERE R1.a = R0.x
+  AND R0.x < 1000
+"""
+input_relations: [
+  Q
+  S
+]
+function: """Imply(!Q.R0.dd_label)"""
+
+}
+
+deepdive.inference.factors.inf_imply_Q_Q__0 {
+weight: """?(dd_weight_column_0)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+]
+input_query: """
+SELECT R0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+     , R1.dd_id AS "Q.R1.dd_id"
+     , R1.x AS "Q.R1.x"
+     , R0.x AS "dd_weight_column_0"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_Q R0
+   , dd_variables_with_id_Q R1
+   , S R2
+   , R R3
+   , S R4
+WHERE R2.a = R0.x
+  AND R3.a = R0.x
+  AND R3.b = R1.x
+  AND R4.a = R1.x
+"""
+input_relations: [
+  Q
+  S
+  R
+]
+function: """Imply(Q.R0.dd_label, Q.R1.dd_label)"""
+
+}
+
+deepdive.inference.factors.inf_imply_Q_Q__1 {
+weight: """-10.0"""
+non_category_weight_cols: [
+
+]
+input_query: """
+SELECT R0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+     , R1.dd_id AS "Q.R1.dd_id"
+     , R1.x AS "Q.R1.x"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_Q R0
+   , dd_variables_with_id_Q R1
+   , S R2
+   , R R3
+   , S R4
+WHERE R2.a = R0.x
+  AND R3.a = R0.x
+  AND R3.b = R1.x
+  AND R4.a = R1.x
+  AND (R0.x + R1.x) < 1000
+"""
+input_relations: [
+  Q
+  S
+  R
+]
+function: """Imply(Q.R0.dd_label, Q.R1.dd_label)"""
+
+}
+
+deepdive.inference.factors.inf_imply_Q_Q__2 {
+weight: """10.0"""
+non_category_weight_cols: [
+
+]
+input_query: """
+SELECT R0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+     , R1.dd_id AS "Q.R1.dd_id"
+     , R1.x AS "Q.R1.x"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_Q R0
+   , dd_variables_with_id_Q R1
+   , S R2
+   , R R3
+   , S R4
+WHERE R2.a = R0.x
+  AND R3.a = R0.x
+  AND R3.b = R1.x
+  AND R4.a = R1.x
+  AND (R0.x + R1.x) > 1000
+"""
+input_relations: [
+  Q
+  S
+  R
+]
+function: """Imply(Q.R0.dd_label, Q.R1.dd_label)"""
+
+}
+
+deepdive.extraction.extractors.ext_T__3 {
+sql: """
+SELECT R0.a AS column_0
+FROM T R0
+"""
+input_relations: [
+  T
+]
+style: sql_extractor
+output_relation: T__3
+materialize: false
+
+}
+
+deepdive.inference.factors.inf_imply_Q_Q1 {
+weight: """?(dd_weight_column_0)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+]
+input_query: """
+SELECT R0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+     , R1.dd_id AS "Q1.R1.dd_id"
+     , R1.x AS "Q1.R1.x"
+     , R0.x AS "dd_weight_column_0"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_Q R0
+   , dd_variables_with_id_Q1 R1
+   , S R2
+   , R R3
+   , S R4
+WHERE R2.a = R0.x
+  AND R3.a = R0.x
+  AND R3.b = R1.x
+  AND R4.a = R1.x
+"""
+input_relations: [
+  Q
+  Q1
+  S
+  R
+]
+function: """Imply(Q.R0.dd_label, Q1.R1.dd_label)"""
+
+}
+
+deepdive.inference.factors.inf_imply_Q_Q_1 {
+weight: """?(dd_weight_column_0)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+]
+input_query: """
+SELECT R0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+     , R1.dd_id AS "Q_1.R1.dd_id"
+     , R1.x AS "Q_1.R1.x"
+     , R0.x AS "dd_weight_column_0"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_Q R0
+   , dd_variables_with_id_Q_1 R1
+   , S R2
+   , R R3
+   , S R4
+WHERE R2.a = R0.x
+  AND R3.a = R0.x
+  AND R3.b = R1.x
+  AND R4.a = R1.x
+"""
+input_relations: [
+  Q
+  Q_1
+  S
+  R
+]
+function: """Imply(Q.R0.dd_label, Q_1.R1.dd_label)"""
+
+}
+

@@ -1,0 +1,81 @@
+#!/usr/bin/env bats
+# Expected output tests
+# 
+# These test cases compares outputs of various modes of ddlog against a .ddl example file with its expected output.
+# Tests are skipped if no expected output is found.
+
+source "$BATS_TEST_DIRNAME"/../bats-template.bash  # for $TESTDIR, $it, etc.
+
+# some preconditions
+setup() {
+    [ -e "$TESTDIR" ]
+}
+
+expectedOutputExistsFor() {
+    expectedOutput="$TESTDIR"/"$1".expected
+    actualOutput="${expectedOutput%.expected}".actual
+    [ -e "$expectedOutput" ]
+}
+
+## tests for basic compilation and pretty-printing
+
+# check if example can be parsed
+@test "$it parses input" {
+    expectedError="$TESTDIR"/parse-error.expected
+    if [ -e "$expectedError" ]; then
+        # input is expected to have parse errors
+        actualError=${expectedError%.expected}.actual
+        ! ddlog print "$TESTDIR"/input.ddlog >/dev/null 2>"$actualError"
+        diff "$expectedError" "$actualError"
+    else
+        # input is supposed to parse without errors
+        ddlog print "$TESTDIR"/input.ddlog >/dev/null
+    fi
+}
+
+# check if print is idempotent
+@test "$it parses and prints what it prints (idempotent)" {
+    printed="$TESTDIR"/printed.actual
+    ddlog print "$TESTDIR"/input.ddlog >"$printed" || skip
+    ddlog print "$printed" >"$TESTDIR"/printed-printed.actual
+    diff "$printed" "$TESTDIR"/printed-printed.actual
+}
+
+
+# compare the compiled output with what's expected
+@test "$it compiles input as expected" {
+    expectedOutputExistsFor "compile" || skip
+    ddlog compile "$TESTDIR"/input.ddlog >"$actualOutput"
+    diff "$expectedOutput" "$actualOutput"
+}
+
+# compare the pretty-printed output with what's expected
+@test "$it prints input as expected" {
+    expectedOutputExistsFor "print" || skip
+    ddlog print --skip-desugar "$TESTDIR"/input.ddlog >"$actualOutput"
+    diff "$expectedOutput" "$actualOutput"
+}
+
+# compare the desugared output with what's expected
+@test "$it desugars as expected" {
+    expectedOutputExistsFor "desugar" || skip
+    ddlog print "$TESTDIR"/input.ddlog >"$actualOutput"
+    diff "$expectedOutput" "$actualOutput"
+}
+
+# compare the export-schema output with what's expected
+@test "$it exports schema and annotations as expected" {
+    expectedOutputExistsFor "export-schema" || skip
+    ddlog export-schema "$TESTDIR"/input.ddlog >"$actualOutput"
+    diff "$expectedOutput" "$actualOutput"
+}
+
+
+## tests for incremental support
+
+# compare the pretty-printed output of the incremental version with what's expected
+@test "$it prints incremental input as expected" {
+    expectedOutputExistsFor "print-incremental" || skip
+    ddlog print-incremental "$TESTDIR"/input.ddlog >"$actualOutput"
+    diff "$expectedOutput" "$actualOutput"
+}

@@ -1,0 +1,5 @@
+[error] "c": number of columns in the query does not match number of columns in the schema
+Q(y, z) :-
+    a(x),
+    c(x, y, z, w).
+

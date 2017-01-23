@@ -1,0 +1,39 @@
+deepdive.schema {"relations" : {"R" : {"columns" : {"a" : {"type" : "int", "index" : 0}, "b" : {"type" : "int", "index" : 1}}}, "A" : {"type" : "view", "columns" : {"column_0" : {"type" : "UNKNOWN", "index" : 0}, "column_1" : {"type" : "UNKNOWN", "index" : 1}}}, "B" : {"type" : "view", "columns" : {"column_0" : {"type" : "UNKNOWN", "index" : 0}, "column_1" : {"type" : "UNKNOWN", "index" : 1}}}}}
+
+deepdive.schema.variables {
+
+}
+
+deepdive.extraction.extractors.ext_A {
+sql: """
+SELECT R0.a AS column_0
+     , R0.a + R0.b AS column_1
+FROM R R0
+"""
+input_relations: [
+  R
+]
+style: sql_extractor
+output_relation: A
+materialize: false
+
+}
+
+deepdive.extraction.extractors.ext_B {
+sql: """
+SELECT R0.column_0 AS column_0
+     , R1.b AS column_1
+FROM A R0
+   , R R1
+WHERE R1.a = R0.column_1
+"""
+input_relations: [
+  A
+  R
+]
+style: sql_extractor
+output_relation: B
+materialize: false
+
+}
+

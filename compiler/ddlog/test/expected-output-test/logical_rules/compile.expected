@@ -1,0 +1,62 @@
+deepdive.schema {"relations" : {"data" : {"columns" : {"x" : {"type" : "int", "index" : 0}, "y" : {"type" : "int", "index" : 1}}}, "P" : {"columns" : {"x" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}, "Q" : {"columns" : {"x" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}}}
+
+deepdive.schema.variables {
+P.dd_label: Boolean
+Q.dd_label: Boolean
+
+}
+
+deepdive.extraction.extractors.ext_P {
+sql: """
+SELECT R0.x AS column_0
+FROM data R0
+WHERE R0.y = 1
+"""
+input_relations: [
+  data
+]
+style: sql_extractor
+output_relation: P
+materialize: false
+
+}
+
+deepdive.extraction.extractors.ext_Q {
+sql: """
+SELECT R0.x AS column_0
+FROM data R0
+WHERE R0.y = 2
+"""
+input_relations: [
+  data
+]
+style: sql_extractor
+output_relation: Q
+materialize: false
+
+}
+
+deepdive.inference.factors.inf_imply_P_Q {
+weight: """1"""
+non_category_weight_cols: [
+
+]
+input_query: """
+SELECT R0.dd_id AS "P.R0.dd_id"
+     , R0.x AS "P.R0.x"
+     , R1.dd_id AS "Q.R1.dd_id"
+     , R1.x AS "Q.R1.x"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_P R0
+   , dd_variables_with_id_Q R1
+WHERE R1.x = R0.x
+  AND true
+"""
+input_relations: [
+  P
+  Q
+]
+function: """Imply(P.R0.dd_label, Q.R1.dd_label)"""
+
+}
+

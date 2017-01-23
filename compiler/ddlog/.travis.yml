@@ -1,0 +1,21 @@
+language: scala
+scala:
+    - "2.11.7"
+jdk:
+    - oraclejdk8
+
+sudo: false  # to use container-based infrastructure
+addons:
+    apt:
+        packages:
+            - wdiff
+cache:
+    directories:
+        - $HOME/.ivy2/cache
+
+install:
+    - make test-build
+script:
+    - make test
+after_success:
+    - sbt coverageReport coveralls

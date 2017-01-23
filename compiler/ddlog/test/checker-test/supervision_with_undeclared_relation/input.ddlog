@@ -1,0 +1,10 @@
+Q?(x int).
+S(y text, l boolean).
+T(x int, y text).
+
+# XXX R is not declared but implicitly defined
+# R(x int, label boolean).
+R(x, l) :- T(x,y), S(y,l).
+
+# ideally, checker should infer the type of undeclared relation to check S.l's type is boolean
+Q(x) = label :- R(x, label).

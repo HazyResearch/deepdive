@@ -1,0 +1,84 @@
+deepdive.schema {"relations" : {"label1" : {"columns" : {"wid" : {"type" : "INT", "index" : 0}, "val" : {"type" : "BOOLEAN", "index" : 1}}}, "features" : {"columns" : {"id" : {"type" : "BIGSERIAL", "index" : 0}, "word_id" : {"type" : "INT", "index" : 1}, "feature_id" : {"type" : "INT", "index" : 2}, "feature_val" : {"type" : "BOOLEAN", "index" : 3}}}, "label2" : {"columns" : {"wid" : {"type" : "INT", "index" : 0}, "val" : {"type" : "BOOLEAN", "index" : 1}}}, "q1" : {"columns" : {"wid" : {"type" : "INT", "index" : 0}}, "variable_type" : "boolean"}, "q2" : {"columns" : {"wid" : {"type" : "INT", "index" : 0}}, "variable_type" : "boolean"}}}
+
+deepdive.schema.variables {
+q1.dd_label: Boolean
+q2.dd_label: Boolean
+
+}
+
+deepdive.extraction.extractors.ext_q1 {
+sql: """
+SELECT R0.wid AS column_0
+     , R0.val AS column_1
+     , 1.0 AS column_2
+FROM label1 R0
+"""
+input_relations: [
+  label1
+]
+style: sql_extractor
+output_relation: q1
+materialize: false
+
+}
+
+deepdive.extraction.extractors.ext_q2 {
+sql: """
+SELECT R0.wid AS column_0
+     , R0.val AS column_1
+     , 1.0 AS column_2
+FROM label2 R0
+"""
+input_relations: [
+  label2
+]
+style: sql_extractor
+output_relation: q2
+materialize: false
+
+}
+
+deepdive.inference.factors.inf_istrue_q1 {
+weight: """?(dd_weight_column_0)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+]
+input_query: """
+SELECT R0.dd_id AS "q1.R0.dd_id"
+     , R0.wid AS "q1.R0.wid"
+     , R1.feature_id AS "dd_weight_column_0"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_q1 R0
+   , features R1
+WHERE R1.word_id = R0.wid
+"""
+input_relations: [
+  q1
+  features
+]
+function: """Imply(q1.R0.dd_label)"""
+
+}
+
+deepdive.inference.factors.inf_istrue_q2 {
+weight: """?(dd_weight_column_0)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+]
+input_query: """
+SELECT R0.dd_id AS "q2.R0.dd_id"
+     , R0.wid AS "q2.R0.wid"
+     , R1.feature_id AS "dd_weight_column_0"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_q2 R0
+   , features R1
+WHERE R1.word_id = R0.wid
+"""
+input_relations: [
+  q2
+  features
+]
+function: """Imply(q2.R0.dd_label)"""
+
+}
+
