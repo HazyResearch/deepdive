@@ -67,8 +67,9 @@ void InferenceResult::reset_gradients() {
 
 void InferenceResult::merge_weights_from(const InferenceResult &other) {
   assert(nweights == other.nweights);
-  for (size_t j = 0; j < nweights; ++j)
+  for (size_t j = 0; j < nweights; ++j) {
     weight_values[j] += other.weight_values[j];
+  }
 }
 
 void InferenceResult::average_weights(size_t count) {
