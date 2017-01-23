@@ -1,0 +1,46 @@
+notifications:
+  email:
+    - deepdive-notifications@cs.stanford.edu
+    # XXX Routing notifications through cs.stanford.edu as Travis cannot directly send to googlegroups.com
+    # See: https://github.com/travis-ci/travis-ci/issues/2513
+    #- deepdive-dev@googlegroups.com
+
+sudo: false  # to use container-based infra, see: http://docs.travis-ci.com/user/migrating-from-legacy/
+addons:
+  apt:
+    sources:
+    # - llvm-toolchain-precise-3.7  # for clang-format-3.7  # XXX this APT repo is down since 2016-05-31, see: http://lists.llvm.org/pipermail/llvm-foundation/2016-May/000020.html
+    - ubuntu-toolchain-r-test     # for gcc 4.8
+    packages:
+    #- clang-format-3.7
+    # for building sampler
+    #- libnuma-dev
+    - gcc-4.8
+    - g++-4.8
+cache:
+  directories:
+    - $HOME/clang+llvm
+    # dependencies
+    - lib/gtest
+    - lib/gtest-1.7.0
+    - lib/tclap
+    - lib/numactl
+
+language: cpp
+compiler:
+  - gcc
+
+before_install:
+  # Workaround until clang/LLVM APT returns, see: https://github.com/travis-ci/travis-ci/issues/6120#issuecomment-224072540
+  - test -x $HOME/clang+llvm/bin/clang-format || { LLVM_VERSION=3.7.0; wget http://llvm.org/releases/$LLVM_VERSION/clang+llvm-$LLVM_VERSION-x86_64-linux-gnu-ubuntu-14.04.tar.xz -O $HOME/clang+llvm.tar.xz && tar xf $HOME/clang+llvm.tar.xz -C $HOME/clang+llvm --strip-components 1; }
+  # code should be already formatted
+  - PATH="$HOME/clang+llvm/bin:$PATH" make format
+  - test $(git status --porcelain | wc -l) -eq 0 || { git diff; false; }
+install:
+  - export CXX="g++-4.8" CC="gcc-4.8"
+  # skip preparing dependencies if they're cached
+  - lib/has-all-dep.sh || make dep
+  - make
+script:
+  - export LD_LIBRARY_PATH="$PWD"/lib/numactl/lib
+  - make test

@@ -1,0 +1,19 @@
+#!/usr/bin/env bats
+load helpers
+
+case $BATS_TEST_FILENAME in
+    *.bats) ;;
+    *)
+        echo >&2 "Cannot run the template directly.  Must be run through a .bats symlink pointing to this file ($BATS_TEST_FILENAME)"
+        false
+esac
+
+@test "end to end test: $(basename "$BATS_TEST_FILENAME" .bats)" {
+    cd "${BATS_TEST_FILENAME%.bats}"
+
+    run_end_to_end.sh
+
+    # check result
+    ! [[ -x ./check_result ]] ||
+    ./check_result
+}

@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -eu
+
+awk <inference_result.out.text '{
+    vid=$1; category=$2; prob=$3;
+    expected=0.0;
+    if ((vid == 0)) {
+             if (category == 0) expected=0
+        else if (category == 1) expected=1
+        else if (category == 2) expected=0
+        else print "var " vid " has a value outside its domain"
+    }
+    if ((vid == 1)) {
+             if (category == 1) expected=1
+        else if (category == 2) expected=0
+        else if (category == 3) expected=0
+        else print "var " vid " has a value outside its domain"
+    }
+    if ((vid == 2)) {
+             if (category == 1) expected=0.05
+        else if (category == 2) expected=0
+        else if (category == 3) expected=0.95
+        else print "var " vid " has a value outside its domain"
+    }
+    eps=0.04
+    if ((prob > expected + eps) || (prob < expected - eps)) {
+        print "var " vid " category " category " prob is " prob ", not near " expected
+        exit(1)
+    }
+}'

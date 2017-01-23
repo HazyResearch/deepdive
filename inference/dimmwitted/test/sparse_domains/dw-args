@@ -1,0 +1,1 @@
+-l 4000 -i 2000 --alpha 0.01 --diminish 0.999 --reg_param 0

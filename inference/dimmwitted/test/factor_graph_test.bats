@@ -1,0 +1,1 @@
+.gtest.bats.template

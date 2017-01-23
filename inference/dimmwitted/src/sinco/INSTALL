@@ -1,0 +1,3 @@
+SINCO software comex with Matlab mex interface. To compile
+run compile_sinco comand (file provided) in Matlab and then
+use the appropriate calling line in your Matlab code.
