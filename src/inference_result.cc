@@ -56,8 +56,9 @@ InferenceResult::InferenceResult(const InferenceResult &other)
 
 void InferenceResult::merge_gradients_from(const InferenceResult &other) {
   assert(nweights == other.nweights);
-  for (size_t j = 0; j < nweights; ++j)
+  for (size_t j = 0; j < nweights; ++j) {
     weight_grads[j] += other.weight_grads[j];
+  }
 }
 
 void InferenceResult::reset_gradients() {
@@ -78,8 +79,9 @@ void InferenceResult::average_weights(size_t count) {
 
 void InferenceResult::copy_weights_to(InferenceResult &other) const {
   assert(nweights == other.nweights);
-  for (size_t j = 0; j < nweights; ++j)
+  for (size_t j = 0; j < nweights; ++j) {
     if (!weights_isfixed[j]) other.weight_values[j] = weight_values[j];
+  }
 }
 
 void InferenceResult::show_weights_snippet(std::ostream &output) const {
