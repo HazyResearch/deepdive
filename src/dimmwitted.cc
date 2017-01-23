@@ -79,15 +79,17 @@ int gibbs(const CmdParser &args) {
 
   // Initialize Gibbs sampling application.
   DimmWitted dw(fg, fg->weights.get(), args);
-  // learstd::cout << ning
+
   dw.learn();
 
-  // dump weights
   dw.dump_weights();
 
-  // inference
   dw.inference();
-  dw.aggregate_results_and_dump();
+
+  if (dw.opts.n_inference_epoch > 0) {
+    // dump only if we did any sampling at all
+    dw.aggregate_results_and_dump();
+  }
 
   return 0;
 }
@@ -127,9 +129,11 @@ void DimmWitted::inference() {
   // inference epochs
   for (size_t i_epoch = 0; i_epoch < n_epoch; ++i_epoch) {
     if (should_show_progress) {
-      std::cout << std::setprecision(2) << "INFERENCE EPOCH "
-                << i_epoch * n_samplers_ << "~" << ((i_epoch + 1) * n_samplers_)
-                << "...." << std::flush;
+      std::streamsize ss = std::cout.precision();
+      std::cout << std::setprecision(3) << "INFERENCE EPOCH "
+                << i_epoch * n_samplers_ << "~"
+                << ((i_epoch + 1) * n_samplers_ - 1) << "...." << std::flush
+                << std::setprecision(ss);
     }
 
     // restart timer
@@ -143,9 +147,11 @@ void DimmWitted::inference() {
 
     double elapsed = t.elapsed();
     if (should_show_progress) {
-      std::cout << "" << elapsed << " sec.";
-      std::cout << "," << (nvar * n_samplers_) / elapsed << " vars/sec"
-                << std::endl;
+      std::streamsize ss = std::cout.precision();
+      std::cout << std::setprecision(3) << "" << elapsed << " sec."
+                << "," << (nvar * n_samplers_) / elapsed << " vars/sec"
+                << std::endl
+                << std::setprecision(ss);
     }
   }
 
@@ -157,7 +163,6 @@ void DimmWitted::learn() {
   InferenceResult &infrs = samplers[0].infrs;
 
   const size_t n_epoch = compute_n_epochs(opts.n_learning_epoch);
-  const size_t nvar = infrs.nvars;
   const size_t nweight = infrs.nweights;
   const double decay = opts.decay;
   const bool should_show_progress = !opts.should_be_quiet;
@@ -165,14 +170,19 @@ void DimmWitted::learn() {
 
   double current_stepsize = opts.stepsize;
   const std::unique_ptr<double[]> prev_weights(new double[nweight]);
-  COPY_ARRAY(infrs.weight_values.get(), nweight, prev_weights.get());
+  COPY_ARRAY_IF_POSSIBLE(infrs.weight_values.get(), nweight,
+                         prev_weights.get());
+
+  bool stop = false;
 
   // learning epochs
-  for (size_t i_epoch = 0; i_epoch < n_epoch; ++i_epoch) {
+  for (size_t i_epoch = 0; !stop && i_epoch < n_epoch; ++i_epoch) {
     if (should_show_progress) {
-      std::cout << std::setprecision(2) << "LEARNING EPOCH "
-                << i_epoch * n_samplers_ << "~" << ((i_epoch + 1) * n_samplers_)
-                << "...." << std::flush;
+      std::streamsize ss = std::cout.precision();
+      std::cout << std::setprecision(3) << "LEARNING EPOCH "
+                << i_epoch * n_samplers_ << "~"
+                << ((i_epoch + 1) * n_samplers_ - 1) << "...." << std::flush
+                << std::setprecision(ss);
     }
 
     t.restart();
@@ -183,41 +193,53 @@ void DimmWitted::learn() {
     // wait the samplers to finish
     for (auto &sampler : samplers) sampler.wait();
 
-    // sum the weights and store in the first factor graph
-    // the average weights will be calculated and assigned to all factor graphs
-    for (size_t i = 1; i < n_samplers_; ++i)
-      infrs.merge_weights_from(samplers[i].infrs);
-    if (n_samplers_ > 1) {
-      infrs.average_weights(n_samplers_);
-    }
+    stop = update_weights(infrs, t.elapsed(), current_stepsize, prev_weights);
+
+    // assigned weights to all factor graphs
     for (size_t i = 1; i < n_samplers_; ++i)
       infrs.copy_weights_to(samplers[i].infrs);
-
-    // calculate the norms of the difference of weights from the current epoch
-    // and last epoch
-    double lmax = -INFINITY;
-    double l2 = 0.0;
-    for (size_t j = 0; j < nweight; ++j) {
-      double diff = fabs(prev_weights[j] - infrs.weight_values[j]);
-      prev_weights[j] = infrs.weight_values[j];
-      l2 += diff * diff;
-      if (lmax < diff) lmax = diff;
-    }
-    lmax /= current_stepsize;
-
-    double elapsed = t.elapsed();
-    if (should_show_progress) {
-      std::cout << "" << elapsed << " sec.";
-      std::cout << "," << (nvar * n_samplers_) / elapsed << " vars/sec."
-                << ",stepsize=" << current_stepsize << ",lmax=" << lmax
-                << ",l2=" << sqrt(l2) / current_stepsize << std::endl;
-    }
 
     current_stepsize *= decay;
   }
 
   double elapsed = t_total.elapsed();
   std::cout << "TOTAL LEARNING TIME: " << elapsed << " sec." << std::endl;
+}
+
+bool DimmWitted::update_weights(InferenceResult &infrs, double elapsed,
+                                double stepsize,
+                                const std::unique_ptr<double[]> &prev_weights) {
+  // sum the weights and store in the first factor graph
+  // the average weights will be calculated
+  for (size_t i = 1; i < n_samplers_; ++i)
+    infrs.merge_weights_from(samplers[i].infrs);
+  if (n_samplers_ > 1) infrs.average_weights(n_samplers_);
+
+  // calculate the norms of the difference of weights from the current epoch
+  // and last epoch
+  double lmax = -INFINITY;
+  double l2 = 0.0;
+  for (size_t j = 0; j < infrs.nweights; ++j) {
+    double diff = fabs(infrs.weight_values[j] - prev_weights[j]);
+    l2 += diff * diff;
+    if (lmax < diff) lmax = diff;
+  }
+  lmax /= stepsize;
+
+  if (!opts.should_be_quiet) {
+    std::streamsize ss = std::cout.precision();
+    std::cout << std::setprecision(3) << "" << elapsed << " sec."
+              << "," << (infrs.nvars * n_samplers_) / elapsed << " vars/sec."
+              << ",stepsize=" << stepsize << ",lmax=" << lmax
+              << ",l2=" << sqrt(l2) / stepsize << std::endl
+              << std::setprecision(ss);
+  }
+
+  // update prev_weights
+  COPY_ARRAY(infrs.weight_values.get(), infrs.nweights, prev_weights.get());
+
+  // TODO: early stopping based on convergence
+  return false;
 }
 
 void DimmWitted::dump_weights() {
