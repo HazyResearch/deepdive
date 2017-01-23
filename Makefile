@@ -137,6 +137,11 @@ build:
 	# record version and build info
 	util/build/generate-build-info.sh >$(BUILD_INFO)
 
+# build DimmWitted
+build: inference/dimmwitted/dw
+inference/dimmwitted/dw:
+	$(@D).build.sh
+
 # ensure some submodules required by stage.sh is there
 build: \
     extern/buildkit/install-shared-libraries-required-by \
@@ -184,7 +189,6 @@ checkstyle:
 
 # submodules to build and the files to copy out from each of them
 include util/build/build-submodules.mk
-$(call BUILD_SUBMODULE_AND_COPY, inference/dimmwitted, dw                                                   )
 $(call BUILD_SUBMODULE_AND_COPY, compiler/ddlog      , target/scala-2.11/ddlog-assembly-0.1-SNAPSHOT.jar    )
 $(call BUILD_SUBMODULE_AND_COPY, runner/mkmimo       , mkmimo                                               )
 ifndef NO_MINDBENDER
@@ -193,9 +197,9 @@ endif
 
 # XXX legacy targets kept to reduce surprise
 .PHONY: build-sampler
-build-sampler: build-submodule-dimmwitted
+build-sampler: inference/dimmwitted/dw
 .PHONY: build-dimmwitted
-build-dimmwitted: build-submodule-dimmwitted
+build-dimmwitted: inference/dimmwitted/dw
 .PHONY: build-mindbender
 build-mindbender: build-submodule-mindbender
 .PHONY: build-ddlog
