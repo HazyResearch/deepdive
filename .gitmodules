@@ -1,9 +1,6 @@
 [submodule "util/mindbender"]
 	path = util/mindbender
 	url = https://github.com/netj/mindbender.git
-[submodule "compiler/ddlog"]
-	path = compiler/ddlog
-	url = https://github.com/HazyResearch/ddlog.git
 [submodule "test/bats"]
 	path = test/bats
 	url = https://github.com/sstephenson/bats.git
