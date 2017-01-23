@@ -1,6 +1,7 @@
 #include "inference_result.h"
 #include "factor_graph.h"
 #include <iostream>
+#include <iomanip>
 #include <memory>
 
 namespace dd {
@@ -150,13 +151,12 @@ void InferenceResult::show_marginal_snippet(std::ostream &output) const {
   output << "   ..." << std::endl;
 }
 
-void InferenceResult::show_marginal_histogram(std::ostream &output) const {
+void InferenceResult::show_marginal_histogram(std::ostream &output,
+                                              const size_t bins) const {
   // show a histogram of inference results
   output << "INFERENCE CALIBRATION (QUERY BINS):" << std::endl;
-  std::vector<size_t> abc;
-  for (int i = 0; i <= 10; ++i) {
-    abc.push_back(0);
-  }
+  std::vector<size_t> abc(bins + 1, 0);
+
   size_t bad = 0;
   for (size_t j = 0; j < nvars; ++j) {
     const Variable &variable = fg.variables[j];
@@ -164,20 +164,31 @@ void InferenceResult::show_marginal_histogram(std::ostream &output) const {
       continue;
     }
     for (size_t k = 0; k < variable.internal_cardinality(); ++k) {
-      int bin = (int)((double)sample_tallies[variable.var_val_base + k] /
-                      agg_nsamples[variable.id] * 10);
-      if (bin >= 0 && bin <= 10) {
+      size_t bin = (size_t)((double)sample_tallies[variable.var_val_base + k] /
+                            agg_nsamples[variable.id] * bins);
+      if (bin <= bins) {
         ++abc[bin];
       } else {
         ++bad;
       }
     }
   }
-  abc[9] += abc[10];
-  for (int i = 0; i < 10; ++i) {
-    output << "PROB BIN 0." << i << "~0." << (i + 1) << "  -->  # " << abc[i]
-           << std::endl;
+  abc[bins - 1] += abc[bins];
+
+  const std::ios::fmtflags flags(output.flags());  // save ostream settings
+  output << std::fixed;  // specify number of decimals (rather than sig figs)
+
+  // save precision and set new one
+  const size_t prec = output.precision(std::max((int)ceil(log10(bins)), 1));
+
+  for (size_t i = 0; i < bins; ++i) {
+    output << "PROB BIN " << (float)i / bins << "~" << (float)(i + 1) / bins
+           << "  -->  # " << abc[i] << std::endl;
   }
+
+  // restore ostream settings
+  output.flags(flags);
+  output << std::setprecision(prec);
 }
 
 void InferenceResult::dump_marginals_in_text(std::ostream &text_output) const {

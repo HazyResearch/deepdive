@@ -53,7 +53,8 @@ class InferenceResult {
   void clear_variabletally();
   void aggregate_marginals_from(const InferenceResult &other);
   void show_marginal_snippet(std::ostream &output) const;
-  void show_marginal_histogram(std::ostream &output) const;
+  void show_marginal_histogram(std::ostream &output,
+                               const size_t bins = 10) const;
   void dump_marginals_in_text(std::ostream &text_output) const;
 
   inline void update_weight(size_t wid, double stepsize, double gradient) {
