@@ -75,7 +75,7 @@ stage compiler/compile-code                                       util/
 stage compiler/compile-codegen                                    util/
 
 stage compiler/ddlog-wrapper.sh                                   bin/ddlog
-stage .build/submodule/compiler/ddlog/target/scala-2.11/ddlog-assembly-0.1-SNAPSHOT.jar  lib/ddlog.jar
+stage compiler/ddlog/ddlog.jar                                    lib/ddlog.jar
 stage compiler/hocon2json                                         util/
 
 # DeepDive execution planner and runner

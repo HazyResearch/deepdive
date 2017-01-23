@@ -138,8 +138,13 @@ build:
 	util/build/generate-build-info.sh >$(BUILD_INFO)
 
 # build DimmWitted
-build: inference/dimmwitted/dw
+.PHONY build: inference/dimmwitted/dw
 inference/dimmwitted/dw:
+	$(@D).build.sh
+
+# build DDlog compiler
+.PHONY build: compiler/ddlog/ddlog.jar
+compiler/ddlog/ddlog.jar:
 	$(@D).build.sh
 
 # ensure some submodules required by stage.sh is there
@@ -189,7 +194,6 @@ checkstyle:
 
 # submodules to build and the files to copy out from each of them
 include util/build/build-submodules.mk
-$(call BUILD_SUBMODULE_AND_COPY, compiler/ddlog      , target/scala-2.11/ddlog-assembly-0.1-SNAPSHOT.jar    )
 $(call BUILD_SUBMODULE_AND_COPY, runner/mkmimo       , mkmimo                                               )
 ifndef NO_MINDBENDER
 $(call BUILD_SUBMODULE_AND_COPY, util/mindbender     , @prefix@/                                            )
@@ -203,6 +207,6 @@ build-dimmwitted: inference/dimmwitted/dw
 .PHONY: build-mindbender
 build-mindbender: build-submodule-mindbender
 .PHONY: build-ddlog
-build-ddlog: build-submodule-ddlog
+build-ddlog: compiler/ddlog/ddlog.jar
 .PHONY: build-mkmimo
 build-mkmimo: build-submodule-mkmimo
