@@ -79,7 +79,6 @@ class DimmWitted {
   void dump_weights();
 
  private:
-
   bool update_weights(InferenceResult& infrs, double elapsed, double stepsize,
                       const std::unique_ptr<double[]>& prev_weights);
   size_t compute_n_epochs(size_t n_epoch);

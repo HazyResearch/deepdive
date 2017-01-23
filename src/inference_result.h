@@ -35,8 +35,12 @@ class InferenceResult {
   // separate Gibbs chain CONDITIONED ON EVIDENCE
   std::unique_ptr<size_t[]> assignments_evid;
 
-  std::unique_ptr<double[]> weight_values;  // array of weight values
-  std::unique_ptr<bool[]> weights_isfixed;  // array of whether weight is fixed
+  // array of weight values
+  std::unique_ptr<double[]> weight_values;
+  // array of weight gradients, used in distributed learning
+  std::unique_ptr<float[]> weight_grads;
+  // array of whether weight is fixed
+  std::unique_ptr<bool[]> weights_isfixed;
 
   InferenceResult(const FactorGraph &fg, const Weight weights[],
                   const CmdParser &opts);
@@ -44,6 +48,8 @@ class InferenceResult {
   // copy constructor
   InferenceResult(const InferenceResult &other);
 
+  void merge_gradients_from(const InferenceResult &other);
+  void reset_gradients();
   void merge_weights_from(const InferenceResult &other);
   void average_weights(size_t count);
   void copy_weights_to(InferenceResult &other) const;
@@ -58,6 +64,8 @@ class InferenceResult {
   void dump_marginals_in_text(std::ostream &text_output) const;
 
   inline void update_weight(size_t wid, double stepsize, double gradient) {
+    double diff = stepsize * gradient;
+    weight_grads[wid] += diff;
     double weight = weight_values[wid];
     switch (opts.regularization) {
       case REG_L2: {
@@ -72,7 +80,7 @@ class InferenceResult {
       default:
         std::abort();
     }
-    weight -= stepsize * gradient;
+    weight -= diff;
     weight_values[wid] = weight;
   }
 
