@@ -55,6 +55,7 @@ NO find "${textfiles[@]}" -type f \
     ! -name '.gitmodules' \
     ! -name 'Makefile' ! -name '*.mk' \
     ! -path compiler/compile-code/compile-code-Makefile \
+    ! -path 'compiler/ddlog/test/*.expected' \
     \
     -exec grep -l '^[[:space:]]*'$'\t' {} +
 
