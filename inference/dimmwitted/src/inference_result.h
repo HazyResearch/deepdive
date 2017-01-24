@@ -64,8 +64,7 @@ class InferenceResult {
   void dump_marginals_in_text(std::ostream &text_output) const;
 
   inline void update_weight(size_t wid, double stepsize, double gradient) {
-    double diff = stepsize * gradient;
-    weight_grads[wid] += diff;
+    weight_grads[wid] += gradient;
     double weight = weight_values[wid];
     switch (opts.regularization) {
       case REG_L2: {
@@ -80,7 +79,7 @@ class InferenceResult {
       default:
         std::abort();
     }
-    weight -= diff;
+    weight -= stepsize * gradient;
     weight_values[wid] = weight;
   }
 

@@ -158,6 +158,8 @@ void FactorGraph::construct_index_part(size_t v_start, size_t v_end,
           v.total_truthiness += item.second.truthiness;
         }
         for (size_t j = 0; j < v.cardinality; ++j) {
+          // catch spurious values (e.g., due to duplicate tuples from DD)
+          assert(value_list[j] != Variable::INVALID_VALUE);
           values[value_index_base] =
               VariableToFactor(value_list[j], truthiness_list[j], 0, 0);
           ++value_index_base;
