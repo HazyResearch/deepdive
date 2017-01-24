@@ -4,6 +4,12 @@
 [submodule "test/bats"]
 	path = test/bats
 	url = https://github.com/sstephenson/bats.git
+[submodule "inference/dimmwitted/test/bats"]
+        path = inference/dimmwitted/test/bats
+	url = https://github.com/sstephenson/bats.git
+[submodule "compiler/ddlog/test/bats"]
+	path = compiler/ddlog/test/bats
+	url = https://github.com/sstephenson/bats.git
 [submodule "extern/buildkit"]
 	path = extern/buildkit
 	url = https://github.com/netj/buildkit.git
