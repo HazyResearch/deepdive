@@ -1,0 +1,23 @@
+#!/usr/bin/env bats
+load helpers
+
+case $BATS_TEST_FILENAME in
+    *.bats) ;;
+    *)
+        echo >&2 "Cannot run the template directly.  Must be run through a .bats symlink pointing to this file ($BATS_TEST_FILENAME)"
+        false
+esac
+
+@test "gtest: $(basename "$BATS_TEST_FILENAME" .bats)" {
+    testFileBaseName=$(basename "$BATS_TEST_FILENAME" .bats)
+    # convert snake_case to CamelCase
+    testClassName=$(perl -ne 's/(?:^|_)(.)/{uc $1}/eg; print' <<<"$testFileBaseName")
+
+    # setup
+    ! [[ -x "${BATS_TEST_FILENAME%.bats}".setup.sh ]] || "${BATS_TEST_FILENAME%.bats}".setup.sh
+
+    dw_test --gtest_filter="$testClassName.*"
+
+    # teardown
+    ! [[ -x "${BATS_TEST_FILENAME%.bats}".teardown.sh ]] || "${BATS_TEST_FILENAME%.bats}".teardown.sh
+}

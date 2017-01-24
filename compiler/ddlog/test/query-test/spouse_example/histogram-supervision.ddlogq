@@ -1,0 +1,1 @@
+label, COUNT(candidate) ?- has_spouse_candidates(candidate,_,_,_,_,label).

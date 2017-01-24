@@ -1,0 +1,21 @@
+#!/usr/bin/env bats
+# Parse error test
+# 
+# The test case here feeds a malformed .ddl into ddlog's print command and compares whether it produces an expected error.
+
+source "$BATS_TEST_DIRNAME"/../bats-template.bash  # for $TESTDIR, $it, etc.
+
+# some preconditions
+setup() {
+    [ -e "$TESTDIR" ]
+    expectedError="$TESTDIR"/parse-error.expected
+    [ -e "$expectedError" ]
+    actualError=${expectedError%.expected}.actual
+}
+
+# check if input produces a parse error
+@test "$it parses input" {
+    ! ddlog print "$TESTDIR"/input.ddlog >/dev/null 2>"$actualError"
+    diff "$expectedError" "$actualError"
+}
+

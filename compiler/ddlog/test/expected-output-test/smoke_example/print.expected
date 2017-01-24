@@ -1,0 +1,30 @@
+person(person_id bigint,
+       name text).
+
+person_has_cancer(person_id bigint,
+                  has_cancer boolean).
+
+person_smokes(person_id bigint,
+              smokes boolean).
+
+friends(person_id bigint,
+        friend_id bigint).
+
+smoke?(person_id bigint).
+
+cancer?(person_id bigint).
+
+smoke(pid) = l :-
+    person_smokes(pid, l).
+
+cancer(pid) = l :-
+    person_has_cancer(pid, l).
+
+@weight(0.5)
+smoke(pid) => cancer(pid) :-
+    person_smokes(pid, l).
+
+@weight(0.4)
+smoke(pid1) => smoke(pid) :-
+    friends(pid1, pid).
+

@@ -1,0 +1,22 @@
+#!/usr/bin/env bats
+# Compile error test
+# 
+# The test case here feeds a malformed .ddl into ddlog's check command and compares whether it produces an expected error.
+
+source "$BATS_TEST_DIRNAME"/../bats-template.bash  # for $TESTDIR, $it, etc.
+
+# some preconditions
+setup() {
+    [ -e "$TESTDIR" ]
+}
+
+# check if input produces a compile error
+@test "$it should produce an expected compilation error" {
+    expectedError="$TESTDIR"/compile-error.expected
+    [ -e "$expectedError" ] || skip
+    actualError=${expectedError%.expected}.actual
+    ! ddlog check   "$TESTDIR"/input.ddlog >/dev/null 2>"$actualError" ||
+    ! ddlog compile "$TESTDIR"/input.ddlog >/dev/null 2>"$actualError" ||
+    false
+    diff "$expectedError" "$actualError"
+}

@@ -1,0 +1,119 @@
+deepdive.schema {"relations" : {"sentences" : {"columns" : {"lemma" : {"type" : "text[]", "index" : 3}, "document_id" : {"type" : "text", "index" : 0}, "sentence_offset" : {"type" : "int", "index" : 7}, "ner_tags" : {"type" : "text[]", "index" : 6}, "words" : {"type" : "text[]", "index" : 2}, "pos_tags" : {"type" : "text[]", "index" : 4}, "dependencies" : {"type" : "text[]", "index" : 5}, "sentence" : {"type" : "text", "index" : 1}, "sentence_id" : {"type" : "text", "index" : 8}}}, "has_spouse_candidates" : {"columns" : {"description" : {"type" : "text", "index" : 3}, "person2_id" : {"type" : "text", "index" : 1}, "person1_id" : {"type" : "text", "index" : 0}, "is_true" : {"type" : "boolean", "index" : 5}, "relation_id" : {"type" : "text", "index" : 4}, "sentence_id" : {"type" : "text", "index" : 2}}}, "has_spouse" : {"columns" : {"relation_id" : {"type" : "text", "index" : 0}}, "variable_type" : "boolean"}, "articles" : {"columns" : {"article_id" : {"type" : "text", "index" : 0}, "text" : {"type" : "text", "index" : 1}}}, "has_spouse_features" : {"columns" : {"relation_id" : {"type" : "text", "index" : 0}, "feature" : {"type" : "text", "index" : 1}}}, "people_mentions" : {"columns" : {"text" : {"type" : "text", "index" : 3}, "length" : {"type" : "int", "index" : 2}, "mention_id" : {"type" : "text", "index" : 4}, "start_position" : {"type" : "int", "index" : 1}, "sentence_id" : {"type" : "text", "index" : 0}}}}}
+
+deepdive.schema.variables {
+has_spouse.dd_label: Boolean
+
+}
+
+deepdive.extraction.extractors.ext_people_mentions_by_ext_people {
+parallelism: ${PARALLELISM}
+input_relations: [
+  sentences
+]
+style: tsj_extractor
+output_relation: people_mentions
+udf: """udf/ext_people.py"""
+input_batch_size: ${INPUT_BATCH_SIZE}
+input: """
+SELECT R0.sentence_id AS column_0
+     , ARRAY_TO_STRING(R0.words, '~^~') AS column_1
+     , ARRAY_TO_STRING(R0.ner_tags, '~^~') AS column_2
+FROM sentences R0
+"""
+
+}
+
+deepdive.extraction.extractors.ext_has_spouse_candidates_by_ext_has_spouse {
+parallelism: ${PARALLELISM}
+input_relations: [
+  people_mentions
+]
+style: tsj_extractor
+output_relation: has_spouse_candidates
+udf: """udf/ext_has_spouse.py"""
+input_batch_size: ${INPUT_BATCH_SIZE}
+input: """
+SELECT R0.sentence_id AS column_0
+     , R0.mention_id AS column_1
+     , R0.text AS column_2
+     , R1.mention_id AS column_3
+     , R1.text AS column_4
+FROM people_mentions R0
+   , people_mentions R1
+WHERE R1.sentence_id = R0.sentence_id
+"""
+
+}
+
+deepdive.extraction.extractors.ext_has_spouse_features_by_ext_has_spouse_features {
+parallelism: ${PARALLELISM}
+input_relations: [
+  sentences
+  has_spouse_candidates
+  people_mentions
+]
+style: tsj_extractor
+output_relation: has_spouse_features
+udf: """udf/ext_has_spouse_features.py"""
+input_batch_size: ${INPUT_BATCH_SIZE}
+input: """
+SELECT ARRAY_TO_STRING(R0.words, '~^~') AS column_0
+     , R1.relation_id AS column_1
+     , R2.start_position AS column_2
+     , R2.length AS column_3
+     , R3.start_position AS column_4
+     , R3.length AS column_5
+FROM sentences R0
+   , has_spouse_candidates R1
+   , people_mentions R2
+   , people_mentions R3
+WHERE R1.sentence_id = R0.sentence_id
+  AND R2.sentence_id = R0.sentence_id
+  AND R2.mention_id = R1.person1_id
+  AND R3.sentence_id = R0.sentence_id
+  AND R3.mention_id = R1.person2_id
+"""
+
+}
+
+deepdive.extraction.extractors.ext_has_spouse {
+sql: """
+SELECT R0.relation_id AS column_0
+     , R0.is_true AS column_1
+     , 1.0 AS column_2
+FROM has_spouse_candidates R0
+"""
+input_relations: [
+  has_spouse_candidates
+]
+style: sql_extractor
+output_relation: has_spouse
+materialize: false
+
+}
+
+deepdive.inference.factors.inf_istrue_has_spouse {
+weight: """?(dd_weight_column_0)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+]
+input_query: """
+SELECT R0.dd_id AS "has_spouse.R0.dd_id"
+     , R0.relation_id AS "has_spouse.R0.relation_id"
+     , R2.feature AS "dd_weight_column_0"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_has_spouse R0
+   , has_spouse_candidates R1
+   , has_spouse_features R2
+WHERE R1.relation_id = R0.relation_id
+  AND R2.relation_id = R0.relation_id
+"""
+input_relations: [
+  has_spouse
+  has_spouse_candidates
+  has_spouse_features
+]
+function: """Imply(has_spouse.R0.dd_label)"""
+
+}
+

@@ -1,0 +1,3 @@
+SELECT R0.article_id AS "id"
+FROM articles R0
+ORDER BY R0.article_id DESC

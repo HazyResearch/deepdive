@@ -1,0 +1,7 @@
+SELECT R0.article_id AS "id"
+FROM articles R0
+WHERE R0.article_id < 100
+UNION ALL
+SELECT R0.article_id AS "id"
+FROM articles R0
+WHERE R0.article_id > 100000

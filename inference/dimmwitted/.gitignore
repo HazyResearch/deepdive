@@ -1,0 +1,37 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+dw
+dw_test
+
+# Compiled Dependency files
+*.d
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+
+# build dependencies
+lib/
+
+# others
+tags
+.DS_Store
+*.json
+.color_coded
+.ycm_extra_conf.py*
+
+# test artifacts
+inference_result.out*
+test/*/*.bin
+test/*/graph.variables*
+test/*/graph.weights*
+test/*/graph.factors*
+test/*/graph.domains*
+test/biased_coin-performance/

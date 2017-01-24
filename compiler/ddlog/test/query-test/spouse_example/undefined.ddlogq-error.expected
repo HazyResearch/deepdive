@@ -1,0 +1,4 @@
+[error] relation "nonexistent" is not defined
+(foo, bar) ?-
+    nonexistent(foo, _, bar, _, _).
+

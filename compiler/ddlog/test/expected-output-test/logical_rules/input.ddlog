@@ -1,0 +1,9 @@
+data(x int, y int).
+P?(x int).
+Q?(x int).
+
+P(x) :- data(x, 1).
+Q(x) :- data(x, 2).
+
+@weight(1)
+P(x) => Q(x) :- TRUE.

@@ -1,0 +1,2 @@
+SELECT R0.article_id AS "id"
+FROM articles R0

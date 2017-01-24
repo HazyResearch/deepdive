@@ -1,0 +1,4 @@
+[error] Variable y, z must have bindings
+Q(y, z) :-
+    a(x).
+

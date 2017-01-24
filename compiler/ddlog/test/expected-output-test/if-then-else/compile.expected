@@ -1,0 +1,72 @@
+deepdive.schema {"relations" : {"labels_resolved" : {"columns" : {"x" : {"type" : "INT", "index" : 0}, "l" : {"type" : "INT", "index" : 1}}}, "q" : {"columns" : {"x" : {"type" : "INT", "index" : 0}}, "variable_type" : "boolean"}, "labels" : {"columns" : {"x" : {"type" : "INT", "index" : 0}, "l" : {"type" : "BOOLEAN", "index" : 1}}}, "p" : {"type" : "view", "columns" : {"column_0" : {"type" : "UNKNOWN", "index" : 0}, "column_1" : {"type" : "UNKNOWN", "index" : 1}}}}}
+
+deepdive.schema.variables {
+q.dd_label: Boolean
+
+}
+
+deepdive.extraction.extractors.ext_q {
+sql: """
+SELECT R0.x AS column_0
+     , 
+CASE WHEN R0.l > 0 THEN true
+     WHEN R0.l < 0 THEN false
+     ELSE NULL
+END AS column_1
+     , 1.0 AS column_2
+FROM labels_resolved R0
+"""
+input_relations: [
+  labels_resolved
+]
+style: sql_extractor
+output_relation: q
+materialize: false
+
+}
+
+deepdive.extraction.extractors.ext_p {
+sql: """
+SELECT R0.x AS column_0
+     , 
+CASE WHEN abs(R0.l) > 10 THEN true
+     ELSE false
+END AS column_1
+FROM labels R0
+UNION ALL
+SELECT R0.x AS column_0
+     , 
+CASE WHEN (R0.x % 10) = 0 THEN false
+     ELSE 
+END AS column_1
+FROM labels R0
+"""
+input_relations: [
+  labels
+]
+style: sql_extractor
+output_relation: p
+materialize: false
+
+}
+
+deepdive.extraction.extractors.ext_labels_resolved {
+sql: """
+SELECT R0.x AS column_0
+     , SUM(
+CASE WHEN R0.l IS NULL THEN 0
+     WHEN R0.l = true THEN 1
+     ELSE -1
+END) AS column_1
+FROM labels R0
+GROUP BY R0.x
+"""
+input_relations: [
+  labels
+]
+style: sql_extractor
+output_relation: labels_resolved
+materialize: false
+
+}
+

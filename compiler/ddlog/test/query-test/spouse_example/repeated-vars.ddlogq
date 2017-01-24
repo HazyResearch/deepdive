@@ -1,0 +1,1 @@
+?- articles(id1, content), articles(id2, content).

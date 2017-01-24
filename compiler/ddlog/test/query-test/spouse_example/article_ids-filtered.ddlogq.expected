@@ -1,0 +1,4 @@
+SELECT R0.article_id AS "id"
+     , R0.text AS "content"
+FROM articles R0
+WHERE R0.text LIKE '% wife %'

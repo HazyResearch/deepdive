@@ -1,0 +1,5 @@
+[error] Variable z must have bindings
+@weight(z)
+b(x) => b(y) :-
+    x < y.
+

@@ -1,0 +1,4 @@
+[error] test/parse-error-test/nested_multiline_comments/input.ddlog[1.1] failure: string matching regex `\p{javaJavaIdentifierStart}\p{javaJavaIdentifierPart}*' expected but `/' found
+
+/* Multi-line comments are not supported */
+^

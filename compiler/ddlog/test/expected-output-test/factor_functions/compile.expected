@@ -1,0 +1,60 @@
+deepdive.schema {"relations" : {"R" : {"columns" : {"a" : {"type" : "int", "index" : 0}, "b" : {"type" : "int", "index" : 1}, "c" : {"type" : "int", "index" : 2}}}, "S" : {"columns" : {"x" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}, "Q" : {"columns" : {"x" : {"type" : "int", "index" : 0}}, "variable_type" : "boolean"}}}
+
+deepdive.schema.variables {
+S.dd_label: Boolean
+Q.dd_label: Boolean
+
+}
+
+deepdive.inference.factors.inf_imply_Q_Q {
+weight: """?(dd_weight_column_0)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+]
+input_query: """
+SELECT R0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+     , R1.dd_id AS "Q.R1.dd_id"
+     , R1.x AS "Q.R1.x"
+     , R1.x AS "dd_weight_column_0"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_Q R0
+   , dd_variables_with_id_Q R1
+   , R R2
+WHERE R2.a = R0.x
+  AND R2.b = R1.x
+"""
+input_relations: [
+  Q
+  R
+]
+function: """Imply(Q.R0.dd_label, Q.R1.dd_label)"""
+
+}
+
+deepdive.inference.factors.inf_equal_Q_not_Q {
+weight: """?(dd_weight_column_0)"""
+non_category_weight_cols: [
+  dd_weight_column_0
+]
+input_query: """
+SELECT R0.dd_id AS "Q.R0.dd_id"
+     , R0.x AS "Q.R0.x"
+     , R1.dd_id AS "Q.R1.dd_id"
+     , R1.x AS "Q.R1.x"
+     , R1.x AS "dd_weight_column_0"
+     , (1)::float AS feature_value
+FROM dd_variables_with_id_Q R0
+   , dd_variables_with_id_Q R1
+   , R R2
+WHERE R2.a = R0.x
+  AND R2.b = R1.x
+"""
+input_relations: [
+  Q
+  R
+]
+function: """Equal(Q.R0.dd_label, !Q.R1.dd_label)"""
+
+}
+

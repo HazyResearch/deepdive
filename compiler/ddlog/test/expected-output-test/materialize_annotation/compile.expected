@@ -1,0 +1,86 @@
+deepdive.schema {"relations" : {"T" : {"columns" : {"x" : {"type" : "text", "index" : 0}}}, "TQ" : {"columns" : {"x" : {"type" : "text", "index" : 0}}, "variable_type" : "boolean"}, "V" : {"columns" : {"x" : {"type" : "text", "index" : 0}}}, "VQ" : {"columns" : {"x" : {"type" : "text", "index" : 0}}, "variable_type" : "boolean"}, "D" : {"columns" : {"x" : {"type" : "text", "index" : 0}}}, "S" : {"columns" : {"x" : {"type" : "text", "index" : 0}}, "annotations" : [{"name" : "materialize"}]}}}
+
+deepdive.schema.variables {
+VQ.dd_label: Boolean
+TQ.dd_label: Boolean
+
+}
+
+deepdive.extraction.extractors.ext_V {
+sql: """
+SELECT R0.x AS column_0
+FROM D R0
+"""
+input_relations: [
+  D
+]
+style: sql_extractor
+output_relation: V
+materialize: false
+
+}
+
+deepdive.extraction.extractors.ext_VQ {
+sql: """
+SELECT R0.x AS column_0
+     , true AS column_1
+     , 1.0 AS column_2
+FROM D R0
+"""
+input_relations: [
+  D
+]
+style: sql_extractor
+output_relation: VQ
+materialize: false
+
+}
+
+deepdive.extraction.extractors.ext_T {
+sql: """
+SELECT R0.x AS column_0
+FROM D R0
+"""
+input_relations: [
+  D
+]
+style: sql_extractor
+output_relation: T
+materialize: true
+
+}
+
+deepdive.extraction.extractors.ext_TQ {
+sql: """
+SELECT R0.x AS column_0
+     , 
+CASE WHEN length(R0.x) > 5 THEN true
+     ELSE NULL
+END AS column_1
+     , 1.0 AS column_2
+FROM D R0
+"""
+input_relations: [
+  D
+]
+style: sql_extractor
+output_relation: TQ
+materialize: true
+
+}
+
+deepdive.extraction.extractors.ext_S {
+sql: """
+SELECT R0.x AS column_0
+FROM D R0
+WHERE R0.x LIKE 'foo%'
+"""
+input_relations: [
+  D
+]
+style: sql_extractor
+output_relation: S
+materialize: true
+
+}
+

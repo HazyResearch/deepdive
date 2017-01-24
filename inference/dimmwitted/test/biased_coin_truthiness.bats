@@ -1,0 +1,1 @@
+.end_to_end_test.bats.template

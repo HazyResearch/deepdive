@@ -1,0 +1,1 @@
+{"relations" : {"R" : {"columns" : {"a" : {"type" : "int", "index" : 0}, "b" : {"type" : "int", "index" : 1}}}, "A" : {"type" : "view", "columns" : {"column_0" : {"type" : "UNKNOWN", "index" : 0}, "column_1" : {"type" : "UNKNOWN", "index" : 1}}}, "B" : {"type" : "view", "columns" : {"column_0" : {"type" : "UNKNOWN", "index" : 0}, "column_1" : {"type" : "UNKNOWN", "index" : 1}}}}}

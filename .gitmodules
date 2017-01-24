@@ -1,14 +1,14 @@
-[submodule "inference/dimmwitted"]
-	path = inference/dimmwitted
-	url = https://github.com/HazyResearch/sampler.git
 [submodule "util/mindbender"]
 	path = util/mindbender
 	url = https://github.com/netj/mindbender.git
-[submodule "compiler/ddlog"]
-	path = compiler/ddlog
-	url = https://github.com/HazyResearch/ddlog.git
 [submodule "test/bats"]
 	path = test/bats
+	url = https://github.com/sstephenson/bats.git
+[submodule "inference/dimmwitted/test/bats"]
+        path = inference/dimmwitted/test/bats
+	url = https://github.com/sstephenson/bats.git
+[submodule "compiler/ddlog/test/bats"]
+	path = compiler/ddlog/test/bats
 	url = https://github.com/sstephenson/bats.git
 [submodule "extern/buildkit"]
 	path = extern/buildkit

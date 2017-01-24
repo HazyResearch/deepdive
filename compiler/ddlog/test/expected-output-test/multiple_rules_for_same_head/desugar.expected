@@ -1,0 +1,156 @@
+R(a int,
+  b int).
+
+S(a int).
+
+T(a int).
+
+Q?(x int).
+
+Q1?(x int).
+
+Q_1?(x int).
+
+S(a) :-
+    R(a, b),
+    R(b, _),
+    a > 100.
+
+S(a) :-
+    R(a, b),
+    R(b, _),
+    a < -100.
+
+S(a) :-
+    R(a, b),
+    R(b, _),
+    a = 0.
+
+function f
+    over (a int, b int)
+ returns (a int)
+ implementation "/bin/false"
+        handles tsv lines.
+
+T___0(a int).
+
+T___0 += f(a, b) :-
+    R(a, b),
+    a > 1000.
+
+T(a) :-
+    T___0(a).
+
+T___1(a int).
+
+T___1 += f(a, b) :-
+    R(a, b),
+    10 < a,
+    a < 20.
+
+T(a) :-
+    T___1(a).
+
+T___2(a int).
+
+T___2 += f(a, b) :-
+    R(a, b),
+    100 < a,
+    a < 200.
+
+T(a) :-
+    T___2(a).
+
+S_0(a int).
+
+S_0 += f(a, b) :-
+    R(a, b),
+    a < 0.
+
+S(a) :-
+    S_0(a).
+
+S_1(a int).
+
+S_1 += f(a, b) :-
+    R(a, b),
+    a > 0.
+
+S(a) :-
+    S_1(a).
+
+function f_1
+    over (a int, b int)
+ returns (a int)
+ implementation "/bin/false"
+        handles tsv lines.
+
+T___3(a int).
+
+T___3 += f_1(a, b) :-
+    R(a, b).
+
+T(a) :-
+    T___3(a).
+
+S_2(a int).
+
+S_2 += f_1(a, b) :-
+    R(a, b),
+    a > 0.
+
+S(a) :-
+    S_2(a).
+
+@weight(a)
+Q(a) :-
+    S(a),
+    a > 1000.
+
+@weight(1.0)
+Q(a) :-
+    S(a),
+    a = 0.
+
+@weight("?")
+!Q(a) :-
+    S(a),
+    a < 1000.
+
+@weight(a)
+Q(a) => Q(b) :-
+    S(a),
+    R(a, b),
+    S(b).
+
+@weight(-10.0)
+Q(a) => Q(b) :-
+    S(a),
+    R(a, b),
+    S(b),
+    (a + b) < 1000.
+
+@weight(10.0)
+Q(a) => Q(c) :-
+    S(a),
+    R(a, c),
+    S(c),
+    (a + c) > 1000.
+
+T_2(a int).
+
+T__3(x) :-
+    T(x).
+
+@weight(a)
+Q(a) => Q1(b) :-
+    S(a),
+    R(a, b),
+    S(b).
+
+@weight(a)
+Q(a) => Q_1(b) :-
+    S(a),
+    R(a, b),
+    S(b).
+
