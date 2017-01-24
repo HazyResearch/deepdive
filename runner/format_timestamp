@@ -13,7 +13,7 @@ set -eu
 format_duration() {
   local T=$1
   if [[ $T -eq 0 ]]; then
-      echo "just now"
+      echo "0s"
   else
       [[ $T -gt 0 ]] || let T=$((0 - T))
       local D=$((T/60/60/24))
@@ -34,7 +34,13 @@ for file; do
     ts=$(date -r "$file" -Iseconds 2>/dev/null || date -r "$file" +%FT%T%:z)
     nsecs=$(( $FORMAT_DURATION_SINCE - $(date -r "$file" +%s) ))
     dur=$(format_duration $nsecs)
-    echo "$ts (${dur## } ago)"
+    echo "$ts ($(
+        case $nsecs in
+            (0)  echo "just now" ;;
+            (-*) echo "in${dur}" ;;
+            (*)  echo "${dur## } ago" ;;
+        esac
+    )"
     exit
 done
 echo N/A

@@ -23,6 +23,7 @@ unset MAKEFLAGS MFLAGS MAKEOVERRIDES MAKELEVEL
 if [[ $# -gt 0 ]]; then
     makeTargets=()
     for target; do
+        # TODO recognize all
         resolved=false
         for fmt in %s %s.done {data,process,data/model,model,process/{model,grounding{,/{factor,variable}}}}/%s.done; do
             makeTarget=$(printf "$fmt" "$target")

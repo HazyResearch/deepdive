@@ -4,7 +4,7 @@
 .deepdive_ as $deepdive
 
 | .deepdive_.execution.processes |= with_entries(
-    if .key == "process/init/app" then . else
+    if .key == $deepdive.execution.process_init_app then . else
         .value |=
             # simply add init/app to all processes whose dependencies are empty
             # (This is a good approximation to making all processes depend on
@@ -13,7 +13,7 @@
             #  there's a cycle in the dependency.)
             ( if (.dependencies_ | length) > 0
               or (.input_ | length) > 0 then .
-            else .dependencies_ += ["process/init/app"]
+            else .dependencies_ += [$deepdive.execution.process_init_app]
             end)
     end
 )

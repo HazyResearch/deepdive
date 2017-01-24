@@ -5,7 +5,7 @@ set -euo pipefail
 jq -r '
 .deepdive_ as $deepdive
 | $deepdive.execution.processes | to_entries[]
-| select(.key | startswith("process/init/relation/"))
+| select(.key | startswith($deepdive.execution.process_init_relation_prefix))
 | select(.value.output_relation | in($deepdive.schema.variables_byName) | not)  # do not treat variables as base relations
 | .value.output_relation
 ' "$@" |

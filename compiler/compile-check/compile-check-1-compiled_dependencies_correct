@@ -18,8 +18,6 @@ $deepdive.execution.processes | to_entries[] |
     [ .dependencies_[]?
     | select(
         (startswith("process/") and in($deepdive.execution.processes)
-      # TODO factor/ aren't really used, so remove?
-      or startswith("factor/")  and (ltrimstr("factor/") | in($deepdive.inference.factors_byName))
       or startswith("data/")    and (ltrimstr("data/")   | in($deepdive.schema.relations)
                                                            # XXX assume user is doing the right thing if schema.json is empty
                                                            or ($deepdive.schema.relations | length == 0))

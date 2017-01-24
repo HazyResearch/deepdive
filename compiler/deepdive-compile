@@ -148,7 +148,7 @@ deepdive-check -a -c "$PWD"/config.json 'compiled_*' 2>&1 | sed 's/^/ /' >&2
 
 ###############################################################################
 STEP "Compiling executable code into:"
-# compile extractors and factors under process/ and factor/
+# compile extractors under process/
 pids=(--)
 for cc in "$DEEPDIVE_HOME"/util/compile-code/compile-code-*; do
     [[ -x "$cc" ]] || continue

@@ -13,9 +13,12 @@
 | .deepdive_.extraction.extractors |= . + {}
 | .deepdive_.inference             |= . + {}
 | .deepdive_.inference.factors     |= . + {}
-| .deepdive_.pipeline              |= . + {}
-| .deepdive_.pipeline.pipelines    |= . + {}
 
 # make sure our intermediate representation for execution plan set up
 | .deepdive_.execution             |= . + {}
 | .deepdive_.execution.processes   |= . + {}
+
+# some default values
+# allowing the initial process to be named something else
+| .deepdive_.execution.process_init_app             |= (. // "process/init/app")
+| .deepdive_.execution.process_init_relation_prefix |= (. // "process/init/relation/")
