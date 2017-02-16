@@ -18,9 +18,17 @@ has_spouse?(
 articles(
     @key
     @distributed_by
-    id      text,
+    id text,
     @searchable
     content text
+).
+
+@source
+spouses_dbpedia(
+    @key
+    person1_name text,
+    @key
+    person2_name text
 ).
 
 ## NLP markup #################################################################
@@ -33,27 +41,22 @@ sentences(
     doc_id         text,
     @key
     sentence_index int,
-    @search_type("text[]")
-    tokens         json,
-    @search_type("text[]")
-    lemmas         json,
-    @search_type("text[]")
-    pos_tags       json,
-    @search_type("text[]")
-    ner_tags       json,
-    @search_type("int[]")
-    doc_offsets    json,
-    @search_type("text[]")
-    dep_types      json,
-    @search_type("int[]")
-    dep_tokens     json
+    @searchable
+    sentence_text  text,
+    tokens         text[],
+    lemmas         text[],
+    pos_tags       text[],
+    ner_tags       text[],
+    doc_offsets    int[],
+    dep_types      text[],
+    dep_tokens     int[]
 ).
 
 function nlp_markup over (
-        doc_id  text,
+        doc_id text,
         content text
     ) returns rows like sentences
-    implementation "udf/nlp_markup.sh" handles tsj lines.
+    implementation "udf/nlp_markup.sh" handles tsv lines.
 
 sentences += nlp_markup(doc_id, content) :-
     articles(doc_id, content).
@@ -63,35 +66,34 @@ sentences += nlp_markup(doc_id, content) :-
 @extraction
 person_mention(
     @key
-    mention_id     text,
+    mention_id text,
     @searchable
-    mention_text   text,
+    mention_text text,
     @distributed_by
     @references(relation="sentences", column="doc_id",         alias="appears_in")
-    doc_id         text,
+    doc_id text,
     @references(relation="sentences", column="sentence_index", alias="appears_in")
     sentence_index int,
-    begin_index    int,
-    end_index      int
+    begin_index int,
+    end_index int
 ).
 
 function map_person_mention over (
-        doc_id         text,
+        doc_id text,
         sentence_index int,
-        tokens         text[],
-        ner_tags       text[]
+        tokens text[],
+        ner_tags text[]
     ) returns rows like person_mention
-    implementation "udf/map_person_mention.py" handles tsj lines.
+    implementation "udf/map_person_mention.py" handles tsv lines.
 
 person_mention += map_person_mention(
     doc_id, sentence_index, tokens, ner_tags
-) :-
-    sentences(doc_id, sentence_index, tokens, _, _, ner_tags, _, _, _).
+) :- sentences(doc_id, sentence_index, _, tokens, _, _, ner_tags, _, _, _).
 
 spouse_candidate(
-    p1_id   text,
+    p1_id text,
     p1_name text,
-    p2_id   text,
+    p2_id text,
     p2_name text
 ).
 
@@ -115,31 +117,31 @@ spouse_candidate(p1, p1_name, p2, p2_name) :-
 spouse_feature(
     @key
     @references(relation="has_spouse", column="p1_id", alias="has_spouse")
-    p1_id   text,
+    p1_id text,
     @key
     @references(relation="has_spouse", column="p2_id", alias="has_spouse")
-    p2_id   text,
+    p2_id text,
     @key
     feature text
 ).
 
 function extract_spouse_features over (
-        p1_id          text,
-        p2_id          text,
+        p1_id text,
+        p2_id text,
         p1_begin_index int,
-        p1_end_index   int,
+        p1_end_index int,
         p2_begin_index int,
-        p2_end_index   int,
-        doc_id         text,
-        sent_index     int,
-        tokens         text[],
-        lemmas         text[],
-        pos_tags       text[],
-        ner_tags       text[],
-        dep_types      text[],
-        dep_tokens     int[]
+        p2_end_index int,
+        doc_id text,
+        sent_index int,
+        tokens text[],
+        lemmas text[],
+        pos_tags text[],
+        ner_tags text[],
+        dep_types text[],
+        dep_tokens int[]
     ) returns rows like spouse_feature
-    implementation "udf/extract_spouse_features.py" handles tsj lines.
+    implementation "udf/extract_spouse_features.py" handles tsv lines.
 
 spouse_feature += extract_spouse_features(
     p1_id, p2_id, p1_begin_index, p1_end_index, p2_begin_index, p2_end_index,
@@ -147,19 +149,20 @@ spouse_feature += extract_spouse_features(
 ) :-
     person_mention(p1_id, _, doc_id, sent_index, p1_begin_index, p1_end_index),
     person_mention(p2_id, _, doc_id, sent_index, p2_begin_index, p2_end_index),
-    sentences(doc_id, sent_index, tokens, lemmas, pos_tags, ner_tags, _, dep_types, dep_tokens).
-## Distant Supervision ########################################################
+    sentences(doc_id, sent_index, _, tokens, lemmas, pos_tags, ner_tags, _, dep_types, dep_tokens).
 
+
+## Distant Supervision ########################################################
 @extraction
 spouse_label(
     @key
     @references(relation="has_spouse", column="p1_id", alias="has_spouse")
-    p1_id   text,
+    p1_id text,
     @key
     @references(relation="has_spouse", column="p2_id", alias="has_spouse")
-    p2_id   text,
+    p2_id text,
     @navigable
-    label   int,
+    label int,
     @navigable
     rule_id text
 ).
@@ -168,21 +171,11 @@ spouse_label(
 spouse_label(p1,p2, 0, NULL) :- spouse_candidate(p1, _, p2, _).
 
 # distant supervision using data from DBpedia
-
-@source
-spouses_dbpedia(
-    @key
-    person1_name text,
-    @key
-    person2_name text
-).
-
 spouse_label(p1,p2, 1, "from_dbpedia") :-
     spouse_candidate(p1, p1_name, p2, p2_name),
     spouses_dbpedia(n1, n2),
     [ lower(n1) = lower(p1_name), lower(n2) = lower(p2_name) ;
       lower(n2) = lower(p1_name), lower(n1) = lower(p2_name) ].
-
 
 # supervision by heuristic rules in a UDF
 function supervise over (
@@ -196,23 +189,22 @@ function supervise over (
         pos_tags       text[],
         ner_tags       text[],
         dep_types      text[],
-        dep_tokens     int[]
+        dep_tokens    int[]
     ) returns (
         p1_id text, p2_id text, label int, rule_id text
     )
-    implementation "udf/supervise_spouse.py" handles tsj lines.
+    implementation "udf/supervise_spouse.py" handles tsv lines.
 
 spouse_label += supervise(
     p1_id, p1_begin, p1_end,
     p2_id, p2_begin, p2_end,
-    doc_id, sentence_index,
+    doc_id, sentence_index, sentence_text,
     tokens, lemmas, pos_tags, ner_tags, dep_types, dep_token_indexes
-) :-
-    spouse_candidate(p1_id, _, p2_id, _),
+) :- spouse_candidate(p1_id, _, p2_id, _),
     person_mention(p1_id, p1_text, doc_id, sentence_index, p1_begin, p1_end),
     person_mention(p2_id, p2_text,      _,              _, p2_begin, p2_end),
     sentences(
-        doc_id, sentence_index,
+        doc_id, sentence_index, sentence_text,
         tokens, lemmas, pos_tags, ner_tags, _, dep_types, dep_token_indexes
     ).
 
@@ -221,25 +213,26 @@ spouse_label += supervise(
 spouse_label_resolved(p1_id, p2_id, SUM(vote)) :- spouse_label(p1_id, p2_id, vote, rule_id).
 
 # assign the resolved labels for the spouse relation
+@materialize
 has_spouse(p1_id, p2_id) = if l > 0 then TRUE
                       else if l < 0 then FALSE
                       else NULL end :- spouse_label_resolved(p1_id, p2_id, l).
+
+###############################################################################
 
 ## Inference Rules ############################################################
 
 # Features
 @weight(f)
 has_spouse(p1_id, p2_id) :-
-    spouse_candidate(p1_id, _, p2_id, _),
     spouse_feature(p1_id, p2_id, f).
 
 # Inference rule: Symmetry
 @weight(3.0)
 has_spouse(p1_id, p2_id) => has_spouse(p2_id, p1_id) :-
-    spouse_candidate(p1_id, _, p2_id, _).
+    TRUE.
 
 # Inference rule: Only one marriage
 @weight(-1.0)
 has_spouse(p1_id, p2_id) => has_spouse(p1_id, p3_id) :-
-    spouse_candidate(p1_id, _, p2_id, _),
-    spouse_candidate(p1_id, _, p3_id, _).
+    TRUE.
