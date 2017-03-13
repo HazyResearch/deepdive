@@ -42,6 +42,10 @@ class InferenceResult {
   // array of whether weight is fixed
   std::unique_ptr<bool[]> weights_isfixed;
 
+  // number of factors for each weight
+  // used to amortize regularization term
+  std::unique_ptr<size_t[]> weight_freqs;
+
   InferenceResult(const FactorGraph &fg, const Weight weights[],
                   const CmdParser &opts);
 
@@ -66,20 +70,37 @@ class InferenceResult {
   inline void update_weight(size_t wid, double stepsize, double gradient) {
     weight_grads[wid] += gradient;
     double weight = weight_values[wid];
+    size_t total_factors = weight_freqs[wid];
+
+    // apply l1 or l2 regularization
     switch (opts.regularization) {
       case REG_L2: {
-        // bounded approx of 1 - opts.reg_param * stepsize
-        weight *= (1.0 / (1.0 + opts.reg_param * stepsize));
+        weight *= (1.0 - opts.reg_param * stepsize / total_factors);
         break;
       }
       case REG_L1: {
-        weight += opts.reg_param * (weight < 0);
+        if (weight > 0) {
+          weight =
+              std::max(0.0, weight - opts.reg_param * stepsize / total_factors);
+        } else if (weight < 0) {
+          weight =
+              std::min(0.0, weight + opts.reg_param * stepsize / total_factors);
+        }
         break;
       }
       default:
         std::abort();
     }
+
+    // apply gradient
     weight -= stepsize * gradient;
+
+    // clamp
+    if (weight > 10)
+      weight = 10;
+    else if (weight < -10)
+      weight = -10;
+
     weight_values[wid] = weight;
   }
 

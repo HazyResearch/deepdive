@@ -21,6 +21,7 @@ class FactorGraphTest : public testing::Test {
   std::unique_ptr<FactorGraph> cfg;
   std::unique_ptr<InferenceResult> infrs;
   std::unique_ptr<CmdParser> cmd_parser;
+  std::vector<double> dummy_probs;
 
   virtual void SetUp() {
     const char* argv[] = {
@@ -54,14 +55,14 @@ class FactorGraphTest : public testing::Test {
 TEST_F(FactorGraphTest, sgd_on_variable) {
   infrs->assignments_free[cfg->variables[0].id] = 0;
 
-  cfg->sgd_on_variable(cfg->variables[0], *infrs, 0.1, false);
+  cfg->sgd_on_variable(cfg->variables[0], *infrs, 0.1, false, dummy_probs);
   std::cout << "The weight value is: " << infrs->weight_values[0] << std::endl;
   EXPECT_EQ(infrs->weight_values[0], 0.2);
 
-  cfg->sgd_on_variable(cfg->variables[10], *infrs, 0.1, false);
+  cfg->sgd_on_variable(cfg->variables[10], *infrs, 0.1, false, dummy_probs);
   EXPECT_EQ(infrs->weight_values[0], 0.2);
 
-  cfg->sgd_on_variable(cfg->variables[10], *infrs, 0.1, false);
+  cfg->sgd_on_variable(cfg->variables[10], *infrs, 0.1, false, dummy_probs);
   EXPECT_EQ(infrs->weight_values[0], 0.2);
 }
 
