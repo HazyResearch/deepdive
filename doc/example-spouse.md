@@ -703,7 +703,7 @@ has_spouse(p1_id, p2_id) = if l > 0 then TRUE
 We additionally make sure that all spouse candidate mentions _not_ labeled by a rule are also included in this table:
 
 ```ddlog
-has_spouse(p1, p2) = NULL :- spouse_candidate(p1, _, p2, _).
+has_spouse(p1, p2) = NULL :- spouse_candidate(p1, _, p2, _), !EXISTS[spouse_label_resolved(p1_id, p2_id, _)].
 ```
 
 Once again, to execute all of the above, just run the following command:
