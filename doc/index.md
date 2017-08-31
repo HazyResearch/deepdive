@@ -5,6 +5,19 @@ no_toc: false
 toc_offset_top: 350
 ---
 
+----
+
+<blockquote class="well alert-block alert-danger">
+<big>
+As of 2017, DeepDive project is in maintenance mode and no longer under active development.
+The user community remains active, but the original project members can no longer promise exciting new features/improvements or responding to requests.
+For the more up-to-date research, please see the <a href="https://hazyresearch.github.io/snorkel/">Snorkel Project</a> or <a href="https://ds3lab.org/~czhang/">Ce Zhang's Projects</a>.
+</big>
+</blockquote>
+
+----
+
+
 ### What does DeepDive do?
 
 DeepDive is a system to extract value from [dark data](http://www.gartner.com/it-glossary/dark-data).
