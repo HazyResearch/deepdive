@@ -40,7 +40,7 @@ void GibbsSampler::wait() {
 GibbsSamplerThread::GibbsSamplerThread(FactorGraph &fg, InferenceResult &infrs,
                                        size_t ith_shard, size_t n_shards,
                                        const CmdParser &opts)
-    : varlen_potential_buffer_(0),
+    : var_potential_buffer_(0),
       fg(fg),
       infrs(infrs),
       sample_evidence(opts.should_sample_evidence),

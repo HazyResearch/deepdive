@@ -109,11 +109,12 @@ class FactorGraph {
    * update corresponding weights (stochastic gradient descent).
    */
   void sgd_on_variable(const Variable& variable, InferenceResult& infrs,
-                       double stepsize, bool is_noise_aware);
+                       double stepsize, bool is_noise_aware,
+                       const std::vector<double>& probs);
 
-  // perform SGD step for weight learning on one factor
-  inline void sgd_on_factor(size_t factor_id, double stepsize, size_t vid,
-                            size_t evidence_value, InferenceResult& infrs);
+  // perform GD step for weight learning on one factor
+  inline void sgd_on_factor(const Factor& factor, double stepsize,
+                            double gradient, InferenceResult& infrs);
 
   /**
    * Returns log-linear weighted potential of the all factors for the given

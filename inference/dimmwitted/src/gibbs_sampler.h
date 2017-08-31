@@ -68,7 +68,7 @@ class GibbsSamplerThread {
   unsigned short p_rand_seed[3];
 
   // potential for each proposals for categorical
-  std::vector<double> varlen_potential_buffer_;
+  std::vector<double> var_potential_buffer_;
 
   // references and cached flags
   FactorGraph &fg;
@@ -133,19 +133,20 @@ inline void GibbsSamplerThread::sample_sgd_single_variable(size_t vid,
 
   const Variable &variable = fg.variables[vid];
 
+  // pick a value for the evid Gibbs chain
+  infrs.assignments_evid[variable.id] = sample_evid(variable);
+
   // pick a value for the regular Gibbs chain
   size_t proposal = draw_sample(variable, infrs.assignments_free.get(),
                                 infrs.weight_values.get());
   infrs.assignments_free[variable.id] = proposal;
 
-  // pick a value for the (parallel) evid Gibbs chain
-  infrs.assignments_evid[variable.id] = sample_evid(variable);
-
   if (!learn_non_evidence && ((!is_noise_aware && !variable.is_evid) ||
                               (is_noise_aware && !variable.has_truthiness())))
     return;
 
-  fg.sgd_on_variable(variable, infrs, stepsize, is_noise_aware);
+  fg.sgd_on_variable(variable, infrs, stepsize, is_noise_aware,
+                     var_potential_buffer_);
 }
 
 inline void GibbsSamplerThread::sample_single_variable(size_t vid) {
@@ -215,7 +216,7 @@ inline size_t GibbsSamplerThread::draw_sample(const Variable &variable,
     }
 
     case DTYPE_CATEGORICAL: {
-      varlen_potential_buffer_.reserve(variable.cardinality);
+      var_potential_buffer_.reserve(variable.cardinality);
       double sum = -100000.0;
       proposal = Variable::INVALID_VALUE;
 // calculate potential for each proposal given a way to iterate the domain
@@ -223,17 +224,20 @@ inline size_t GibbsSamplerThread::draw_sample(const Variable &variable,
   do {                                                                        \
           for                                                                 \
       EACH_DOMAIN_VALUE {                                                     \
-        varlen_potential_buffer_[DOMAIN_INDEX] =                              \
+        var_potential_buffer_[DOMAIN_INDEX] =                                 \
             fg.potential(variable, DOMAIN_VALUE, assignments, weight_values); \
-        sum = logadd(sum, varlen_potential_buffer_[DOMAIN_INDEX]);            \
+        sum = logadd(sum, var_potential_buffer_[DOMAIN_INDEX]);               \
       }                                                                       \
     double r = erand48(p_rand_seed);                                          \
+    bool unset = true;                                                        \
         for                                                                   \
       EACH_DOMAIN_VALUE {                                                     \
-        r -= exp(varlen_potential_buffer_[DOMAIN_INDEX] - sum);               \
-        if (r <= 0) {                                                         \
+        double prob = exp(var_potential_buffer_[DOMAIN_INDEX] - sum);         \
+        var_potential_buffer_[DOMAIN_INDEX] = prob;                           \
+        r -= prob;                                                            \
+        if (r <= 0 && unset) {                                                \
           proposal = DOMAIN_VALUE;                                            \
-          break;                                                              \
+          unset = false;                                                      \
         }                                                                     \
       }                                                                       \
   } while (0)

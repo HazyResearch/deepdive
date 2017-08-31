@@ -242,76 +242,87 @@ FactorGraph::FactorGraph(const FactorGraph &other)
 }
 
 // Inline by defined here; accessible only from current file.
-inline void FactorGraph::sgd_on_factor(size_t factor_id, double stepsize,
-                                       size_t vid, size_t evidence_value,
+inline void FactorGraph::sgd_on_factor(const Factor &factor, double stepsize,
+                                       double gradient,
                                        InferenceResult &infrs) {
-  const Factor &factor = factors[factor_id];
-  if (infrs.weights_isfixed[factor.weight_id]) {
-    return;
-  }
-  // stochastic gradient ascent
-  // decrement weight with stepsize * gradient of weight
-  // gradient of weight = E[f] - E[f|D], where D is evidence variables,
-  // f is the factor function, E[] is expectation. Expectation is
-  // calculated using a sample of the variable.
-  double pot_evid = factor.potential(vifs.get(), infrs.assignments_evid.get(),
-                                     vid, evidence_value);
-  double pot_free = factor.potential(vifs.get(), infrs.assignments_free.get());
-  double gradient = pot_free - pot_evid;
+  if (infrs.weights_isfixed[factor.weight_id]) return;
   infrs.update_weight(factor.weight_id, stepsize, gradient);
 }
 
 void FactorGraph::sgd_on_variable(const Variable &variable,
                                   InferenceResult &infrs, double stepsize,
-                                  bool is_noise_aware) {
+                                  bool is_noise_aware,
+                                  const std::vector<double> &probs) {
+  // stochastic gradient ascent
+  // decrement weight with stepsize * gradient of weight
+  // gradient of weight = E[f] - E[f|D], where D is evidence variables,
+  // f is the factor function, E[] is expectation. Expectation is
+  // calculated using a sample of the variable.
+
   if (variable.is_boolean()) {
     // boolean: for each factor {learn}
     // NOTE: boolean vars do not support truthiness / noise-aware learning
     const VariableToFactor &vv = values[variable.var_val_base];
     for (size_t j = 0; j < vv.factor_index_length; ++j) {
       size_t factor_id = factor_index[vv.factor_index_base + j];
-      sgd_on_factor(factor_id, stepsize, variable.id, variable.assignment_dense,
-                    infrs);
+      const Factor &factor = factors[factor_id];
+
+      double pot_evid =
+          factor.potential(vifs.get(), infrs.assignments_evid.get());
+      double pot_free =
+          factor.potential(vifs.get(), infrs.assignments_free.get());
+      double gradient = pot_free - pot_evid;
+
+      sgd_on_factor(factor, stepsize, gradient, infrs);
     }
   } else {
     // categorical: for each evidence value { for each factor {learn} }
-    size_t proposal = infrs.assignments_free[variable.id];
-    for (size_t val = 0; val < variable.internal_cardinality(); ++val) {
-      // skip non-evidence values
-      if (!is_noise_aware && val != variable.assignment_dense) continue;
 
-      const VariableToFactor &ev = values[variable.var_val_base + val];
-      if (is_noise_aware && is_linear_zero(ev.truthiness)) continue;
+    // The factors are generated using ddlog rules, and as a result,
+    // only one assignment to the vars involved would activate a factor.
+    // In the FG, we index the factors not by vars, but by <var, value>.
+    // Here we find all factors for this var by iterating through its vals
+    // and that index.
 
-      double truthiness = is_noise_aware ? ev.truthiness : 1;
+    for (size_t i = 0; i < variable.internal_cardinality(); ++i) {
+      const VariableToFactor &vtf = values[variable.var_val_base + i];
 
-      // run SGD on all factors "activated" by this evidence value
-      for (size_t j = 0; j < ev.factor_index_length; ++j) {
-        size_t factor_id = factor_index[ev.factor_index_base + j];
-        sgd_on_factor(factor_id, stepsize * truthiness, variable.id, val,
-                      infrs);
-      }
+      // loop through each factor corresponding to this <var, val>
+      for (size_t j = 0; j < vtf.factor_index_length; ++j) {
+        size_t factor_id = factor_index[vtf.factor_index_base + j];
+        const Factor &factor = factors[factor_id];
 
-      // run SGD on all factors "activated" by proposal value
-      // NOTE: Current ddlog inference rule syntax implies that this list
-      //       of factors would overlap the above list only if the factor
-      //       connects tuple [var=val] and tuple [var=proposal], which sensible
-      //       ddlog inference rules would never generate.
-      //       Hence we assume that there is no overlap.
-      //       This may change in the future as we introduce fancier factor
-      //       types.
+        if (infrs.weights_isfixed[factor.weight_id]) {
+          continue;
+        }
 
-      // skip if we have just processed the same list of factors
-      // NOTE: not skipping before the first loop because ... assignments_evid!
-      if (val == proposal) continue;
+        // compute E[f] and E[f|D]
+        double pot_free_expected = 0, pot_evid_expected = 0;
 
-      const VariableToFactor &pv = values[variable.var_val_base + proposal];
-      for (size_t j = 0; j < pv.factor_index_length; ++j) {
-        size_t factor_id = factor_index[pv.factor_index_base + j];
-        sgd_on_factor(factor_id, stepsize * truthiness, variable.id, val,
-                      infrs);
-      }
-    }  // end for
+        if (!is_noise_aware) {
+          pot_evid_expected =
+              factor.potential(vifs.get(), infrs.assignments_evid.get());
+        }
+
+        for (size_t k = 0; k < variable.internal_cardinality(); ++k) {
+          double pot_free = factor.potential(
+              vifs.get(), infrs.assignments_free.get(), variable.id, k);
+          pot_free_expected += pot_free * probs[k];
+
+          if (is_noise_aware) {
+            double pot_evid = factor.potential(
+                vifs.get(), infrs.assignments_evid.get(), variable.id, k);
+            pot_evid_expected +=
+                pot_evid * values[variable.var_val_base + k].truthiness;
+          }
+        }
+
+        double gradient = pot_free_expected - pot_evid_expected;
+
+        sgd_on_factor(factor, stepsize, gradient, infrs);
+
+      }  // end for
+    }    // end for
   }
 }
 
